@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNav } from '../App';
 import { supabase, updateOrderStatus } from '../lib/supabase';
-import './Payment.css';
-
+import "./payment.css";
 export default function Payment({ orderId }) {
   const { navigate } = useNav();
   const [order, setOrder] = useState(null);

@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNav } from '../App';
 import { formatPrice } from '../lib/utils';
 import TabBar from '../components/TabBar';
-import './Cart.css';
-
+import "./cart.css";
 export default function Cart() {
   const { navigate } = useNav();
   const [items, setItems] = useState([]);
