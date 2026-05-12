@@ -1,0 +1,119 @@
+.bc-wrap {
+  margin: 0 0 18px;
+  width: 100%;
+}
+
+.bc-banner {
+  position: relative;
+  width: 100%;
+  min-height: 140px;
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  cursor: pointer;
+  transition: transform 0.15s;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  animation: bc-slide-in 0.5s ease-out;
+}
+
+@keyframes bc-slide-in {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.bc-banner:active {
+  transform: scale(0.98);
+}
+
+.bc-content {
+  flex: 1;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bc-sponsor {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0.7;
+  margin-bottom: 2px;
+}
+
+.bc-content h3 {
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.bc-content p {
+  font-size: 13px;
+  opacity: 0.95;
+  line-height: 1.3;
+  margin-top: 2px;
+}
+
+.bc-cta {
+  display: inline-block;
+  margin-top: 10px;
+  align-self: flex-start;
+  background: rgba(255,255,255,0.25);
+  backdrop-filter: blur(10px);
+  color: inherit;
+  border: 1.5px solid rgba(255,255,255,0.5);
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.bc-image {
+  position: absolute;
+  right: -20px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 130px;
+  height: 130px;
+  opacity: 0.6;
+  z-index: 1;
+}
+
+.bc-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.bc-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.bc-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #DDD;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.3s;
+}
+
+.bc-dot.active {
+  width: 20px;
+  background: var(--primary, #1F8B4C);
+}

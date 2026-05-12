@@ -539,3 +539,130 @@ export async function getProductsForSkinDiagnosis(diagnosis) {
   
   return { compatibles, avoid };
 }
+// ─── UPLOAD IMAGE PRODUIT ───
+export async function uploadProductImage(file) {
+  const fileName = `product_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.jpg`;
+  
+  // Compression avant upload
+  const compressed = await compressImage(file, 800, 0.85);
+  
+  const { error } = await supabase.storage
+    .from('product-images')
+    .upload(fileName, compressed, {
+      contentType: 'image/jpeg',
+      upsert: true,
+    });
+  if (error) {
+    console.error('uploadProductImage error:', error);
+    return null;
+  }
+  const { data } = supabase.storage.from('product-images').getPublicUrl(fileName);
+  return data.publicUrl;
+}
+
+// ─── UPLOAD IMAGE BANNIÈRE ───
+export async function uploadBannerImage(file) {
+  const fileName = `banner_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.jpg`;
+  const compressed = await compressImage(file, 1200, 0.85);
+  const { error } = await supabase.storage
+    .from('banner-images')
+    .upload(fileName, compressed, {
+      contentType: 'image/jpeg',
+      upsert: true,
+    });
+  if (error) {
+    console.error('uploadBannerImage error:', error);
+    return null;
+  }
+  const { data } = supabase.storage.from('banner-images').getPublicUrl(fileName);
+  return data.publicUrl;
+}
+
+// ─── Compression image côté client ───
+export async function compressImage(file, maxDim = 800, quality = 0.85) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        canvas.toBlob(blob => resolve(blob), 'image/jpeg', quality);
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// ─── BANNIÈRES ───
+export async function getActiveBanners() {
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from('banners')
+    .select('*')
+    .eq('active', true)
+    .or(`end_date.is.null,end_date.gt.${now}`)
+    .lte('start_date', now)
+    .order('display_order', { ascending: true });
+  if (error) {
+    console.error('getActiveBanners error:', error);
+    return [];
+  }
+  return data || [];
+}
+
+export async function getAllBanners() {
+  const { data } = await supabase
+    .from('banners')
+    .select('*')
+    .order('display_order', { ascending: true });
+  return data || [];
+}
+
+export async function createBanner(banner) {
+  const { data, error } = await supabase
+    .from('banners')
+    .insert(banner)
+    .select()
+    .single();
+  if (error) console.error('createBanner error:', error);
+  return error ? null : data;
+}
+
+export async function updateBanner(id, updates) {
+  return supabase.from('banners').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id);
+}
+
+export async function deleteBanner(id) {
+  return supabase.from('banners').delete().eq('id', id);
+}
+
+export async function incrementBannerClick(id) {
+  // Increment atomique du compteur
+  const { data: current } = await supabase
+    .from('banners')
+    .select('click_count')
+    .eq('id', id)
+    .single();
+  if (current) {
+    await supabase
+      .from('banners')
+      .update({ click_count: (current.click_count || 0) + 1 })
+      .eq('id', id);
+  }
+}

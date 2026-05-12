@@ -1,134 +1,146 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { useState, useEffect, useRef } from 'react';
+import { supabase, uploadProductImage, getAllBrands } from '../lib/supabase';
+import './PharmaProducts.css';
 
-const CATEGORIES = ['serum', 'solaire', 'nettoyant', 'hydratant', 'masque', 'corps', 'levres', 'maquillage', 'cheveux', 'huile'];
-const COMMON_BADGES = ['Made in Sénégal', 'Bio', 'Vegan', 'Sans parfum', 'Sans alcool'];
+const CATEGORIES = [
+  { id: 'serum', label: '💧 Sérums' },
+  { id: 'hydratant', label: '🌸 Hydratants' },
+  { id: 'nettoyant', label: '🧼 Nettoyants' },
+  { id: 'protection', label: '☀️ Solaires' },
+  { id: 'exfoliant', label: '✨ Exfoliants' },
+  { id: 'masque', label: '🎭 Masques' },
+  { id: 'creme', label: '🧴 Crèmes' },
+  { id: 'huile', label: '💛 Huiles' },
+  { id: 'lèvres', label: '💋 Lèvres' },
+  { id: 'autre', label: '📦 Autre' },
+];
 
-export default function PharmaProducts({ pharmacy }) {
-  const [products, setProducts] = useState([]);
-  const [editing, setEditing] = useState(null);
+export default function PharmaProducts({ pharmacyId, pharmacyName }) {
+  const [myProducts, setMyProducts] = useState([]);
+  const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState(null);
   const [filter, setFilter] = useState('all');
 
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => {
+    refresh();
+    (async () => {
+      const b = await getAllBrands();
+      setBrands(b);
+    })();
+  }, []);
 
   const refresh = async () => {
+    setLoading(true);
     const { data } = await supabase
       .from('products')
       .select('*')
-      .eq('submitted_by_pharmacy_id', pharmacy.id)
+      .eq('submitted_by_pharmacy_id', pharmacyId)
       .order('created_at', { ascending: false });
-    setProducts(data || []);
+    setMyProducts(data || []);
     setLoading(false);
   };
 
-  const handleSave = async (p) => {
-    const payload = {
-      name: p.name, brand: p.brand, category: p.category,
-      price: parseInt(p.price), score: 70,
-      img: p.img, short_desc: p.short_desc, long_desc: p.long_desc,
-      inci: p.inci, badges: p.badges || [],
+  const handleSave = async (product) => {
+    const data = {
+      ...product,
+      submitted_by_pharmacy_id: pharmacyId,
       status: 'pending',
-      submitted_by_pharmacy_id: pharmacy.id,
-      active: true,
+      active: false,
     };
-    if (p.id) {
-      await supabase.from('products').update(payload).eq('id', p.id);
+    
+    if (editing?.id) {
+      await supabase.from('products').update(data).eq('id', editing.id);
     } else {
-      const { data: newProd } = await supabase.from('products').insert(payload).select().single();
-      // Créer automatiquement un inventaire pour cette pharmacie
-      if (newProd) {
-        await supabase.from('inventory').insert({
-          pharmacy_id: pharmacy.id,
-          product_id: newProd.id,
-          stock: p.initialStock || 5,
-          active: true,
-        });
-      }
+      await supabase.from('products').insert(data);
     }
+    
+    setShowForm(false);
     setEditing(null);
     refresh();
-    alert('✅ Produit envoyé à Diaara pour validation. Tu seras notifié(e) sous 24h.');
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Supprimer ce produit ?')) return;
+    if (!confirm('Supprimer cette proposition ?')) return;
     await supabase.from('products').delete().eq('id', id);
     refresh();
   };
 
-  const filtered = filter === 'all' ? products : products.filter(p => p.status === filter);
-
-  if (editing) {
-    return <ProductForm product={editing} onSave={handleSave} onCancel={() => setEditing(null)} />;
-  }
+  const filtered = filter === 'all' ? myProducts : myProducts.filter(p => p.status === filter);
 
   return (
     <div className="ph-section">
       <header className="ph-header">
-        <div>
-          <h1>Mes produits proposés</h1>
-          <p>{products.length} produits · {products.filter(p => p.status === 'approved').length} validés par Diaara</p>
-        </div>
-        <button className="ph-btn-pri" onClick={() => setEditing({
-          name: '', brand: '', category: 'serum', price: 0, img: '',
-          short_desc: '', long_desc: '', inci: '', badges: [], initialStock: 5,
-        })}>+ Nouveau produit</button>
+        <h1>📦 Mes produits</h1>
+        <p>Propose des produits à ajouter au catalogue Diaara</p>
       </header>
 
-      <div className="ph-info-banner">
-        ℹ️ Propose tes produits beauté à Diaara. Une fois validé par notre équipe, ton produit sera visible pour toutes les clientes Diaara.
+      <div className="ph-filters">
+        <button className={`ph-filter ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>
+          Tous ({myProducts.length})
+        </button>
+        <button className={`ph-filter ${filter === 'pending' ? 'active' : ''}`} onClick={() => setFilter('pending')}>
+          ⏳ En attente ({myProducts.filter(p => p.status === 'pending').length})
+        </button>
+        <button className={`ph-filter ${filter === 'approved' ? 'active' : ''}`} onClick={() => setFilter('approved')}>
+          ✅ Validés ({myProducts.filter(p => p.status === 'approved').length})
+        </button>
+        <button className={`ph-filter ${filter === 'rejected' ? 'active' : ''}`} onClick={() => setFilter('rejected')}>
+          ❌ Refusés ({myProducts.filter(p => p.status === 'rejected').length})
+        </button>
       </div>
 
-      <div className="ph-filters">
-        {[
-          { id: 'all', label: 'Tous', count: products.length },
-          { id: 'pending', label: '⏳ En attente', count: products.filter(p => p.status === 'pending').length },
-          { id: 'approved', label: '✅ Validés', count: products.filter(p => p.status === 'approved').length },
-          { id: 'rejected', label: '❌ Rejetés', count: products.filter(p => p.status === 'rejected').length },
-        ].map(f => (
-          <button key={f.id} className={`ph-filter ${filter === f.id ? 'active' : ''}`} onClick={() => setFilter(f.id)}>
-            {f.label} <span className="ph-filter-count">{f.count}</span>
-          </button>
-        ))}
-      </div>
+      <button className="ph-btn-add" onClick={() => { setEditing(null); setShowForm(true); }}>
+        + Proposer un nouveau produit
+      </button>
+
+      {showForm && (
+        <ProductForm
+          product={editing || {}}
+          brands={brands}
+          onSave={handleSave}
+          onCancel={() => { setShowForm(false); setEditing(null); }}
+        />
+      )}
 
       {loading ? (
-        <div className="ph-empty">Chargement…</div>
+        <p style={{ textAlign: 'center', padding: 40 }}>Chargement…</p>
       ) : filtered.length === 0 ? (
         <div className="ph-empty">
-          <div style={{ fontSize: 48, opacity: 0.2 }}>✨</div>
-          <p>Aucun produit proposé</p>
-          <button className="ph-btn-pri" onClick={() => setEditing({
-            name: '', brand: '', category: 'serum', price: 0, img: '',
-            short_desc: '', long_desc: '', inci: '', badges: [], initialStock: 5,
-          })} style={{ marginTop: 12 }}>+ Proposer mon premier produit</button>
+          <div style={{ fontSize: 48, opacity: 0.2 }}>📦</div>
+          <p>Aucun produit dans cette catégorie</p>
         </div>
       ) : (
-        <div className="ph-product-grid">
+        <div className="ph-products-grid">
           {filtered.map(p => (
             <div key={p.id} className="ph-product-card">
-              {p.img && <img src={p.img} alt="" />}
-              <div className="ph-product-body">
+              <img
+                src={p.image_url || `https://placehold.co/300x300/F4F4F2/9B9B9B/png?text=${encodeURIComponent(p.name?.substring(0, 20) || '?')}`}
+                alt={p.name}
+                onError={(e) => { e.target.src = `https://placehold.co/300x300/F4F4F2/9B9B9B/png?text=${encodeURIComponent(p.name?.substring(0, 15) || '?')}`; }}
+              />
+              <div className="ph-product-info">
                 <div className="ph-product-head">
                   <strong>{p.name}</strong>
-                  <span className={`ph-badge ${p.status === 'approved' ? 'good' : p.status === 'rejected' ? 'bad' : 'medium'}`}>
-                    {p.status === 'pending' && '⏳'}
-                    {p.status === 'approved' && '✅'}
-                    {p.status === 'rejected' && '❌'}
-                    {' ' + p.status}
+                  <span className={`ph-status ph-status-${p.status}`}>
+                    {p.status === 'pending' && '⏳ En attente'}
+                    {p.status === 'approved' && '✅ Validé'}
+                    {p.status === 'rejected' && '❌ Refusé'}
                   </span>
                 </div>
-                <p className="ph-product-meta">{p.brand} · {p.category}</p>
+                <p className="ph-product-meta">{p.brand_name} · {p.category}</p>
                 <p className="ph-product-price">{p.price?.toLocaleString('fr-FR')} FCFA</p>
-                {p.rejection_reason && (
-                  <div className="ph-rejection-note">
-                    ⚠️ Motif rejet : {p.rejection_reason}
-                  </div>
+                {p.status === 'rejected' && p.rejection_reason && (
+                  <p className="ph-rejection">⚠️ {p.rejection_reason}</p>
                 )}
                 <div className="ph-product-actions">
-                  <button className="ph-btn-sec" onClick={() => setEditing(p)}>✏️ Modifier</button>
-                  <button className="ph-btn-danger" onClick={() => handleDelete(p.id)}>🗑️</button>
+                  {p.status === 'pending' && (
+                    <button className="ph-mini-btn" onClick={() => { setEditing(p); setShowForm(true); }}>✏️ Modifier</button>
+                  )}
+                  {p.status !== 'approved' && (
+                    <button className="ph-mini-btn ph-mini-btn-danger" onClick={() => handleDelete(p.id)}>🗑️ Supprimer</button>
+                  )}
                 </div>
               </div>
             </div>
@@ -139,82 +151,130 @@ export default function PharmaProducts({ pharmacy }) {
   );
 }
 
-function ProductForm({ product, onSave, onCancel }) {
-  const [p, setP] = useState(product);
+function ProductForm({ product, brands, onSave, onCancel }) {
+  const [form, setForm] = useState({
+    name: product.name || '',
+    brand_name: product.brand_name || '',
+    category: product.category || 'serum',
+    description: product.description || '',
+    ingredients: product.ingredients || '',
+    price: product.price || '',
+    image_url: product.image_url || '',
+    ...product,
+  });
+  const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const upd = (k, v) => setP({ ...p, [k]: v });
+  const cameraInputRef = useRef(null);
+  const galleryInputRef = useRef(null);
 
-  const toggleBadge = (b) => {
-    const cur = p.badges || [];
-    upd('badges', cur.includes(b) ? cur.filter(x => x !== b) : [...cur, b]);
+  const handleFile = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const url = await uploadProductImage(file);
+      if (url) {
+        setForm(f => ({ ...f, image_url: url }));
+      } else {
+        alert('Erreur upload. Réessaie.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Erreur : ' + err.message);
+    }
+    setUploading(false);
   };
 
   const handleSubmit = async () => {
-    if (!p.name?.trim() || !p.brand?.trim() || !p.price) {
-      alert('Nom, marque et prix requis');
-      return;
-    }
+    if (!form.name.trim()) { alert('Nom du produit requis'); return; }
+    if (!form.price || form.price <= 0) { alert('Prix requis'); return; }
     setSaving(true);
-    await onSave(p);
+    const data = { ...form, price: parseInt(form.price) };
+    delete data.created_at;
+    delete data.updated_at;
+    delete data.status;
+    delete data.rejection_reason;
+    await onSave(data);
     setSaving(false);
   };
 
   return (
-    <div className="ph-section">
-      <header className="ph-header">
-        <div>
-          <button className="ph-link" onClick={onCancel}>← Retour</button>
-          <h1>{product.id ? 'Modifier' : 'Proposer'} un produit</h1>
-          <p>Diaara validera ton produit sous 24h</p>
-        </div>
-      </header>
+    <div className="ph-modal-overlay" onClick={onCancel}>
+      <div className="ph-modal" onClick={e => e.stopPropagation()}>
+        <h3>{product.id ? '✏️ Modifier' : '📦 Nouveau produit'}</h3>
+        <p style={{ fontSize: 12, color: '#6B6B6B', marginBottom: 16 }}>
+          Le produit sera vérifié par Diaara avant d'apparaître dans le catalogue
+        </p>
 
-      <div className="ph-form-grid">
-        <div className="ph-form-section">
-          <h3>📦 Informations</h3>
-          <label>Nom du produit *<input value={p.name} onChange={e => upd('name', e.target.value)} placeholder="ex: Beurre de karité pur" /></label>
-          <label>Marque *<input value={p.brand} onChange={e => upd('brand', e.target.value)} placeholder="ex: Kheweul SN" /></label>
-          <label>Catégorie<select value={p.category} onChange={e => upd('category', e.target.value)}>
-            {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-          </select></label>
-          <label>Prix (FCFA) *<input type="number" value={p.price} onChange={e => upd('price', e.target.value)} /></label>
-          {!p.id && (
-            <label>Stock initial<input type="number" value={p.initialStock} onChange={e => upd('initialStock', parseInt(e.target.value) || 0)} placeholder="Quantité disponible" /></label>
+        {/* PHOTO UPLOAD */}
+        <div className="ph-photo-section">
+          <h4>📷 Photo du produit</h4>
+          {form.image_url ? (
+            <div className="ph-photo-preview">
+              <img src={form.image_url} alt="Produit" />
+              <button className="ph-photo-remove" onClick={() => setForm({...form, image_url: ''})}>🗑️</button>
+            </div>
+          ) : (
+            <div className="ph-photo-empty">
+              <div style={{ fontSize: 36, opacity: 0.3 }}>📸</div>
+              <p>Ajoute une photo claire du produit</p>
+            </div>
           )}
-        </div>
 
-        <div className="ph-form-section">
-          <h3>📸 Visuel</h3>
-          <label>URL de l'image *<input value={p.img} onChange={e => upd('img', e.target.value)} placeholder="https://..." /></label>
-          <p style={{ fontSize: 11, color: '#6B6B6B' }}>Astuce : upload ta photo sur imgur.com et colle le lien ici</p>
-          {p.img && <img src={p.img} alt="" style={{ width: '100%', maxWidth: 200, borderRadius: 8, marginTop: 10 }} />}
-        </div>
+          <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleFile} style={{ display: 'none' }} />
+          <input ref={galleryInputRef} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
 
-        <div className="ph-form-section" style={{ gridColumn: '1 / -1' }}>
-          <h3>📝 Description</h3>
-          <label>Description courte<input value={p.short_desc} onChange={e => upd('short_desc', e.target.value)} placeholder="Une phrase qui résume le produit" /></label>
-          <label>Description détaillée<textarea value={p.long_desc} onChange={e => upd('long_desc', e.target.value)} rows={3} placeholder="Bienfaits, utilisation, public visé..." /></label>
-          <label>Ingrédients (INCI)<textarea value={p.inci} onChange={e => upd('inci', e.target.value)} rows={3} placeholder="Aqua, Glycerin, Butyrospermum Parkii..." /></label>
-        </div>
-
-        <div className="ph-form-section" style={{ gridColumn: '1 / -1' }}>
-          <h3>🏷️ Badges</h3>
-          <p style={{ fontSize: 11, color: '#6B6B6B', marginBottom: 8 }}>Coche les caractéristiques qui s'appliquent</p>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {COMMON_BADGES.map(b => (
-              <button key={b} type="button"
-                className={`ph-filter ${(p.badges || []).includes(b) ? 'active' : ''}`}
-                onClick={() => toggleBadge(b)}>{b}</button>
-            ))}
+          <div className="ph-photo-buttons">
+            <button className="ph-photo-btn" onClick={() => cameraInputRef.current?.click()} disabled={uploading}>
+              📷 Prendre photo
+            </button>
+            <button className="ph-photo-btn" onClick={() => galleryInputRef.current?.click()} disabled={uploading}>
+              🖼️ Choisir
+            </button>
           </div>
+          {uploading && <p style={{ fontSize: 11, color: '#F4B53A', textAlign: 'center', marginTop: 6 }}>⏳ Upload en cours...</p>}
         </div>
-      </div>
 
-      <div className="ph-form-actions">
-        <button className="ph-btn-sec" onClick={onCancel}>Annuler</button>
-        <button className="ph-btn-pri" onClick={handleSubmit} disabled={saving}>
-          {saving ? 'Envoi...' : '✨ Envoyer pour validation'}
-        </button>
+        <label>Nom du produit *
+          <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Ex: Sérum Niacinamide 10%" />
+        </label>
+
+        <label>Marque
+          <input value={form.brand_name} onChange={e => setForm({...form, brand_name: e.target.value})} placeholder="Ex: The Ordinary, La Roche-Posay" list="brands-list" />
+          <datalist id="brands-list">
+            {brands.map(b => <option key={b.id} value={b.name} />)}
+          </datalist>
+        </label>
+
+        <label>Catégorie
+          <select value={form.category} onChange={e => setForm({...form, category: e.target.value})}>
+            {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+          </select>
+        </label>
+
+        <label>Prix (FCFA) *
+          <input type="number" value={form.price} onChange={e => setForm({...form, price: e.target.value})} placeholder="8500" />
+        </label>
+
+        <label>Description courte
+          <textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})} rows={2}
+            placeholder="Action : éclaircit, hydrate, etc." />
+        </label>
+
+        <label>Ingrédients clés
+          <textarea value={form.ingredients} onChange={e => setForm({...form, ingredients: e.target.value})} rows={3}
+            placeholder="Niacinamide 10%, Zinc 1%, Acide Hyaluronique..." />
+          <p style={{ fontSize: 10, color: '#6B6B6B', marginTop: 4 }}>
+            💡 Important pour les recommandations IA
+          </p>
+        </label>
+
+        <div className="ph-form-actions">
+          <button className="ph-btn-sec" onClick={onCancel}>Annuler</button>
+          <button className="ph-btn-pri" onClick={handleSubmit} disabled={saving || uploading}>
+            {saving ? 'Envoi...' : '📤 Proposer le produit'}
+          </button>
+        </div>
       </div>
     </div>
   );

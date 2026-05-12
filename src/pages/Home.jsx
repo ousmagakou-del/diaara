@@ -3,6 +3,7 @@ import { useNav, useUser } from '../App';
 import { getAllProducts, getAllPharmacies } from '../lib/supabase';
 import ProductTile from '../components/ProductTile';
 import TabBar from '../components/TabBar';
+import BannerCarousel from '../components/BannerCarousel';
 import './Home.css';
 
 const CATEGORIES = [
@@ -101,6 +102,11 @@ export default function Home() {
           <button className="home-skin-cta" onClick={() => navigate({ name: 'scan', params: {} })}>
             Refaire le diagnostic →
           </button>
+        </div>
+
+        {/* 🎨 BANNIÈRE CAROUSEL */}
+        <div style={{ padding: '0 16px' }}>
+          <BannerCarousel />
         </div>
 
         <button className="home-banner" onClick={() => navigate('/pharmacies')}>
