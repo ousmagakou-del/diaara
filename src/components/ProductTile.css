@@ -1,0 +1,103 @@
+.product-tile {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  transition: transform 0.15s;
+}
+.product-tile:active { transform: scale(0.97); }
+.pt-img-wrap {
+  width: 100%;
+  aspect-ratio: 1;
+  position: relative;
+  background: var(--bg-soft);
+}
+.pt-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.pt-score {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: white;
+  font-weight: 800;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pt-score.excellent { background: var(--excellent); }
+.pt-score.good { background: var(--good); }
+.pt-score.medium { background: var(--medium); }
+.pt-score.poor { background: var(--poor); }
+.pt-score.bad { background: var(--bad); }
+.pt-info {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.pt-brand {
+  font-size: 10px;
+  color: var(--ink-soft);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.pt-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 32px;
+}
+.pt-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+.pt-price {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--primary);
+}
+.pt-price small { font-size: 9px; opacity: 0.7; font-weight: 600; }
+.pt-rating {
+  font-size: 11px;
+  color: var(--medium);
+  font-weight: 600;
+}
+.pt-fav {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.9);
+  color: var(--ink-mute);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+  transition: all 0.15s;
+}
+.pt-fav.active {
+  background: white;
+  color: var(--bad);
+}
+.pt-fav:active {
+  transform: scale(0.9);
+}

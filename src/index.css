@@ -1,111 +1,185 @@
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
-
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+  --bg: #FFFFFF;
+  --bg-soft: #F7F7F5;
+  --bg-card: #FFFFFF;
+  --ink: #1A1A1A;
+  --ink-soft: #6B6B6B;
+  --ink-mute: #A0A0A0;
+  --line: #EEEEEE;
+  --line-soft: #F4F4F2;
+  --excellent: #1F8B4C;
+  --excellent-bg: #E8F5EC;
+  --good: #6BC050;
+  --good-bg: #EFF8EA;
+  --medium: #F4B53A;
+  --medium-bg: #FEF6E5;
+  --poor: #E8743C;
+  --poor-bg: #FCEDE3;
+  --bad: #D9342B;
+  --bad-bg: #FCE9E7;
+  --primary: #1F8B4C;
+  --primary-dark: #166635;
+  --primary-light: #E8F5EC;
+  --accent: #FFD700;
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --tabbar-height: 78px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
+:root[data-theme="dark"] {
+  --bg: #0F1115;
+  --bg-soft: #1A1D24;
+  --bg-card: #1A1D24;
+  --ink: #F2F2F2;
+  --ink-soft: #A0A0A0;
+  --ink-mute: #6B6B6B;
+  --line: #2A2E36;
+  --line-soft: #1F2229;
+  --excellent-bg: #1A3A2A;
+  --good-bg: #1F3520;
+  --medium-bg: #3A2D14;
+  --bad-bg: #3A1716;
+  --primary-light: #1A3A2A;
+}
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+button { background: none; border: none; cursor: pointer; font: inherit; color: inherit; }
+input, textarea, select { font: inherit; }
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
 }
 
 body {
-  margin: 0;
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  color: var(--ink);
+  background: var(--bg);
+  overscroll-behavior: none;
 }
 
-#root {
-  width: 1126px;
-  max-width: 100%;
+.app-shell {
+  width: 100%;
+  max-width: 480px;
   margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
+  height: 100vh;
+  height: 100dvh;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+}
+
+.desktop-only-tag { display: none; }
+
+@media (min-width: 768px) {
+  body {
+    background: linear-gradient(135deg, #1F8B4C 0%, #166635 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .app-shell {
+    height: 880px;
+    max-height: 95vh;
+    border-radius: 40px;
+    border: 12px solid #1A1A1A;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.4);
+  }
+  .desktop-only-tag {
+    display: block;
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    font-weight: 700;
+    opacity: 0.7;
+    z-index: 100;
+  }
+}
+
+.page-anim { animation: slideIn 0.28s cubic-bezier(0.4, 0, 0.2, 1); }
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes scaleIn { from { transform: scale(0); } to { transform: scale(1); } }
+
+button {
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+}
+button:active:not(:disabled) { transform: scale(0.96); }
+
+.btn-primary {
+  width: 100%;
+  padding: 14px;
+  background: var(--primary);
+  color: white;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-primary.secondary { background: var(--bg-soft); color: var(--ink); }
+
+.icon-back-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--bg-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.icon-back-btn svg { width: 18px; height: 18px; }
+
+.section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.3px;
+}
+.section-sub {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+
+.phone-input-wrap {
   display: flex;
   flex-direction: column;
-  box-sizing: border-box;
+  gap: 6px;
+  margin-bottom: 12px;
 }
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+.phone-input-label {
+  font-size: 11px;
+  color: var(--ink-soft);
+  font-weight: 600;
+  text-transform: uppercase;
 }
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
+.phone-input {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 14px;
+  color: var(--ink);
 }
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
-}
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+.phone-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: var(--bg);
 }

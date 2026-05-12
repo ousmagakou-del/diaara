@@ -1,0 +1,114 @@
+.ph-screen {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+.ph-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: calc(var(--safe-top) + 14px) 16px 12px;
+}
+.ph-header h1 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.ph-header p {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.ph-filters {
+  display: flex;
+  gap: 8px;
+  padding: 0 16px 12px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.ph-filter {
+  padding: 8px 14px;
+  background: var(--bg-soft);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  flex-shrink: 0;
+}
+.ph-filter.active {
+  background: var(--primary);
+  color: white;
+}
+.ph-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 16px;
+  padding-bottom: calc(var(--tabbar-height) + 20px);
+}
+.ph-card {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.ph-cover {
+  height: 100px;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--bg-soft);
+}
+.ph-body { padding: 14px; }
+.ph-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.ph-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-top: -32px;
+  border: 3px solid var(--bg-card);
+  background: white;
+  flex-shrink: 0;
+}
+.ph-head h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.ph-meta {
+  font-size: 11px;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+.ph-rating {
+  font-size: 12px;
+  color: var(--medium);
+  font-weight: 700;
+}
+.ph-tagline {
+  font-size: 12px;
+  color: var(--ink-soft);
+  font-style: italic;
+  margin: 8px 0;
+}
+.ph-info-row {
+  font-size: 12px;
+  color: var(--ink);
+  padding: 4px 0;
+}
+.ph-wa {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 8px 16px;
+  background: #25D366;
+  color: white;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}

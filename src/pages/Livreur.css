@@ -1,0 +1,414 @@
+.liv-screen {
+  width: 100%;
+  min-height: 100vh;
+  background: #F5F6F8;
+  font-family: var(--font, system-ui);
+  padding-bottom: 100px;
+}
+html, body, #root {
+  height: auto !important;
+  overflow-y: auto !important;
+}
+
+.liv-header {
+  background: linear-gradient(135deg, #1F8B4C 0%, #166635 100%);
+  color: white;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.liv-logo {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  border: 2px solid white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 18px;
+}
+.liv-header strong { display: block; font-size: 15px; }
+.liv-header p { font-size: 11px; opacity: 0.9; }
+
+.liv-main {
+  padding: 16px;
+  max-width: 600px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.liv-card {
+  background: white;
+  border-radius: 14px;
+  padding: 16px;
+  border: 1px solid #EEE;
+}
+.liv-card h2 {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6B6B6B;
+  margin-bottom: 10px;
+}
+.liv-card p { font-size: 13px; padding: 3px 0; }
+.liv-card a { color: #1F8B4C; font-weight: 600; }
+
+.liv-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #EEE;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.liv-card-head code {
+  background: #F4F4F2;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.liv-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #F4F4F2;
+  color: #6B6B6B;
+}
+.liv-status-assigned, .liv-status-picking { background: #FEF6E5; color: #F4B53A; }
+.liv-status-picked, .liv-status-in_route, .liv-status-arrived,
+.liv-status-cash_collected, .liv-status-proof_uploaded { background: #E8F5EC; color: #1F8B4C; }
+.liv-status-delivered { background: #E8F5EC; color: #1F8B4C; }
+
+.liv-wa-btn {
+  display: inline-block;
+  padding: 10px 16px;
+  background: #25D366;
+  color: white !important;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.liv-maps-btn {
+  display: inline-block;
+  padding: 10px 16px;
+  background: #4285F4;
+  color: white !important;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.liv-pharmacy-group {
+  background: #F9FAFB;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+.liv-pharmacy-group strong {
+  display: block;
+  font-size: 13px;
+  color: #1F8B4C;
+  margin-bottom: 6px;
+}
+.liv-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding: 3px 0;
+}
+.liv-total {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px;
+  background: #E8F5EC;
+  color: #166635;
+  border-radius: 10px;
+  margin-top: 10px;
+  font-size: 14px;
+}
+.liv-total strong { font-size: 16px; }
+.liv-cod-alert {
+  margin-top: 10px;
+  padding: 12px;
+  background: #FEF6E5;
+  color: #A07700;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+.liv-paid-alert {
+  margin-top: 10px;
+  padding: 12px;
+  background: #E8F5EC;
+  color: #166635;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.liv-cash-box {
+  background: #FEF6E5;
+  border-radius: 10px;
+  padding: 14px;
+  text-align: center;
+}
+.liv-cash-done {
+  background: #E8F5EC;
+  color: #166635;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.liv-gps-active {
+  text-align: center;
+  padding: 16px;
+  background: #E8F5EC;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+.liv-gps-active strong { display: block; font-size: 14px; color: #1F8B4C; }
+.liv-gps-active p { font-size: 12px; color: #6B6B6B; margin-top: 4px; }
+.liv-gps-dot {
+  display: inline-block;
+  width: 12px; height: 12px;
+  background: #1F8B4C;
+  border-radius: 50%;
+  margin-right: 8px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.4); }
+}
+
+.liv-btn-pri {
+  width: 100%;
+  padding: 14px;
+  background: #1F8B4C;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.liv-btn-stop {
+  width: 100%;
+  padding: 12px;
+  background: #FEF6E5;
+  color: #A07700;
+  border: none;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.liv-btn-final {
+  width: 100%;
+  padding: 18px;
+  background: linear-gradient(135deg, #1F8B4C 0%, #166635 100%);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  margin-top: 20px;
+  box-shadow: 0 4px 14px rgba(31, 139, 76, 0.3);
+}
+.liv-btn-final:disabled {
+  background: #DDD;
+  color: #999;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.liv-steps-enriched {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.liv-step-card {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  background: #F9FAFB;
+  border: 1.5px solid #EEE;
+  border-radius: 12px;
+}
+.liv-step-card.done {
+  background: #E8F5EC;
+  border-color: #1F8B4C;
+}
+.liv-step-num {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: #DDD;
+  color: #6B6B6B;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.liv-step-card.done .liv-step-num {
+  background: #1F8B4C;
+  color: white;
+}
+.liv-step-content { flex: 1; }
+.liv-step-content strong { font-size: 14px; display: block; }
+.liv-step-content p { font-size: 11px; color: #6B6B6B; margin: 2px 0 8px; padding: 0; }
+
+.liv-step-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.liv-mini-btn {
+  padding: 8px 12px;
+  background: white;
+  border: 1px solid #DDD;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  color: #1A1A1A;
+}
+.liv-mini-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.liv-mini-btn.pri {
+  background: #1F8B4C;
+  color: white;
+  border-color: #1F8B4C;
+}
+.liv-mini-btn.done {
+  background: #1F8B4C;
+  color: white;
+  border-color: #1F8B4C;
+}
+
+.liv-thumb {
+  width: 100%;
+  max-height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin: 8px 0;
+}
+
+/* Proof options grid */
+.liv-proof-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.liv-proof-option {
+  position: relative;
+  background: white;
+  border: 2px solid #EEE;
+  border-radius: 12px;
+  padding: 16px 10px;
+  cursor: pointer;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s;
+}
+.liv-proof-option:hover:not(:disabled) {
+  border-color: #1F8B4C;
+  background: #F9FAFB;
+}
+.liv-proof-option.selected {
+  border-color: #1F8B4C;
+  background: #E8F5EC;
+}
+.liv-proof-option:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.liv-proof-icon { font-size: 28px; }
+.liv-proof-option strong { font-size: 13px; }
+.liv-proof-option span { font-size: 11px; color: #6B6B6B; }
+.liv-proof-check {
+  position: absolute;
+  top: 6px; right: 6px;
+  background: #1F8B4C;
+  color: white;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.liv-proof-preview {
+  background: #F9FAFB;
+  border-radius: 10px;
+  padding: 10px;
+  text-align: center;
+  margin-bottom: 10px;
+}
+.liv-proof-preview img {
+  width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+.liv-pin-display {
+  padding: 18px;
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: 0.5em;
+  color: #1F8B4C;
+  background: white;
+  border-radius: 10px;
+}
+
+/* Modal */
+.liv-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.liv-modal {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  max-width: 480px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.liv-modal h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}

@@ -1,0 +1,61 @@
+import { useState, useEffect } from 'react';
+import { useNav } from '../App';
+import { getMyOrders } from '../lib/supabase';
+import TabBar from '../components/TabBar';
+import './Orders.css';
+
+export default function Orders() {
+  const { navigate } = useNav();
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      setOrders(await getMyOrders());
+      setLoading(false);
+    })();
+  }, []);
+
+  return (
+    <div className="orders-screen page-anim">
+      <div className="orders-header">
+        <button className="icon-back-btn" onClick={() => navigate('/')}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+          </svg>
+        </button>
+        <h1>Mes commandes</h1>
+      </div>
+
+      <div className="orders-scroll">
+        {loading ? (
+          <div style={{padding: 40, textAlign: 'center'}}>Chargement…</div>
+        ) : orders.length === 0 ? (
+          <div className="orders-empty">
+            <div style={{fontSize: 64, opacity: 0.2}}>📦</div>
+            <h3>Aucune commande</h3>
+            <p>Tes commandes apparaîtront ici</p>
+          </div>
+        ) : (
+          orders.map(o => (
+            <button
+              key={o.id}
+              className="order-card"
+              onClick={() => navigate({ name: 'order_tracking', params: { orderId: o.id } })}
+            >
+              <div className="order-card-head">
+                <code>{o.id}</code>
+                <span className={'order-status ' + o.status}>{o.status}</span>
+              </div>
+              <div className="order-card-body">
+                <span>{o.items.length} articles · {o.total.toLocaleString('fr-FR')} FCFA</span>
+                <span>{new Date(o.created_at).toLocaleString('fr-FR')}</span>
+              </div>
+            </button>
+          ))
+        )}
+      </div>
+      <TabBar />
+    </div>
+  );
+}

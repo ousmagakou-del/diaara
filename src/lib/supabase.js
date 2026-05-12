@@ -3,9 +3,29 @@ import { createClient } from '@supabase/supabase-js';
 const SUPABASE_URL = 'https://qxhhnrnworwrnwmqekmb.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF4aGhucm53b3J3cm53bXFla21iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MTExMzYsImV4cCI6MjA5NDA4NzEzNn0.l_7-Eg06UFnXvSw1BQiuNw0yU94jillHNycx-jvP1Aw';
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Configuration Supabase avec gestion robuste de la session
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+    storage: window.localStorage,
+    storageKey: 'diaara-auth',
+  },
+  global: {
+    fetch: (url, options = {}) => {
+      // Timeout 10s sur toutes les requêtes Supabase
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timeoutId));
+    },
+  },
+});
 
-// ═══ AUTH ═══
+// ═══════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════
+
 export async function signUp(email, password, firstName) {
   return supabase.auth.signUp({
     email, password,
@@ -29,11 +49,22 @@ export async function signOut() {
 }
 
 export async function getCurrentUser() {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const { data: profile } = await supabase
-    .from('users_profile').select('*').eq('id', user.id).single();
-  return profile;
+  try {
+    // Timeout 2s pour auth.getUser()
+    const userPromise = supabase.auth.getUser();
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Auth timeout')), 2000)
+    );
+    const { data: { user } } = await Promise.race([userPromise, timeoutPromise]);
+    if (!user) return null;
+
+    const { data: profile } = await supabase
+      .from('users_profile').select('*').eq('id', user.id).single();
+    return profile;
+  } catch (e) {
+    console.error('getCurrentUser error:', e.message);
+    return null;
+  }
 }
 
 export async function updateProfile(updates) {
@@ -42,7 +73,10 @@ export async function updateProfile(updates) {
   return supabase.from('users_profile').update(updates).eq('id', user.id).select().single();
 }
 
-// ═══ PRODUITS & MARQUES ═══
+// ═══════════════════════════════════════════════
+// PRODUITS & MARQUES
+// ═══════════════════════════════════════════════
+
 export async function getAllProducts() {
   const { data } = await supabase.from('products').select('*').eq('active', true);
   return data || [];
@@ -63,13 +97,19 @@ export async function getProductAvailability(productId) {
   return data || [];
 }
 
-// ═══ PHARMACIES ═══
+// ═══════════════════════════════════════════════
+// PHARMACIES
+// ═══════════════════════════════════════════════
+
 export async function getAllPharmacies() {
   const { data } = await supabase.from('pharmacies').select('*').eq('active', true);
   return data || [];
 }
 
-// ═══ COMMANDES ═══
+// ═══════════════════════════════════════════════
+// COMMANDES
+// ═══════════════════════════════════════════════
+
 function generateOrderId() {
   return 'DIA-' + Date.now().toString(36).toUpperCase();
 }
@@ -84,8 +124,10 @@ export async function createOrder({ items, address, paymentMethod, subtotal, shi
     payment_method: paymentMethod,
     subtotal, shipping, total,
     promo_code: promoCode,
+    confirmation_token: 'CFM-' + Math.random().toString(36).substring(2, 10).toUpperCase(),
   };
   const { data, error } = await supabase.from('orders').insert(order).select().single();
+  if (error) console.error('createOrder error:', error);
   return error ? null : data;
 }
 
@@ -101,7 +143,10 @@ export async function updateOrderStatus(id, status) {
   return supabase.from('orders').update({ status }).eq('id', id);
 }
 
-// ═══ REALTIME ═══
+// ═══════════════════════════════════════════════
+// REALTIME
+// ═══════════════════════════════════════════════
+
 export function subscribeToNewOrders(callback) {
   return supabase
     .channel('orders-changes')
@@ -110,3 +155,247 @@ export function subscribeToNewOrders(callback) {
       (payload) => callback(payload.new))
     .subscribe();
 }
+
+// ═══════════════════════════════════════════════
+// FAVORIS
+// ═══════════════════════════════════════════════
+
+export async function getMyFavorites() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data } = await supabase
+    .from('favorites')
+    .select('product_id, products(*)')
+    .eq('user_id', user.id);
+  return (data || []).map(f => f.products).filter(Boolean);
+}
+
+export async function isFavorite(productId) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
+  const { data } = await supabase
+    .from('favorites')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('product_id', productId)
+    .maybeSingle();
+  return !!data;
+}
+
+export async function toggleFavorite(productId) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
+  const fav = await isFavorite(productId);
+  if (fav) {
+    await supabase.from('favorites').delete()
+      .eq('user_id', user.id)
+      .eq('product_id', productId);
+    return false;
+  } else {
+    await supabase.from('favorites').insert({
+      user_id: user.id,
+      product_id: productId,
+    });
+    return true;
+  }
+}
+
+export async function getFavoritesCount() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return 0;
+  const { count } = await supabase
+    .from('favorites')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user.id);
+  return count || 0;
+}
+
+// ═══════════════════════════════════════════════
+// ADRESSES
+// ═══════════════════════════════════════════════
+
+export async function getMyAddresses() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data, error } = await supabase
+    .from('addresses')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('is_default', { ascending: false })
+    .order('created_at', { ascending: false });
+  if (error) console.error('getMyAddresses error:', error);
+  return data || [];
+}
+
+export async function saveAddress(address) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    alert('Tu dois être connectée');
+    return null;
+  }
+
+  try {
+    if (address.is_default) {
+      await supabase
+        .from('addresses')
+        .update({ is_default: false })
+        .eq('user_id', user.id);
+    }
+
+    if (address.id) {
+      const { data, error } = await supabase
+        .from('addresses')
+        .update({
+          label: address.label,
+          icon: address.icon,
+          name: address.name,
+          phone: address.phone,
+          city: address.city,
+          neighborhood: address.neighborhood,
+          line: address.line,
+          is_default: address.is_default,
+        })
+        .eq('id', address.id)
+        .select()
+        .single();
+      if (error) {
+        alert('Erreur update : ' + error.message);
+        return null;
+      }
+      return data;
+    } else {
+      const newAddr = {
+        user_id: user.id,
+        label: address.label || 'Domicile',
+        icon: address.icon || '🏠',
+        name: address.name || '',
+        phone: address.phone || '',
+        city: address.city,
+        neighborhood: address.neighborhood || '',
+        line: address.line,
+        is_default: address.is_default || false,
+      };
+      const { data, error } = await supabase
+        .from('addresses')
+        .insert(newAddr)
+        .select()
+        .single();
+      if (error) {
+        alert('Erreur insert : ' + error.message);
+        return null;
+      }
+      return data;
+    }
+  } catch (e) {
+    alert('Erreur technique : ' + e.message);
+    return null;
+  }
+}
+
+export async function deleteAddress(id) {
+  return supabase.from('addresses').delete().eq('id', id);
+}
+
+export async function setDefaultAddress(id) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  await supabase
+    .from('addresses')
+    .update({ is_default: false })
+    .eq('user_id', user.id);
+  return supabase
+    .from('addresses')
+    .update({ is_default: true })
+    .eq('id', id);
+}
+
+// ═══════════════════════════════════════════════
+// WHATSAPP & CONFIRMATION CLIENTE
+// ═══════════════════════════════════════════════
+
+export function generateConfirmToken() {
+  return 'CFM-' + Math.random().toString(36).substring(2, 10).toUpperCase();
+}
+
+export async function getOrderByConfirmToken(token) {
+  const { data, error } = await supabase
+    .from('orders')
+    .select('*')
+    .eq('confirmation_token', token)
+    .single();
+  if (error) {
+    console.error('getOrderByConfirmToken error:', error);
+    return null;
+  }
+  return data;
+}
+
+export async function clientConfirmDelivery(orderId) {
+  return supabase
+    .from('orders')
+    .update({
+      status: 'delivered',
+      client_confirmed: true,
+      client_confirmed_at: new Date().toISOString(),
+    })
+    .eq('id', orderId);
+}
+
+export async function clientReportDispute(orderId, reason) {
+  return supabase
+    .from('orders')
+    .update({
+      status: 'disputed',
+      client_dispute_reason: reason,
+      client_confirmed: false,
+    })
+    .eq('id', orderId);
+}
+
+export async function sendWhatsApp(to, text) {
+  try {
+    const { data, error } = await supabase.functions.invoke('send-whatsapp', {
+      body: { to, text },
+    });
+    if (error) {
+      console.error('sendWhatsApp error:', error);
+      return { success: false, error: error.message };
+    }
+    return data;
+  } catch (e) {
+    console.error('sendWhatsApp exception:', e);
+    return { success: false, error: e.message };
+  }
+}
+
+export const WhatsAppTemplates = {
+  driverAssigned: (driverName, order, trackingUrl) =>
+    `Salut ${driverName}! 🛵\n\nNouvelle livraison Diaara :\n\n📦 N° ${order.id}\n👤 ${order.address?.name}\n📍 ${order.address?.line}, ${order.address?.city}\n💰 ${order.total?.toLocaleString('fr-FR')} FCFA${order.payment_method === 'cod' ? ' (à ENCAISSER cash 💵)' : ' (déjà payé en ligne ✅)'}\n\n🔗 Lien tracking GPS :\n${trackingUrl}\n\nOuvre ce lien sur ton téléphone, partage ta position et suis les étapes.\n\nDiaara 💚`,
+
+  orderCreatedDigital: (clientName, orderId, total, method) =>
+    `Salut ${clientName} 💚\n\nTa commande Diaara ${orderId} est reçue !\n\n💳 Paiement ${method} : ${total.toLocaleString('fr-FR')} FCFA\n\nDès validation, on prépare ton colis 📦\n\nDiaara`,
+
+  orderCreatedCash: (clientName, orderId, total) =>
+    `Salut ${clientName} 💚\n\nTa commande Diaara ${orderId} est reçue !\n\n💵 Prépare ${total.toLocaleString('fr-FR')} FCFA cash pour la livraison\n\nOn te notifie dès que le livreur arrive 🛵\n\nDiaara`,
+
+  orderPaid: (clientName, orderId) =>
+    `Salut ${clientName} 💚\n\nTon paiement pour la commande ${orderId} est confirmé ✅\n\nOn prépare ta commande, tu seras notifiée quand le livreur arrive 🛵\n\nDiaara`,
+
+  orderShipped: (clientName, orderId, driverName, driverPhone) =>
+    `Hey ${clientName} 🛵\n\nTa commande ${orderId} est en route !\n\n👤 Livreur : ${driverName}\n📞 WhatsApp : ${driverPhone || '—'}\n\nSuis sa progression en temps réel dans l'app Diaara.\n\nDiaara 💚`,
+
+  orderAwaitingConfirm: (clientName, orderId, confirmUrl) =>
+    `Bonjour ${clientName} 💚\n\nLe livreur indique avoir livré ta commande ${orderId}.\n\n👉 Confirme ta réception ici :\n${confirmUrl}\n\nDis-nous si tout va bien ou si tu as un souci.\n\nDiaara 💚`,
+
+  orderAwaitingConfirmCash: (clientName, orderId, total, confirmUrl) =>
+    `Bonjour ${clientName} 💚\n\nLe livreur indique avoir livré ta commande ${orderId} et reçu ${total.toLocaleString('fr-FR')} FCFA cash.\n\n👉 Confirme ta réception ici :\n${confirmUrl}\n\nDis-nous si tout va bien ou si tu as un souci.\n\nDiaara 💚`,
+
+  orderDelivered: (clientName, orderId) =>
+    `🎉 Bonjour ${clientName} !\n\nTa commande ${orderId} est officiellement livrée !\n\nMerci pour ta confiance 💚\n\nN'hésite pas à noter ton expérience dans l'app.\n\nDiaara`,
+
+  newOrderToPharmacy: (pharmacyName, order) =>
+    `🏥 Hello ${pharmacyName}\n\nNouvelle commande Diaara à préparer :\n\n📦 N° ${order.id}\n👤 ${order.address?.name}\n📍 ${order.address?.city}\n\nVoir tes commandes : ${window.location.origin}/?pharma\n\nDiaara 💚`,
+
+  disputeToAdmin: (orderId, clientName, reason) =>
+    `⚠️ LITIGE Diaara\n\nCommande : ${orderId}\nCliente : ${clientName}\nMotif : ${reason}\n\nVérifie les preuves dans l'admin et contacte la cliente.\n\nDiaara`,
+};
