@@ -12,17 +12,57 @@ export default function Referral() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
+    console.log('Referral: user =', user);
+    if (!user || !user.id) {
+      setLoading(false);
+      return;
+    }
     (async () => {
-      const [c, s] = await Promise.all([
-        getOrCreateReferralCode(user.id),
-        getReferralStats(user.id),
-      ]);
-      setCode(c || 'ERROR');
-      setStats(s);
+      try {
+        console.log('Referral: fetching code for', user.id);
+        const [c, s] = await Promise.all([
+          getOrCreateReferralCode(user.id),
+          getReferralStats(user.id),
+        ]);
+        console.log('Referral: got code', c, 'stats', s);
+        setCode(c || 'ERROR');
+        setStats(s);
+      } catch (e) {
+        console.error('Referral error:', e);
+      }
       setLoading(false);
     })();
   }, [user]);
+
+  // Si pas connecté
+  if (!user) {
+    return (
+      <div className="rf-screen">
+        <header className="rf-header">
+          <button className="rf-back" onClick={() => navigate(-1)}>←</button>
+          <h1>Parraine tes amies</h1>
+        </header>
+        <div style={{ padding: 40, textAlign: 'center' }}>
+          <p>Tu dois être connectée pour parrainer.</p>
+          <button onClick={() => navigate('/')} style={{ marginTop: 20, padding: '12px 24px', background: '#1F8B4C', color: 'white', border: 'none', borderRadius: 10, fontWeight: 700 }}>
+            Se connecter
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="rf-screen">
+        <header className="rf-header">
+          <button className="rf-back" onClick={() => navigate(-1)}>←</button>
+          <h1>Parraine tes amies</h1>
+        </header>
+        <div style={{ padding: 40, textAlign: 'center' }}>Chargement…</div>
+      </div>
+    );
+  }
 
   const shareUrl = `https://diaara-brg.pages.dev/?ref=${code}`;
   const shareText = `Salut ! 💚 Je t'invite sur Diaara, la marketplace beauté pour la peau africaine. Utilise mon code ${code} et reçois 500 points (= 2500 FCFA de réduction) à ton inscription ! ${shareUrl}`;
@@ -30,14 +70,9 @@ export default function Referral() {
   const handleShare = async () => {
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: 'Diaara - Beauté pour ta peau',
-          text: shareText,
-          url: shareUrl,
-        });
-      } catch (e) { /* user cancelled */ }
+        await navigator.share({ title: 'Diaara', text: shareText, url: shareUrl });
+      } catch (e) {}
     } else {
-      // Fallback : copier
       navigator.clipboard.writeText(shareText);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -54,24 +89,18 @@ export default function Referral() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  if (loading) return <div style={{ padding: 40, textAlign: 'center' }}>Chargement…</div>;
-
   return (
     <div className="rf-screen">
       <header className="rf-header">
         <button className="rf-back" onClick={() => navigate(-1)}>←</button>
         <h1>Parraine tes amies</h1>
       </header>
-
       <div className="rf-scroll">
-        {/* Hero card */}
         <div className="rf-hero">
           <div style={{ fontSize: 56 }}>🎁</div>
           <h2>Gagne 500 points par amie !</h2>
           <p>Toi <strong>+500 points</strong> · Elle <strong>+500 points</strong></p>
         </div>
-
-        {/* Code à partager */}
         <div className="rf-code-card">
           <p className="rf-code-label">Ton code de parrainage</p>
           <div className="rf-code-box" onClick={handleCopy}>
@@ -79,8 +108,6 @@ export default function Referral() {
             <span className="rf-code-copy">{copied ? '✓ Copié' : '📋 Copier'}</span>
           </div>
         </div>
-
-        {/* Boutons partage */}
         <div className="rf-share-buttons">
           <button className="rf-btn rf-btn-wa" onClick={handleWhatsApp}>
             📱 Partager sur WhatsApp
@@ -89,8 +116,6 @@ export default function Referral() {
             🔗 Partager le lien
           </button>
         </div>
-
-        {/* Stats */}
         <div className="rf-stats-card">
           <div className="rf-stat">
             <div className="rf-stat-number">{stats.count}</div>
@@ -101,8 +126,6 @@ export default function Referral() {
             <div className="rf-stat-label">Points gagnés</div>
           </div>
         </div>
-
-        {/* Liste des filleules */}
         {stats.list.length > 0 && (
           <div className="rf-list-card">
             <h3>Tes filleules</h3>
@@ -114,22 +137,12 @@ export default function Referral() {
             ))}
           </div>
         )}
-
-        {/* Comment ça marche */}
         <div className="rf-info">
           <h3>Comment ça marche ?</h3>
-          <div className="rf-step">
-            <strong>1.</strong> Partage ton code à tes amies
-          </div>
-          <div className="rf-step">
-            <strong>2.</strong> Elles s'inscrivent avec ton code
-          </div>
-          <div className="rf-step">
-            <strong>3.</strong> Toi +500 pts, elles +500 pts
-          </div>
-          <div className="rf-step">
-            <strong>4.</strong> Pas de limite ! Plus tu parraines, plus tu gagnes
-          </div>
+          <div className="rf-step"><strong>1.</strong> Partage ton code à tes amies</div>
+          <div className="rf-step"><strong>2.</strong> Elles s'inscrivent avec ton code</div>
+          <div className="rf-step"><strong>3.</strong> Toi +500 pts, elles +500 pts</div>
+          <div className="rf-step"><strong>4.</strong> Pas de limite !</div>
         </div>
       </div>
     </div>
