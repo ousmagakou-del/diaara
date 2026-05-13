@@ -6,6 +6,7 @@ import PharmaProducts from '../pharma/PharmaProducts';
 import PharmaInventory from '../pharma/PharmaInventory';
 import PharmaCommission from '../pharma/PharmaCommission';
 import PharmaSettings from '../pharma/PharmaSettings';
+import { useOrderAlerts } from '../lib/useOrderAlerts';
 import './Pharma.css';
 
 const ADMIN_WHATSAPP = '221777608983';
@@ -30,6 +31,16 @@ export default function Pharma() {
   const [pinError, setPinError] = useState('');
   const [section, setSection] = useState('dashboard');
   const [newOrdersCount, setNewOrdersCount] = useState(0);
+
+  // Notifications temps réel : son ding + notif navigateur + WhatsApp via trigger
+  const {
+    pendingCount,
+    muted,
+    setMuted,
+    notifPermission,
+    requestNotificationPermission,
+    testDing,
+  } = useOrderAlerts(selectedPharmacy?.id);
 
   useEffect(() => {
     (async () => {
@@ -286,13 +297,36 @@ export default function Pharma() {
             >
               <span className="phar-nav-icon">{item.icon}</span>
               <span>{item.label}</span>
-              {item.badge && newOrdersCount > 0 && (
-                <span className="phar-nav-badge">{newOrdersCount}</span>
+              {item.badge && pendingCount > 0 && (
+                <span className="phar-nav-badge">{pendingCount}</span>
               )}
             </button>
           ))}
         </nav>
         <div className="phar-side-foot">
+          <button
+            className="phar-mute-btn"
+            onClick={() => setMuted(!muted)}
+            title={muted ? 'Réactiver les sons' : 'Couper les sons'}
+          >
+            {muted ? '🔕 Sons coupés' : '🔔 Sons activés'}
+          </button>
+
+          {notifPermission !== 'granted' && notifPermission !== 'denied' && (
+            <button
+              className="phar-mute-btn"
+              onClick={requestNotificationPermission}
+              title="Active les notifications du navigateur"
+              style={{ color: '#F4B53A' }}
+            >
+              ⚡ Activer les notifs
+            </button>
+          )}
+
+          <button className="phar-mute-btn" onClick={testDing}>
+            🎵 Tester le son
+          </button>
+
           <a href="/" className="phar-app-link">👁️ Voir l'app cliente</a>
           <button className="phar-logout-btn" onClick={logout}>🔒 Déconnecter</button>
         </div>

@@ -840,6 +840,38 @@
   margin-top: 10px;
 }
 
+/* ════════════════════════════════════════
+   NOTIFS COMMANDE — bouton mute & badge animé
+   ════════════════════════════════════════ */
+.phar-mute-btn {
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.8);
+  text-align: left;
+  background: rgba(255,255,255,0.08);
+  border: none;
+  display: block;
+  width: 100%;
+  cursor: pointer;
+  margin-bottom: 6px;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.phar-mute-btn:hover {
+  background: rgba(255,255,255,0.15);
+  color: white;
+}
+
+.phar-nav-badge {
+  animation: phar-pulse 1.4s ease-in-out infinite;
+}
+@keyframes phar-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.18); }
+}
+
 /* Mobile */
 @media (max-width: 900px) {
   .phar-shell { flex-direction: column; }
