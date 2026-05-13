@@ -27,6 +27,7 @@ export default function Profile() {
   const neighborhood = user?.neighborhood;
   const skinType = user?.skin_type || 'Mixte';
   const phototype = user?.skin_phototype || 'VI';
+  const loyaltyPoints = user?.loyalty_points || 0;
 
   return (
     <div className="prof-screen page-anim">
@@ -66,6 +67,23 @@ export default function Profile() {
           <div className="prof-update-text">
             <strong>Mettre à jour mon diagnostic</strong>
             <span>Photo + quiz · 2 min · plus précis dans le temps</span>
+          </div>
+          <span className="prof-update-arrow">→</span>
+        </button>
+
+        {/* CTA Mes points fidélité */}
+        <button
+          className="prof-update-cta"
+          onClick={() => navigate({ name: 'loyalty', params: {} })}
+          style={{
+            background: 'linear-gradient(135deg, #F4B53A 0%, #E8385C 100%)',
+            marginTop: 12,
+          }}
+        >
+          <span className="prof-update-icon">💎</span>
+          <div className="prof-update-text">
+            <strong>Mes points fidélité</strong>
+            <span>{loyaltyPoints.toLocaleString('fr-FR')} points · Voir mes récompenses</span>
           </div>
           <span className="prof-update-arrow">→</span>
         </button>
