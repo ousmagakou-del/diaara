@@ -155,6 +155,17 @@ export default function Profile() {
           </button>
 
           <div className="prof-menu-sep" />
+          
+          <button className="prof-menu-row" onClick={() => navigate({ name: 'notifications', params: {} })}>
+            <div className="prof-menu-icon">🔔</div>
+            <div className="prof-menu-text">
+              <strong>Notifications</strong>
+              <span>Rappels routine peau · Commandes</span>
+            </div>
+            <span className="prof-menu-arrow">→</span>
+          </button>
+
+          <div className="prof-menu-sep" />
 
           <button className="prof-menu-row" onClick={() => toggleTheme()}>
             <div className="prof-menu-icon">{getTheme() === 'dark' ? '🌙' : '☀️'}</div>

@@ -723,3 +723,189 @@ export async function getReferralStats(userId) {
     bonusEarned: (referrals?.length || 0) * 500,
   };
 }
+// VAPID public key (générée pour Diaara)
+// ⚠️ Tu dois générer ta propre clé en prod via web-push library
+const VAPID_PUBLIC_KEY = 'BNxe7DjGiK8jp_LdEKgZbI3oFG9p_X0wmKHHfsXOlVHwBE3FB_pIRgFb_VxkN1xnzPxRzz0w8hYqYnFw7yWEpQk';
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+// Vérifier si les notifs sont supportées
+export function isPushSupported() {
+  return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+}
+
+// Statut de la permission
+export function getNotificationPermission() {
+  if (!('Notification' in window)) return 'unsupported';
+  return Notification.permission; // 'granted', 'denied', 'default'
+}
+
+// Demander permission + s'abonner
+export async function subscribeToPush(userId) {
+  if (!isPushSupported()) {
+    return { success: false, error: 'Pas supporté sur ce navigateur' };
+  }
+  
+  try {
+    // Demande permission
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      return { success: false, error: 'Permission refusée' };
+    }
+    
+    const registration = await navigator.serviceWorker.ready;
+    
+    // S'abonne au push
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+    });
+    
+    // Sauvegarde dans Supabase
+    const sub = subscription.toJSON();
+    await supabase
+      .from('push_subscriptions')
+      .upsert({
+        user_id: userId,
+        endpoint: sub.endpoint,
+        p256dh: sub.keys.p256dh,
+        auth: sub.keys.auth,
+        user_agent: navigator.userAgent,
+        enabled: true,
+      }, { onConflict: 'endpoint' });
+    
+    return { success: true };
+  } catch (e) {
+    console.error('subscribeToPush error:', e);
+    return { success: false, error: e.message };
+  }
+}
+
+// Se désabonner
+export async function unsubscribeFromPush(userId) {
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+    if (subscription) {
+      await subscription.unsubscribe();
+      await supabase
+        .from('push_subscriptions')
+        .delete()
+        .eq('endpoint', subscription.endpoint);
+    }
+    return true;
+  } catch (e) {
+    console.error('unsubscribeFromPush error:', e);
+    return false;
+  }
+}
+
+// Tester une notification (locale, pas via serveur)
+export async function showLocalNotification(title, body, options = {}) {
+  if (!isPushSupported() || Notification.permission !== 'granted') return;
+  
+  const registration = await navigator.serviceWorker.ready;
+  await registration.showNotification(title, {
+    body,
+    icon: '/icon-192.png',
+    badge: '/icon-96.png',
+    vibrate: [200, 100, 200],
+    ...options,
+  });
+}
+
+// ─── HISTORIQUE NOTIFICATIONS ───
+export async function getNotifications(userId, limit = 50) {
+  const { data } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('user_id', userId)
+    .order('sent_at', { ascending: false })
+    .limit(limit);
+  return data || [];
+}
+
+export async function getUnreadCount(userId) {
+  const { count } = await supabase
+    .from('notifications')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('read', false);
+  return count || 0;
+}
+
+export async function markNotificationRead(notifId) {
+  return supabase
+    .from('notifications')
+    .update({ read: true })
+    .eq('id', notifId);
+}
+
+export async function markAllNotificationsRead(userId) {
+  return supabase
+    .from('notifications')
+    .update({ read: true })
+    .eq('user_id', userId)
+    .eq('read', false);
+}
+
+// Créer une notification (côté serveur ou via app)
+export async function createNotification({ userId, title, body, url, type = 'info' }) {
+  return supabase
+    .from('notifications')
+    .insert({
+      user_id: userId,
+      title,
+      body,
+      url,
+      type,
+    });
+}
+
+// ─── RAPPELS ROUTINE PEAU ───
+// Programme local des rappels (pas besoin de serveur push)
+export function scheduleSkinRoutineReminders(morningTime, eveningTime) {
+  // Stocker en localStorage
+  localStorage.setItem('diaara-routine-morning', morningTime || '');
+  localStorage.setItem('diaara-routine-evening', eveningTime || '');
+  
+  // Démarrer le check
+  startRoutineReminderCheck();
+}
+
+let reminderInterval = null;
+function startRoutineReminderCheck() {
+  if (reminderInterval) clearInterval(reminderInterval);
+  
+  // Check chaque minute
+  reminderInterval = setInterval(() => {
+    if (Notification.permission !== 'granted') return;
+    
+    const now = new Date();
+    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    
+    const morning = localStorage.getItem('diaara-routine-morning');
+    const evening = localStorage.getItem('diaara-routine-evening');
+    const lastNotif = localStorage.getItem('diaara-last-reminder');
+    const today = now.toDateString();
+    
+    if (morning && currentTime === morning && lastNotif !== `${today}-morning`) {
+      showLocalNotification('☀️ Routine matin', 'C\'est l\'heure de ta routine matinale ! Nettoie, hydrate, protège.');
+      localStorage.setItem('diaara-last-reminder', `${today}-morning`);
+    }
+    
+    if (evening && currentTime === evening && lastNotif !== `${today}-evening`) {
+      showLocalNotification('🌙 Routine soir', 'C\'est l\'heure de ta routine du soir ! Démaquille, nettoie, traite.');
+      localStorage.setItem('diaara-last-reminder', `${today}-evening`);
+    }
+  }, 60000); // chaque minute
+}

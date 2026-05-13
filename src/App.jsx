@@ -26,6 +26,7 @@ import Livreur from './pages/Livreur';
 import ClientConfirm from './pages/ClientConfirm';
 import Loyalty from './pages/Loyalty';
 import Referral from './pages/Referral';
+import NotifSettings from './pages/NotifSettings';
 import InstallPrompt from './components/InstallPrompt';
 import WhatsAppButton from './components/WhatsAppButton';
 
@@ -207,6 +208,7 @@ function ClientApp() {
     case 'quiz': page = <SkinQuiz onComplete={refreshUser} />; break;
     case 'loyalty': page = <Loyalty />; break;
     case 'referral': page = <Referral />; break;
+    case 'notifications': page = <NotifSettings />; break;
     default: page = <Home />;
   }
 
