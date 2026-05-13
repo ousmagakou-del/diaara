@@ -6,24 +6,28 @@ import TabBar from '../components/TabBar';
 import BannerCarousel from '../components/BannerCarousel';
 import './Home.css';
 
-const CATEGORIES = [
-  { id: 'serum', name: 'Sérums', img: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400&q=80' },
-  { id: 'solaire', name: 'Solaires', img: 'https://images.unsplash.com/photo-1556228453-efd6c1ff04f6?w=400&q=80' },
-  { id: 'nettoyant', name: 'Nettoyants', img: 'https://images.unsplash.com/photo-1556228852-80b6e5eeff06?w=400&q=80' },
-  { id: 'hydratant', name: 'Hydratants', img: 'https://images.unsplash.com/photo-1571781926291-c477ebfd024b?w=400&q=80' },
-  { id: 'masque', name: 'Masques', img: 'https://images.unsplash.com/photo-1570194065650-d99fb4bedf0a?w=400&q=80' },
-  { id: 'corps', name: 'Corps', img: 'https://images.unsplash.com/photo-1601612628452-9e99ced43524?w=400&q=80' },
-  { id: 'levres', name: 'Lèvres', img: 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?w=400&q=80' },
-  { id: 'maquillage', name: 'Maquillage', img: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=400&q=80' },
-  { id: 'cheveux', name: 'Cheveux', img: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=400&q=80' },
-  { id: 'huile', name: 'Huiles', img: 'https://images.unsplash.com/photo-1599387737669-d56586d75f08?w=400&q=80' },
-];
+// Emojis pour chaque catégorie (fallback si pas d'image produit)
+const CATEGORY_EMOJI = {
+  'Visage': '✨',
+  'Corps': '🧴',
+  'Bébé': '👶',
+  'Bucco-dentaire': '🦷',
+  'Compléments': '💊',
+  'Cheveux': '💇',
+  'Solaire': '☀️',
+  'Intime': '🌸',
+  'Hygiène': '🧼',
+  'Pieds & Mains': '🦶',
+  'Lèvres': '💋',
+  'Déodorants': '🌿',
+};
 
 export default function Home() {
   const { navigate } = useNav();
   const { user } = useUser();
   const [products, setProducts] = useState([]);
   const [pharmacies, setPharmacies] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -31,6 +35,28 @@ export default function Home() {
       const [p, ph] = await Promise.all([getAllProducts(), getAllPharmacies()]);
       setProducts(p);
       setPharmacies(ph);
+      
+      // Construire les catégories à partir des vrais produits
+      const catMap = {};
+      p.forEach(prod => {
+        if (!prod.category) return;
+        // Normaliser : "serum" et "Sérums" → "Visage" 
+        // On garde uniquement les catégories qui commencent par majuscule
+        const cat = prod.category;
+        if (cat[0] !== cat[0].toUpperCase()) return; // skip les minuscules
+        
+        if (!catMap[cat]) {
+          catMap[cat] = { id: cat, name: cat, count: 0, sampleImg: null };
+        }
+        catMap[cat].count++;
+        // Prendre l'image du premier produit de la catégorie (qui a une image)
+        if (!catMap[cat].sampleImg && prod.img) {
+          catMap[cat].sampleImg = prod.img;
+        }
+      });
+      
+      const cats = Object.values(catMap).sort((a, b) => b.count - a.count);
+      setCategories(cats);
       setLoading(false);
     })();
   }, []);
@@ -42,12 +68,32 @@ export default function Home() {
   const phototype = user?.skin_phototype || 'VI';
   const concerns = user?.skin_concerns?.map(cap).join(' · ') || 'Taches post-acné · Brillance zone T';
 
-  const compat = 87;
-  const avoid = 12;
+  // Filtre les produits compatibles avec le type de peau de la cliente
+  const compatibleProducts = products.filter(p => {
+    if (!p.skin_types || p.skin_types.length === 0) return true;
+    const userSkin = (user?.skin_type || '').toLowerCase();
+    return p.skin_types.some(t => 
+      t.toLowerCase() === userSkin || 
+      t.toLowerCase() === 'toutes' || 
+      t.toLowerCase() === 'all'
+    );
+  });
+
+  const compat = compatibleProducts.length;
+  const avoid = products.length - compat;
   const favs = 6;
 
-  const topMatches = products.slice(0, 6);
-  const trending = products.slice().sort((a, b) => (b.review_count || 0) - (a.review_count || 0)).slice(0, 4);
+  // Top matches : produits compatibles avec le meilleur score
+  const topMatches = compatibleProducts
+    .slice()
+    .sort((a, b) => (b.score || 0) - (a.score || 0))
+    .slice(0, 6);
+  
+  // Tendances : produits avec le plus de reviews
+  const trending = products
+    .slice()
+    .sort((a, b) => (b.review_count || 0) - (a.review_count || 0))
+    .slice(0, 4);
 
   return (
     <div className="home-screen page-anim">
@@ -104,7 +150,7 @@ export default function Home() {
           </button>
         </div>
 
-        {/* 🎨 BANNIÈRE CAROUSEL */}
+        {/* BANNIÈRE CAROUSEL */}
         <div style={{ padding: '0 16px' }}>
           <BannerCarousel />
         </div>
@@ -118,25 +164,77 @@ export default function Home() {
           <span className="home-banner-arrow">→</span>
         </button>
 
+        {/* CATÉGORIES DYNAMIQUES */}
         <div className="home-section">
           <div className="home-section-head">
             <div className="section-title">Catégories</div>
             <button className="section-link" onClick={() => navigate({ name: 'categories', params: {} })}>Tout voir →</button>
           </div>
-          <div className="cat-grid">
-            {CATEGORIES.map(cat => (
-              <button
-                key={cat.id}
-                className="cat-tile"
-                onClick={() => navigate({ name: 'search', params: { category: cat.id } })}
-              >
-                <img src={cat.img} alt="" />
-                <div className="cat-name">{cat.name}</div>
-              </button>
-            ))}
-          </div>
+          {loading ? (
+            <div style={{ padding: 30, textAlign: 'center', color: '#9B9B9B' }}>Chargement…</div>
+          ) : (
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', 
+              gap: 10, 
+              padding: '0 16px',
+            }}>
+              {categories.map(cat => (
+                <button
+                  key={cat.id}
+                  onClick={() => navigate({ name: 'search', params: { category: cat.id } })}
+                  style={{
+                    background: 'white',
+                    border: '1px solid #EEE',
+                    borderRadius: 14,
+                    padding: 10,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    textAlign: 'left',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                  }}
+                >
+                  <div style={{
+                    width: '100%',
+                    aspectRatio: '1/1',
+                    background: 'linear-gradient(135deg, #1F8B4C20, #1F8B4C10)',
+                    borderRadius: 10,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 36,
+                    marginBottom: 8,
+                    overflow: 'hidden',
+                  }}>
+                    {cat.sampleImg ? (
+                      <img 
+                        src={cat.sampleImg} 
+                        alt="" 
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        onError={e => { 
+                          e.target.style.display = 'none'; 
+                          e.target.parentElement.innerHTML = CATEGORY_EMOJI[cat.name] || '📦';
+                        }}
+                      />
+                    ) : (
+                      CATEGORY_EMOJI[cat.name] || '📦'
+                    )}
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#1A1A1A', lineHeight: 1.2 }}>
+                    {cat.name}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#6B6B6B', marginTop: 2 }}>
+                    {cat.count} produit{cat.count > 1 ? 's' : ''}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
+        {/* POUR TOI */}
         <div className="home-section">
           <div className="home-section-head">
             <div>
@@ -146,6 +244,8 @@ export default function Home() {
           </div>
           {loading ? (
             <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-soft)' }}>Chargement…</div>
+          ) : topMatches.length === 0 ? (
+            <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-soft)' }}>Aucun produit pour le moment</div>
           ) : (
             <div className="product-grid">
               {topMatches.map(p => <ProductTile key={p.id} product={p} />)}
@@ -153,11 +253,14 @@ export default function Home() {
           )}
         </div>
 
+        {/* TENDANCES */}
         <div className="home-section">
           <div className="section-title">🔥 Tendances cette semaine</div>
-          <div className="product-grid" style={{ marginTop: 12 }}>
-            {trending.map(p => <ProductTile key={p.id} product={p} />)}
-          </div>
+          {loading ? null : (
+            <div className="product-grid" style={{ marginTop: 12 }}>
+              {trending.map(p => <ProductTile key={p.id} product={p} />)}
+            </div>
+          )}
         </div>
 
         <div style={{ height: 30 }} />
