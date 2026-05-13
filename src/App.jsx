@@ -27,6 +27,7 @@ import ClientConfirm from './pages/ClientConfirm';
 import Loyalty from './pages/Loyalty';
 import Referral from './pages/Referral';
 import InstallPrompt from './components/InstallPrompt';
+import WhatsAppButton from './components/WhatsAppButton';
 
 const NavContext = createContext(null);
 export function useNav() { return useContext(NavContext); }
@@ -53,15 +54,11 @@ function ClientApp() {
   useEffect(() => {
     let cancelled = false;
     
-    // Check session immédiatement (synchrone via localStorage)
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (cancelled) return;
-      console.log('App: session', session?.user?.id || 'none');
       if (session?.user) {
-        // Récupère le profil en arrière-plan
         getCurrentUser().then(u => {
           if (!cancelled) {
-            console.log('App: profile loaded', u?.id);
             setUser(u || { id: session.user.id, email: session.user.email });
             setAuthChecked(true);
           }
@@ -75,8 +72,7 @@ function ClientApp() {
         setUser(null);
         setAuthChecked(true);
       }
-    }).catch((e) => {
-      console.error('App: session error', e);
+    }).catch(() => {
       if (!cancelled) {
         setUser(null);
         setAuthChecked(true);
@@ -85,7 +81,6 @@ function ClientApp() {
 
     const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (cancelled) return;
-      console.log('App: auth change', _event, session?.user?.id || 'none');
       if (session?.user) {
         try {
           const u = await getCurrentUser();
@@ -168,6 +163,7 @@ function ClientApp() {
           <div className="app-shell">
             <Onboarding onComplete={refreshUser} />
             <InstallPrompt />
+            <WhatsAppButton />
           </div>
         </UserContext.Provider>
       </NavContext.Provider>
@@ -182,6 +178,7 @@ function ClientApp() {
           <div className="app-shell">
             <SkinQuiz onComplete={refreshUser} />
             <InstallPrompt />
+            <WhatsAppButton />
           </div>
         </UserContext.Provider>
       </NavContext.Provider>
@@ -220,6 +217,7 @@ function ClientApp() {
         <div className="app-shell">
           {page}
           <InstallPrompt />
+          <WhatsAppButton />
         </div>
       </UserContext.Provider>
     </NavContext.Provider>
