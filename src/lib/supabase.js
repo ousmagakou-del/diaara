@@ -50,17 +50,25 @@ export async function signOut() {
 
 export async function getCurrentUser() {
   try {
-    // Timeout 2s pour auth.getUser()
-    const userPromise = supabase.auth.getUser();
+    // Lit la session depuis localStorage (instantané, pas d'appel réseau)
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return null;
+    
+    const user = session.user;
+    
+    // Récupère le profil avec timeout 5s
+    const profilePromise = supabase
+      .from('users_profile')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+    
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Auth timeout')), 8000)
+      setTimeout(() => reject(new Error('Profile timeout')), 5000)
     );
-    const { data: { user } } = await Promise.race([userPromise, timeoutPromise]);
-    if (!user) return null;
-
-    const { data: profile } = await supabase
-      .from('users_profile').select('*').eq('id', user.id).single();
-    return profile;
+    
+    const { data: profile } = await Promise.race([profilePromise, timeoutPromise]);
+    return profile || { id: user.id, email: user.email };
   } catch (e) {
     console.error('getCurrentUser error:', e.message);
     return null;
