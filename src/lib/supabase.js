@@ -909,3 +909,113 @@ function startRoutineReminderCheck() {
     }
   }, 60000); // chaque minute
 }
+
+export async function getProductReviews(productId) {
+  const { data } = await supabase
+    .from('reviews')
+    .select('*')
+    .eq('product_id', productId)
+    .eq('status', 'approved')
+    .order('created_at', { ascending: false });
+  return data || [];
+}
+
+export async function createReview({ productId, userId, userName, rating, title, comment, photoUrls = [] }) {
+  // Vérifie si l'user a déjà laissé un avis
+  const { data: existing } = await supabase
+    .from('reviews')
+    .select('id')
+    .eq('product_id', productId)
+    .eq('user_id', userId)
+    .maybeSingle();
+  
+  if (existing) {
+    // Update
+    const { error } = await supabase
+      .from('reviews')
+      .update({ rating, title, comment, photo_urls: photoUrls })
+      .eq('id', existing.id);
+    return !error;
+  }
+  
+  // Insert
+  const { error } = await supabase
+    .from('reviews')
+    .insert({
+      product_id: productId,
+      user_id: userId,
+      user_name: userName,
+      rating,
+      title,
+      comment,
+      photo_urls: photoUrls,
+      verified_purchase: true, // À améliorer avec vérif commande livrée
+    });
+  return !error;
+}
+
+export async function uploadReviewPhoto(file) {
+  const fileName = `review_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.jpg`;
+  
+  // Compression
+  const compressed = await compressImage(file, 800, 0.85);
+  
+  const { error } = await supabase.storage
+    .from('review-photos')
+    .upload(fileName, compressed, {
+      contentType: 'image/jpeg',
+      upsert: true,
+    });
+  if (error) {
+    console.error('uploadReviewPhoto error:', error);
+    return null;
+  }
+  const { data } = supabase.storage.from('review-photos').getPublicUrl(fileName);
+  return data.publicUrl;
+}
+
+export async function markReviewHelpful(reviewId) {
+  const { data } = await supabase
+    .from('reviews')
+    .select('helpful_count')
+    .eq('id', reviewId)
+    .single();
+  if (data) {
+    await supabase
+      .from('reviews')
+      .update({ helpful_count: (data.helpful_count || 0) + 1 })
+      .eq('id', reviewId);
+  }
+}
+
+export async function reportReview(reviewId) {
+  await supabase
+    .from('reviews')
+    .update({ reported: true })
+    .eq('id', reviewId);
+}
+
+export async function getReviewStats(productId) {
+  const reviews = await getProductReviews(productId);
+  if (reviews.length === 0) {
+    return { avg: 0, total: 0, distribution: [0, 0, 0, 0, 0] };
+  }
+  const sum = reviews.reduce((s, r) => s + r.rating, 0);
+  const avg = sum / reviews.length;
+  const distribution = [0, 0, 0, 0, 0];
+  reviews.forEach(r => {
+    if (r.rating >= 1 && r.rating <= 5) distribution[r.rating - 1]++;
+  });
+  return { avg, total: reviews.length, distribution };
+}
+
+// Pharmacie répond à un avis
+export async function respondToReview(reviewId, response) {
+  return supabase
+    .from('reviews')
+    .update({
+      pharmacy_response: response,
+      pharmacy_responded_at: new Date().toISOString(),
+    })
+    .eq('id', reviewId);
+}

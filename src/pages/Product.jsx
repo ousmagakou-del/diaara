@@ -3,6 +3,7 @@ import { useNav } from '../App';
 import { getAllProducts, getProductAvailability, isFavorite, toggleFavorite } from '../lib/supabase';
 import { scoreClass, formatPrice } from '../lib/utils';
 import { haptic } from '../lib/haptic';
+import ReviewsSection from '../components/ReviewsSection';
 import './Product.css';
 
 export default function Product({ id }) {
@@ -154,9 +155,7 @@ export default function Product({ id }) {
               </div>
             )}
             {tab === 'reviews' && (
-              <div style={{fontSize: 13, color: 'var(--ink-soft)', textAlign: 'center', padding: 20}}>
-                Les avis seront bientôt disponibles
-              </div>
+              <ReviewsSection productId={product.id} />
             )}
           </div>
 
