@@ -3,16 +3,45 @@ import { supabase } from '../lib/supabase';
 
 const BANNED_PINS = ['0000','1111','2222','3333','4444','5555','6666','7777','8888','9999','1234','4321','0123','9876'];
 
+// Suggestions Unsplash : photos libres de droits, déjà optimisées
+const UNSPLASH_SUGGESTIONS = [
+  {
+    label: 'Croix verte',
+    cover: 'https://images.unsplash.com/photo-1622230208995-0f26eba75875?fm=jpg&q=80&w=1600&auto=format&fit=crop',
+    logo:  'https://images.unsplash.com/photo-1622230208995-0f26eba75875?fm=jpg&q=80&w=400&h=400&auto=format&fit=crop',
+  },
+  {
+    label: 'Comptoir blanc',
+    cover: 'https://images.unsplash.com/photo-1583912267550-d6c2ac3196c0?fm=jpg&q=80&w=1600&auto=format&fit=crop',
+    logo:  'https://images.unsplash.com/photo-1583912267550-d6c2ac3196c0?fm=jpg&q=80&w=400&h=400&auto=format&fit=crop',
+  },
+  {
+    label: 'Médicaments',
+    cover: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?fm=jpg&q=80&w=1600&auto=format&fit=crop',
+    logo:  'https://images.unsplash.com/photo-1576091160550-2173dba999ef?fm=jpg&q=80&w=400&h=400&auto=format&fit=crop',
+  },
+  {
+    label: 'Cosmétiques',
+    cover: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?fm=jpg&q=80&w=1600&auto=format&fit=crop',
+    logo:  'https://images.unsplash.com/photo-1556228720-195a672e8a03?fm=jpg&q=80&w=400&h=400&auto=format&fit=crop',
+  },
+];
+
 export default function PharmaSettings({ pharmacy, onUpdate }) {
   const [form, setForm] = useState({
     name: '', description: '', manager_name: '',
     address: '', city: '', neighborhood: '',
     phone: '', whatsapp: '',
     hours: '', delivery_hours: '',
+    logo: '', cover: '',
   });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState('');
+
+  // États d'erreur pour aperçu image
+  const [logoBroken, setLogoBroken] = useState(false);
+  const [coverBroken, setCoverBroken] = useState(false);
 
   // Sous-vue : changement PIN
   const [pinView, setPinView] = useState(false);
@@ -35,13 +64,26 @@ export default function PharmaSettings({ pharmacy, onUpdate }) {
       whatsapp: pharmacy.whatsapp || '',
       hours: pharmacy.hours || '',
       delivery_hours: pharmacy.delivery_hours || '',
+      logo: pharmacy.logo || '',
+      cover: pharmacy.cover || '',
     });
+    setLogoBroken(false);
+    setCoverBroken(false);
   }, [pharmacy]);
 
   const handleChange = (key) => (e) => {
     setForm(prev => ({ ...prev, [key]: e.target.value }));
     if (saved) setSaved(false);
     if (saveError) setSaveError('');
+    if (key === 'logo') setLogoBroken(false);
+    if (key === 'cover') setCoverBroken(false);
+  };
+
+  const applySuggestion = (s) => {
+    setForm(prev => ({ ...prev, logo: s.logo, cover: s.cover }));
+    setLogoBroken(false);
+    setCoverBroken(false);
+    if (saved) setSaved(false);
   };
 
   const handleSave = async () => {
@@ -172,6 +214,122 @@ export default function PharmaSettings({ pharmacy, onUpdate }) {
       </div>
 
       <div className="phar-settings-form">
+
+        {/* ── IMAGES ── */}
+        <div className="phar-card">
+          <div className="phar-card-title">🖼️ Images de ta pharmacie</div>
+
+          {/* Logo */}
+          <div className="phar-field">
+            <label className="phar-label">Logo (carré 400×400 idéal)</label>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+              <div style={{
+                width: 80, height: 80, borderRadius: 12, background: '#F4F4F2',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                overflow: 'hidden', flexShrink: 0,
+                border: logoBroken ? '2px solid #D9342B' : '1px solid #EEE',
+              }}>
+                {form.logo && !logoBroken ? (
+                  <img
+                    src={form.logo}
+                    alt="logo"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    onError={() => setLogoBroken(true)}
+                  />
+                ) : (
+                  <span style={{ fontSize: 28 }}>🏥</span>
+                )}
+              </div>
+              <div style={{ flex: 1 }}>
+                <input
+                  className="phar-input"
+                  value={form.logo}
+                  onChange={handleChange('logo')}
+                  placeholder="https://exemple.com/logo.jpg"
+                />
+                {logoBroken && (
+                  <p className="phar-hint" style={{ color: '#D9342B' }}>
+                    ⚠️ Image introuvable — vérifie l'URL
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Cover */}
+          <div className="phar-field">
+            <label className="phar-label">Image de couverture (bandeau page détail)</label>
+            <div style={{
+              width: '100%', height: 140, borderRadius: 12,
+              background: form.cover && !coverBroken ? 'transparent' : 'linear-gradient(135deg, #1F8B4C 0%, #166635 100%)',
+              overflow: 'hidden',
+              border: coverBroken ? '2px solid #D9342B' : '1px solid #EEE',
+              marginBottom: 8,
+            }}>
+              {form.cover && !coverBroken ? (
+                <img
+                  src={form.cover}
+                  alt="cover"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  onError={() => setCoverBroken(true)}
+                />
+              ) : (
+                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 14, fontWeight: 600 }}>
+                  Aperçu de la couverture
+                </div>
+              )}
+            </div>
+            <input
+              className="phar-input"
+              value={form.cover}
+              onChange={handleChange('cover')}
+              placeholder="https://exemple.com/cover.jpg"
+            />
+            {coverBroken && (
+              <p className="phar-hint" style={{ color: '#D9342B' }}>
+                ⚠️ Image introuvable — vérifie l'URL
+              </p>
+            )}
+          </div>
+
+          {/* Suggestions Unsplash */}
+          <div className="phar-field">
+            <label className="phar-label">💡 Pas d'image ? Choisis une suggestion</label>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {UNSPLASH_SUGGESTIONS.map((s, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => applySuggestion(s)}
+                  style={{
+                    border: '1px solid #DDD',
+                    borderRadius: 10,
+                    padding: 6,
+                    background: 'white',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 4,
+                    width: 96,
+                    fontFamily: 'inherit',
+                  }}
+                  title={`Appliquer "${s.label}"`}
+                >
+                  <img
+                    src={s.logo}
+                    alt={s.label}
+                    style={{ width: 80, height: 60, objectFit: 'cover', borderRadius: 6 }}
+                    loading="lazy"
+                  />
+                  <span style={{ fontSize: 11, color: '#1A1A1A', fontWeight: 600 }}>{s.label}</span>
+                </button>
+              ))}
+            </div>
+            <p className="phar-hint">📷 Photos libres de droits Unsplash — remplaçables plus tard</p>
+          </div>
+        </div>
+
         {/* Infos générales */}
         <div className="phar-card">
           <div className="phar-card-title">🏥 Infos de la pharmacie</div>
