@@ -3,6 +3,7 @@ import { supabase, subscribeToNewOrders } from '../lib/supabase';
 import { adminLogin, adminLogout, getAdminSession, changeAdminPin } from '../lib/adminAuth';
 import DashboardSection from '../admin/DashboardSection';
 import OrdersSection from '../admin/OrdersSection';
+import FinancesSection from '../admin/FinancesSection';
 import PharmaciesSection from '../admin/PharmaciesSection';
 import ProductsSection from '../admin/ProductsSection';
 import BrandsSection from '../admin/BrandsSection';
@@ -26,6 +27,7 @@ const NAV = [
   { id: 'stats',       icon: '📈', label: 'Statistiques' },
   { id: 'pharmacies',  icon: '🏥', label: 'Pharmacies' },
   { id: 'commissions', icon: '💰', label: 'Commissions' },
+  { id: 'finances',    icon: '💸', label: 'Finances' },
   { id: 'products',    icon: '🛍️', label: 'Produits' },
   { id: 'validation',  icon: '✨', label: 'Validation produits', badge: true },
   { id: 'brands',      icon: '🏷️', label: 'Marques' },
@@ -215,6 +217,7 @@ export default function Admin() {
         {section === 'stats'       && <StatsSection />}
         {section === 'pharmacies'  && <PharmaciesSection />}
         {section === 'commissions' && <CommissionsSection />}
+        {section === 'finances'    && <FinancesSection />}
         {section === 'products'    && <ProductsSection />}
         {section === 'validation'  && <ProductsValidationSection />}
         {section === 'brands'      && <BrandsSection />}
