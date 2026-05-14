@@ -34,10 +34,18 @@ const PRICE_RANGES = [
 const COMMON_BADGES = ['Made in Sénégal', 'Bio', 'Vegan', 'Sans parfum', 'Sans alcool', 'Recommandé dermato'];
 
 const CAT_LABELS = {
+  visage: 'Visage',
   serum: 'Sérums', solaire: 'Solaires', nettoyant: 'Nettoyants',
   hydratant: 'Hydratants', masque: 'Masques', corps: 'Corps',
   levres: 'Lèvres', maquillage: 'Maquillage', cheveux: 'Cheveux', huile: 'Huiles',
+  hygiene: 'Hygiène', bebe: 'Bébé', bouche: 'Bouche', complement: 'Compléments',
+  parfum: 'Parfums',
 };
+
+function catLabel(cat) {
+  if (!cat) return '';
+  return CAT_LABELS[cat] || (cat.charAt(0).toUpperCase() + cat.slice(1));
+}
 
 export default function Search({ initialCategory }) {
   const { navigate } = useNav();
@@ -48,7 +56,6 @@ export default function Search({ initialCategory }) {
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
 
-  // Filtres
   const [sort, setSort] = useState('recommended');
   const [selectedBrands, setSelectedBrands] = useState([]);
   const [scoreRange, setScoreRange] = useState('all');
@@ -66,11 +73,7 @@ export default function Search({ initialCategory }) {
 
   const filtered = useMemo(() => {
     let list = [...products];
-
-    // Filtre catégorie
     if (category) list = list.filter(p => p.category === category);
-
-    // Filtre recherche texte
     if (q.trim() !== '') {
       const s = q.toLowerCase();
       list = list.filter(p =>
@@ -79,31 +82,16 @@ export default function Search({ initialCategory }) {
         p.category?.toLowerCase().includes(s)
       );
     }
-
-    // Filtre marques
-    if (selectedBrands.length > 0) {
-      list = list.filter(p => selectedBrands.includes(p.brand));
-    }
-
-    // Filtre score
+    if (selectedBrands.length > 0) list = list.filter(p => selectedBrands.includes(p.brand));
     const sr = SCORE_RANGES.find(r => r.id === scoreRange);
     if (sr && sr.min > 0) list = list.filter(p => p.score >= sr.min);
-
-    // Filtre prix
     const pr = PRICE_RANGES.find(r => r.id === priceRange);
     if (pr && pr.id !== 'all') list = list.filter(p => p.price >= pr.min && p.price < pr.max);
-
-    // Filtre badges
-    if (selectedBadges.length > 0) {
-      list = list.filter(p => selectedBadges.every(b => p.badges?.includes(b)));
-    }
-
-    // Tri
+    if (selectedBadges.length > 0) list = list.filter(p => selectedBadges.every(b => p.badges?.includes(b)));
     if (sort === 'score-desc') list.sort((a, b) => (b.score || 0) - (a.score || 0));
     else if (sort === 'price-asc') list.sort((a, b) => a.price - b.price);
     else if (sort === 'price-desc') list.sort((a, b) => b.price - a.price);
     else if (sort === 'reviews') list.sort((a, b) => (b.review_count || 0) - (a.review_count || 0));
-
     return list;
   }, [products, category, q, selectedBrands, scoreRange, priceRange, selectedBadges, sort]);
 
@@ -122,13 +110,8 @@ export default function Search({ initialCategory }) {
     setSelectedBadges([]);
   };
 
-  const toggleBrand = (b) => {
-    setSelectedBrands(prev => prev.includes(b) ? prev.filter(x => x !== b) : [...prev, b]);
-  };
-
-  const toggleBadge = (b) => {
-    setSelectedBadges(prev => prev.includes(b) ? prev.filter(x => x !== b) : [...prev, b]);
-  };
+  const toggleBrand = (b) => setSelectedBrands(prev => prev.includes(b) ? prev.filter(x => x !== b) : [...prev, b]);
+  const toggleBadge = (b) => setSelectedBadges(prev => prev.includes(b) ? prev.filter(x => x !== b) : [...prev, b]);
 
   return (
     <div className="search-screen page-anim">
@@ -146,7 +129,7 @@ export default function Search({ initialCategory }) {
             autoFocus={!category}
             value={q}
             onChange={e => setQ(e.target.value)}
-            placeholder={category ? `Filtrer dans ${CAT_LABELS[category] || category}...` : "Produit, marque, ingrédient..."}
+            placeholder={category ? `Filtrer dans ${catLabel(category)}...` : "Produit, marque, ingrédient..."}
           />
           {q && <button onClick={() => setQ('')} className="search-clear">×</button>}
         </div>
@@ -173,7 +156,7 @@ export default function Search({ initialCategory }) {
         <div className="search-cat-bar">
           {category && (
             <span className="search-cat-chip">
-              📁 {CAT_LABELS[category] || category}
+              📁 {catLabel(category)}
               <button onClick={() => setCategory(null)}>×</button>
             </span>
           )}
@@ -226,7 +209,7 @@ export default function Search({ initialCategory }) {
             <div className="search-results">
               <div className="search-count">
                 <strong>{filtered.length}</strong> produit{filtered.length > 1 ? 's' : ''}
-                {category ? ` dans ${CAT_LABELS[category]}` : ''}
+                {category ? ` dans ${catLabel(category)}` : ''}
               </div>
               <div className="product-grid">
                 {filtered.map(p => <ProductTile key={p.id} product={p} />)}
