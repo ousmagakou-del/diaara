@@ -1,45 +1,82 @@
 /* ═══════════════════════════════════════════════════
-   AJOUTS — Bouton + flottant + toast + picker
+   AJOUTS — Bouton + style Uber Eats + animation jump
    À COLLER À LA FIN de ton ProductTile.css existant
-   (ne remplace PAS ton CSS actuel)
+   (REMPLACE la version précédente .pt-add si tu l'as déjà ajoutée)
    ═══════════════════════════════════════════════════ */
 
-/* Bouton + flottant en bas à droite */
 .product-tile {
   position: relative;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+/* Animation "saute" quand on ajoute */
+.product-tile.just-added {
+  animation: pt-jump 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes pt-jump {
+  0%   { transform: scale(1) translateY(0); }
+  30%  { transform: scale(0.95) translateY(2px); }
+  60%  { transform: scale(1.04) translateY(-6px); }
+  100% { transform: scale(1) translateY(0); }
+}
+
+/* Le wrap de l'image doit autoriser le débordement du bouton + */
+.pt-img-wrap {
+  position: relative;
+  overflow: visible !important;
+}
+
+/* L'image elle-même reste découpée correctement (border-radius) */
+.pt-img-wrap > img {
+  display: block;
+}
+
+/* Bouton + style Uber Eats : blanc, rond, dépasse en bas à droite de la photo */
 .pt-add {
   position: absolute;
-  bottom: 8px;
-  right: 8px;
+  bottom: -14px;          /* dépasse de la photo */
+  right: 10px;
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #1F8B4C;
-  color: white;
+  background: #FFFFFF;
+  color: #1A1A1A;
   border: none;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(31, 139, 76, 0.4);
-  z-index: 6;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18), 0 1px 3px rgba(0, 0, 0, 0.08);
+  z-index: 8;
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+              background 0.15s ease,
+              color 0.15s ease,
+              box-shadow 0.15s ease;
   font-family: inherit;
   padding: 0;
 }
 
-.pt-add:hover:not(:disabled),
-.pt-add:active:not(:disabled) {
+.pt-add:hover:not(:disabled) {
   transform: scale(1.08);
-  background: #166635;
-  box-shadow: 0 6px 16px rgba(31, 139, 76, 0.5);
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.22), 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
-.pt-add:disabled {
-  opacity: 0.7;
+.pt-add:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+.pt-add.loading {
+  opacity: 0.85;
   cursor: wait;
+}
+
+/* État succès : vert avec check pendant 600ms */
+.pt-add.success {
+  background: #1F8B4C;
+  color: #FFFFFF;
+  transform: scale(1.15);
+  box-shadow: 0 6px 16px rgba(31, 139, 76, 0.4);
 }
 
 @keyframes pt-spin {
@@ -47,7 +84,12 @@
   to   { transform: rotate(360deg); }
 }
 
-/* Toast flottant en bas */
+/* Marge supplémentaire entre photo et info pour que le + dépasse joliment */
+.pt-info {
+  padding-top: 10px;
+}
+
+/* ─── Toast minimaliste ─── */
 .pt-toast {
   position: fixed;
   bottom: 90px;
@@ -71,7 +113,7 @@
   to   { opacity: 1; transform: translate(-50%, 0); }
 }
 
-/* Picker modal */
+/* ─── Picker multi-pharmacies ─── */
 .pt-picker-backdrop {
   position: fixed;
   inset: 0;

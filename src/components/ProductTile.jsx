@@ -12,6 +12,7 @@ export default function ProductTile({ product, size = 'normal' }) {
 
   // Quick-add state
   const [adding, setAdding] = useState(false);
+  const [justAdded, setJustAdded] = useState(false); // pour l'anim "jump"
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pharmacies, setPharmacies] = useState([]);
   const [toast, setToast] = useState('');
@@ -34,10 +35,14 @@ export default function ProductTile({ product, size = 'normal' }) {
 
   const showToast = (text) => {
     setToast(text);
-    setTimeout(() => setToast(''), 2200);
+    setTimeout(() => setToast(''), 2000);
   };
 
-  // ─── Bouton + intelligent ───
+  const triggerJump = () => {
+    setJustAdded(true);
+    setTimeout(() => setJustAdded(false), 600);
+  };
+
   const handleQuickAdd = async (e) => {
     e.stopPropagation();
     e.preventDefault();
@@ -50,20 +55,18 @@ export default function ProductTile({ product, size = 'normal' }) {
       setAdding(false);
 
       if (!av || av.length === 0) {
-        showToast('😢 Aucun stock disponible');
+        showToast('😢 Aucun stock');
         return;
       }
 
-      // 1 seule pharmacie : ajout direct
       if (av.length === 1) {
         const pharmacy = av[0].pharmacy || av[0];
         addToCart({ product, pharmacy });
         haptic('success');
-        showToast('✓ Ajouté au panier');
+        triggerJump();
         return;
       }
 
-      // Plusieurs : picker
       setPharmacies(av);
       setPickerOpen(true);
     } catch (err) {
@@ -78,7 +81,7 @@ export default function ProductTile({ product, size = 'normal' }) {
     addToCart({ product, pharmacy });
     haptic('success');
     setPickerOpen(false);
-    showToast('✓ Ajouté au panier');
+    triggerJump();
   };
 
   const sc = scoreClass(product.score);
@@ -86,7 +89,12 @@ export default function ProductTile({ product, size = 'normal' }) {
 
   return (
     <>
-      <div className={`product-tile ${size}`} onClick={handleOpen} role="button" tabIndex={0}>
+      <div
+        className={`product-tile ${size} ${justAdded ? 'just-added' : ''}`}
+        onClick={handleOpen}
+        role="button"
+        tabIndex={0}
+      >
         <div className="pt-img-wrap">
           <img
             src={product.img}
@@ -104,7 +112,32 @@ export default function ProductTile({ product, size = 'normal' }) {
               <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
             </svg>
           </button>
+
+          {/* Bouton + style Uber Eats : sur la photo, blanc, dépasse en bas à droite */}
+          <button
+            type="button"
+            className={`pt-add ${adding ? 'loading' : ''} ${justAdded ? 'success' : ''}`}
+            onClick={handleQuickAdd}
+            disabled={adding}
+            aria-label="Ajouter au panier"
+          >
+            {justAdded ? (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            ) : adding ? (
+              <svg viewBox="0 0 24 24" width="18" height="18" style={{ animation: 'pt-spin 0.8s linear infinite' }}>
+                <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.5" fill="none" strokeDasharray="45" strokeDashoffset="22" strokeLinecap="round" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            )}
+          </button>
         </div>
+
         <div className="pt-info">
           <div className="pt-brand">{product.brand}</div>
           <div className="pt-name">{product.name}</div>
@@ -113,32 +146,10 @@ export default function ProductTile({ product, size = 'normal' }) {
             <span className="pt-rating">★ {product.rating}</span>
           </div>
         </div>
-
-        {/* Bouton + flottant */}
-        <button
-          type="button"
-          className="pt-add"
-          onClick={handleQuickAdd}
-          disabled={adding}
-          aria-label="Ajouter au panier"
-        >
-          {adding ? (
-            <svg viewBox="0 0 24 24" width="18" height="18" style={{ animation: 'pt-spin 0.8s linear infinite' }}>
-              <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.5" fill="none" strokeDasharray="45" strokeDashoffset="20" strokeLinecap="round" />
-            </svg>
-          ) : (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
-              <line x1="12" y1="5" x2="12" y2="19"/>
-              <line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-          )}
-        </button>
       </div>
 
-      {/* Toast */}
       {toast && <div className="pt-toast">{toast}</div>}
 
-      {/* Picker multi-pharmacies */}
       {pickerOpen && (
         <div className="pt-picker-backdrop" onClick={() => setPickerOpen(false)}>
           <div className="pt-picker-modal" onClick={e => e.stopPropagation()}>
