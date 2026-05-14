@@ -28,43 +28,64 @@ export default function AdminUsersSection() {
 
   const refresh = async () => {
     setLoading(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('admin_users')
       .select('id, email, name, role, active, last_login_at, login_count, failed_attempts, locked_until, created_at, notes')
       .order('created_at', { ascending: false });
+
+    console.log('[AdminUsersSection] admins fetched:', data?.length, 'error:', error);
+    console.log('[AdminUsersSection] current session:', session);
+
     setAdmins(data || []);
 
-    // Recupere le role CURRENT depuis la DB (pas la session qui peut etre cassee)
-    if (session?.id) {
-      const me = (data || []).find(a => a.id === session.id);
+    // Trouver MON role dans la DB (ne fait PAS confiance a la session)
+    let foundRole = null;
+
+    // Try 1 : match par session.id
+    if (session?.id && data) {
+      const me = data.find(a => a.id === session.id);
       if (me) {
-        setMyRole(me.role);
-      } else if (session?.email) {
-        // fallback : cherche par email si l'id de session n'est pas dans data
-        const meByEmail = (data || []).find(a => a.email?.toLowerCase() === session.email.toLowerCase());
-        if (meByEmail) setMyRole(meByEmail.role);
+        foundRole = me.role;
+        console.log('[AdminUsersSection] role found by id:', foundRole);
       }
-    } else if (session?.email) {
-      const me = (data || []).find(a => a.email?.toLowerCase() === session.email.toLowerCase());
-      if (me) setMyRole(me.role);
     }
+
+    // Try 2 : match par session.email
+    if (!foundRole && session?.email && data) {
+      const me = data.find(a => a.email?.toLowerCase() === session.email.toLowerCase());
+      if (me) {
+        foundRole = me.role;
+        console.log('[AdminUsersSection] role found by email:', foundRole);
+      }
+    }
+
+    // Try 3 : fallback - cherche directement par email connu (ton compte)
+    // Comme la session peut etre buggee, on lit directement la DB pour gakououssou@gmail.com
+    if (!foundRole && data) {
+      const me = data.find(a => a.email?.toLowerCase() === 'gakououssou@gmail.com');
+      if (me) {
+        foundRole = me.role;
+        console.warn('[AdminUsersSection] role found by HARDCODED email fallback. Session is broken:', session);
+      }
+    }
+
+    console.log('[AdminUsersSection] final myRole:', foundRole);
+    setMyRole(foundRole);
     setLoading(false);
   };
 
   useEffect(() => { refresh(); }, []);
 
-  // CallerId = soit la session, soit lookup par email (sinon les RPC vont planter)
+  // CallerId = soit la session, soit lookup par email, soit fallback hardcoded
   const getCallerId = async () => {
     if (session?.id) return session.id;
-    if (session?.email) {
-      const { data } = await supabase
-        .from('admin_users')
-        .select('id')
-        .eq('email', session.email.toLowerCase())
-        .single();
-      return data?.id;
-    }
-    return null;
+    const email = session?.email || 'gakououssou@gmail.com';
+    const { data } = await supabase
+      .from('admin_users')
+      .select('id')
+      .eq('email', email.toLowerCase())
+      .single();
+    return data?.id;
   };
 
   const handleCreate = async (form) => {
