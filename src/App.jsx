@@ -38,6 +38,52 @@ export function useNav() { return useContext(NavContext); }
 const UserContext = createContext(null);
 export function useUser() { return useContext(UserContext); }
 
+// ─── Helpers route ↔ URL ───
+function routeToPath(route) {
+  if (!route || !route.name || route.name === 'home') return '/';
+  const params = route.params || {};
+  switch (route.name) {
+    case 'product': return `/product/${params.id}`;
+    case 'pharmacy_detail': return `/pharmacy/${params.id}`;
+    case 'order_tracking': return `/order/${params.orderId}`;
+    case 'scan_result': return `/scan/result/${params.scanId}`;
+    case 'payment': return `/payment/${params.orderId}`;
+    case 'search': 
+      if (params.category) return `/search?category=${encodeURIComponent(params.category)}`;
+      return '/search';
+    default: return `/${route.name}`;
+  }
+}
+
+function pathToRoute(pathname, search = '') {
+  const path = pathname.replace(/^\//, '');
+  const searchParams = new URLSearchParams(search);
+  
+  if (path === '' || path === '/') return { name: 'home', params: {} };
+  
+  const parts = path.split('/');
+  
+  // Routes paramétrées
+  if (parts[0] === 'product' && parts[1]) return { name: 'product', params: { id: parts[1] } };
+  if (parts[0] === 'pharmacy' && parts[1]) return { name: 'pharmacy_detail', params: { id: parts[1] } };
+  if (parts[0] === 'order' && parts[1]) return { name: 'order_tracking', params: { orderId: parts[1] } };
+  if (parts[0] === 'scan' && parts[1] === 'result' && parts[2]) return { name: 'scan_result', params: { scanId: parts[2] } };
+  if (parts[0] === 'payment' && parts[1]) return { name: 'payment', params: { orderId: parts[1] } };
+  
+  // Routes simples
+  const simpleRoutes = ['search', 'cart', 'checkout', 'orders', 'profile', 'pharmacies', 'scan', 'scan_history', 'addresses', 'favorites', 'payments', 'evolution', 'categories', 'quiz', 'loyalty', 'referral', 'notifications'];
+  if (simpleRoutes.includes(parts[0])) {
+    const params = {};
+    if (parts[0] === 'search') {
+      const cat = searchParams.get('category');
+      if (cat) params.category = cat;
+    }
+    return { name: parts[0], params };
+  }
+  
+  return { name: 'home', params: {} };
+}
+
 export default function App() {
   const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
   if (params.has('admin')) return <Admin />;
@@ -50,11 +96,26 @@ export default function App() {
 }
 
 function ClientApp() {
-  const [route, setRoute] = useState({ name: 'home', params: {} });
-  const [history, setHistory] = useState([]);
+  // ─── Route initiale depuis l'URL ───
+  const initialRoute = typeof window !== 'undefined' 
+    ? pathToRoute(window.location.pathname, window.location.search)
+    : { name: 'home', params: {} };
+  
+  const [route, setRoute] = useState(initialRoute);
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
 
+  // ─── Écoute le bouton retour navigateur ───
+  useEffect(() => {
+    const handlePopState = () => {
+      const newRoute = pathToRoute(window.location.pathname, window.location.search);
+      setRoute(newRoute);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // ─── Auth ───
   useEffect(() => {
     let cancelled = false;
     
@@ -103,31 +164,38 @@ function ClientApp() {
     };
   }, []);
 
+  // ─── Navigation avec URL update ───
   const navigate = (target) => {
     if (target === -1) { goBack(); return; }
-    setHistory(h => [...h, route]);
+    
+    let newRoute;
+    
     if (typeof target === 'string') {
       const path = target.split('?')[0].replace(/^\//, '');
       if (path.startsWith('product/')) {
-        setRoute({ name: 'product', params: { id: path.split('/')[1] } });
+        newRoute = { name: 'product', params: { id: path.split('/')[1] } };
       } else {
         const map = { '': 'home', search: 'search', cart: 'cart', profile: 'profile', orders: 'orders', pharmacies: 'pharmacies', scan: 'scan' };
-        if (map[path] !== undefined) setRoute({ name: map[path], params: {} });
+        newRoute = { name: map[path] || 'home', params: {} };
       }
     } else if (typeof target === 'object') {
-      setRoute(target);
+      newRoute = target;
+    } else {
+      return;
     }
+    
+    // Push dans l'historique navigateur
+    const newPath = routeToPath(newRoute);
+    if (newPath !== window.location.pathname + window.location.search) {
+      window.history.pushState(null, '', newPath);
+    }
+    
+    setRoute(newRoute);
     if (typeof window !== 'undefined') window.scrollTo(0, 0);
   };
 
   const goBack = () => {
-    if (history.length > 0) {
-      const prev = history[history.length - 1];
-      setHistory(h => h.slice(0, -1));
-      setRoute(prev);
-    } else {
-      setRoute({ name: 'home', params: {} });
-    }
+    window.history.back();
   };
 
   const refreshUser = async (directUser) => {

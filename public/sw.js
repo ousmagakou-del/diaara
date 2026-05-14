@@ -1,103 +1,96 @@
 // ════════════════════════════════════════════════
-// Diaara Service Worker v2 — Update-friendly
+// Diaara Service Worker v4 — PROPRE & FIABLE
+// ════════════════════════════════════════════════
+// - Network-first pour l'app (toujours fraîche)
+// - Cache-first pour assets statiques (rapide)
+// - Ignore chrome-extension et autres schemes
+// - Compatible PWA installable
 // ════════════════════════════════════════════════
 
-const CACHE_VERSION = 'diaara-v2-' + Date.now();
-const STATIC_CACHE = 'diaara-static-v2';
+const SW_VERSION = 'v4-2026-05-13';
+const CACHE_STATIC = 'diaara-static-v4';
 
-// Fichiers essentiels (cache au install)
-const ESSENTIAL_FILES = [
+// Fichiers essentiels à cacher au install
+const ESSENTIAL = [
   '/',
   '/index.html',
   '/manifest.json',
   '/offline.html',
-  '/icon-192.png',
-  '/icon-512.png',
 ];
 
-// ─── INSTALL ─────────────────────────
+// ─── INSTALL : nettoie les anciens caches ───
 self.addEventListener('install', (event) => {
-  console.log('[SW Diaara v2] Install');
-  event.waitUntil(
-    caches.open(STATIC_CACHE).then(cache => 
-      cache.addAll(ESSENTIAL_FILES).catch(e => console.warn('[SW] Cache install warn:', e))
-    ).then(() => self.skipWaiting()) // Active immédiatement
-  );
-});
-
-// ─── ACTIVATE ─────────────────────────
-self.addEventListener('activate', (event) => {
-  console.log('[SW Diaara v2] Activate');
+  console.log('[SW v4] Install');
   event.waitUntil(
     Promise.all([
-      // Supprime les anciens caches
+      // Supprime TOUS les anciens caches (v1, v2, v3, etc.)
       caches.keys().then(names => 
         Promise.all(
           names
-            .filter(name => name !== STATIC_CACHE)
+            .filter(name => name !== CACHE_STATIC)
             .map(name => {
-              console.log('[SW] Delete old cache:', name);
+              console.log('[SW v4] Delete old cache:', name);
               return caches.delete(name);
             })
         )
       ),
-      // Prend le contrôle immédiat de tous les clients
-      self.clients.claim(),
-    ])
+      // Cache les essentiels
+      caches.open(CACHE_STATIC).then(cache => 
+        cache.addAll(ESSENTIAL).catch(e => console.warn('[SW v4] Cache install warn:', e))
+      ),
+    ]).then(() => self.skipWaiting())
   );
 });
 
-// ─── FETCH ─────────────────────────
+// ─── ACTIVATE : prend le contrôle ───
+self.addEventListener('activate', (event) => {
+  console.log('[SW v4] Activate');
+  event.waitUntil(self.clients.claim());
+});
+
+// ─── FETCH : gère les requêtes ───
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // ❌ NE PAS toucher aux schemes spéciaux (chrome-extension, etc.)
+  // ❌ IGNORER : schemes non-HTTP (chrome-extension, etc.)
   if (!url.protocol.startsWith('http')) return;
 
-  // ❌ NE PAS cacher les requêtes POST/PUT/DELETE
+  // ❌ IGNORER : POST/PUT/DELETE
   if (request.method !== 'GET') return;
 
-  // ❌ NE PAS cacher Supabase API (toujours frais)
+  // ❌ IGNORER : Supabase API (toujours frais)
   if (url.hostname.includes('supabase.co')) return;
 
-  // ❌ NE PAS cacher les analytics / extensions
+  // ❌ IGNORER : Google Analytics, Tag Manager
   if (url.hostname.includes('google-analytics') || 
       url.hostname.includes('googletagmanager')) return;
 
-  // ✅ NETWORK FIRST pour l'app (HTML, JS, CSS)
-  if (request.destination === 'document' || 
-      request.destination === 'script' || 
-      request.destination === 'style') {
-    event.respondWith(networkFirst(request));
-    return;
-  }
-
-  // ✅ CACHE FIRST pour images & assets statiques
+  // ✅ CACHE-FIRST pour images & assets statiques
   if (request.destination === 'image' || 
-      request.destination === 'font' || 
-      url.pathname.match(/\.(png|jpg|jpeg|gif|webp|svg|woff2?|ttf|ico)$/)) {
+      request.destination === 'font' ||
+      url.pathname.match(/\.(png|jpg|jpeg|gif|webp|svg|woff2?|ttf|ico|mp3|mp4)$/i)) {
     event.respondWith(cacheFirst(request));
     return;
   }
 
-  // Par défaut : NETWORK FIRST
+  // ✅ NETWORK-FIRST pour l'app (HTML/JS/CSS)
   event.respondWith(networkFirst(request));
 });
 
-// ─── STRATÉGIES CACHE ─────────────────────────
+// ─── STRATÉGIES ───
 
 async function networkFirst(request) {
   try {
     const response = await fetch(request);
     
-    // Cache seulement si succès ET schéma compatible
+    // Cache la réponse si succès
     if (response.ok && request.url.startsWith('http')) {
       try {
-        const cache = await caches.open(STATIC_CACHE);
+        const cache = await caches.open(CACHE_STATIC);
         await cache.put(request, response.clone());
       } catch (e) {
-        // Ignore les erreurs de cache (chrome-extension, etc.)
+        // Ignore les erreurs de cache (extensions, etc.)
       }
     }
     return response;
@@ -106,24 +99,34 @@ async function networkFirst(request) {
     const cached = await caches.match(request);
     if (cached) return cached;
     
-    // Si c'est une page HTML → fallback offline
+    // Si page HTML → offline fallback
     if (request.destination === 'document') {
       return caches.match('/offline.html');
     }
     
-    throw error;
+    return new Response('Network error', { status: 503 });
   }
 }
 
 async function cacheFirst(request) {
   const cached = await caches.match(request);
-  if (cached) return cached;
+  if (cached) {
+    // Pour les images : refresh en background
+    fetch(request).then(response => {
+      if (response.ok && request.url.startsWith('http')) {
+        caches.open(CACHE_STATIC).then(cache => {
+          cache.put(request, response).catch(() => {});
+        });
+      }
+    }).catch(() => {});
+    return cached;
+  }
 
   try {
     const response = await fetch(request);
     if (response.ok && request.url.startsWith('http')) {
       try {
-        const cache = await caches.open(STATIC_CACHE);
+        const cache = await caches.open(CACHE_STATIC);
         await cache.put(request, response.clone());
       } catch (e) {
         // Ignore
@@ -135,23 +138,20 @@ async function cacheFirst(request) {
   }
 }
 
-// ─── PUSH NOTIFICATIONS ─────────────────────────
+// ─── PUSH NOTIFICATIONS ───
 self.addEventListener('push', (event) => {
   if (!event.data) return;
-  
   try {
     const data = event.data.json();
-    const options = {
+    event.waitUntil(self.registration.showNotification(data.title || 'Diaara', {
       body: data.body || '',
       icon: data.icon || '/icon-192.png',
       badge: data.badge || '/icon-96.png',
       vibrate: [200, 100, 200],
       data: { url: data.url || '/' },
-      actions: data.actions || [],
-    };
-    event.waitUntil(self.registration.showNotification(data.title || 'Diaara', options));
+    }));
   } catch (e) {
-    console.error('[SW] Push error:', e);
+    console.error('[SW v4] Push error:', e);
   }
 });
 
@@ -168,4 +168,9 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
-console.log('[SW Diaara v2] Loaded');
+// ─── MESSAGES (force update) ───
+self.addEventListener('message', (event) => {
+  if (event.data === 'skipWaiting') self.skipWaiting();
+});
+
+console.log('[SW Diaara v4] Loaded');
