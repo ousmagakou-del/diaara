@@ -6,6 +6,8 @@ import OrdersSection from '../admin/OrdersSection';
 import FinancesSection from '../admin/FinancesSection';
 import PerformanceSection from '../admin/PerformanceSection';
 import SkinScansSection from '../admin/SkinScansSection';
+import AdminUsersSection from '../admin/AdminUsersSection';
+import AdminLogsSection from '../admin/AdminLogsSection';
 import PharmaciesSection from '../admin/PharmaciesSection';
 import ProductsSection from '../admin/ProductsSection';
 import BrandsSection from '../admin/BrandsSection';
@@ -44,6 +46,8 @@ const NAV = [
   { id: 'staff',       icon: '👷', label: 'Équipe' },
   { id: 'history',     icon: '📜', label: 'Historique' },
   { id: 'settings',    icon: '⚙️', label: 'Paramètres' },
+  { id: 'adminusers',  icon: '👥', label: 'Gestion admins' },
+  { id: 'adminlogs',   icon: '📜', label: 'Logs activité' },
 ];
 
 export default function Admin() {
@@ -236,6 +240,8 @@ export default function Admin() {
         {section === 'staff'       && <StaffSection />}
         {section === 'history'     && <HistorySection />}
         {section === 'settings'    && <SettingsSection />}
+        {section === 'adminusers'  && <AdminUsersSection />}
+        {section === 'adminlogs'   && <AdminLogsSection />}
       </main>
 
       {pinModal && (
