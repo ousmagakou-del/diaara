@@ -11,6 +11,9 @@ export default function ProductsSection() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterCat, setFilterCat] = useState('all');
+  const [busyId, setBusyId] = useState(null);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [okMsg, setOkMsg] = useState('');
 
   useEffect(() => { refresh(); }, []);
 
@@ -24,6 +27,12 @@ export default function ProductsSection() {
     setLoading(false);
   };
 
+  const flash = (msg, isError = false) => {
+    if (isError) { setErrorMsg(msg); setOkMsg(''); }
+    else         { setOkMsg(msg);    setErrorMsg(''); }
+    setTimeout(() => { setErrorMsg(''); setOkMsg(''); }, 4000);
+  };
+
   const handleSave = async (p) => {
     const payload = {
       name: p.name, brand: p.brand, category: p.category,
@@ -34,18 +43,85 @@ export default function ProductsSection() {
       inci: p.inci, reason: p.reason, badges: p.badges || [],
       active: p.active,
     };
+    let result;
     if (p.id) {
-      await supabase.from('products').update(payload).eq('id', p.id);
+      result = await supabase.from('products').update(payload).eq('id', p.id);
     } else {
-      await supabase.from('products').insert(payload);
+      result = await supabase.from('products').insert(payload);
+    }
+    if (result.error) {
+      flash(`Erreur sauvegarde : ${result.error.message}`, true);
+      return;
     }
     setEditing(null);
+    flash('✓ Produit sauvegardé');
     refresh();
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Supprimer ce produit ?')) return;
-    await supabase.from('products').delete().eq('id', id);
+  // ─── Soft delete : juste désactiver ───
+  const handleSoftDelete = async (p) => {
+    if (!confirm(`Désactiver "${p.name}" ?\n\nLe produit ne sera plus visible côté client mais l'historique des commandes reste intact.`)) return;
+    setBusyId(p.id);
+    const { error } = await supabase
+      .from('products')
+      .update({ active: false })
+      .eq('id', p.id);
+    setBusyId(null);
+    if (error) {
+      flash(`Erreur : ${error.message}`, true);
+      return;
+    }
+    flash('✓ Produit désactivé');
+    refresh();
+  };
+
+  // ─── Réactiver ───
+  const handleReactivate = async (p) => {
+    setBusyId(p.id);
+    const { error } = await supabase
+      .from('products')
+      .update({ active: true })
+      .eq('id', p.id);
+    setBusyId(null);
+    if (error) {
+      flash(`Erreur : ${error.message}`, true);
+      return;
+    }
+    flash('✓ Produit réactivé');
+    refresh();
+  };
+
+  // ─── Hard delete : suppression définitive avec gestion des FK ───
+  const handleHardDelete = async (p) => {
+    const phrase = 'SUPPRIMER';
+    const typed = prompt(`⚠️ SUPPRESSION DÉFINITIVE de "${p.name}"\n\nÇa supprime aussi :\n- Les lignes inventory (stock pharmacies)\n- Les favoris des clientes\n\nPour confirmer, tape : ${phrase}`);
+    if (typed !== phrase) {
+      flash('Annulé');
+      return;
+    }
+    setBusyId(p.id);
+
+    // 1. Nettoie inventory
+    const { error: invErr } = await supabase
+      .from('inventory').delete().eq('product_id', p.id);
+    if (invErr) {
+      setBusyId(null);
+      flash(`Erreur inventory : ${invErr.message}`, true);
+      return;
+    }
+
+    // 2. Nettoie favorites (si la table existe)
+    await supabase.from('favorites').delete().eq('product_id', p.id);
+    // (on ignore l'erreur si la table n'existe pas)
+
+    // 3. Supprime le produit
+    const { error } = await supabase.from('products').delete().eq('id', p.id);
+    setBusyId(null);
+    if (error) {
+      flash(`Erreur : ${error.message}`, true);
+      return;
+    }
+    flash('✓ Produit supprimé définitivement');
     refresh();
   };
 
@@ -80,6 +156,18 @@ export default function ProductsSection() {
         </div>
         <button className="adm-btn-pri" onClick={handleNew}>+ Nouveau produit</button>
       </header>
+
+      {/* Feedback messages */}
+      {errorMsg && (
+        <div style={{ background: '#FCE9E7', color: '#D9342B', padding: '10px 14px', borderRadius: 8, marginBottom: 12, fontSize: 13, fontWeight: 600 }}>
+          ⚠️ {errorMsg}
+        </div>
+      )}
+      {okMsg && (
+        <div style={{ background: '#E8F5EC', color: '#1F8B4C', padding: '10px 14px', borderRadius: 8, marginBottom: 12, fontSize: 13, fontWeight: 600 }}>
+          {okMsg}
+        </div>
+      )}
 
       <input
         type="text"
@@ -117,7 +205,7 @@ export default function ProductsSection() {
           </thead>
           <tbody>
             {filtered.map(p => (
-              <tr key={p.id}>
+              <tr key={p.id} style={{ opacity: busyId === p.id ? 0.5 : 1 }}>
                 <td>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     {p.img && <img src={p.img} alt="" style={{ width: 36, height: 36, borderRadius: 4, objectFit: 'cover' }} />}
@@ -132,9 +220,40 @@ export default function ProductsSection() {
                 <td>{p.price?.toLocaleString('fr-FR')} FCFA</td>
                 <td><span className={`adm-badge ${p.score >= 80 ? 'excellent' : p.score >= 60 ? 'good' : 'medium'}`}>{p.score}</span></td>
                 <td><span className={`adm-badge ${p.active ? 'good' : 'bad'}`}>{p.active ? '✓ Actif' : '× Inactif'}</span></td>
-                <td>
-                  <button className="adm-btn-sec" onClick={() => setEditing(p)}>✏️</button>
-                  <button className="adm-btn-danger" onClick={() => handleDelete(p.id)} style={{ marginLeft: 4 }}>🗑️</button>
+                <td style={{ whiteSpace: 'nowrap' }}>
+                  <button className="adm-btn-sec" onClick={() => setEditing(p)} title="Modifier" disabled={busyId === p.id}>
+                    ✏️
+                  </button>
+                  {p.active ? (
+                    <button
+                      className="adm-btn-sec"
+                      onClick={() => handleSoftDelete(p)}
+                      style={{ marginLeft: 4 }}
+                      title="Désactiver (cacher du catalogue client)"
+                      disabled={busyId === p.id}
+                    >
+                      🚫
+                    </button>
+                  ) : (
+                    <button
+                      className="adm-btn-sec"
+                      onClick={() => handleReactivate(p)}
+                      style={{ marginLeft: 4 }}
+                      title="Réactiver"
+                      disabled={busyId === p.id}
+                    >
+                      ↩️
+                    </button>
+                  )}
+                  <button
+                    className="adm-btn-danger"
+                    onClick={() => handleHardDelete(p)}
+                    style={{ marginLeft: 4 }}
+                    title="Supprimer définitivement"
+                    disabled={busyId === p.id}
+                  >
+                    🗑️
+                  </button>
                 </td>
               </tr>
             ))}
