@@ -2,27 +2,23 @@ import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { exportCSV, openInvoicePrintWindow, fmtDate, fmtDateTime, fmtFCFA } from '../lib/exports';
 
-const COMMISSION_RATE = 0.08; // 8% pour toutes les pharmacies
-
-// Statuts considérés comme "encaissés" pour le CA
-const REVENUE_STATUSES = ['delivered', 'shipped', 'ready', 'preparing', 'paid'];
+const COMMISSION_RATE = 0.08;
+const REVENUE_STATUSES = ['delivered', 'shipped', 'ready', 'preparing', 'paid', 'client_confirmed'];
 
 export default function FinancesSection() {
   const [orders, setOrders] = useState([]);
   const [pharmacies, setPharmacies] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState('30d'); // 7d | 30d | 90d | year | all
+  const [period, setPeriod] = useState('30d');
   const [pharmacyFilter, setPharmacyFilter] = useState('all');
-  const [csvFormat, setCsvFormat] = useState('excel-fr');
-  const [exportMenu, setExportMenu] = useState(null); // null | 'orders' | 'commissions'
+  const [exportMenu, setExportMenu] = useState(null);
 
-  // ─── Chargement ───
   useEffect(() => {
     (async () => {
       setLoading(true);
       const [ordersRes, pharmaciesRes] = await Promise.all([
         supabase.from('orders')
-          .select('id, total, items, status, created_at, delivered_at, customer_name, customer_neighborhood, pharmacy_id')
+          .select('id, total, items, status, created_at, accepted_at, prepared_at, assigned_pharmacy_id, pharmacy_splits, address')
           .in('status', REVENUE_STATUSES)
           .order('created_at', { ascending: false }),
         supabase.from('pharmacies').select('id, name, city, neighborhood, address, phone, whatsapp'),
@@ -33,22 +29,46 @@ export default function FinancesSection() {
     })();
   }, []);
 
+  // ─── Récupère le nom client depuis address (jsonb) ───
+  const getCustomerName = (o) => {
+    const a = o.address;
+    if (typeof a === 'object' && a !== null) {
+      return a.name || a.full_name || a.customer_name || '—';
+    }
+    return '—';
+  };
+  const getCustomerArea = (o) => {
+    const a = o.address;
+    if (typeof a === 'object' && a !== null) {
+      return a.neighborhood || a.area || a.city || '';
+    }
+    return '';
+  };
+
+  // ─── Pharmacie de la commande (assigned_pharmacy_id en priorité) ───
+  const getPharmacyId = (o) => {
+    if (o.assigned_pharmacy_id) return o.assigned_pharmacy_id;
+    // fallback : 1ère pharmacie du pharmacy_splits
+    if (Array.isArray(o.pharmacy_splits) && o.pharmacy_splits[0]?.pharmacy_id) {
+      return o.pharmacy_splits[0].pharmacy_id;
+    }
+    return null;
+  };
+
   // ─── Filtrage période + pharmacie ───
   const filteredOrders = useMemo(() => {
     let list = orders;
     if (pharmacyFilter !== 'all') {
-      list = list.filter(o => o.pharmacy_id === pharmacyFilter);
+      list = list.filter(o => getPharmacyId(o) === pharmacyFilter);
     }
     if (period !== 'all') {
-      const now = Date.now();
       const days = { '7d': 7, '30d': 30, '90d': 90, 'year': 365 }[period] || 30;
-      const cutoff = now - days * 24 * 60 * 60 * 1000;
+      const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
       list = list.filter(o => new Date(o.created_at).getTime() >= cutoff);
     }
     return list;
   }, [orders, period, pharmacyFilter]);
 
-  // ─── KPI ───
   const kpi = useMemo(() => {
     const totalRevenue = filteredOrders.reduce((s, o) => s + (Number(o.total) || 0), 0);
     const totalCommission = Math.round(totalRevenue * COMMISSION_RATE);
@@ -56,14 +76,13 @@ export default function FinancesSection() {
     const orderCount = filteredOrders.length;
     const avgBasket = orderCount > 0 ? Math.round(totalRevenue / orderCount) : 0;
 
-    // CA du mois courant vs mois précédent
     const now = new Date();
     const startThisMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
     const startLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime();
     const endLastMonth = startThisMonth;
     let revenueThisMonth = 0, revenueLastMonth = 0;
     for (const o of orders) {
-      if (pharmacyFilter !== 'all' && o.pharmacy_id !== pharmacyFilter) continue;
+      if (pharmacyFilter !== 'all' && getPharmacyId(o) !== pharmacyFilter) continue;
       const t = new Date(o.created_at).getTime();
       const v = Number(o.total) || 0;
       if (t >= startThisMonth) revenueThisMonth += v;
@@ -76,7 +95,6 @@ export default function FinancesSection() {
     return { totalRevenue, totalCommission, netPharmacies, orderCount, avgBasket, revenueThisMonth, revenueLastMonth, monthDelta };
   }, [filteredOrders, orders, pharmacyFilter]);
 
-  // ─── Revenus par mois (12 derniers) ───
   const monthlyData = useMemo(() => {
     const months = [];
     const now = new Date();
@@ -85,7 +103,7 @@ export default function FinancesSection() {
       const next = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
       let revenue = 0;
       for (const o of orders) {
-        if (pharmacyFilter !== 'all' && o.pharmacy_id !== pharmacyFilter) continue;
+        if (pharmacyFilter !== 'all' && getPharmacyId(o) !== pharmacyFilter) continue;
         const t = new Date(o.created_at).getTime();
         if (t >= d.getTime() && t < next.getTime()) {
           revenue += Number(o.total) || 0;
@@ -99,12 +117,12 @@ export default function FinancesSection() {
     return months;
   }, [orders, pharmacyFilter]);
 
-  // ─── Top pharmacies ───
   const topPharmacies = useMemo(() => {
     const map = {};
     for (const o of filteredOrders) {
-      if (!o.pharmacy_id) continue;
-      map[o.pharmacy_id] = (map[o.pharmacy_id] || 0) + (Number(o.total) || 0);
+      const phId = getPharmacyId(o);
+      if (!phId) continue;
+      map[phId] = (map[phId] || 0) + (Number(o.total) || 0);
     }
     return Object.entries(map)
       .map(([id, revenue]) => {
@@ -115,36 +133,34 @@ export default function FinancesSection() {
       .slice(0, 10);
   }, [filteredOrders, pharmacies]);
 
-  // ─── Top produits ───
   const topProducts = useMemo(() => {
     const map = {};
     for (const o of filteredOrders) {
       const items = Array.isArray(o.items) ? o.items : [];
       for (const it of items) {
-        const key = it.productId || it.name || 'unknown';
+        const key = it.productId || it.product_id || it.id || it.name || 'unknown';
         if (!map[key]) map[key] = { name: it.name || 'Produit', qty: 0, revenue: 0 };
-        map[key].qty += Number(it.qty) || 1;
-        map[key].revenue += (Number(it.price) || 0) * (Number(it.qty) || 1);
+        map[key].qty += Number(it.qty) || Number(it.quantity) || 1;
+        map[key].revenue += (Number(it.price) || 0) * (Number(it.qty) || Number(it.quantity) || 1);
       }
     }
     return Object.values(map).sort((a, b) => b.revenue - a.revenue).slice(0, 10);
   }, [filteredOrders]);
 
-  // ─── Exports ───
   const doExportOrders = (format) => {
     const rows = filteredOrders.map(o => {
-      const ph = pharmacies.find(p => p.id === o.pharmacy_id);
+      const ph = pharmacies.find(p => p.id === getPharmacyId(o));
       const total = Number(o.total) || 0;
       const commission = Math.round(total * COMMISSION_RATE);
       const net = total - commission;
       const items = Array.isArray(o.items) ? o.items : [];
       return {
-        id: o.id?.slice(0, 8).toUpperCase() || '',
+        id: String(o.id || '').slice(0, 8).toUpperCase(),
         date: fmtDate(o.created_at),
         pharmacie: ph?.name || '—',
         ville: ph?.city || '',
-        cliente: o.customer_name || '',
-        quartier: o.customer_neighborhood || '',
+        cliente: getCustomerName(o),
+        quartier: getCustomerArea(o),
         statut: o.status,
         nb_produits: items.length,
         total_fcfa: total,
@@ -189,11 +205,14 @@ export default function FinancesSection() {
   };
 
   const handleInvoice = (order) => {
-    const ph = pharmacies.find(p => p.id === order.pharmacy_id);
-    openInvoicePrintWindow(order, ph);
+    const ph = pharmacies.find(p => p.id === getPharmacyId(order));
+    const enriched = {
+      ...order,
+      customer_name: getCustomerName(order),
+    };
+    openInvoicePrintWindow(enriched, ph);
   };
 
-  // ─── Styles ───
   const S = {
     section: { padding: 24 },
     h1: { fontSize: 24, fontWeight: 800, margin: 0 },
@@ -217,7 +236,7 @@ export default function FinancesSection() {
     th: { textAlign: 'left', padding: '10px 8px', background: '#F9FAFB', fontSize: 11, fontWeight: 700, color: '#6B6B6B', textTransform: 'uppercase', borderBottom: '1px solid #EEE' },
     td: { padding: '10px 8px', borderBottom: '1px solid #F4F4F2' },
     chart: { display: 'flex', alignItems: 'flex-end', gap: 6, height: 180, padding: '0 4px' },
-    bar: { flex: 1, background: 'linear-gradient(180deg, #1F8B4C 0%, #166635 100%)', borderRadius: '4px 4px 0 0', minHeight: 2, position: 'relative' },
+    bar: { flex: 1, background: 'linear-gradient(180deg, #1F8B4C 0%, #166635 100%)', borderRadius: '4px 4px 0 0', minHeight: 2 },
     barLabel: { fontSize: 9, color: '#6B6B6B', textAlign: 'center', marginTop: 4 },
     exportMenuWrap: { position: 'relative', display: 'inline-block' },
     exportMenu: { position: 'absolute', top: '100%', left: 0, marginTop: 4, background: 'white', border: '1px solid #DDD', borderRadius: 10, padding: 6, minWidth: 220, boxShadow: '0 6px 20px rgba(0,0,0,0.08)', zIndex: 10 },
@@ -229,26 +248,11 @@ export default function FinancesSection() {
   return (
     <div style={S.section} onClick={() => exportMenu && setExportMenu(null)}>
       <h1 style={S.h1}>💰 Finances</h1>
-      <p style={S.sub}>
-        CA, commissions, exports comptables · Commission Diaara fixée à 8%
-      </p>
+      <p style={S.sub}>CA, commissions, exports comptables · Commission Diaara fixée à 8%</p>
 
-      {/* FILTRES */}
       <div style={S.filters}>
-        {[
-          ['7d', '7 jours'],
-          ['30d', '30 jours'],
-          ['90d', '90 jours'],
-          ['year', '1 an'],
-          ['all', 'Tout'],
-        ].map(([k, label]) => (
-          <button
-            key={k}
-            style={{ ...S.pill, ...(period === k ? S.pillActive : {}) }}
-            onClick={() => setPeriod(k)}
-          >
-            {label}
-          </button>
+        {[['7d','7 jours'],['30d','30 jours'],['90d','90 jours'],['year','1 an'],['all','Tout']].map(([k, label]) => (
+          <button key={k} style={{ ...S.pill, ...(period === k ? S.pillActive : {}) }} onClick={() => setPeriod(k)}>{label}</button>
         ))}
         <select style={S.select} value={pharmacyFilter} onChange={e => setPharmacyFilter(e.target.value)}>
           <option value="all">Toutes pharmacies</option>
@@ -260,7 +264,6 @@ export default function FinancesSection() {
         <p style={{ color: '#9B9B9B' }}>Chargement…</p>
       ) : (
         <>
-          {/* KPI */}
           <div style={S.grid}>
             <div style={S.kpiCard}>
               <div style={S.kpiLabel}>📦 CA brut</div>
@@ -283,7 +286,7 @@ export default function FinancesSection() {
               <div style={S.kpiMeta}>Par commande</div>
             </div>
             <div style={S.kpiCard}>
-              <div style={S.kpiLabel}>📈 Ce mois vs précédent</div>
+              <div style={S.kpiLabel}>📈 Mois en cours vs précédent</div>
               <div style={{ ...S.kpiValue, color: kpi.monthDelta == null ? '#9B9B9B' : kpi.monthDelta >= 0 ? '#1F8B4C' : '#D9342B' }}>
                 {kpi.monthDelta == null ? '—' : (kpi.monthDelta >= 0 ? '↑ +' : '↓ ') + kpi.monthDelta + '%'}
               </div>
@@ -293,7 +296,6 @@ export default function FinancesSection() {
             </div>
           </div>
 
-          {/* EXPORTS */}
           <div style={S.section2}>
             <div style={S.sectionTitle}>📤 Exports comptables</div>
             <div style={S.rowExport}>
@@ -303,63 +305,43 @@ export default function FinancesSection() {
                 </button>
                 {exportMenu === 'orders' && (
                   <div style={S.exportMenu} onClick={e => e.stopPropagation()}>
-                    <button style={S.exportMenuItem} onClick={() => doExportOrders('excel-fr')}>
-                      📊 Excel français (recommandé)
-                    </button>
-                    <button style={S.exportMenuItem} onClick={() => doExportOrders('standard')}>
-                      📄 CSV standard
-                    </button>
+                    <button style={S.exportMenuItem} onClick={() => doExportOrders('excel-fr')}>📊 Excel français (recommandé)</button>
+                    <button style={S.exportMenuItem} onClick={() => doExportOrders('standard')}>📄 CSV standard</button>
                   </div>
                 )}
               </div>
-
               <div style={S.exportMenuWrap}>
                 <button style={S.btnOutline} onClick={e => { e.stopPropagation(); setExportMenu(exportMenu === 'commissions' ? null : 'commissions'); }}>
                   💰 Exporter les commissions par pharmacie
                 </button>
                 {exportMenu === 'commissions' && (
                   <div style={S.exportMenu} onClick={e => e.stopPropagation()}>
-                    <button style={S.exportMenuItem} onClick={() => doExportCommissions('excel-fr')}>
-                      📊 Excel français (recommandé)
-                    </button>
-                    <button style={S.exportMenuItem} onClick={() => doExportCommissions('standard')}>
-                      📄 CSV standard
-                    </button>
+                    <button style={S.exportMenuItem} onClick={() => doExportCommissions('excel-fr')}>📊 Excel français</button>
+                    <button style={S.exportMenuItem} onClick={() => doExportCommissions('standard')}>📄 CSV standard</button>
                   </div>
                 )}
               </div>
             </div>
-            <p style={{ fontSize: 11, color: '#9B9B9B' }}>
-              💡 <strong>Excel français</strong> : séparateur `;`, encodage UTF-8 BOM, virgule décimale — s'ouvre direct dans Excel/Numbers.<br/>
-              💡 <strong>CSV standard</strong> : séparateur `,`, encodage UTF-8 — universel.
-            </p>
           </div>
 
-          {/* GRAPHIQUE 12 MOIS */}
           <div style={S.section2}>
             <div style={S.sectionTitle}>📈 Revenus des 12 derniers mois</div>
             <div style={S.chart}>
               {monthlyData.map((m, i) => (
                 <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <div title={fmtFCFA(m.revenue)} style={{
-                    ...S.bar,
-                    height: `${(m.revenue / maxBar) * 160}px`,
-                    width: '70%',
-                  }} />
+                  <div title={fmtFCFA(m.revenue)} style={{ ...S.bar, height: `${(m.revenue / maxBar) * 160}px`, width: '70%' }} />
                   <div style={S.barLabel}>{m.label}</div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* TOP PHARMACIES */}
           <div style={S.section2}>
             <div style={S.sectionTitle}>🏥 Top 10 pharmacies par CA</div>
             <table style={S.table}>
               <thead>
                 <tr>
-                  <th style={S.th}>#</th>
-                  <th style={S.th}>Pharmacie</th>
+                  <th style={S.th}>#</th><th style={S.th}>Pharmacie</th>
                   <th style={{ ...S.th, textAlign: 'right' }}>CA brut</th>
                   <th style={{ ...S.th, textAlign: 'right' }}>Commission 8%</th>
                   <th style={{ ...S.th, textAlign: 'right' }}>Net à verser</th>
@@ -367,7 +349,7 @@ export default function FinancesSection() {
               </thead>
               <tbody>
                 {topPharmacies.length === 0 ? (
-                  <tr><td colSpan={5} style={{ ...S.td, textAlign: 'center', color: '#9B9B9B' }}>Aucune donnée pour cette période</td></tr>
+                  <tr><td colSpan={5} style={{ ...S.td, textAlign: 'center', color: '#9B9B9B' }}>Aucune donnée</td></tr>
                 ) : topPharmacies.map((p, i) => (
                   <tr key={p.id}>
                     <td style={S.td}>{i + 1}</td>
@@ -381,14 +363,12 @@ export default function FinancesSection() {
             </table>
           </div>
 
-          {/* TOP PRODUITS */}
           <div style={S.section2}>
             <div style={S.sectionTitle}>🏆 Top 10 produits vendus</div>
             <table style={S.table}>
               <thead>
                 <tr>
-                  <th style={S.th}>#</th>
-                  <th style={S.th}>Produit</th>
+                  <th style={S.th}>#</th><th style={S.th}>Produit</th>
                   <th style={{ ...S.th, textAlign: 'right' }}>Quantité</th>
                   <th style={{ ...S.th, textAlign: 'right' }}>CA généré</th>
                 </tr>
@@ -408,17 +388,14 @@ export default function FinancesSection() {
             </table>
           </div>
 
-          {/* COMMANDES DÉTAIL */}
           <div style={S.section2}>
             <div style={S.sectionTitle}>📋 Détail des commandes — {filteredOrders.length} résultat{filteredOrders.length > 1 ? 's' : ''}</div>
             <div style={{ overflowX: 'auto' }}>
               <table style={S.table}>
                 <thead>
                   <tr>
-                    <th style={S.th}>Date</th>
-                    <th style={S.th}>ID</th>
-                    <th style={S.th}>Pharmacie</th>
-                    <th style={S.th}>Cliente</th>
+                    <th style={S.th}>Date</th><th style={S.th}>ID</th>
+                    <th style={S.th}>Pharmacie</th><th style={S.th}>Cliente</th>
                     <th style={S.th}>Statut</th>
                     <th style={{ ...S.th, textAlign: 'right' }}>Total</th>
                     <th style={{ ...S.th, textAlign: 'right' }}>Commission</th>
@@ -429,21 +406,19 @@ export default function FinancesSection() {
                   {filteredOrders.length === 0 ? (
                     <tr><td colSpan={8} style={{ ...S.td, textAlign: 'center', color: '#9B9B9B', padding: 30 }}>Aucune commande pour cette période</td></tr>
                   ) : filteredOrders.slice(0, 100).map(o => {
-                    const ph = pharmacies.find(p => p.id === o.pharmacy_id);
+                    const ph = pharmacies.find(p => p.id === getPharmacyId(o));
                     const total = Number(o.total) || 0;
                     const commission = Math.round(total * COMMISSION_RATE);
                     return (
                       <tr key={o.id}>
                         <td style={S.td}>{fmtDateTime(o.created_at)}</td>
-                        <td style={S.td}><code style={{ background: '#F4F4F2', padding: '2px 6px', borderRadius: 4, fontSize: 11 }}>#{o.id?.slice(0, 6).toUpperCase()}</code></td>
+                        <td style={S.td}><code style={{ background: '#F4F4F2', padding: '2px 6px', borderRadius: 4, fontSize: 11 }}>#{String(o.id).slice(0, 6).toUpperCase()}</code></td>
                         <td style={S.td}>{ph?.name || '—'}</td>
-                        <td style={S.td}>{o.customer_name || '—'}</td>
+                        <td style={S.td}>{getCustomerName(o)}</td>
                         <td style={S.td}><span style={{ background: '#E8F5EC', color: '#1F8B4C', padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700 }}>{o.status}</span></td>
                         <td style={{ ...S.td, textAlign: 'right', fontWeight: 700 }}>{fmtFCFA(total)}</td>
                         <td style={{ ...S.td, textAlign: 'right', color: '#1F8B4C' }}>{fmtFCFA(commission)}</td>
-                        <td style={S.td}>
-                          <button style={S.btnGhost} onClick={() => handleInvoice(o)}>📄 Facture</button>
-                        </td>
+                        <td style={S.td}><button style={S.btnGhost} onClick={() => handleInvoice(o)}>📄 Facture</button></td>
                       </tr>
                     );
                   })}

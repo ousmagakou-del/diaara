@@ -20,7 +20,7 @@ export default function SkinScansSection() {
           .select('id, user_id, skin_type, skin_score, diagnosis, created_at')
           .order('created_at', { ascending: false }),
         supabase
-          .from('users')
+          .from('users_profile')
           .select('id', { count: 'exact', head: true })
           .then(r => r)
           .catch(() => ({ count: null })),
