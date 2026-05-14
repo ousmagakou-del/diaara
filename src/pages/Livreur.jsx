@@ -6,6 +6,7 @@ import './Livreur.css';
 export default function Livreur() {
   const [order, setOrder] = useState(null);
   const [tracking, setTracking] = useState(null);
+  const [pharmacies, setPharmacies] = useState([]);
   const [token, setToken] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -45,6 +46,16 @@ export default function Livreur() {
     }
     setTracking(data);
     setOrder(data.orders);
+    
+    // ─── Charge les pharmacies des items ───
+    const pharmacyIds = [...new Set((data.orders?.items || []).map(it => it.pharmacyId))];
+    if (pharmacyIds.length > 0) {
+      const { data: phData } = await supabase
+        .from('pharmacies')
+        .select('*')
+        .in('id', pharmacyIds);
+      setPharmacies(phData || []);
+    }
     
     if (data.delivery_photo_url) setProofMethod('photo');
     else if (data.delivery_signature) setProofMethod('signature');
@@ -133,7 +144,6 @@ export default function Livreur() {
   };
 
   const handleBarcodeScan = async (barcode) => {
-    // Ajoute le code-barres scanné à la liste
     const scanned = tracking?.scanned_barcodes || [];
     const newScanned = [...scanned, {
       code: barcode,
@@ -146,7 +156,6 @@ export default function Livreur() {
     
     loadTracking(token);
     
-    // Feedback
     if (navigator.vibrate) navigator.vibrate(100);
     setShowBarcodeScanner(false);
   };
@@ -236,16 +245,14 @@ export default function Livreur() {
   }
 
   const isCash = order?.payment_method === 'cod';
-  const waUrl = order?.address?.phone ? 'https://wa.me/' + order.address.phone.replace(/\D/g, '') : null;
-  const mapsUrl = order?.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${order.address.line}, ${order.address.city}`)}` : null;
+  const clientWaUrl = order?.address?.phone ? 'https://wa.me/' + order.address.phone.replace(/\D/g, '') : null;
+  const clientMapsUrl = order?.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${order.address.line}, ${order.address.city}`)}` : null;
   const stepDone = (s) => {
     const ord = ['assigned', 'picking', 'picked', 'in_route', 'arrived', 'cash_collected', 'proof_uploaded', 'delivered'];
     return ord.indexOf(tracking?.status) >= ord.indexOf(s);
   };
 
   const isCompleted = ['awaiting_confirm', 'delivered'].includes(order?.status);
-  
-  // Compteur produits scannés
   const scannedCount = (tracking?.scanned_barcodes || []).length;
   const totalProducts = (order?.items || []).reduce((sum, it) => sum + (it.qty || 1), 0);
   const allScanned = scannedCount >= totalProducts && totalProducts > 0;
@@ -261,6 +268,7 @@ export default function Livreur() {
       </header>
 
       <main className="liv-main">
+        {/* CARTE COMMANDE */}
         <div className="liv-card">
           <div className="liv-card-head">
             <code>{order?.id}</code>
@@ -276,18 +284,113 @@ export default function Livreur() {
                 : '🎉 Livré'}
             </span>
           </div>
+        </div>
 
-          <h2>👤 Cliente</h2>
-          <p><strong>{order?.address?.name}</strong></p>
-          <p>📞 <a href={`tel:${order?.address?.phone}`}>{order?.address?.phone}</a></p>
-          <p>📍 {order?.address?.line}</p>
-          <p>{order?.address?.neighborhood}, {order?.address?.city}</p>
-          <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-            {waUrl && <a href={waUrl} target="_blank" rel="noopener noreferrer" className="liv-wa-btn">💬 WhatsApp</a>}
-            {mapsUrl && <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="liv-maps-btn">🗺️ Itinéraire</a>}
+        {/* PICKUP — PHARMACIE(S) */}
+        {pharmacies.length > 0 && (
+          <div className="liv-card" style={{ borderLeft: '4px solid #1F8B4C' }}>
+            <h2>🏥 PICKUP — Récupération</h2>
+            {pharmacies.map(ph => {
+              const phPhone = ph.phone || ph.whatsapp;
+              const phWaUrl = phPhone ? 'https://wa.me/' + phPhone.replace(/\D/g, '') : null;
+              const phMapsUrl = (ph.lat && ph.lng) 
+                ? `https://www.google.com/maps/dir/?api=1&destination=${ph.lat},${ph.lng}`
+                : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${ph.address || ph.neighborhood || ''}, ${ph.city || 'Dakar'}`)}`;
+              
+              return (
+                <div key={ph.id} style={{
+                  background: '#F9FAFB',
+                  borderRadius: 10,
+                  padding: 14,
+                  marginBottom: 10,
+                  border: '1px solid #EEE',
+                }}>
+                  <strong style={{ fontSize: 15, color: '#1A1A1A', display: 'block', marginBottom: 6 }}>
+                    {ph.name}
+                  </strong>
+                  {ph.tagline && (
+                    <p style={{ fontSize: 12, color: '#6B6B6B', marginBottom: 6 }}>
+                      {ph.tagline}
+                    </p>
+                  )}
+                  <p style={{ fontSize: 13, marginBottom: 4 }}>
+                    📍 {ph.address || ph.neighborhood}{ph.city ? ', ' + ph.city : ''}
+                  </p>
+                  {phPhone && (
+                    <p style={{ fontSize: 13, marginBottom: 4 }}>
+                      📞 <a href={`tel:${phPhone}`}>{phPhone}</a>
+                    </p>
+                  )}
+                  {ph.hours && (
+                    <p style={{ fontSize: 12, color: '#6B6B6B', marginBottom: 8 }}>
+                      ⏰ {ph.hours}
+                    </p>
+                  )}
+                  
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
+                    {phWaUrl && (
+                      <a href={phWaUrl} target="_blank" rel="noopener noreferrer" className="liv-wa-btn" style={{ flex: 1, minWidth: 80, textAlign: 'center' }}>
+                        💬 WhatsApp
+                      </a>
+                    )}
+                    {phPhone && (
+                      <a href={`tel:${phPhone}`} className="liv-maps-btn" style={{ background: '#1F8B4C', color: 'white', flex: 1, minWidth: 80, textAlign: 'center' }}>
+                        📞 Appeler
+                      </a>
+                    )}
+                    <a href={phMapsUrl} target="_blank" rel="noopener noreferrer" className="liv-maps-btn" style={{ flex: 1, minWidth: 80, textAlign: 'center' }}>
+                      🗺️ Itinéraire
+                    </a>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* DELIVERY — CLIENTE */}
+        <div className="liv-card" style={{ borderLeft: '4px solid #1DC8F2' }}>
+          <h2>🏠 DELIVERY — Livraison</h2>
+          <div style={{
+            background: '#F9FAFB',
+            borderRadius: 10,
+            padding: 14,
+            border: '1px solid #EEE',
+          }}>
+            <strong style={{ fontSize: 15, color: '#1A1A1A', display: 'block', marginBottom: 6 }}>
+              {order?.address?.name}
+            </strong>
+            <p style={{ fontSize: 13, marginBottom: 4 }}>
+              📞 <a href={`tel:${order?.address?.phone}`}>{order?.address?.phone}</a>
+            </p>
+            <p style={{ fontSize: 13, marginBottom: 4 }}>
+              📍 {order?.address?.line}
+            </p>
+            <p style={{ fontSize: 13 }}>
+              {order?.address?.neighborhood}, {order?.address?.city}
+            </p>
+            
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
+              {clientWaUrl && (
+                <a href={clientWaUrl} target="_blank" rel="noopener noreferrer" className="liv-wa-btn" style={{ flex: 1, minWidth: 80, textAlign: 'center' }}>
+                  💬 WhatsApp
+                </a>
+              )}
+              {order?.address?.phone && (
+                <a href={`tel:${order.address.phone}`} className="liv-maps-btn" style={{ background: '#1DC8F2', color: 'white', flex: 1, minWidth: 80, textAlign: 'center' }}>
+                  📞 Appeler
+                </a>
+              )}
+              {clientMapsUrl && (
+                <a href={clientMapsUrl} target="_blank" rel="noopener noreferrer" className="liv-maps-btn" style={{ flex: 1, minWidth: 80, textAlign: 'center' }}>
+                  🗺️ Itinéraire
+                </a>
+              )}
+            </div>
           </div>
         </div>
 
+        {/* ARTICLES */}
         <div className="liv-card">
           <h2>📦 Articles à livrer</h2>
           {Array.from(new Map((order?.items || []).map(it => [it.pharmacyId, it.pharmacyName]))).map(([phId, phName]) => (
@@ -317,6 +420,7 @@ export default function Livreur() {
           )}
         </div>
 
+        {/* GPS */}
         {!isCompleted && (
           <div className="liv-card">
             <h2>📡 Partage GPS</h2>
@@ -345,12 +449,12 @@ export default function Livreur() {
           </div>
         )}
 
+        {/* ÉTAPES */}
         {!isCompleted && (
           <div className="liv-card">
             <h2>✅ Étapes de livraison</h2>
             <div className="liv-steps-enriched">
               
-              {/* Étape 1 — Arrivée pharmacie */}
               <div className={`liv-step-card ${stepDone('picking') ? 'done' : ''}`}>
                 <div className="liv-step-num">1</div>
                 <div className="liv-step-content">
@@ -369,14 +473,12 @@ export default function Livreur() {
                 </div>
               </div>
 
-              {/* Étape 2 — Scan code-barres */}
               <div className={`liv-step-card ${allScanned ? 'done' : ''}`}>
                 <div className="liv-step-num">2</div>
                 <div className="liv-step-content">
                   <strong>📊 Vérifier les produits</strong>
                   <p>Scanne le code-barres de chaque produit</p>
                   
-                  {/* Compteur de scans */}
                   <div style={{
                     background: allScanned ? '#E8F5EC' : '#FEF6E5',
                     color: allScanned ? '#1F8B4C' : '#A07700',
@@ -391,7 +493,6 @@ export default function Livreur() {
                     {allScanned && ' ✅'}
                   </div>
 
-                  {/* Liste des scans déjà faits */}
                   {scannedCount > 0 && (
                     <div style={{
                       background: '#F9FAFB',
@@ -437,7 +538,6 @@ export default function Livreur() {
                 </div>
               </div>
 
-              {/* Étape 3 — Photo produit final + récupération */}
               <div className={`liv-step-card ${stepDone('picked') ? 'done' : ''}`}>
                 <div className="liv-step-num">3</div>
                 <div className="liv-step-content">
@@ -456,7 +556,6 @@ export default function Livreur() {
                 </div>
               </div>
 
-              {/* Étape 4 */}
               <div className={`liv-step-card ${stepDone('in_route') ? 'done' : ''}`}>
                 <div className="liv-step-num">4</div>
                 <div className="liv-step-content">
@@ -469,7 +568,6 @@ export default function Livreur() {
                 </div>
               </div>
 
-              {/* Étape 5 */}
               <div className={`liv-step-card ${stepDone('arrived') ? 'done' : ''}`}>
                 <div className="liv-step-num">5</div>
                 <div className="liv-step-content">
@@ -596,188 +694,243 @@ export default function Livreur() {
   );
 }
 
-// ─── MODAL SCANNER CODE-BARRES ───
+// ─── MODAL SCANNER CODE-BARRES (avec permission iPhone) ───
 function BarcodeScannerModal({ onScan, onCancel, alreadyScanned = [] }) {
   const videoRef = useRef(null);
   const readerRef = useRef(null);
-  const [status, setStatus] = useState('starting');
+  const streamRef = useRef(null);
+  const [status, setStatus] = useState('idle');
+  const [errorMsg, setErrorMsg] = useState('');
   const [detected, setDetected] = useState(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    const reader = new BrowserMultiFormatReader();
-    readerRef.current = reader;
+  // ─── Demande explicite permission caméra ───
+  const requestPermission = async () => {
+    setStatus('requesting');
+    setErrorMsg('');
     
-    (async () => {
-      try {
-        setStatus('starting');
-        
-        // Préfère la caméra arrière
-        const devices = await BrowserMultiFormatReader.listVideoInputDevices();
-        const backCamera = devices.find(d => /back|rear|environment/i.test(d.label));
-        const deviceId = backCamera?.deviceId || devices[0]?.deviceId;
-        
-        if (!deviceId) {
-          setStatus('no-camera');
-          return;
-        }
-        
-        setStatus('scanning');
-        
-        await reader.decodeFromVideoDevice(deviceId, videoRef.current, (result, err) => {
-          if (cancelled) return;
-          if (result) {
-            const code = result.getText();
-            
-            // Vérifie pas déjà scanné
-            if (alreadyScanned.includes(code)) {
-              setDetected({ code, alreadyScanned: true });
-              setTimeout(() => setDetected(null), 1500);
-              return;
-            }
-            
-            // Beep + vibration
-            if (navigator.vibrate) navigator.vibrate(100);
-            
-            setDetected({ code, success: true });
-            
-            // Valide après 800ms
-            setTimeout(() => {
-              if (!cancelled) onScan(code);
-            }, 800);
-          }
-        });
-      } catch (e) {
-        console.error('Scanner error:', e);
-        setStatus('error');
+    try {
+      // Étape 1 : demande permission EXPLICITE
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { 
+          facingMode: { ideal: 'environment' }, // caméra arrière
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+        audio: false,
+      });
+      
+      streamRef.current = stream;
+      
+      // Attache au video
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
       }
-    })();
-    
-    return () => {
-      cancelled = true;
-      try {
-        if (readerRef.current) {
-          readerRef.current.reset();
+      
+      // Étape 2 : démarre ZXing sur le video flux existant
+      setStatus('scanning');
+      
+      const reader = new BrowserMultiFormatReader();
+      readerRef.current = reader;
+      
+      // Décode depuis le video element (pas depuis deviceId)
+      reader.decodeFromVideoElement(videoRef.current, (result, err) => {
+        if (result) {
+          const code = result.getText();
+          
+          if (alreadyScanned.includes(code)) {
+            setDetected({ code, alreadyScanned: true });
+            setTimeout(() => setDetected(null), 1500);
+            return;
+          }
+          
+          if (navigator.vibrate) navigator.vibrate(100);
+          setDetected({ code, success: true });
+          
+          setTimeout(() => {
+            cleanup();
+            onScan(code);
+          }, 800);
         }
-      } catch (e) {}
-    };
+      });
+      
+    } catch (e) {
+      console.error('Camera error:', e);
+      if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
+        setErrorMsg('Permission caméra refusée. Va dans Réglages > Safari > Caméra et autorise.');
+      } else if (e.name === 'NotFoundError') {
+        setErrorMsg('Aucune caméra détectée');
+      } else if (e.name === 'NotReadableError') {
+        setErrorMsg('La caméra est utilisée par une autre app. Ferme les autres apps.');
+      } else {
+        setErrorMsg('Erreur : ' + (e.message || e.name || 'inconnue'));
+      }
+      setStatus('error');
+    }
+  };
+
+  const cleanup = () => {
+    try {
+      if (readerRef.current) {
+        readerRef.current.reset();
+        readerRef.current = null;
+      }
+    } catch (e) {}
+    
+    try {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(t => t.stop());
+        streamRef.current = null;
+      }
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    return () => cleanup();
   }, []);
 
+  const handleCancel = () => {
+    cleanup();
+    onCancel();
+  };
+
   return (
-    <div className="liv-modal-overlay" onClick={onCancel}>
+    <div className="liv-modal-overlay" onClick={handleCancel}>
       <div className="liv-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 500, padding: 16 }}>
         <h3 style={{ marginBottom: 8 }}>📊 Scanner code-barres</h3>
-        <p style={{ fontSize: 13, color: '#6B6B6B', marginBottom: 14 }}>
-          Pointe la caméra vers le code-barres du produit
-        </p>
         
-        <div style={{
-          position: 'relative',
-          background: '#000',
-          borderRadius: 12,
-          overflow: 'hidden',
-          aspectRatio: '4/3',
-          marginBottom: 14,
-        }}>
-          <video 
-            ref={videoRef}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            playsInline
-            muted
-          />
-          
-          {/* Overlay scan zone */}
-          <div style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            pointerEvents: 'none',
-          }}>
-            <div style={{
-              width: '80%',
-              height: '40%',
-              border: '3px solid rgba(31,139,76,0.8)',
-              borderRadius: 8,
-              boxShadow: '0 0 0 9999px rgba(0,0,0,0.4)',
-            }} />
+        {status === 'idle' && (
+          <div style={{ textAlign: 'center', padding: 20 }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>📷</div>
+            <p style={{ fontSize: 14, marginBottom: 16, color: '#4B4B4B' }}>
+              Diaara a besoin d'accéder à ta caméra pour scanner les codes-barres
+            </p>
+            <button 
+              className="liv-btn-pri" 
+              onClick={requestPermission}
+              style={{ width: '100%', marginBottom: 8 }}
+            >
+              📷 Activer la caméra
+            </button>
+            <button 
+              className="liv-btn-stop" 
+              onClick={handleCancel}
+              style={{ width: '100%' }}
+            >
+              Annuler
+            </button>
           </div>
-          
-          {/* Statut */}
-          {status === 'starting' && (
+        )}
+
+        {(status === 'requesting' || status === 'scanning') && (
+          <>
+            <p style={{ fontSize: 13, color: '#6B6B6B', marginBottom: 14 }}>
+              Pointe la caméra vers le code-barres
+            </p>
+            
             <div style={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              fontSize: 14,
-              fontWeight: 700,
-              background: 'rgba(0,0,0,0.5)',
+              position: 'relative',
+              background: '#000',
+              borderRadius: 12,
+              overflow: 'hidden',
+              aspectRatio: '4/3',
+              marginBottom: 14,
             }}>
-              ⏳ Démarrage caméra...
+              <video 
+                ref={videoRef}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                playsInline
+                muted
+                autoPlay
+              />
+              
+              {/* Overlay zone scan */}
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                pointerEvents: 'none',
+              }}>
+                <div style={{
+                  width: '80%',
+                  height: '40%',
+                  border: '3px solid rgba(31,139,76,0.8)',
+                  borderRadius: 8,
+                  boxShadow: '0 0 0 9999px rgba(0,0,0,0.4)',
+                }} />
+              </div>
+              
+              {status === 'requesting' && (
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  background: 'rgba(0,0,0,0.5)',
+                }}>
+                  ⏳ Activation caméra...
+                </div>
+              )}
+              
+              {detected?.success && (
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  background: 'rgba(31,139,76,0.9)',
+                }}>
+                  <div style={{ fontSize: 48 }}>✅</div>
+                  <div style={{ fontFamily: 'monospace', fontSize: 14, marginTop: 8 }}>{detected.code}</div>
+                </div>
+              )}
+              
+              {detected?.alreadyScanned && (
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  background: 'rgba(217,52,43,0.9)',
+                }}>
+                  <div style={{ fontSize: 48 }}>⚠️</div>
+                  <div style={{ fontSize: 14, marginTop: 8 }}>Déjà scanné</div>
+                </div>
+              )}
             </div>
-          )}
-          
-          {status === 'no-camera' && (
-            <div style={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              fontSize: 13,
-              fontWeight: 700,
-              background: 'rgba(217,52,43,0.9)',
-              padding: 20,
-              textAlign: 'center',
-            }}>
-              📷 Pas de caméra détectée<br />Vérifie les permissions
-            </div>
-          )}
-          
-          {/* Feedback succès */}
-          {detected?.success && (
-            <div style={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              background: 'rgba(31,139,76,0.9)',
-              animation: 'fadeIn 0.2s',
-            }}>
-              <div style={{ fontSize: 48 }}>✅</div>
-              <div style={{ fontFamily: 'monospace', fontSize: 14, marginTop: 8 }}>{detected.code}</div>
-            </div>
-          )}
-          
-          {/* Feedback déjà scanné */}
-          {detected?.alreadyScanned && (
-            <div style={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              background: 'rgba(217,52,43,0.9)',
-            }}>
-              <div style={{ fontSize: 48 }}>⚠️</div>
-              <div style={{ fontSize: 14, marginTop: 8 }}>Déjà scanné</div>
-            </div>
-          )}
-        </div>
-        
-        <button className="liv-btn-stop" onClick={onCancel} style={{ width: '100%' }}>
-          Annuler
-        </button>
+            
+            <button className="liv-btn-stop" onClick={handleCancel} style={{ width: '100%' }}>
+              Annuler
+            </button>
+          </>
+        )}
+
+        {status === 'error' && (
+          <div style={{ textAlign: 'center', padding: 20 }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>❌</div>
+            <p style={{ fontSize: 14, marginBottom: 16, color: '#D9342B', fontWeight: 600 }}>
+              {errorMsg}
+            </p>
+            <button className="liv-btn-pri" onClick={requestPermission} style={{ width: '100%', marginBottom: 8 }}>
+              🔄 Réessayer
+            </button>
+            <button className="liv-btn-stop" onClick={handleCancel} style={{ width: '100%' }}>
+              Annuler
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
