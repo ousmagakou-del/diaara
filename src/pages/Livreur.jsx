@@ -3,6 +3,9 @@ import { supabase, sendWhatsApp, WhatsAppTemplates, generateConfirmToken } from 
 import { BrowserMultiFormatReader } from '@zxing/browser';
 import './Livreur.css';
 
+const SUPABASE_URL = 'https://qxhhnrnworwrnwmqekmb.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF4aGhucm53b3J3cm53bXFla21iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MTExMzYsImV4cCI6MjA5NDA4NzEzNn0.l_7-Eg06UFnXvSw1BQiuNw0yU94jillHNycx-jvP1Aw';
+
 export default function Livreur() {
   const [order, setOrder] = useState(null);
   const [tracking, setTracking] = useState(null);
@@ -47,7 +50,6 @@ export default function Livreur() {
     setTracking(data);
     setOrder(data.orders);
     
-    // ─── Charge les pharmacies des items ───
     const pharmacyIds = [...new Set((data.orders?.items || []).map(it => it.pharmacyId))];
     if (pharmacyIds.length > 0) {
       const { data: phData } = await supabase
@@ -268,7 +270,6 @@ export default function Livreur() {
       </header>
 
       <main className="liv-main">
-        {/* CARTE COMMANDE */}
         <div className="liv-card">
           <div className="liv-card-head">
             <code>{order?.id}</code>
@@ -390,7 +391,6 @@ export default function Livreur() {
           </div>
         </div>
 
-        {/* ARTICLES */}
         <div className="liv-card">
           <h2>📦 Articles à livrer</h2>
           {Array.from(new Map((order?.items || []).map(it => [it.pharmacyId, it.pharmacyName]))).map(([phId, phName]) => (
@@ -420,7 +420,6 @@ export default function Livreur() {
           )}
         </div>
 
-        {/* GPS */}
         {!isCompleted && (
           <div className="liv-card">
             <h2>📡 Partage GPS</h2>
@@ -449,7 +448,6 @@ export default function Livreur() {
           </div>
         )}
 
-        {/* ÉTAPES */}
         {!isCompleted && (
           <div className="liv-card">
             <h2>✅ Étapes de livraison</h2>
@@ -688,31 +686,52 @@ export default function Livreur() {
           onScan={handleBarcodeScan} 
           onCancel={() => setShowBarcodeScanner(false)}
           alreadyScanned={(tracking?.scanned_barcodes || []).map(b => b.code)}
+          orderItems={order?.items || []}
         />
       )}
     </div>
   );
 }
 
-// ─── MODAL SCANNER CODE-BARRES (avec permission iPhone) ───
-function BarcodeScannerModal({ onScan, onCancel, alreadyScanned = [] }) {
+// ─── MODAL SCANNER CODE-BARRES (intelligent OpenBeautyFacts) ───
+function BarcodeScannerModal({ onScan, onCancel, alreadyScanned = [], orderItems = [] }) {
   const videoRef = useRef(null);
   const readerRef = useRef(null);
   const streamRef = useRef(null);
   const [status, setStatus] = useState('idle');
   const [errorMsg, setErrorMsg] = useState('');
-  const [detected, setDetected] = useState(null);
+  const [verifying, setVerifying] = useState(false);
+  const [verification, setVerification] = useState(null);
 
-  // ─── Demande explicite permission caméra ───
+  const verifyBarcode = async (barcode) => {
+    setVerifying(true);
+    try {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/verify-barcode`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ barcode, orderItems }),
+      });
+      
+      const data = await response.json();
+      setVerification({ barcode, ...data });
+    } catch (e) {
+      setVerification({ barcode, success: false, error: e.message, message: 'Erreur réseau' });
+    } finally {
+      setVerifying(false);
+    }
+  };
+
   const requestPermission = async () => {
     setStatus('requesting');
     setErrorMsg('');
     
     try {
-      // Étape 1 : demande permission EXPLICITE
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { 
-          facingMode: { ideal: 'environment' }, // caméra arrière
+          facingMode: { ideal: 'environment' },
           width: { ideal: 1280 },
           height: { ideal: 720 },
         },
@@ -721,36 +740,31 @@ function BarcodeScannerModal({ onScan, onCancel, alreadyScanned = [] }) {
       
       streamRef.current = stream;
       
-      // Attache au video
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
       }
       
-      // Étape 2 : démarre ZXing sur le video flux existant
       setStatus('scanning');
       
       const reader = new BrowserMultiFormatReader();
       readerRef.current = reader;
       
-      // Décode depuis le video element (pas depuis deviceId)
-      reader.decodeFromVideoElement(videoRef.current, (result, err) => {
+      reader.decodeFromVideoElement(videoRef.current, async (result, err) => {
         if (result) {
           const code = result.getText();
           
           if (alreadyScanned.includes(code)) {
-            setDetected({ code, alreadyScanned: true });
-            setTimeout(() => setDetected(null), 1500);
+            setVerification({ barcode: code, alreadyScanned: true, message: 'Déjà scanné' });
+            setTimeout(() => setVerification(null), 1500);
             return;
           }
           
-          if (navigator.vibrate) navigator.vibrate(100);
-          setDetected({ code, success: true });
+          if (verifying || verification) return;
           
-          setTimeout(() => {
-            cleanup();
-            onScan(code);
-          }, 800);
+          if (navigator.vibrate) navigator.vibrate(100);
+          
+          await verifyBarcode(code);
         }
       });
       
@@ -761,7 +775,7 @@ function BarcodeScannerModal({ onScan, onCancel, alreadyScanned = [] }) {
       } else if (e.name === 'NotFoundError') {
         setErrorMsg('Aucune caméra détectée');
       } else if (e.name === 'NotReadableError') {
-        setErrorMsg('La caméra est utilisée par une autre app. Ferme les autres apps.');
+        setErrorMsg('La caméra est utilisée par une autre app.');
       } else {
         setErrorMsg('Erreur : ' + (e.message || e.name || 'inconnue'));
       }
@@ -776,7 +790,6 @@ function BarcodeScannerModal({ onScan, onCancel, alreadyScanned = [] }) {
         readerRef.current = null;
       }
     } catch (e) {}
-    
     try {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(t => t.stop());
@@ -793,6 +806,36 @@ function BarcodeScannerModal({ onScan, onCancel, alreadyScanned = [] }) {
     cleanup();
     onCancel();
   };
+
+  const handleConfirm = () => {
+    cleanup();
+    onScan(verification.barcode);
+  };
+
+  const handleReject = () => {
+    setVerification(null);
+  };
+
+  let bgColor = 'rgba(0,0,0,0.4)';
+  let icon = '';
+  if (verification) {
+    if (verification.alreadyScanned) {
+      bgColor = 'rgba(217,52,43,0.95)';
+      icon = '⚠️';
+    } else if (verification.success && verification.inOrder) {
+      bgColor = 'rgba(31,139,76,0.95)';
+      icon = '✅';
+    } else if (verification.success && !verification.inOrder) {
+      bgColor = 'rgba(255,121,0,0.95)';
+      icon = '⚠️';
+    } else if (verification.obfData) {
+      bgColor = 'rgba(255,121,0,0.95)';
+      icon = '⚠️';
+    } else {
+      bgColor = 'rgba(217,52,43,0.95)';
+      icon = '❓';
+    }
+  }
 
   return (
     <div className="liv-modal-overlay" onClick={handleCancel}>
@@ -844,7 +887,6 @@ function BarcodeScannerModal({ onScan, onCancel, alreadyScanned = [] }) {
                 autoPlay
               />
               
-              {/* Overlay zone scan */}
               <div style={{
                 position: 'absolute',
                 inset: 0,
@@ -862,58 +904,97 @@ function BarcodeScannerModal({ onScan, onCancel, alreadyScanned = [] }) {
                 }} />
               </div>
               
-              {status === 'requesting' && (
+              {status === 'requesting' && !verification && (
                 <div style={{
-                  position: 'absolute',
-                  inset: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'white',
-                  fontSize: 14,
-                  fontWeight: 700,
-                  background: 'rgba(0,0,0,0.5)',
+                  position: 'absolute', inset: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: 'white', fontSize: 14, fontWeight: 700, background: 'rgba(0,0,0,0.5)',
                 }}>
                   ⏳ Activation caméra...
                 </div>
               )}
               
-              {detected?.success && (
+              {verifying && (
                 <div style={{
-                  position: 'absolute',
-                  inset: 0,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'white',
-                  background: 'rgba(31,139,76,0.9)',
+                  position: 'absolute', inset: 0,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  color: 'white', background: 'rgba(0,0,0,0.7)',
                 }}>
-                  <div style={{ fontSize: 48 }}>✅</div>
-                  <div style={{ fontFamily: 'monospace', fontSize: 14, marginTop: 8 }}>{detected.code}</div>
+                  <div style={{ fontSize: 36 }}>🔍</div>
+                  <div style={{ fontSize: 14, marginTop: 8, fontWeight: 700 }}>Vérification...</div>
                 </div>
               )}
               
-              {detected?.alreadyScanned && (
+              {verification && (
                 <div style={{
-                  position: 'absolute',
-                  inset: 0,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'white',
-                  background: 'rgba(217,52,43,0.9)',
+                  position: 'absolute', inset: 0,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  color: 'white', background: bgColor,
+                  padding: 16, textAlign: 'center',
                 }}>
-                  <div style={{ fontSize: 48 }}>⚠️</div>
-                  <div style={{ fontSize: 14, marginTop: 8 }}>Déjà scanné</div>
+                  <div style={{ fontSize: 48, marginBottom: 8 }}>{icon}</div>
+                  
+                  {(verification.product?.img || verification.obfData?.image) && (
+                    <img 
+                      src={verification.product?.img || verification.obfData?.image} 
+                      alt=""
+                      style={{ 
+                        width: 60, height: 60, borderRadius: 8, 
+                        objectFit: 'cover', marginBottom: 8,
+                        background: 'white',
+                      }}
+                    />
+                  )}
+                  
+                  {verification.product && (
+                    <div style={{ fontWeight: 800, fontSize: 14 }}>
+                      {verification.product.brand} · {verification.product.name}
+                    </div>
+                  )}
+                  {!verification.product && verification.obfData && (
+                    <div style={{ fontWeight: 800, fontSize: 14 }}>
+                      {verification.obfData.brand} · {verification.obfData.name}
+                    </div>
+                  )}
+                  
+                  <div style={{ fontSize: 12, marginTop: 6, opacity: 0.95 }}>
+                    {verification.message}
+                  </div>
+                  
+                  <div style={{ fontFamily: 'monospace', fontSize: 11, marginTop: 6, opacity: 0.7 }}>
+                    {verification.barcode}
+                  </div>
                 </div>
               )}
             </div>
             
-            <button className="liv-btn-stop" onClick={handleCancel} style={{ width: '100%' }}>
-              Annuler
-            </button>
+            {verification && !verification.alreadyScanned && (
+              <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                <button 
+                  className="liv-btn-stop" 
+                  onClick={handleReject}
+                  style={{ flex: 1 }}
+                >
+                  🔄 Re-scanner
+                </button>
+                <button 
+                  className="liv-btn-pri" 
+                  onClick={handleConfirm}
+                  style={{ 
+                    flex: 2,
+                    background: verification.inOrder ? '#1F8B4C' : '#FF7900',
+                  }}
+                >
+                  ✓ Confirmer
+                </button>
+              </div>
+            )}
+            
+            {!verification && (
+              <button className="liv-btn-stop" onClick={handleCancel} style={{ width: '100%' }}>
+                Annuler
+              </button>
+            )}
           </>
         )}
 
@@ -936,7 +1017,6 @@ function BarcodeScannerModal({ onScan, onCancel, alreadyScanned = [] }) {
   );
 }
 
-// ─── MODAL PHOTO ───
 function PhotoCaptureModal({ type, onCapture, onCancel }) {
   const fileInputRef = useRef(null);
   const labels = {
@@ -965,7 +1045,6 @@ function PhotoCaptureModal({ type, onCapture, onCancel }) {
   );
 }
 
-// ─── MODAL SIGNATURE ───
 function SignatureModal({ onSubmit, onCancel }) {
   const canvasRef = useRef(null);
   const [drawing, setDrawing] = useState(false);
@@ -1044,7 +1123,6 @@ function SignatureModal({ onSubmit, onCancel }) {
   );
 }
 
-// ─── MODAL PIN ───
 function PinEntryModal({ onSubmit, onCancel }) {
   const [pin, setPin] = useState('');
   const submit = () => {
