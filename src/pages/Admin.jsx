@@ -23,6 +23,7 @@ import SettingsSection from '../admin/SettingsSection';
 import ProductsValidationSection from '../admin/ProductsValidationSection';
 import CommissionsSection from '../admin/CommissionsSection';
 import BannersSection from '../admin/BannersSection';
+import CategoriesSection from '../admin/CategoriesSection';
 import './Admin.css';
 
 const NAV = [
@@ -38,6 +39,7 @@ const NAV = [
   { id: 'validation',  icon: '✨', label: 'Validation produits', badge: true },
   { id: 'brands',      icon: '🏷️', label: 'Marques' },
   { id: 'banners',     icon: '🎨', label: 'Bannières' },
+  { id: 'categories',  icon: '📂', label: 'Catégories' },
   { id: 'promos',      icon: '🎁', label: 'Codes promo' },
   { id: 'marketing',   icon: '📣', label: 'Marketing' },
   { id: 'reviews',     icon: '⭐', label: 'Modération avis' },
@@ -232,6 +234,7 @@ export default function Admin() {
         {section === 'validation'  && <ProductsValidationSection />}
         {section === 'brands'      && <BrandsSection />}
         {section === 'banners'     && <BannersSection />}
+        {section === 'categories'  && <CategoriesSection />}
         {section === 'promos'      && <PromosSection />}
         {section === 'marketing'   && <MarketingSection />}
         {section === 'reviews'     && <ReviewsSection />}
