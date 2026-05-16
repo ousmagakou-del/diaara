@@ -27,8 +27,10 @@ export default function BrandsSection() {
     const payload = {
       name: b.name?.trim(),
       country: b.country?.trim() || null,
-      logo: b.logo || null,
-      description: b.description?.trim() || null,
+      city: b.city?.trim() || null,
+      img: b.img || null,
+      tagline: b.tagline?.trim() || null,
+      story: b.story?.trim() || null,
       local: !!b.local,
     };
     if (!payload.name) {
@@ -70,14 +72,11 @@ export default function BrandsSection() {
 
     setUploadingId(brand.id);
 
-    // Extension correcte
     let ext = 'png';
     if (file.type === 'image/svg+xml') ext = 'svg';
     else if (file.type === 'image/jpeg' || /\.jpe?g$/i.test(file.name)) ext = 'jpg';
     else if (file.type === 'image/webp') ext = 'webp';
-    else if (file.type === 'image/png') ext = 'png';
 
-    // Slug du nom de marque
     const slug = brand.name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
     const filename = `${slug}-${Date.now()}.${ext}`;
 
@@ -108,9 +107,10 @@ export default function BrandsSection() {
       return;
     }
 
+    // ⚠️ La colonne s'appelle `img` (pas `logo`) dans ta DB
     const { error: updErr } = await supabase
       .from('brands')
-      .update({ logo: publicUrl })
+      .update({ img: publicUrl })
       .eq('id', brand.id);
 
     setUploadingId(null);
@@ -126,13 +126,12 @@ export default function BrandsSection() {
 
   const handleRemoveLogo = async (b) => {
     if (!confirm(`Retirer le logo de "${b.name}" ?`)) return;
-    const { error } = await supabase.from('brands').update({ logo: null }).eq('id', b.id);
+    const { error } = await supabase.from('brands').update({ img: null }).eq('id', b.id);
     if (error) { flash('Erreur : ' + error.message, 'err'); return; }
     flash('Logo retiré');
     refresh();
   };
 
-  // ─── Filtre recherche ───
   const filtered = brands.filter(b => {
     if (!search.trim()) return true;
     const s = search.toLowerCase();
@@ -140,7 +139,7 @@ export default function BrandsSection() {
   });
 
   const localCount = brands.filter(b => b.local).length;
-  const withLogoCount = brands.filter(b => b.logo).length;
+  const withLogoCount = brands.filter(b => b.img).length;
 
   return (
     <div className="adm-section">
@@ -151,7 +150,7 @@ export default function BrandsSection() {
             {brands.length} marques · {localCount} sénégalaises 🇸🇳 · {withLogoCount} avec logo
           </p>
         </div>
-        <button className="adm-btn-pri" onClick={() => setEditing({ name: '', country: '', logo: '', description: '', local: false })}>
+        <button className="adm-btn-pri" onClick={() => setEditing({ name: '', country: '', img: '', story: '', tagline: '', local: false })}>
           + Nouvelle marque
         </button>
       </header>
@@ -190,8 +189,7 @@ export default function BrandsSection() {
           <div className="adm-form-card" onClick={e => e.stopPropagation()}>
             <h3>{editing.id ? 'Modifier' : 'Nouvelle'} marque</h3>
 
-            {/* Preview du logo */}
-            {editing.logo && (
+            {editing.img && (
               <div style={{
                 margin: '8px 0 16px',
                 padding: 14,
@@ -201,7 +199,7 @@ export default function BrandsSection() {
                 alignItems: 'center',
                 gap: 12,
               }}>
-                <img src={editing.logo} alt="" style={{
+                <img src={editing.img} alt="" style={{
                   width: 60, height: 60, borderRadius: 8, objectFit: 'contain', background: 'white', padding: 4,
                 }} />
                 <div style={{ flex: 1, fontSize: 12, color: '#6B6B6B', wordBreak: 'break-all' }}>
@@ -210,7 +208,7 @@ export default function BrandsSection() {
                 <button
                   type="button"
                   className="adm-btn-sec"
-                  onClick={() => setEditing({ ...editing, logo: '' })}
+                  onClick={() => setEditing({ ...editing, img: '' })}
                   style={{ fontSize: 11 }}
                 >
                   🗑️ Retirer
@@ -218,14 +216,17 @@ export default function BrandsSection() {
               </div>
             )}
 
-            <label>Nom *<input value={editing.name} onChange={e => setEditing({ ...editing, name: e.target.value })} placeholder="Bioderma" /></label>
-            <label>Pays<input value={editing.country} onChange={e => setEditing({ ...editing, country: e.target.value })} placeholder="Sénégal, France, Corée..." /></label>
+            <label>Nom *<input value={editing.name || ''} onChange={e => setEditing({ ...editing, name: e.target.value })} placeholder="Bioderma" /></label>
+            <label>Pays<input value={editing.country || ''} onChange={e => setEditing({ ...editing, country: e.target.value })} placeholder="Sénégal, France, Corée..." /></label>
+            <label>Ville<input value={editing.city || ''} onChange={e => setEditing({ ...editing, city: e.target.value })} placeholder="Dakar, Paris..." /></label>
 
             <label>Logo URL (optionnel — sinon utilise l'upload depuis la liste)
-              <input value={editing.logo || ''} onChange={e => setEditing({ ...editing, logo: e.target.value })} placeholder="https://... ou laisse vide" />
+              <input value={editing.img || ''} onChange={e => setEditing({ ...editing, img: e.target.value })} placeholder="https://... ou laisse vide" />
             </label>
 
-            <label>Description<textarea value={editing.description || ''} onChange={e => setEditing({ ...editing, description: e.target.value })} rows={3} /></label>
+            <label>Tagline (petite phrase d'accroche)<input value={editing.tagline || ''} onChange={e => setEditing({ ...editing, tagline: e.target.value })} placeholder="Made in Sénégal · Naturel" /></label>
+
+            <label>Histoire / Description<textarea value={editing.story || ''} onChange={e => setEditing({ ...editing, story: e.target.value })} rows={3} /></label>
 
             <label className="adm-form-checkbox">
               <input type="checkbox" checked={!!editing.local} onChange={e => setEditing({ ...editing, local: e.target.checked })} />
@@ -268,9 +269,9 @@ export default function BrandsSection() {
                     alignItems: 'center', justifyContent: 'center',
                     overflow: 'hidden',
                   }}>
-                    {b.logo ? (
+                    {b.img ? (
                       <img
-                        src={b.logo}
+                        src={b.img}
                         alt=""
                         style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 4, boxSizing: 'border-box' }}
                         onError={(e) => { e.target.style.display = 'none'; }}
@@ -284,8 +285,8 @@ export default function BrandsSection() {
                 </td>
                 <td>
                   <strong>{b.name}</strong>
-                  {b.description && (
-                    <div style={{ fontSize: 11, color: '#6B6B6B', marginTop: 2 }}>{b.description.slice(0, 80)}</div>
+                  {b.tagline && (
+                    <div style={{ fontSize: 11, color: '#6B6B6B', marginTop: 2 }}>{b.tagline}</div>
                   )}
                 </td>
                 <td>{b.country || '—'}</td>
@@ -299,15 +300,15 @@ export default function BrandsSection() {
                     display: 'inline-block',
                     padding: '6px 10px',
                     borderRadius: 6,
-                    background: b.logo ? '#F4F4F2' : '#1F8B4C',
-                    color: b.logo ? '#1A1A1A' : 'white',
+                    background: b.img ? '#F4F4F2' : '#1F8B4C',
+                    color: b.img ? '#1A1A1A' : 'white',
                     fontSize: 11,
                     fontWeight: 600,
                     cursor: 'pointer',
                     opacity: uploadingId === b.id ? 0.6 : 1,
                     fontFamily: 'inherit',
                   }}>
-                    {uploadingId === b.id ? '⏳ Upload...' : (b.logo ? '🔄 Remplacer' : '📤 Uploader')}
+                    {uploadingId === b.id ? '⏳ Upload...' : (b.img ? '🔄 Remplacer' : '📤 Uploader')}
                     <input
                       type="file"
                       accept=".svg,.png,.jpg,.jpeg,.webp,image/svg+xml,image/png,image/jpeg,image/webp"
@@ -316,7 +317,7 @@ export default function BrandsSection() {
                       disabled={uploadingId === b.id}
                     />
                   </label>
-                  {b.logo && (
+                  {b.img && (
                     <button
                       className="adm-btn-sec"
                       onClick={() => handleRemoveLogo(b)}
