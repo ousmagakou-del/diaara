@@ -5,10 +5,19 @@ export default function BrandsSection() {
   const [brands, setBrands] = useState([]);
   const [editing, setEditing] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [uploadingId, setUploadingId] = useState(null);
+  const [msg, setMsg] = useState({ text: '', kind: '' });
+  const [search, setSearch] = useState('');
 
   useEffect(() => { refresh(); }, []);
 
+  const flash = (text, kind = 'ok') => {
+    setMsg({ text, kind });
+    setTimeout(() => setMsg({ text: '', kind: '' }), 3000);
+  };
+
   const refresh = async () => {
+    setLoading(true);
     const { data } = await supabase.from('brands').select('*').order('name');
     setBrands(data || []);
     setLoading(false);
@@ -16,48 +25,213 @@ export default function BrandsSection() {
 
   const handleSave = async (b) => {
     const payload = {
-      name: b.name, country: b.country, logo: b.logo,
-      description: b.description, local: b.local,
+      name: b.name?.trim(),
+      country: b.country?.trim() || null,
+      logo: b.logo || null,
+      description: b.description?.trim() || null,
+      local: !!b.local,
     };
-    if (b.id) {
-      await supabase.from('brands').update(payload).eq('id', b.id);
-    } else {
-      await supabase.from('brands').insert(payload);
+    if (!payload.name) {
+      flash('Le nom est requis', 'err');
+      return;
     }
+    if (b.id) {
+      const { error } = await supabase.from('brands').update(payload).eq('id', b.id);
+      if (error) { flash('Erreur : ' + error.message, 'err'); return; }
+    } else {
+      const { error } = await supabase.from('brands').insert(payload);
+      if (error) { flash('Erreur : ' + error.message, 'err'); return; }
+    }
+    flash(b.id ? 'Marque modifiée' : 'Marque créée');
     setEditing(null);
     refresh();
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Supprimer cette marque ?')) return;
-    await supabase.from('brands').delete().eq('id', id);
+  const handleDelete = async (b) => {
+    if (!confirm(`Supprimer "${b.name}" ?\n\nLes produits de cette marque ne seront pas supprimés.`)) return;
+    const { error } = await supabase.from('brands').delete().eq('id', b.id);
+    if (error) { flash('Erreur : ' + error.message, 'err'); return; }
+    flash('Marque supprimée');
     refresh();
   };
+
+  // ─── Upload logo direct depuis la liste ───
+  const handleUploadLogo = async (brand, file) => {
+    if (!file) return;
+    const allowed = ['image/svg+xml', 'image/png', 'image/jpeg', 'image/webp', 'image/jpg'];
+    if (!allowed.includes(file.type) && !/\.(svg|png|jpe?g|webp)$/i.test(file.name)) {
+      flash('Format non supporté (SVG/PNG/JPG/WebP uniquement)', 'err');
+      return;
+    }
+    if (file.size > 500 * 1024) {
+      flash('Logo trop lourd (max 500 KB)', 'err');
+      return;
+    }
+
+    setUploadingId(brand.id);
+
+    // Extension correcte
+    let ext = 'png';
+    if (file.type === 'image/svg+xml') ext = 'svg';
+    else if (file.type === 'image/jpeg' || /\.jpe?g$/i.test(file.name)) ext = 'jpg';
+    else if (file.type === 'image/webp') ext = 'webp';
+    else if (file.type === 'image/png') ext = 'png';
+
+    // Slug du nom de marque
+    const slug = brand.name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    const filename = `${slug}-${Date.now()}.${ext}`;
+
+    const { error: upErr } = await supabase
+      .storage
+      .from('brand-logos')
+      .upload(filename, file, {
+        cacheControl: '3600',
+        contentType: file.type,
+        upsert: true,
+      });
+
+    if (upErr) {
+      setUploadingId(null);
+      flash('Upload échoué : ' + upErr.message, 'err');
+      return;
+    }
+
+    const { data: urlData } = supabase
+      .storage
+      .from('brand-logos')
+      .getPublicUrl(filename);
+
+    const publicUrl = urlData?.publicUrl;
+    if (!publicUrl) {
+      setUploadingId(null);
+      flash('URL publique non récupérée', 'err');
+      return;
+    }
+
+    const { error: updErr } = await supabase
+      .from('brands')
+      .update({ logo: publicUrl })
+      .eq('id', brand.id);
+
+    setUploadingId(null);
+
+    if (updErr) {
+      flash('Sauvegarde échouée : ' + updErr.message, 'err');
+      return;
+    }
+
+    flash(`Logo uploadé pour ${brand.name}`);
+    refresh();
+  };
+
+  const handleRemoveLogo = async (b) => {
+    if (!confirm(`Retirer le logo de "${b.name}" ?`)) return;
+    const { error } = await supabase.from('brands').update({ logo: null }).eq('id', b.id);
+    if (error) { flash('Erreur : ' + error.message, 'err'); return; }
+    flash('Logo retiré');
+    refresh();
+  };
+
+  // ─── Filtre recherche ───
+  const filtered = brands.filter(b => {
+    if (!search.trim()) return true;
+    const s = search.toLowerCase();
+    return b.name?.toLowerCase().includes(s) || b.country?.toLowerCase().includes(s);
+  });
+
+  const localCount = brands.filter(b => b.local).length;
+  const withLogoCount = brands.filter(b => b.logo).length;
 
   return (
     <div className="adm-section">
       <header className="adm-header">
         <div>
           <h1>Marques</h1>
-          <p>{brands.length} marques · {brands.filter(b => b.local).length} sénégalaises 🇸🇳</p>
+          <p>
+            {brands.length} marques · {localCount} sénégalaises 🇸🇳 · {withLogoCount} avec logo
+          </p>
         </div>
         <button className="adm-btn-pri" onClick={() => setEditing({ name: '', country: '', logo: '', description: '', local: false })}>
           + Nouvelle marque
         </button>
       </header>
 
+      {msg.text && (
+        <div style={{
+          padding: '10px 14px',
+          borderRadius: 8,
+          fontSize: 13,
+          fontWeight: 600,
+          marginBottom: 12,
+          background: msg.kind === 'err' ? '#FCE9E7' : '#E8F5EC',
+          color: msg.kind === 'err' ? '#D9342B' : '#1F8B4C',
+        }}>{msg.text}</div>
+      )}
+
+      <input
+        type="search"
+        placeholder="🔍 Rechercher une marque..."
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        style={{
+          width: '100%',
+          padding: 10,
+          borderRadius: 8,
+          border: '1px solid #DDD',
+          fontSize: 14,
+          marginBottom: 14,
+          boxSizing: 'border-box',
+          fontFamily: 'inherit',
+        }}
+      />
+
       {editing && (
         <div className="adm-form-overlay" onClick={() => setEditing(null)}>
           <div className="adm-form-card" onClick={e => e.stopPropagation()}>
             <h3>{editing.id ? 'Modifier' : 'Nouvelle'} marque</h3>
-            <label>Nom<input value={editing.name} onChange={e => setEditing({ ...editing, name: e.target.value })} /></label>
+
+            {/* Preview du logo */}
+            {editing.logo && (
+              <div style={{
+                margin: '8px 0 16px',
+                padding: 14,
+                background: '#F4F4F2',
+                borderRadius: 10,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+              }}>
+                <img src={editing.logo} alt="" style={{
+                  width: 60, height: 60, borderRadius: 8, objectFit: 'contain', background: 'white', padding: 4,
+                }} />
+                <div style={{ flex: 1, fontSize: 12, color: '#6B6B6B', wordBreak: 'break-all' }}>
+                  Logo actuel
+                </div>
+                <button
+                  type="button"
+                  className="adm-btn-sec"
+                  onClick={() => setEditing({ ...editing, logo: '' })}
+                  style={{ fontSize: 11 }}
+                >
+                  🗑️ Retirer
+                </button>
+              </div>
+            )}
+
+            <label>Nom *<input value={editing.name} onChange={e => setEditing({ ...editing, name: e.target.value })} placeholder="Bioderma" /></label>
             <label>Pays<input value={editing.country} onChange={e => setEditing({ ...editing, country: e.target.value })} placeholder="Sénégal, France, Corée..." /></label>
-            <label>Logo URL<input value={editing.logo} onChange={e => setEditing({ ...editing, logo: e.target.value })} /></label>
-            <label>Description<textarea value={editing.description} onChange={e => setEditing({ ...editing, description: e.target.value })} rows={3} /></label>
+
+            <label>Logo URL (optionnel — sinon utilise l'upload depuis la liste)
+              <input value={editing.logo || ''} onChange={e => setEditing({ ...editing, logo: e.target.value })} placeholder="https://... ou laisse vide" />
+            </label>
+
+            <label>Description<textarea value={editing.description || ''} onChange={e => setEditing({ ...editing, description: e.target.value })} rows={3} /></label>
+
             <label className="adm-form-checkbox">
-              <input type="checkbox" checked={editing.local} onChange={e => setEditing({ ...editing, local: e.target.checked })} />
+              <input type="checkbox" checked={!!editing.local} onChange={e => setEditing({ ...editing, local: e.target.checked })} />
               <span>🇸🇳 Marque locale (Made in Sénégal)</span>
             </label>
+
             <div className="adm-form-actions">
               <button className="adm-btn-sec" onClick={() => setEditing(null)}>Annuler</button>
               <button className="adm-btn-pri" onClick={() => handleSave(editing)}>Enregistrer</button>
@@ -68,33 +242,92 @@ export default function BrandsSection() {
 
       {loading ? (
         <div className="adm-empty">Chargement…</div>
+      ) : filtered.length === 0 ? (
+        <div className="adm-empty">
+          {search ? `Aucune marque ne correspond à "${search}"` : 'Aucune marque'}
+        </div>
       ) : (
         <table className="adm-table">
           <thead>
             <tr>
+              <th>Logo</th>
               <th>Marque</th>
               <th>Pays</th>
               <th>Type</th>
+              <th>Logo</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
-            {brands.map(b => (
+            {filtered.map(b => (
               <tr key={b.id}>
-                <td>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {b.logo && <img src={b.logo} alt="" style={{ width: 32, height: 32, borderRadius: 4, objectFit: 'cover' }} />}
-                    <div>
-                      <strong>{b.name}</strong>
-                      <div style={{ fontSize: 11, color: '#6B6B6B' }}>{b.description?.slice(0, 60)}</div>
-                    </div>
+                <td style={{ width: 60 }}>
+                  <div style={{
+                    width: 48, height: 48, borderRadius: 8,
+                    background: '#F4F4F2', display: 'flex',
+                    alignItems: 'center', justifyContent: 'center',
+                    overflow: 'hidden',
+                  }}>
+                    {b.logo ? (
+                      <img
+                        src={b.logo}
+                        alt=""
+                        style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 4, boxSizing: 'border-box' }}
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                    ) : (
+                      <span style={{ fontSize: 18, fontWeight: 800, color: '#6B6B6B' }}>
+                        {b.name?.charAt(0).toUpperCase()}
+                      </span>
+                    )}
                   </div>
                 </td>
-                <td>{b.country || '—'}</td>
-                <td>{b.local ? <span className="adm-badge good">🇸🇳 Locale</span> : <span className="adm-badge">International</span>}</td>
                 <td>
+                  <strong>{b.name}</strong>
+                  {b.description && (
+                    <div style={{ fontSize: 11, color: '#6B6B6B', marginTop: 2 }}>{b.description.slice(0, 80)}</div>
+                  )}
+                </td>
+                <td>{b.country || '—'}</td>
+                <td>
+                  {b.local
+                    ? <span className="adm-badge good">🇸🇳 Locale</span>
+                    : <span className="adm-badge">International</span>}
+                </td>
+                <td>
+                  <label style={{
+                    display: 'inline-block',
+                    padding: '6px 10px',
+                    borderRadius: 6,
+                    background: b.logo ? '#F4F4F2' : '#1F8B4C',
+                    color: b.logo ? '#1A1A1A' : 'white',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    opacity: uploadingId === b.id ? 0.6 : 1,
+                    fontFamily: 'inherit',
+                  }}>
+                    {uploadingId === b.id ? '⏳ Upload...' : (b.logo ? '🔄 Remplacer' : '📤 Uploader')}
+                    <input
+                      type="file"
+                      accept=".svg,.png,.jpg,.jpeg,.webp,image/svg+xml,image/png,image/jpeg,image/webp"
+                      style={{ display: 'none' }}
+                      onChange={(e) => handleUploadLogo(b, e.target.files?.[0])}
+                      disabled={uploadingId === b.id}
+                    />
+                  </label>
+                  {b.logo && (
+                    <button
+                      className="adm-btn-sec"
+                      onClick={() => handleRemoveLogo(b)}
+                      style={{ marginLeft: 4, fontSize: 11 }}
+                      title="Retirer le logo"
+                    >🗑️</button>
+                  )}
+                </td>
+                <td style={{ whiteSpace: 'nowrap' }}>
                   <button className="adm-btn-sec" onClick={() => setEditing(b)}>✏️</button>
-                  <button className="adm-btn-danger" onClick={() => handleDelete(b.id)} style={{ marginLeft: 4 }}>🗑️</button>
+                  <button className="adm-btn-danger" onClick={() => handleDelete(b)} style={{ marginLeft: 4 }}>🗑️</button>
                 </td>
               </tr>
             ))}
