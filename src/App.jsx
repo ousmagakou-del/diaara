@@ -1,4 +1,4 @@
-import { useState, createContext, useContext, useEffect } from 'react';
+import { useState, createContext, useContext, useEffect, useRef } from 'react';
 import { supabase, getCurrentUser } from './lib/supabase';
 import { checkAndNotifyCartAbandon, notifyWelcome } from './lib/notifications';
 import SplashScreen from './components/SplashScreen';
@@ -128,7 +128,9 @@ function ClientApp() {
 
   useEffect(() => {
     let cancelled = false;
+    let isFirstLoad = true;
     
+    // 1. Premier chargement : check session + fetch profil une seule fois
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (cancelled) return;
       if (session?.user) {
@@ -154,8 +156,14 @@ function ClientApp() {
       }
     });
 
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    // 2. Auth state change : NE FETCH QUE sur SIGN_IN ou SIGN_OUT, pas sur TOKEN_REFRESHED
+    const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (cancelled) return;
+      // Ignore le premier event (INITIAL_SESSION) car deja gere ci-dessus
+      if (isFirstLoad) { isFirstLoad = false; return; }
+      // Ignore les refresh de token qui ne changent pas l'user
+      if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') return;
+      
       if (session?.user) {
         try {
           const u = await getCurrentUser();
@@ -174,9 +182,12 @@ function ClientApp() {
     };
   }, []);
 
-  // ─── NOTIFICATIONS WHATSAPP : check au load apres auth ───
+  // ─── NOTIFICATIONS WHATSAPP : 1 SEULE FOIS PAR SESSION ───
+  const notifsSentRef = useRef(false);
   useEffect(() => {
     if (!authChecked || !user?.id || !user?.phone) return;
+    if (notifsSentRef.current) return; // Deja envoye dans cette session
+    notifsSentRef.current = true;
 
     const welcomeTimer = setTimeout(() => {
       notifyWelcome({

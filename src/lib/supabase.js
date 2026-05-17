@@ -60,6 +60,8 @@ export async function getCurrentUser() {
 export async function updateProfile(updates) {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.user) return null;
+  // Invalide les caches liés à l'utilisateur
+  invalidateCache(`my_loyalty_${session.user.id}`);
   return supabase.from('users_profile').update(updates).eq('id', session.user.id).select().single();
 }
 
@@ -125,18 +127,27 @@ export async function createOrder({ items, address, paymentMethod, subtotal, shi
   };
   const { data, error } = await supabase.from('orders').insert(order).select().single();
   if (error) console.error('createOrder error:', error);
+  // Invalide le cache de mes commandes pour que la nouvelle apparaisse
+  if (session?.user?.id) invalidateCache(`my_orders_${session.user.id}`);
   return error ? null : data;
 }
 
 export async function getMyOrders() {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.user) return [];
-  const { data } = await supabase
-    .from('orders').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false });
-  return data || [];
+  return cachedFetch(`my_orders_${session.user.id}`, async () => {
+    const { data } = await supabase
+      .from('orders').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false });
+    return data || [];
+  }, { ttl: 60 * 1000 }); // 1 min (les commandes changent souvent)
 }
 
 export async function updateOrderStatus(id, status) {
+  // Invalide le cache global orders
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user?.id) invalidateCache(`my_orders_${session.user.id}`);
+  } catch {}
   return supabase.from('orders').update({ status }).eq('id', id);
 }
 
@@ -156,11 +167,13 @@ export function subscribeToNewOrders(callback) {
 export async function getMyFavorites() {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.user) return [];
-  const { data } = await supabase
-    .from('favorites')
-    .select('product_id, products(*)')
-    .eq('user_id', session.user.id);
-  return (data || []).map(f => f.products).filter(Boolean);
+  return cachedFetch(`my_favs_${session.user.id}`, async () => {
+    const { data } = await supabase
+      .from('favorites')
+      .select('product_id, products(*)')
+      .eq('user_id', session.user.id);
+    return (data || []).map(f => f.products).filter(Boolean);
+  }, { ttl: 2 * 60 * 1000 }); // 2 min
 }
 
 export async function isFavorite(productId) {
@@ -178,6 +191,9 @@ export async function isFavorite(productId) {
 export async function toggleFavorite(productId) {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.user) return false;
+  // Invalide les caches favoris a chaque toggle
+  invalidateCache(`my_favs_${session.user.id}`);
+  invalidateCache(`my_favs_count_${session.user.id}`);
   const fav = await isFavorite(productId);
   if (fav) {
     await supabase.from('favorites').delete()
@@ -196,11 +212,13 @@ export async function toggleFavorite(productId) {
 export async function getFavoritesCount() {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.user) return 0;
-  const { count } = await supabase
-    .from('favorites')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', session.user.id);
-  return count || 0;
+  return cachedFetch(`my_favs_count_${session.user.id}`, async () => {
+    const { count } = await supabase
+      .from('favorites')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', session.user.id);
+    return count || 0;
+  }, { ttl: 2 * 60 * 1000 });
 }
 
 // ═══════════════════════════════════════════════
@@ -210,13 +228,15 @@ export async function getFavoritesCount() {
 export async function getMyAddresses() {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.user) return [];
-  const { data } = await supabase
-    .from('addresses')
-    .select('*')
-    .eq('user_id', session.user.id)
-    .order('is_default', { ascending: false })
-    .order('created_at', { ascending: false });
-  return data || [];
+  return cachedFetch(`my_addresses_${session.user.id}`, async () => {
+    const { data } = await supabase
+      .from('addresses')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .order('is_default', { ascending: false })
+      .order('created_at', { ascending: false });
+    return data || [];
+  }, { ttl: 5 * 60 * 1000 });
 }
 
 export async function saveAddress(address) {
@@ -225,6 +245,8 @@ export async function saveAddress(address) {
     alert('Tu dois être connectée');
     return null;
   }
+  // Invalide le cache adresses a la sauvegarde
+  invalidateCache(`my_addresses_${session.user.id}`);
   try {
     if (address.is_default) {
       await supabase
@@ -262,12 +284,17 @@ export async function saveAddress(address) {
 }
 
 export async function deleteAddress(id) {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user?.id) invalidateCache(`my_addresses_${session.user.id}`);
+  } catch {}
   return supabase.from('addresses').delete().eq('id', id);
 }
 
 export async function setDefaultAddress(id) {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.user) return;
+  invalidateCache(`my_addresses_${session.user.id}`);
   await supabase.from('addresses').update({ is_default: false }).eq('user_id', session.user.id);
   return supabase.from('addresses').update({ is_default: true }).eq('id', id);
 }
@@ -474,11 +501,13 @@ export async function compressImage(file, maxDim = 800, quality = 0.85) {
 // ═══════════════════════════════════════════════
 
 export async function getActiveBanners() {
-  const now = new Date().toISOString();
-  const { data } = await supabase.from('banners').select('*').eq('active', true)
-    .or(`end_date.is.null,end_date.gt.${now}`)
-    .lte('start_date', now).order('display_order', { ascending: true });
-  return data || [];
+  return cachedFetch('active_banners', async () => {
+    const now = new Date().toISOString();
+    const { data } = await supabase.from('banners').select('*').eq('active', true)
+      .or(`end_date.is.null,end_date.gt.${now}`)
+      .lte('start_date', now).order('display_order', { ascending: true });
+    return data || [];
+  }, { ttl: 3 * 60 * 1000 }); // 3 min, banners changent rarement
 }
 
 export async function getAllBanners() {
@@ -491,16 +520,19 @@ export async function getAllBanners() {
 export async function createBanner(banner) {
   const { data, error } = await supabase.from('banners').insert(banner).select().single();
   invalidateCache('all_banners');
+  invalidateCache('active_banners');
   return error ? null : data;
 }
 
 export async function updateBanner(id, updates) {
   invalidateCache('all_banners');
+  invalidateCache('active_banners');
   return supabase.from('banners').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id);
 }
 
 export async function deleteBanner(id) {
   invalidateCache('all_banners');
+  invalidateCache('active_banners');
   return supabase.from('banners').delete().eq('id', id);
 }
 
@@ -654,8 +686,8 @@ export async function bonusLoyaltyPoints(userId, points, reason) {
   return !error;
 }
 
-export function pointsToFcfa(points) { return Math.floor(points / 100) * 500; }
-export function fcfaToPoints(fcfa) { return Math.floor(fcfa / 500) * 100; }
+export function pointsToFcfa(points) { return Math.floor(points / 100) * 1000; }
+export function fcfaToPoints(fcfa) { return Math.floor(fcfa / 1000) * 100; }
 export function getTierInfo(tier) {
   if (tier === 'gold') return { label: 'Or 🥇', color: '#F4B53A', emoji: '🥇' };
   if (tier === 'silver') return { label: 'Argent 🥈', color: '#9B9B9B', emoji: '🥈' };
