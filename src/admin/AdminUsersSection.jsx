@@ -33,9 +33,7 @@ export default function AdminUsersSection() {
       .select('id, email, name, role, active, last_login_at, login_count, failed_attempts, locked_until, created_at, notes')
       .order('created_at', { ascending: false });
 
-    console.log('[AdminUsersSection] admins fetched:', data?.length, 'error:', error);
-    console.log('[AdminUsersSection] current session:', session);
-
+    if (error) console.warn('[AdminUsersSection] fetch error:', error.message);
     setAdmins(data || []);
 
     // Trouver MON role dans la DB (ne fait PAS confiance a la session)
@@ -44,46 +42,32 @@ export default function AdminUsersSection() {
     // Try 1 : match par session.id
     if (session?.id && data) {
       const me = data.find(a => a.id === session.id);
-      if (me) {
-        foundRole = me.role;
-        console.log('[AdminUsersSection] role found by id:', foundRole);
-      }
+      if (me) foundRole = me.role;
     }
 
     // Try 2 : match par session.email
     if (!foundRole && session?.email && data) {
       const me = data.find(a => a.email?.toLowerCase() === session.email.toLowerCase());
-      if (me) {
-        foundRole = me.role;
-        console.log('[AdminUsersSection] role found by email:', foundRole);
-      }
+      if (me) foundRole = me.role;
     }
 
-    // Try 3 : fallback - cherche directement par email connu (ton compte)
-    // Comme la session peut etre buggee, on lit directement la DB pour gakououssou@gmail.com
-    if (!foundRole && data) {
-      const me = data.find(a => a.email?.toLowerCase() === 'gakououssou@gmail.com');
-      if (me) {
-        foundRole = me.role;
-        console.warn('[AdminUsersSection] role found by HARDCODED email fallback. Session is broken:', session);
-      }
-    }
-
-    console.log('[AdminUsersSection] final myRole:', foundRole);
+    // Pas de fallback hardcoded : si on n'a pas trouve le role, on laisse null.
+    // L'UI affichera "Verification de tes permissions..." puis "lecture seule".
     setMyRole(foundRole);
     setLoading(false);
   };
 
   useEffect(() => { refresh(); }, []);
 
-  // CallerId = soit la session, soit lookup par email, soit fallback hardcoded
+  // CallerId = uniquement depuis la session (plus de fallback email pour eviter
+  // qu'une session corrompue se fasse passer pour un super admin specifique).
   const getCallerId = async () => {
     if (session?.id) return session.id;
-    const email = session?.email || 'gakououssou@gmail.com';
+    if (!session?.email) return null;
     const { data } = await supabase
       .from('admin_users')
       .select('id')
-      .eq('email', email.toLowerCase())
+      .eq('email', session.email.toLowerCase())
       .single();
     return data?.id;
   };

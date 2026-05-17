@@ -1,14 +1,22 @@
 import { useState, useEffect } from 'react';
 import { supabase, updateOrderStatus } from '../lib/supabase';
 
-const STATUS_FLOW = ['pending_payment', 'paid', 'preparing', 'shipped', 'delivered'];
+// Flow lineaire des statuts "normaux" d'une commande. Une commande peut sortir
+// de ce flow (refused, cancelled, disputed...) et ne plus etre "avancable".
+const STATUS_FLOW = ['pending_payment', 'paid', 'preparing', 'ready', 'shipped', 'awaiting_confirm', 'delivered'];
 const STATUS_LABELS = {
-  pending_payment: { label: 'Paiement en attente', color: 'medium', emoji: '⏳' },
-  paid: { label: 'Payée', color: 'good', emoji: '✅' },
-  preparing: { label: 'En préparation', color: 'good', emoji: '📦' },
-  shipped: { label: 'En route', color: 'excellent', emoji: '🛵' },
-  delivered: { label: 'Livrée', color: 'excellent', emoji: '🎉' },
-  cancelled: { label: 'Annulée', color: 'bad', emoji: '❌' },
+  pending_payment:   { label: 'Paiement en attente',  color: 'medium',    emoji: '⏳' },
+  paid:              { label: 'Payée',                color: 'good',      emoji: '✅' },
+  preparing:         { label: 'En préparation',       color: 'good',      emoji: '📦' },
+  ready:             { label: 'Prête à livrer',       color: 'good',      emoji: '✔️' },
+  shipped:           { label: 'En route',             color: 'excellent', emoji: '🛵' },
+  awaiting_cash:     { label: 'Encaissement cash',    color: 'medium',    emoji: '💵' },
+  awaiting_confirm:  { label: 'Confirm cliente',      color: 'medium',    emoji: '⌛' },
+  client_confirmed:  { label: 'Confirmée cliente',    color: 'excellent', emoji: '🤝' },
+  delivered:         { label: 'Livrée',               color: 'excellent', emoji: '🎉' },
+  cancelled:         { label: 'Annulée',              color: 'bad',       emoji: '❌' },
+  refused:           { label: 'Refusée',              color: 'bad',       emoji: '🚫' },
+  disputed:          { label: 'Litige',               color: 'bad',       emoji: '⚠️' },
 };
 
 export default function OrdersSection() {
@@ -35,7 +43,9 @@ export default function OrdersSection() {
 
   const advance = async (order) => {
     const idx = STATUS_FLOW.indexOf(order.status);
-    if (idx >= STATUS_FLOW.length - 1) return;
+    // Safe guard : si le statut n'est pas dans le flow (refused, cancelled, disputed,
+    // awaiting_cash, etc.), on ne fait rien plutot que de retrograder a pending_payment.
+    if (idx === -1 || idx >= STATUS_FLOW.length - 1) return;
     const next = STATUS_FLOW[idx + 1];
     await updateOrderStatus(order.id, next);
     refresh();
@@ -153,8 +163,11 @@ export default function OrdersSection() {
 
 function OrderDetail({ order, onAdvance, onCancel }) {
   const s = STATUS_LABELS[order.status];
-  const canAdvance = STATUS_FLOW.indexOf(order.status) < STATUS_FLOW.length - 1;
-  const nextStatus = canAdvance ? STATUS_LABELS[STATUS_FLOW[STATUS_FLOW.indexOf(order.status) + 1]] : null;
+  const flowIdx = STATUS_FLOW.indexOf(order.status);
+  // canAdvance vrai SEULEMENT si le statut est dans le flow ET n'est pas le dernier.
+  // Sinon (refused, cancelled, disputed, etc.), le bouton "Avancer" est cache.
+  const canAdvance = flowIdx >= 0 && flowIdx < STATUS_FLOW.length - 1;
+  const nextStatus = canAdvance ? STATUS_LABELS[STATUS_FLOW[flowIdx + 1]] : null;
   const waUrl = order.address?.phone ? 'https://wa.me/' + order.address.phone.replace(/\D/g, '') : null;
 
   return (

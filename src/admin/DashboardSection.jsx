@@ -5,6 +5,7 @@ export default function DashboardSection({ setSection }) {
   const [stats, setStats] = useState({
     orders: 0, revenue: 0, commission: 0, users: 0, pharmacies: 0, products: 0,
     pending: 0, toShip: 0, delivered: 0, avgBasket: 0,
+    pendingRevenue: 0,
     lowStock: 0, outOfStock: 0,
   });
   const [recentOrders, setRecentOrders] = useState([]);
@@ -22,7 +23,12 @@ export default function DashboardSection({ setSection }) {
       const delivered = orders.filter(o => o.status === 'delivered');
       const revenue = delivered.reduce((s, o) => s + (o.total || 0), 0);
       const pending = orders.filter(o => o.status === 'pending_payment').length;
-      const toShip = orders.filter(o => ['paid', 'preparing'].includes(o.status)).length;
+      const toShip = orders.filter(o => ['paid', 'preparing', 'ready', 'shipped'].includes(o.status)).length;
+      // Vraie somme des commandes en cours (payees, en prepa, en route, attente confirm)
+      // — separe du revenu deja livre.
+      const pendingRevenue = orders
+        .filter(o => ['paid', 'preparing', 'ready', 'shipped', 'awaiting_confirm', 'awaiting_cash'].includes(o.status))
+        .reduce((s, o) => s + (Number(o.total) || 0), 0);
       const inv = inventoryRes.data || [];
 
       setStats({
@@ -36,6 +42,7 @@ export default function DashboardSection({ setSection }) {
         toShip,
         delivered: delivered.length,
         avgBasket: delivered.length > 0 ? Math.round(revenue / delivered.length) : 0,
+        pendingRevenue,
         lowStock: inv.filter(i => i.stock > 0 && i.stock < 10).length,
         outOfStock: inv.filter(i => i.stock === 0).length,
       });
@@ -69,7 +76,7 @@ export default function DashboardSection({ setSection }) {
         <div className="adm-kpi">
           <div className="adm-kpi-label">EN ATTENTE</div>
           <div className="adm-kpi-value" style={{ color: '#F4B53A' }}>
-            {(stats.pending + stats.toShip > 0 ? stats.revenue : 0).toLocaleString('fr-FR')}<small>FCFA</small>
+            {stats.pendingRevenue.toLocaleString('fr-FR')}<small>FCFA</small>
           </div>
           <div className="adm-kpi-meta">{stats.pending + stats.toShip} commandes en cours</div>
         </div>

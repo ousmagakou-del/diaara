@@ -3,7 +3,13 @@ import { supabase } from '../lib/supabase';
 import { exportCSV, openInvoicePrintWindow, fmtDate, fmtDateTime, fmtFCFA } from '../lib/exports';
 
 const COMMISSION_RATE = 0.08;
-const REVENUE_STATUSES = ['delivered', 'shipped', 'ready', 'preparing', 'paid', 'client_confirmed'];
+// CA "encaissé" = commandes effectivement livrees et confirmees par la cliente.
+// CA "en cours" = commandes payees / en preparation / en route, pas encore livrees.
+// On separe les deux pour ne pas afficher du revenu fantome (commandes pouvant etre annulees).
+const FULFILLED_STATUSES = ['delivered', 'client_confirmed'];
+const IN_PROGRESS_STATUSES = ['paid', 'preparing', 'ready', 'shipped', 'awaiting_confirm', 'awaiting_cash'];
+// Statuts qu'on lit en DB (pour le detail) — on garde les deux familles
+const REVENUE_STATUSES = [...FULFILLED_STATUSES, ...IN_PROGRESS_STATUSES];
 
 export default function FinancesSection() {
   const [orders, setOrders] = useState([]);
@@ -70,19 +76,28 @@ export default function FinancesSection() {
   }, [orders, period, pharmacyFilter]);
 
   const kpi = useMemo(() => {
-    const totalRevenue = filteredOrders.reduce((s, o) => s + (Number(o.total) || 0), 0);
-    const totalCommission = Math.round(totalRevenue * COMMISSION_RATE);
-    const netPharmacies = totalRevenue - totalCommission;
+    // Split clair entre CA encaisse et CA en cours
+    const fulfilledOrders = filteredOrders.filter(o => FULFILLED_STATUSES.includes(o.status));
+    const inProgressOrders = filteredOrders.filter(o => IN_PROGRESS_STATUSES.includes(o.status));
+
+    const fulfilledRevenue = fulfilledOrders.reduce((s, o) => s + (Number(o.total) || 0), 0);
+    const inProgressRevenue = inProgressOrders.reduce((s, o) => s + (Number(o.total) || 0), 0);
+    const totalRevenue = fulfilledRevenue + inProgressRevenue;
+    // Commission calculee SEULEMENT sur l'encaisse (on ne facture pas les commandes potentiellement annulees)
+    const fulfilledCommission = Math.round(fulfilledRevenue * COMMISSION_RATE);
+    const netPharmacies = fulfilledRevenue - fulfilledCommission;
     const orderCount = filteredOrders.length;
-    const avgBasket = orderCount > 0 ? Math.round(totalRevenue / orderCount) : 0;
+    const avgBasket = fulfilledOrders.length > 0 ? Math.round(fulfilledRevenue / fulfilledOrders.length) : 0;
 
     const now = new Date();
     const startThisMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
     const startLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime();
     const endLastMonth = startThisMonth;
+    // Comparaison mois N vs mois N-1 sur le CA encaisse (delivered) uniquement
     let revenueThisMonth = 0, revenueLastMonth = 0;
     for (const o of orders) {
       if (pharmacyFilter !== 'all' && getPharmacyId(o) !== pharmacyFilter) continue;
+      if (!FULFILLED_STATUSES.includes(o.status)) continue;
       const t = new Date(o.created_at).getTime();
       const v = Number(o.total) || 0;
       if (t >= startThisMonth) revenueThisMonth += v;
@@ -92,7 +107,15 @@ export default function FinancesSection() {
       ? Math.round(((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100)
       : null;
 
-    return { totalRevenue, totalCommission, netPharmacies, orderCount, avgBasket, revenueThisMonth, revenueLastMonth, monthDelta };
+    return {
+      totalRevenue,
+      fulfilledRevenue, inProgressRevenue,
+      fulfilledOrdersCount: fulfilledOrders.length,
+      inProgressOrdersCount: inProgressOrders.length,
+      totalCommission: fulfilledCommission,
+      netPharmacies, orderCount, avgBasket,
+      revenueThisMonth, revenueLastMonth, monthDelta,
+    };
   }, [filteredOrders, orders, pharmacyFilter]);
 
   const monthlyData = useMemo(() => {
@@ -266,27 +289,32 @@ export default function FinancesSection() {
         <>
           <div style={S.grid}>
             <div style={S.kpiCard}>
-              <div style={S.kpiLabel}>📦 CA brut</div>
-              <div style={S.kpiValue}>{fmtFCFA(kpi.totalRevenue)}</div>
-              <div style={S.kpiMeta}>{kpi.orderCount} commande{kpi.orderCount > 1 ? 's' : ''}</div>
+              <div style={S.kpiLabel}>✅ CA encaissé</div>
+              <div style={{ ...S.kpiValue, color: '#1F8B4C' }}>{fmtFCFA(kpi.fulfilledRevenue)}</div>
+              <div style={S.kpiMeta}>{kpi.fulfilledOrdersCount} commande{kpi.fulfilledOrdersCount > 1 ? 's' : ''} livrée{kpi.fulfilledOrdersCount > 1 ? 's' : ''}</div>
+            </div>
+            <div style={S.kpiCard}>
+              <div style={S.kpiLabel}>⏳ CA en cours</div>
+              <div style={{ ...S.kpiValue, color: '#F4B53A' }}>{fmtFCFA(kpi.inProgressRevenue)}</div>
+              <div style={S.kpiMeta}>{kpi.inProgressOrdersCount} commande{kpi.inProgressOrdersCount > 1 ? 's' : ''} en préparation/route</div>
             </div>
             <div style={S.kpiCard}>
               <div style={S.kpiLabel}>💰 Commission YARAM</div>
               <div style={{ ...S.kpiValue, color: '#1F8B4C' }}>{fmtFCFA(kpi.totalCommission)}</div>
-              <div style={S.kpiMeta}>8% sur {fmtFCFA(kpi.totalRevenue)}</div>
+              <div style={S.kpiMeta}>8% sur CA encaissé</div>
             </div>
             <div style={S.kpiCard}>
-              <div style={S.kpiLabel}>🏥 Net pharmacies</div>
+              <div style={S.kpiLabel}>🏥 Net pharmacies (encaissé)</div>
               <div style={S.kpiValue}>{fmtFCFA(kpi.netPharmacies)}</div>
-              <div style={S.kpiMeta}>92% du CA</div>
+              <div style={S.kpiMeta}>92% du CA livré</div>
             </div>
             <div style={S.kpiCard}>
               <div style={S.kpiLabel}>🛒 Panier moyen</div>
               <div style={S.kpiValue}>{fmtFCFA(kpi.avgBasket)}</div>
-              <div style={S.kpiMeta}>Par commande</div>
+              <div style={S.kpiMeta}>par commande livrée</div>
             </div>
             <div style={S.kpiCard}>
-              <div style={S.kpiLabel}>📈 Mois en cours vs précédent</div>
+              <div style={S.kpiLabel}>📈 Mois N vs N-1 (encaissé)</div>
               <div style={{ ...S.kpiValue, color: kpi.monthDelta == null ? '#9B9B9B' : kpi.monthDelta >= 0 ? '#1F8B4C' : '#D9342B' }}>
                 {kpi.monthDelta == null ? '—' : (kpi.monthDelta >= 0 ? '↑ +' : '↓ ') + kpi.monthDelta + '%'}
               </div>
