@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { signUp, signIn, signInWithGoogle } from '../lib/supabase';
+import { signUp, signIn, signInWithGoogle, supabase } from '../lib/supabase';
 import { notifyWelcome } from '../lib/notifications';
 import './Onboarding.css';
 
 // ─── URLs des photos onboarding (Supabase Storage) ───
-const PHOTO_WOMAN = 'https://qxhhnrnworwrnwmqekmb.supabase.co/storage/v1/object/public/banner-images/onboarding/onboarding-woman.jpg';
-const PHOTO_MAN   = 'https://qxhhnrnworwrnwmqekmb.supabase.co/storage/v1/object/public/banner-images/onboarding/onboarding-man.jpg';
+const PHOTO_WOMAN   = 'https://qxhhnrnworwrnwmqekmb.supabase.co/storage/v1/object/public/banner-images/onboarding/onboarding-woman.jpg';
+const PHOTO_MAN     = 'https://qxhhnrnworwrnwmqekmb.supabase.co/storage/v1/object/public/banner-images/onboarding/onboarding-man.jpg';
+const PHOTO_LIVREUR = 'https://qxhhnrnworwrnwmqekmb.supabase.co/storage/v1/object/public/banner-images/onboarding/onboarding-livreur.jpg';
 
 const SLIDES = [
   {
@@ -21,7 +22,7 @@ const SLIDES = [
     desc: 'Score sur 100, INCI décodé, avis filtrés par profil similaire. Tout pour choisir avec confiance.',
   },
   {
-    img: PHOTO_WOMAN,
+    img: PHOTO_LIVREUR,
     badge: 'Livré chez toi',
     title: 'À Dakar en 24h',
     desc: 'Wave, Orange Money, cash à la livraison. 24h Dakar, 48h Thiès & Mbour. Toujours simple.',
@@ -40,6 +41,12 @@ export default function Onboarding({ onComplete }) {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // ─── Modal mot de passe oublie ───
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotMsg, setForgotMsg] = useState({ text: '', kind: '' });
 
   const handleNext = () => {
     if (slide < SLIDES.length - 1) setSlide(slide + 1);
@@ -107,6 +114,35 @@ export default function Onboarding({ onComplete }) {
       console.error('Google auth error:', err);
       setError('Erreur connexion Google : ' + (err.message || 'Réessaie'));
       setGoogleLoading(false);
+    }
+  };
+
+  // ─── Forgot password handler ───
+  const handleForgotSubmit = async () => {
+    setForgotMsg({ text: '', kind: '' });
+    if (!forgotEmail.trim()) {
+      setForgotMsg({ text: 'Entre ton email', kind: 'err' });
+      return;
+    }
+    setForgotLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
+        redirectTo: window.location.origin + '/?reset=1',
+      });
+      if (error) throw error;
+      setForgotMsg({ 
+        text: '✓ Email envoyé ! Vérifie ta boîte (et les spams). Clique sur le lien pour créer un nouveau mot de passe.', 
+        kind: 'ok',
+      });
+      setTimeout(() => {
+        setForgotOpen(false);
+        setForgotEmail('');
+        setForgotMsg({ text: '', kind: '' });
+      }, 4000);
+    } catch (err) {
+      setForgotMsg({ text: err.message || 'Erreur. Réessaie.', kind: 'err' });
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -257,6 +293,29 @@ export default function Onboarding({ onComplete }) {
             </button>
           </div>
 
+          {/* ─── Lien "Mot de passe oublie ?" en mode LOGIN seulement ─── */}
+          {mode === 'login' && (
+            <div style={{ textAlign: 'right', marginTop: 4, marginBottom: 12 }}>
+              <button
+                type="button"
+                onClick={() => { setForgotEmail(email); setForgotOpen(true); }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#1F8B4C',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  padding: 4,
+                  fontFamily: 'inherit',
+                  textDecoration: 'underline',
+                }}
+              >
+                Mot de passe oublié ?
+              </button>
+            </div>
+          )}
+
           <button
             className="btn-primary"
             onClick={mode === 'signup' ? handleSignUp : handleLogin}
@@ -276,6 +335,99 @@ export default function Onboarding({ onComplete }) {
             </button>
           </p>
         </div>
+
+        {/* ─── Modal Forgot Password ─── */}
+        {forgotOpen && (
+          <div style={{
+            position: 'fixed', inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 1000, padding: 20,
+            animation: 'ob-fade 0.2s ease-out',
+          }}>
+            <div style={{
+              background: 'white',
+              borderRadius: 16,
+              padding: 24,
+              maxWidth: 380,
+              width: '100%',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                <span style={{ fontSize: 24 }}>🔑</span>
+                <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>Mot de passe oublié</h2>
+              </div>
+              <p style={{ fontSize: 13, color: '#6B6B6B', marginBottom: 16 }}>
+                Entre ton email. Tu recevras un lien pour créer un nouveau mot de passe.
+              </p>
+
+              <div className="phone-input-wrap" style={{ marginBottom: 12 }}>
+                <span className="phone-input-label">Email</span>
+                <input
+                  className="phone-input"
+                  type="email"
+                  value={forgotEmail}
+                  onChange={e => { setForgotEmail(e.target.value); setForgotMsg({ text: '', kind: '' }); }}
+                  placeholder="ton@email.com"
+                  autoFocus
+                  onKeyDown={e => e.key === 'Enter' && handleForgotSubmit()}
+                />
+              </div>
+
+              {forgotMsg.text && (
+                <div style={{
+                  padding: '10px 12px',
+                  borderRadius: 8,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  marginBottom: 12,
+                  background: forgotMsg.kind === 'err' ? '#FCE9E7' : '#E8F5EC',
+                  color: forgotMsg.kind === 'err' ? '#D9342B' : '#1F8B4C',
+                  lineHeight: 1.5,
+                }}>
+                  {forgotMsg.text}
+                </div>
+              )}
+
+              <button
+                onClick={handleForgotSubmit}
+                disabled={forgotLoading}
+                style={{
+                  width: '100%',
+                  padding: 14,
+                  background: forgotLoading ? '#DDD' : '#1F8B4C',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 12,
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: forgotLoading ? 'wait' : 'pointer',
+                  fontFamily: 'inherit',
+                  marginBottom: 8,
+                }}
+              >
+                {forgotLoading ? 'Envoi...' : 'Envoyer le lien →'}
+              </button>
+              <button
+                onClick={() => { setForgotOpen(false); setForgotEmail(''); setForgotMsg({ text: '', kind: '' }); }}
+                style={{
+                  width: '100%',
+                  padding: 10,
+                  background: 'transparent',
+                  color: '#6B6B6B',
+                  border: 'none',
+                  borderRadius: 10,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

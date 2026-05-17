@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNav, useUser } from '../App';
 import {
   getAllProducts,
@@ -19,27 +19,44 @@ const DEFAULT_CATEGORY_PRESET = {
   text_color: '#1A1A1A',
 };
 
+// ─── Cache module-level : conserve les data entre mounts ───
+// Ca evite le "ecran vide" quand on revient au Home depuis une autre page
+const homeDataCache = {
+  products: null,
+  pharmacies: null,
+  categories: null,
+  topBrands: null,
+  banners: null,
+  bestSellers: null,
+  loadedAt: 0,
+};
+
 export default function Home() {
-  const { navigate } = useNav();
+  const { navigate, route } = useNav();
   const { user } = useUser();
 
-  const [products, setProducts] = useState([]);
-  const [pharmacies, setPharmacies] = useState([]);
+  // ─── Hydrate depuis le cache module-level si dispo (instantane) ───
+  const [products, setProducts] = useState(homeDataCache.products || []);
+  const [pharmacies, setPharmacies] = useState(homeDataCache.pharmacies || []);
   const [nearbyPharmacies, setNearbyPharmacies] = useState([]);
   const [userPos, setUserPos] = useState(null);
   const [gpsStatus, setGpsStatus] = useState('unknown');
-  const [categories, setCategories] = useState([]);
-  const [topBrands, setTopBrands] = useState([]);
-  const [banners, setBanners] = useState([]);
+  const [categories, setCategories] = useState(homeDataCache.categories || []);
+  const [topBrands, setTopBrands] = useState(homeDataCache.topBrands || []);
+  const [banners, setBanners] = useState(homeDataCache.banners || []);
   const [activeBannerIdx, setActiveBannerIdx] = useState(0);
   const [favIds, setFavIds] = useState([]);
-  const [bestSellers, setBestSellers] = useState([]);
+  const [bestSellers, setBestSellers] = useState(homeDataCache.bestSellers || []);
   const [latestScan, setLatestScan] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // Loading = true SEULEMENT au tout premier load (pas de cache)
+  const [loading, setLoading] = useState(!homeDataCache.products);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [couponDismissed, setCouponDismissed] = useState(() => {
     try { return localStorage.getItem('yaram_coupon_dismissed') === '1'; } catch { return false; }
   });
+
+  // Ref pour eviter les re-fetch concurrents
+  const fetchingRef = useRef(false);
 
   // ─── GPS au demarrage ───
   useEffect(() => {
@@ -60,95 +77,149 @@ export default function Home() {
   }, []);
 
   // ─── Charger toutes les donnees ───
-  useEffect(() => {
-    (async () => {
-      try {
-        const [p, ph, br, bn, catRes] = await Promise.all([
-          getAllProducts(),
-          getAllPharmacies(),
-          getAllBrands(),
-          getAllBanners().catch(() => []),
-          supabase.from('categories').select('*').eq('active', true).order('display_order', { ascending: true }),
-        ]);
+  const loadData = async (force = false) => {
+    if (fetchingRef.current) return;
+    fetchingRef.current = true;
 
-        setProducts(p);
-        setPharmacies(ph);
-
-        // Categories
-        const catData = catRes?.data || [];
-        if (catData.length > 0) {
-          const counts = {};
-          p.forEach(prod => { if (prod.category) counts[prod.category] = (counts[prod.category] || 0) + 1; });
-          setCategories(catData.map(cat => ({ ...cat, product_count: counts[cat.slug] || 0 })));
-        } else {
-          const catMap = {};
-          p.forEach(prod => {
-            if (!prod.category) return;
-            if (!catMap[prod.category]) {
-              catMap[prod.category] = {
-                id: prod.category,
-                slug: prod.category,
-                name: prod.category.charAt(0).toUpperCase() + prod.category.slice(1),
-                bg_color: DEFAULT_CATEGORY_PRESET.bg_color,
-                text_color: DEFAULT_CATEGORY_PRESET.text_color,
-                icon_url: null,
-                product_count: 0,
-              };
-            }
-            catMap[prod.category].product_count++;
-          });
-          setCategories(Object.values(catMap).sort((a, b) => b.product_count - a.product_count).slice(0, 12));
-        }
-
-        // Top marques
-        const brandCount = {};
-        p.forEach(prod => { if (prod.brand) brandCount[prod.brand] = (brandCount[prod.brand] || 0) + 1; });
-        const sortedBrands = (br || [])
-          .map(b => ({ ...b, _count: brandCount[b.name] || 0 }))
-          .sort((a, b) => b._count - a._count)
-          .slice(0, 10);
-        setTopBrands(sortedBrands);
-
-        // Bannieres
-        const now = new Date();
-        const activeBn = (bn || []).filter(b =>
-          b.active !== false &&
-          (!b.end_date || new Date(b.end_date) > now)
-        );
-        setBanners(activeBn);
-
-        if (user?.id) {
-          const { data: favs } = await supabase
-            .from('favorites').select('product_id').eq('user_id', user.id);
-          setFavIds((favs || []).map(f => f.product_id));
-
-          const { data: scan } = await supabase
-            .from('skin_scans').select('*')
-            .eq('user_id', user.id).order('created_at', { ascending: false })
-            .limit(1).maybeSingle();
-          setLatestScan(scan);
-        }
-
-        try {
-          const { data: orders } = await supabase
-            .from('orders').select('items')
-            .in('status', ['delivered', 'shipped', 'ready', 'preparing']);
-          const productSales = {};
-          (orders || []).forEach(o => {
-            (o.items || []).forEach(item => {
-              if (item.productId) productSales[item.productId] = (productSales[item.productId] || 0) + (item.qty || 1);
-            });
-          });
-          const sortedIds = Object.entries(productSales).sort((a, b) => b[1] - a[1]).map(([id]) => id);
-          const best = sortedIds.map(id => p.find(pr => pr.id === id)).filter(Boolean);
-          setBestSellers(best);
-        } catch (e) { console.error('best sellers error:', e); }
-      } catch (err) {
-        console.error('Home load error:', err);
-      }
+    // Si on a deja du cache recent (< 5 min) et pas force, on skip
+    const cacheAge = Date.now() - homeDataCache.loadedAt;
+    if (!force && homeDataCache.products && cacheAge < 5 * 60 * 1000) {
+      fetchingRef.current = false;
       setLoading(false);
-    })();
+      return;
+    }
+
+    try {
+      const [p, ph, br, bn, catRes] = await Promise.all([
+        getAllProducts(),
+        getAllPharmacies(),
+        getAllBrands(),
+        getAllBanners().catch(() => []),
+        supabase.from('categories').select('*').eq('active', true).order('display_order', { ascending: true }),
+      ]);
+
+      setProducts(p);
+      setPharmacies(ph);
+      homeDataCache.products = p;
+      homeDataCache.pharmacies = ph;
+
+      // Categories
+      const catData = catRes?.data || [];
+      let newCategories;
+      if (catData.length > 0) {
+        const counts = {};
+        p.forEach(prod => { if (prod.category) counts[prod.category] = (counts[prod.category] || 0) + 1; });
+        newCategories = catData.map(cat => ({ ...cat, product_count: counts[cat.slug] || 0 }));
+      } else {
+        const catMap = {};
+        p.forEach(prod => {
+          if (!prod.category) return;
+          if (!catMap[prod.category]) {
+            catMap[prod.category] = {
+              id: prod.category,
+              slug: prod.category,
+              name: prod.category.charAt(0).toUpperCase() + prod.category.slice(1),
+              bg_color: DEFAULT_CATEGORY_PRESET.bg_color,
+              text_color: DEFAULT_CATEGORY_PRESET.text_color,
+              icon_url: null,
+              product_count: 0,
+            };
+          }
+          catMap[prod.category].product_count++;
+        });
+        newCategories = Object.values(catMap).sort((a, b) => b.product_count - a.product_count).slice(0, 12);
+      }
+      setCategories(newCategories);
+      homeDataCache.categories = newCategories;
+
+      // Top marques
+      const brandCount = {};
+      p.forEach(prod => { if (prod.brand) brandCount[prod.brand] = (brandCount[prod.brand] || 0) + 1; });
+      const sortedBrands = (br || [])
+        .map(b => ({ ...b, _count: brandCount[b.name] || 0 }))
+        .sort((a, b) => b._count - a._count)
+        .slice(0, 10);
+      setTopBrands(sortedBrands);
+      homeDataCache.topBrands = sortedBrands;
+
+      // Bannieres
+      const now = new Date();
+      const activeBn = (bn || []).filter(b =>
+        b.active !== false &&
+        (!b.end_date || new Date(b.end_date) > now)
+      );
+      setBanners(activeBn);
+      homeDataCache.banners = activeBn;
+
+      if (user?.id) {
+        const { data: favs } = await supabase
+          .from('favorites').select('product_id').eq('user_id', user.id);
+        setFavIds((favs || []).map(f => f.product_id));
+
+        const { data: scan } = await supabase
+          .from('skin_scans').select('*')
+          .eq('user_id', user.id).order('created_at', { ascending: false })
+          .limit(1).maybeSingle();
+        setLatestScan(scan);
+      }
+
+      try {
+        const { data: orders } = await supabase
+          .from('orders').select('items')
+          .in('status', ['delivered', 'shipped', 'ready', 'preparing']);
+        const productSales = {};
+        (orders || []).forEach(o => {
+          (o.items || []).forEach(item => {
+            if (item.productId) productSales[item.productId] = (productSales[item.productId] || 0) + (item.qty || 1);
+          });
+        });
+        const sortedIds = Object.entries(productSales).sort((a, b) => b[1] - a[1]).map(([id]) => id);
+        const best = sortedIds.map(id => p.find(pr => pr.id === id)).filter(Boolean);
+        setBestSellers(best);
+        homeDataCache.bestSellers = best;
+      } catch (e) { console.error('best sellers error:', e); }
+
+      homeDataCache.loadedAt = Date.now();
+    } catch (err) {
+      console.error('Home load error:', err);
+    } finally {
+      setLoading(false);
+      fetchingRef.current = false;
+    }
+  };
+
+  // ─── Load au mount + quand l'user change ───
+  useEffect(() => {
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
+
+  // ─── Re-fetch silencieux quand on revient sur le Home ───
+  // Pattern : si route.name === 'home' ET cache > 30s, refresh BG
+  useEffect(() => {
+    if (route?.name !== 'home') return;
+    const cacheAge = Date.now() - homeDataCache.loadedAt;
+    if (cacheAge > 30 * 1000) {
+      // Refresh en BG, ne montre pas le loading (on a deja la data du cache)
+      loadData(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route?.name]);
+
+  // ─── Refresh quand l'app redevient visible (retour iOS) ───
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        const cacheAge = Date.now() - homeDataCache.loadedAt;
+        if (cacheAge > 60 * 1000) {
+          loadData(true);
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ─── Trier pharmacies par distance ───
   useEffect(() => {
@@ -184,7 +255,6 @@ export default function Home() {
   const firstName = user?.first_name || 'toi';
   const avatarLetter = (firstName || 'Y').charAt(0).toUpperCase();
 
-  // ─── Recos pour toi (scoring depuis le scan IA) ───
   const diag = latestScan?.diagnosis || {};
   const skinTypeRaw = latestScan?.skin_type || diag.skin_type || user?.skin_type || null;
   const skinType = skinTypeRaw ? cap(skinTypeRaw) : null;
@@ -237,7 +307,6 @@ export default function Home() {
         return sB - sA;
       }).slice(0, 4);
 
-  // ─── Handler clic banniere ───
   const handleBannerClick = (banner) => {
     if (banner.id) {
       supabase.rpc('increment_banner_click', { banner_id: banner.id }).catch(() => {
@@ -251,11 +320,43 @@ export default function Home() {
     else if (banner.link_type === 'external' && banner.link_target) window.open(banner.link_target, '_blank');
   };
 
-  // ─── Handler scan code-barres → ouvre la fiche produit ───
   const handleProductFound = (productId) => {
     setScannerOpen(false);
     navigate({ name: 'product', params: { id: productId } });
   };
+
+  // ─── Skeleton loader (premier load seulement) ───
+  if (loading && products.length === 0) {
+    return (
+      <div className="yhome-screen page-anim">
+        <div className="yhome-scroll">
+          <header className="yhome-hero">
+            <div className="yhome-hero-top">
+              <div className="yhome-avatar-btn">
+                <div className="yhome-avatar-letter" style={{ background: 'rgba(255,255,255,0.2)' }} />
+                <div>
+                  <div style={{ width: 120, height: 12, background: 'rgba(255,255,255,0.25)', borderRadius: 6, marginBottom: 6 }} />
+                  <div style={{ width: 80, height: 10, background: 'rgba(255,255,255,0.2)', borderRadius: 6 }} />
+                </div>
+              </div>
+            </div>
+            <div className="yhome-search-row">
+              <div className="yhome-search-bar" style={{ background: 'rgba(255,255,255,0.9)', height: 44 }} />
+              <div className="yhome-scan-btn" />
+            </div>
+          </header>
+
+          <div style={{ padding: 16 }}>
+            <div style={{ background: '#EEE', height: 100, borderRadius: 14, marginBottom: 16 }} />
+            <div style={{ background: '#EEE', height: 70, borderRadius: 14, marginBottom: 16 }} />
+            <div style={{ background: '#EEE', height: 180, borderRadius: 14, marginBottom: 16 }} />
+            <div style={{ background: '#EEE', height: 240, borderRadius: 14 }} />
+          </div>
+        </div>
+        <TabBar active="home" />
+      </div>
+    );
+  }
 
   return (
     <div className="yhome-screen page-anim">
@@ -313,7 +414,6 @@ export default function Home() {
           </div>
         </header>
 
-        {/* ════════ COUPON PROMO COLLANT ════════ */}
         {!couponDismissed && (
           <div className="yhome-coupon">
             <div className="yhome-coupon-badge">
@@ -327,11 +427,8 @@ export default function Home() {
               className="yhome-coupon-code"
               onClick={() => {
                 try { navigator.clipboard?.writeText('BIENVENUE10'); } catch {}
-                // Stocker le code pour application auto au checkout
                 try { localStorage.setItem('yaram_pending_promo', 'BIENVENUE10'); } catch {}
-                // Petit feedback visuel via vibration
                 if (navigator.vibrate) navigator.vibrate(40);
-                // Redirige vers le panier
                 navigate('/cart');
               }}
             >
@@ -341,7 +438,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* ════════ CARTE BONS PLANS ════════ */}
         <button
           className="yhome-promo-link"
           onClick={() => navigate({ name: 'promos', params: {} })}
@@ -354,7 +450,6 @@ export default function Home() {
           <div className="yhome-promo-link-arrow">→</div>
         </button>
 
-        {/* ════════ MARQUES (cercles) ════════ */}
         {topBrands.length > 0 && (
           <section className="yhome-section">
             <div className="yhome-section-head">
@@ -384,7 +479,6 @@ export default function Home() {
           </section>
         )}
 
-        {/* ════════ BANNIÈRE 100% IMAGE ════════ */}
         {banners.length > 0 && (
           <section className="yhome-section">
             <div className="yhome-banner-wrap" onClick={() => handleBannerClick(banners[activeBannerIdx])}>
@@ -395,7 +489,6 @@ export default function Home() {
                   className="yhome-banner-img-full"
                 />
               ) : (
-                /* Fallback : si pas d'image, ancien rendu avec gradient + texte */
                 <div
                   className="yhome-banner-fallback"
                   style={{
@@ -431,7 +524,6 @@ export default function Home() {
           </section>
         )}
 
-        {/* ════════ CATÉGORIES ════════ */}
         {categories.length > 0 && (
           <section className="yhome-section">
             <div className="yhome-section-head">
@@ -467,7 +559,6 @@ export default function Home() {
           </section>
         )}
 
-        {/* ════════ PRÈS DE CHEZ TOI ════════ */}
         <section className="yhome-section">
           <div className="yhome-section-head">
             <div>
@@ -531,7 +622,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ════════ POUR TOI (2 par rangée) ════════ */}
         {topMatches.length > 0 && (
           <section className="yhome-section">
             <div className="yhome-section-head">
@@ -549,7 +639,6 @@ export default function Home() {
           </section>
         )}
 
-        {/* ════════ TENDANCES (2 par rangée) ════════ */}
         {trending.length > 0 && (
           <section className="yhome-section">
             <div className="yhome-section-head">
@@ -572,7 +661,6 @@ export default function Home() {
 
       <TabBar active="home" />
 
-      {/* Scanner code-barres modal */}
       {scannerOpen && (
         <BarcodeScannerClient
           onProductFound={handleProductFound}
