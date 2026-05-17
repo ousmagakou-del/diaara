@@ -3,10 +3,29 @@ import { signUp, signIn, signInWithGoogle } from '../lib/supabase';
 import { notifyWelcome } from '../lib/notifications';
 import './Onboarding.css';
 
+// ─── URLs des photos onboarding (Supabase Storage) ───
+const PHOTO_WOMAN = 'https://qxhhnrnworwrnwmqekmb.supabase.co/storage/v1/object/public/banner-images/onboarding/onboarding-woman.jpg';
+const PHOTO_MAN   = 'https://qxhhnrnworwrnwmqekmb.supabase.co/storage/v1/object/public/banner-images/onboarding/onboarding-man.jpg';
+
 const SLIDES = [
-  { icon: '✨', title: 'Beauté validée pour ta peau', desc: 'YARAM analyse chaque produit et te dit s\'il est fait pour toi. Plus de mauvaises surprises.' },
-  { icon: '📱', title: 'Scanne, score, achète', desc: 'Score sur 100, INCI décodé, avis filtrés par profil similaire. Livré chez toi.' },
-  { icon: '🇸🇳', title: 'Livré chez toi à Dakar', desc: 'Wave, Orange Money, cash à la livraison. 24h Dakar, 48h Thiès & Mbour.' },
+  {
+    img: PHOTO_WOMAN,
+    badge: 'Beauté validée',
+    title: 'Une peau qui te ressemble',
+    desc: 'YARAM analyse chaque produit pour ta peau africaine. Plus de mauvaises surprises, que des routines qui marchent.',
+  },
+  {
+    img: PHOTO_MAN,
+    badge: 'Pour elles & pour eux',
+    title: 'Scanne, score, achète',
+    desc: 'Score sur 100, INCI décodé, avis filtrés par profil similaire. Tout pour choisir avec confiance.',
+  },
+  {
+    img: PHOTO_WOMAN,
+    badge: 'Livré chez toi',
+    title: 'À Dakar en 24h',
+    desc: 'Wave, Orange Money, cash à la livraison. 24h Dakar, 48h Thiès & Mbour. Toujours simple.',
+  },
 ];
 
 export default function Onboarding({ onComplete }) {
@@ -42,9 +61,6 @@ export default function Onboarding({ onComplete }) {
       const { data, error } = await signUp(email, password, firstName);
       if (error) throw error;
       if (data.user) {
-        // ─── Envoi WhatsApp de bienvenue si le user a un phone ───
-        // Note : pour que ca marche, il faut que signUp() sauve le phone dans users_profile.
-        // Sinon ce sera envoye au prochain login via App.jsx.
         if (phone.trim()) {
           notifyWelcome({
             userId: data.user.id,
@@ -87,7 +103,6 @@ export default function Onboarding({ onComplete }) {
     try {
       const { error } = await signInWithGoogle();
       if (error) throw error;
-      // Pas besoin de redirect manuel, Supabase fait la redirection auto
     } catch (err) {
       console.error('Google auth error:', err);
       setError('Erreur connexion Google : ' + (err.message || 'Réessaie'));
@@ -95,18 +110,26 @@ export default function Onboarding({ onComplete }) {
     }
   };
 
+  // ═══════════════ SLIDE INTRO ═══════════════
   if (step === 'intro') {
     const sl = SLIDES[slide];
     return (
       <div className="ob-screen">
+        <div className="ob-hero-img" style={{ backgroundImage: `url(${sl.img})` }} key={slide} />
+        
         <div className="ob-skip-bar">
           <button className="ob-skip" onClick={() => setStep('auth')}>Passer</button>
         </div>
+
         <div className="ob-content">
-          <div className="ob-icon" key={slide}>{sl.icon}</div>
+          <div className="ob-mini-badge" key={`b${slide}`}>
+            <span className="ob-mini-badge-dot" />
+            <span>{sl.badge}</span>
+          </div>
           <h1 className="ob-title" key={`t${slide}`}>{sl.title}</h1>
           <p className="ob-desc" key={`d${slide}`}>{sl.desc}</p>
         </div>
+
         <div className="ob-bottom">
           <div className="ob-dots">
             {SLIDES.map((_, i) => <div key={i} className={`ob-dot ${i === slide ? 'active' : ''}`} />)}
@@ -119,11 +142,12 @@ export default function Onboarding({ onComplete }) {
     );
   }
 
+  // ═══════════════ AUTH ═══════════════
   if (step === 'auth') {
     return (
       <div className="ob-auth-screen page-anim">
         <div className="ob-auth-top">
-          <div className="ob-logo-circle">D</div>
+          <div className="ob-logo-circle">Y</div>
           <h2 className="ob-auth-title">
             {mode === 'signup' ? 'Bienvenue sur YARAM' : 'Re-bonjour'}
           </h2>
@@ -134,7 +158,6 @@ export default function Onboarding({ onComplete }) {
         <div className="ob-auth-bottom">
           {error && <div className="ob-error">⚠️ {error}</div>}
 
-          {/* GOOGLE EN PREMIER */}
           <button 
             onClick={handleGoogle} 
             disabled={googleLoading}
@@ -182,7 +205,7 @@ export default function Onboarding({ onComplete }) {
 
           {mode === 'signup' && (
             <div className="phone-input-wrap">
-              <span className="phone-input-label">📱 WhatsApp (optionnel — recevoir tes notifs)</span>
+              <span className="phone-input-label">📱 WhatsApp (recevoir tes notifs)</span>
               <input className="phone-input" type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+221 77 123 45 67" />
             </div>
           )}
@@ -192,7 +215,6 @@ export default function Onboarding({ onComplete }) {
             <input className="phone-input" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="ton@email.com" />
           </div>
           
-          {/* MOT DE PASSE AVEC TOGGLE ŒIL */}
           <div className="phone-input-wrap" style={{ position: 'relative' }}>
             <span className="phone-input-label">Mot de passe (6+ caractères)</span>
             <input 
@@ -244,11 +266,11 @@ export default function Onboarding({ onComplete }) {
             {loading ? 'En cours...' : (mode === 'signup' ? 'Créer mon compte →' : 'Se connecter →')}
           </button>
 
-          <p style={{ textAlign: 'center', marginTop: 18, fontSize: 12, color: 'var(--ink-soft)' }}>
+          <p style={{ textAlign: 'center', marginTop: 18, fontSize: 12, color: '#6B6B6B' }}>
             {mode === 'signup' ? 'Déjà inscrite ?' : 'Pas de compte ?'}{' '}
             <button
               onClick={() => { setMode(mode === 'signup' ? 'login' : 'signup'); setError(null); }}
-              style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'underline', padding: 0, background: 'transparent', border: 'none', cursor: 'pointer' }}
+              style={{ color: '#1F8B4C', fontWeight: 600, textDecoration: 'underline', padding: 0, background: 'transparent', border: 'none', cursor: 'pointer' }}
             >
               {mode === 'signup' ? 'Se connecter' : 'Créer un compte'}
             </button>
@@ -258,6 +280,7 @@ export default function Onboarding({ onComplete }) {
     );
   }
 
+  // ═══════════════ DONE ═══════════════
   if (step === 'done') {
     return (
       <div className="ob-done-screen page-anim">
@@ -273,7 +296,7 @@ export default function Onboarding({ onComplete }) {
         </p>
         <button
           onClick={() => { setMode('login'); setStep('auth'); setPassword(''); }}
-          style={{ marginTop: 32, padding: '16px 32px', background: 'white', color: '#166635', borderRadius: 14, fontSize: 15, fontWeight: 700, width: '100%', maxWidth: 280 }}
+          style={{ marginTop: 32, padding: '16px 32px', background: 'white', color: '#166635', borderRadius: 14, fontSize: 15, fontWeight: 700, width: '100%', maxWidth: 280, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
         >
           Se connecter maintenant →
         </button>

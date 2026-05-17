@@ -1,6 +1,7 @@
 import { useState, createContext, useContext, useEffect } from 'react';
 import { supabase, getCurrentUser } from './lib/supabase';
 import { checkAndNotifyCartAbandon, notifyWelcome } from './lib/notifications';
+import SplashScreen from './components/SplashScreen';
 import Onboarding from './pages/Onboarding';
 import SkinQuiz from './pages/SkinQuiz';
 import Home from './pages/Home';
@@ -40,7 +41,9 @@ export function useNav() { return useContext(NavContext); }
 const UserContext = createContext(null);
 export function useUser() { return useContext(UserContext); }
 
-// ─── Helpers route ↔ URL ───
+// Splash minimum display time (pour que ce soit visible meme si le auth est ultra rapide)
+const SPLASH_MIN_DURATION = 1200;
+
 function routeToPath(route) {
   if (!route || !route.name || route.name === 'home') return '/';
   const params = route.params || {};
@@ -106,6 +109,13 @@ function ClientApp() {
   const [route, setRoute] = useState(initialRoute);
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [splashDone, setSplashDone] = useState(false);
+
+  // Splash minimum duration
+  useEffect(() => {
+    const t = setTimeout(() => setSplashDone(true), SPLASH_MIN_DURATION);
+    return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -168,8 +178,6 @@ function ClientApp() {
   useEffect(() => {
     if (!authChecked || !user?.id || !user?.phone) return;
 
-    // Welcome fallback : si le user vient de Google OAuth ou si le welcome n'a jamais ete envoye
-    // notifyWelcome a un cooldown 1 an + RPC has_received_whatsapp → ne renvoie jamais 2 fois
     const welcomeTimer = setTimeout(() => {
       notifyWelcome({
         userId: user.id,
@@ -178,7 +186,6 @@ function ClientApp() {
       }).catch(() => {});
     }, 2000);
 
-    // Cart abandoned : check si panier > 24h
     const cartTimer = setTimeout(() => {
       checkAndNotifyCartAbandon({
         userId: user.id,
@@ -235,33 +242,9 @@ function ClientApp() {
     }
   };
 
-  // ─── SPLASH SCREEN YARAM ───
-  if (!authChecked) {
-    return (
-      <div style={{
-        background: 'linear-gradient(135deg, #1F8B4C 0%, #166635 100%)',
-        width: '100vw', height: '100vh',
-        display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center',
-      }}>
-        <div style={{
-          color: 'white',
-          fontSize: 56,
-          fontWeight: 900,
-          letterSpacing: '0.15em',
-          textShadow: '0 4px 24px rgba(0,0,0,0.3)',
-          fontFamily: 'system-ui, -apple-system, sans-serif',
-        }}>YARAM</div>
-        <div style={{ 
-          color: 'white', 
-          marginTop: 16, 
-          fontSize: 11, 
-          opacity: 0.7, 
-          letterSpacing: '0.3em', 
-          fontWeight: 500,
-        }}>BEAUTÉ SÉNÉGAL</div>
-      </div>
-    );
+  // ─── SPLASH (auth pas check OU splash min duration pas atteint) ───
+  if (!authChecked || !splashDone) {
+    return <SplashScreen />;
   }
 
   if (!user) {
