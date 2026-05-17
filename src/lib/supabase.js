@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { cachedFetch, invalidateCache } from './dataCache';
 
 const SUPABASE_URL = 'https://qxhhnrnworwrnwmqekmb.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF4aGhucm53b3J3cm53bXFla21iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MTExMzYsImV4cCI6MjA5NDA4NzEzNn0.l_7-Eg06UFnXvSw1BQiuNw0yU94jillHNycx-jvP1Aw';
@@ -12,6 +13,9 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     storageKey: 'yaram-auth',
   },
 });
+
+// Re-export utility for admin sections
+export { invalidateCache };
 
 // ═══════════════════════════════════════════════
 // AUTH
@@ -60,17 +64,21 @@ export async function updateProfile(updates) {
 }
 
 // ═══════════════════════════════════════════════
-// PRODUITS & MARQUES
+// PRODUITS & MARQUES — AVEC CACHE
 // ═══════════════════════════════════════════════
 
 export async function getAllProducts() {
-  const { data } = await supabase.from('products').select('*').eq('active', true);
-  return data || [];
+  return cachedFetch('all_products', async () => {
+    const { data } = await supabase.from('products').select('*').eq('active', true);
+    return data || [];
+  }, { ttl: 5 * 60 * 1000 }); // 5 min
 }
 
 export async function getAllBrands() {
-  const { data } = await supabase.from('brands').select('*');
-  return data || [];
+  return cachedFetch('all_brands', async () => {
+    const { data } = await supabase.from('brands').select('*');
+    return data || [];
+  }, { ttl: 10 * 60 * 1000 });
 }
 
 export async function getProductAvailability(productId) {
@@ -84,12 +92,14 @@ export async function getProductAvailability(productId) {
 }
 
 // ═══════════════════════════════════════════════
-// PHARMACIES
+// PHARMACIES — AVEC CACHE
 // ═══════════════════════════════════════════════
 
 export async function getAllPharmacies() {
-  const { data } = await supabase.from('pharmacies').select('*').eq('active', true);
-  return data || [];
+  return cachedFetch('all_pharmacies', async () => {
+    const { data } = await supabase.from('pharmacies').select('*').eq('active', true);
+    return data || [];
+  }, { ttl: 10 * 60 * 1000 });
 }
 
 // ═══════════════════════════════════════════════
@@ -100,7 +110,7 @@ function generateOrderId() {
   return 'DIA-' + Date.now().toString(36).toUpperCase();
 }
 
-export async function createOrder({ items, address, paymentMethod, subtotal, shipping, total, promoCode }) {
+export async function createOrder({ items, address, paymentMethod, subtotal, shipping, total, promoCode, promoDiscount }) {
   const { data: { session } } = await supabase.auth.getSession();
   const order = {
     id: generateOrderId(),
@@ -110,6 +120,7 @@ export async function createOrder({ items, address, paymentMethod, subtotal, shi
     payment_method: paymentMethod,
     subtotal, shipping, total,
     promo_code: promoCode,
+    promo_discount: promoDiscount || 0,
     confirmation_token: 'CFM-' + Math.random().toString(36).substring(2, 10).toUpperCase(),
   };
   const { data, error } = await supabase.from('orders').insert(order).select().single();
@@ -459,7 +470,7 @@ export async function compressImage(file, maxDim = 800, quality = 0.85) {
 }
 
 // ═══════════════════════════════════════════════
-// BANNIÈRES
+// BANNIÈRES — AVEC CACHE
 // ═══════════════════════════════════════════════
 
 export async function getActiveBanners() {
@@ -471,20 +482,25 @@ export async function getActiveBanners() {
 }
 
 export async function getAllBanners() {
-  const { data } = await supabase.from('banners').select('*').order('display_order', { ascending: true });
-  return data || [];
+  return cachedFetch('all_banners', async () => {
+    const { data } = await supabase.from('banners').select('*').order('display_order', { ascending: true });
+    return data || [];
+  }, { ttl: 2 * 60 * 1000 });
 }
 
 export async function createBanner(banner) {
   const { data, error } = await supabase.from('banners').insert(banner).select().single();
+  invalidateCache('all_banners');
   return error ? null : data;
 }
 
 export async function updateBanner(id, updates) {
+  invalidateCache('all_banners');
   return supabase.from('banners').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id);
 }
 
 export async function deleteBanner(id) {
+  invalidateCache('all_banners');
   return supabase.from('banners').delete().eq('id', id);
 }
 
@@ -723,8 +739,11 @@ export async function getReferralStats(userId) {
     bonusEarned: (referrals?.length || 0) * 500,
   };
 }
-// VAPID public key (générée pour YARAM)
-// ⚠️ Tu dois générer ta propre clé en prod via web-push library
+
+// ═══════════════════════════════════════════════
+// PUSH NOTIFICATIONS (existant, conserve)
+// ═══════════════════════════════════════════════
+
 const VAPID_PUBLIC_KEY = 'BNxe7DjGiK8jp_LdEKgZbI3oFG9p_X0wmKHHfsXOlVHwBE3FB_pIRgFb_VxkN1xnzPxRzz0w8hYqYnFw7yWEpQk';
 
 function urlBase64ToUint8Array(base64String) {
@@ -732,290 +751,178 @@ function urlBase64ToUint8Array(base64String) {
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
   const rawData = window.atob(base64);
   const outputArray = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
+  for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
   return outputArray;
 }
 
-// Vérifier si les notifs sont supportées
 export function isPushSupported() {
   return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 }
 
-// Statut de la permission
 export function getNotificationPermission() {
   if (!('Notification' in window)) return 'unsupported';
-  return Notification.permission; // 'granted', 'denied', 'default'
+  return Notification.permission;
 }
 
-// Demander permission + s'abonner
 export async function subscribeToPush(userId) {
-  if (!isPushSupported()) {
-    return { success: false, error: 'Pas supporté sur ce navigateur' };
-  }
-  
+  if (!isPushSupported()) return { success: false, error: 'Pas supporté' };
   try {
-    // Demande permission
     const permission = await Notification.requestPermission();
-    if (permission !== 'granted') {
-      return { success: false, error: 'Permission refusée' };
-    }
-    
+    if (permission !== 'granted') return { success: false, error: 'Permission refusée' };
     const registration = await navigator.serviceWorker.ready;
-    
-    // S'abonne au push
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
     });
-    
-    // Sauvegarde dans Supabase
     const sub = subscription.toJSON();
-    await supabase
-      .from('push_subscriptions')
-      .upsert({
-        user_id: userId,
-        endpoint: sub.endpoint,
-        p256dh: sub.keys.p256dh,
-        auth: sub.keys.auth,
-        user_agent: navigator.userAgent,
-        enabled: true,
-      }, { onConflict: 'endpoint' });
-    
+    await supabase.from('push_subscriptions').upsert({
+      user_id: userId, endpoint: sub.endpoint,
+      p256dh: sub.keys.p256dh, auth: sub.keys.auth,
+      user_agent: navigator.userAgent, enabled: true,
+    }, { onConflict: 'endpoint' });
     return { success: true };
   } catch (e) {
-    console.error('subscribeToPush error:', e);
     return { success: false, error: e.message };
   }
 }
 
-// Se désabonner
 export async function unsubscribeFromPush(userId) {
   try {
     const registration = await navigator.serviceWorker.ready;
     const subscription = await registration.pushManager.getSubscription();
     if (subscription) {
       await subscription.unsubscribe();
-      await supabase
-        .from('push_subscriptions')
-        .delete()
-        .eq('endpoint', subscription.endpoint);
+      await supabase.from('push_subscriptions').delete().eq('endpoint', subscription.endpoint);
     }
     return true;
-  } catch (e) {
-    console.error('unsubscribeFromPush error:', e);
-    return false;
-  }
+  } catch { return false; }
 }
 
-// Tester une notification (locale, pas via serveur)
 export async function showLocalNotification(title, body, options = {}) {
   if (!isPushSupported() || Notification.permission !== 'granted') return;
-  
   const registration = await navigator.serviceWorker.ready;
   await registration.showNotification(title, {
-    body,
-    icon: '/icon-192.png',
-    badge: '/icon-96.png',
-    vibrate: [200, 100, 200],
-    ...options,
+    body, icon: '/icon-192.png', badge: '/icon-96.png',
+    vibrate: [200, 100, 200], ...options,
   });
 }
 
-// ─── HISTORIQUE NOTIFICATIONS ───
 export async function getNotifications(userId, limit = 50) {
-  const { data } = await supabase
-    .from('notifications')
-    .select('*')
-    .eq('user_id', userId)
-    .order('sent_at', { ascending: false })
-    .limit(limit);
+  const { data } = await supabase.from('notifications').select('*')
+    .eq('user_id', userId).order('sent_at', { ascending: false }).limit(limit);
   return data || [];
 }
 
 export async function getUnreadCount(userId) {
-  const { count } = await supabase
-    .from('notifications')
+  const { count } = await supabase.from('notifications')
     .select('id', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .eq('read', false);
+    .eq('user_id', userId).eq('read', false);
   return count || 0;
 }
 
 export async function markNotificationRead(notifId) {
-  return supabase
-    .from('notifications')
-    .update({ read: true })
-    .eq('id', notifId);
+  return supabase.from('notifications').update({ read: true }).eq('id', notifId);
 }
 
 export async function markAllNotificationsRead(userId) {
-  return supabase
-    .from('notifications')
-    .update({ read: true })
-    .eq('user_id', userId)
-    .eq('read', false);
+  return supabase.from('notifications').update({ read: true })
+    .eq('user_id', userId).eq('read', false);
 }
 
-// Créer une notification (côté serveur ou via app)
 export async function createNotification({ userId, title, body, url, type = 'info' }) {
-  return supabase
-    .from('notifications')
-    .insert({
-      user_id: userId,
-      title,
-      body,
-      url,
-      type,
-    });
+  return supabase.from('notifications').insert({
+    user_id: userId, title, body, url, type,
+  });
 }
 
-// ─── RAPPELS ROUTINE PEAU ───
-// Programme local des rappels (pas besoin de serveur push)
 export function scheduleSkinRoutineReminders(morningTime, eveningTime) {
-  // Stocker en localStorage
   localStorage.setItem('yaram-routine-morning', morningTime || '');
   localStorage.setItem('yaram-routine-evening', eveningTime || '');
-  
-  // Démarrer le check
   startRoutineReminderCheck();
 }
 
 let reminderInterval = null;
 function startRoutineReminderCheck() {
   if (reminderInterval) clearInterval(reminderInterval);
-  
-  // Check chaque minute
   reminderInterval = setInterval(() => {
     if (Notification.permission !== 'granted') return;
-    
     const now = new Date();
     const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    
     const morning = localStorage.getItem('yaram-routine-morning');
     const evening = localStorage.getItem('yaram-routine-evening');
     const lastNotif = localStorage.getItem('yaram-last-reminder');
     const today = now.toDateString();
-    
     if (morning && currentTime === morning && lastNotif !== `${today}-morning`) {
-      showLocalNotification('☀️ Routine matin', 'C\'est l\'heure de ta routine matinale ! Nettoie, hydrate, protège.');
+      showLocalNotification('☀️ Routine matin', 'C\'est l\'heure de ta routine matinale !');
       localStorage.setItem('yaram-last-reminder', `${today}-morning`);
     }
-    
     if (evening && currentTime === evening && lastNotif !== `${today}-evening`) {
-      showLocalNotification('🌙 Routine soir', 'C\'est l\'heure de ta routine du soir ! Démaquille, nettoie, traite.');
+      showLocalNotification('🌙 Routine soir', 'C\'est l\'heure de ta routine du soir !');
       localStorage.setItem('yaram-last-reminder', `${today}-evening`);
     }
-  }, 60000); // chaque minute
+  }, 60000);
 }
 
+// ═══════════════════════════════════════════════
+// REVIEWS
+// ═══════════════════════════════════════════════
+
 export async function getProductReviews(productId) {
-  const { data } = await supabase
-    .from('reviews')
-    .select('*')
-    .eq('product_id', productId)
-    .eq('status', 'approved')
+  const { data } = await supabase.from('reviews').select('*')
+    .eq('product_id', productId).eq('status', 'approved')
     .order('created_at', { ascending: false });
   return data || [];
 }
 
 export async function createReview({ productId, userId, userName, rating, title, comment, photoUrls = [] }) {
-  // Vérifie si l'user a déjà laissé un avis
-  const { data: existing } = await supabase
-    .from('reviews')
-    .select('id')
-    .eq('product_id', productId)
-    .eq('user_id', userId)
-    .maybeSingle();
-  
+  const { data: existing } = await supabase.from('reviews').select('id')
+    .eq('product_id', productId).eq('user_id', userId).maybeSingle();
   if (existing) {
-    // Update
-    const { error } = await supabase
-      .from('reviews')
-      .update({ rating, title, comment, photo_urls: photoUrls })
-      .eq('id', existing.id);
+    const { error } = await supabase.from('reviews').update({ rating, title, comment, photo_urls: photoUrls }).eq('id', existing.id);
     return !error;
   }
-  
-  // Insert
-  const { error } = await supabase
-    .from('reviews')
-    .insert({
-      product_id: productId,
-      user_id: userId,
-      user_name: userName,
-      rating,
-      title,
-      comment,
-      photo_urls: photoUrls,
-      verified_purchase: true, // À améliorer avec vérif commande livrée
-    });
+  const { error } = await supabase.from('reviews').insert({
+    product_id: productId, user_id: userId, user_name: userName,
+    rating, title, comment, photo_urls: photoUrls, verified_purchase: true,
+  });
   return !error;
 }
 
 export async function uploadReviewPhoto(file) {
   const fileName = `review_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.jpg`;
-  
-  // Compression
   const compressed = await compressImage(file, 800, 0.85);
-  
-  const { error } = await supabase.storage
-    .from('review-photos')
-    .upload(fileName, compressed, {
-      contentType: 'image/jpeg',
-      upsert: true,
-    });
-  if (error) {
-    console.error('uploadReviewPhoto error:', error);
-    return null;
-  }
+  const { error } = await supabase.storage.from('review-photos').upload(fileName, compressed, {
+    contentType: 'image/jpeg', upsert: true,
+  });
+  if (error) { console.error('uploadReviewPhoto error:', error); return null; }
   const { data } = supabase.storage.from('review-photos').getPublicUrl(fileName);
   return data.publicUrl;
 }
 
 export async function markReviewHelpful(reviewId) {
-  const { data } = await supabase
-    .from('reviews')
-    .select('helpful_count')
-    .eq('id', reviewId)
-    .single();
+  const { data } = await supabase.from('reviews').select('helpful_count').eq('id', reviewId).single();
   if (data) {
-    await supabase
-      .from('reviews')
-      .update({ helpful_count: (data.helpful_count || 0) + 1 })
-      .eq('id', reviewId);
+    await supabase.from('reviews').update({ helpful_count: (data.helpful_count || 0) + 1 }).eq('id', reviewId);
   }
 }
 
 export async function reportReview(reviewId) {
-  await supabase
-    .from('reviews')
-    .update({ reported: true })
-    .eq('id', reviewId);
+  await supabase.from('reviews').update({ reported: true }).eq('id', reviewId);
 }
 
 export async function getReviewStats(productId) {
   const reviews = await getProductReviews(productId);
-  if (reviews.length === 0) {
-    return { avg: 0, total: 0, distribution: [0, 0, 0, 0, 0] };
-  }
+  if (reviews.length === 0) return { avg: 0, total: 0, distribution: [0, 0, 0, 0, 0] };
   const sum = reviews.reduce((s, r) => s + r.rating, 0);
   const avg = sum / reviews.length;
   const distribution = [0, 0, 0, 0, 0];
-  reviews.forEach(r => {
-    if (r.rating >= 1 && r.rating <= 5) distribution[r.rating - 1]++;
-  });
+  reviews.forEach(r => { if (r.rating >= 1 && r.rating <= 5) distribution[r.rating - 1]++; });
   return { avg, total: reviews.length, distribution };
 }
 
-// Pharmacie répond à un avis
 export async function respondToReview(reviewId, response) {
-  return supabase
-    .from('reviews')
-    .update({
-      pharmacy_response: response,
-      pharmacy_responded_at: new Date().toISOString(),
-    })
-    .eq('id', reviewId);
+  return supabase.from('reviews').update({
+    pharmacy_response: response,
+    pharmacy_responded_at: new Date().toISOString(),
+  }).eq('id', reviewId);
 }

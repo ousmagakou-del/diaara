@@ -1,42 +1,39 @@
 // ════════════════════════════════════════════════
-// YARAM Service Worker v4 — PROPRE & FIABLE
+// YARAM Service Worker v5 — PERFORMANT
 // ════════════════════════════════════════════════
-// - Network-first pour l'app (toujours fraîche)
-// - Cache-first pour assets statiques (rapide)
-// - Ignore chrome-extension et autres schemes
-// - Compatible PWA installable
+// - Network-first pour HTML/JS (fraîcheur)
+// - Cache-first pour images/fonts (rapidité)
+// - Stale-while-revalidate pour Supabase GET (snappy)
+// - Ignore mutations Supabase (POST/PUT/DELETE)
 // ════════════════════════════════════════════════
 
-const SW_VERSION = 'v4-2026-05-13';
-const CACHE_STATIC = 'yaram-static-v4';
+const SW_VERSION = 'v5-2026-05-17';
+const CACHE_STATIC = 'yaram-static-v5';
+const CACHE_SUPABASE = 'yaram-supabase-v5';
 
-// Fichiers essentiels à cacher au install
 const ESSENTIAL = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/offline.html',
 ];
 
-// ─── INSTALL : nettoie les anciens caches ───
+// ─── INSTALL : pre-cache + clean old caches ───
 self.addEventListener('install', (event) => {
-  console.log('[SW v4] Install');
+  console.log('[SW v5] Install');
   event.waitUntil(
     Promise.all([
-      // Supprime TOUS les anciens caches (v1, v2, v3, etc.)
-      caches.keys().then(names => 
+      caches.keys().then(names =>
         Promise.all(
           names
-            .filter(name => name !== CACHE_STATIC)
+            .filter(name => name !== CACHE_STATIC && name !== CACHE_SUPABASE)
             .map(name => {
-              console.log('[SW v4] Delete old cache:', name);
+              console.log('[SW v5] Delete old cache:', name);
               return caches.delete(name);
             })
         )
       ),
-      // Cache les essentiels
-      caches.open(CACHE_STATIC).then(cache => 
-        cache.addAll(ESSENTIAL).catch(e => console.warn('[SW v4] Cache install warn:', e))
+      caches.open(CACHE_STATIC).then(cache =>
+        cache.addAll(ESSENTIAL).catch(e => console.warn('[SW v5] Cache install warn:', e))
       ),
     ]).then(() => self.skipWaiting())
   );
@@ -44,37 +41,49 @@ self.addEventListener('install', (event) => {
 
 // ─── ACTIVATE : prend le contrôle ───
 self.addEventListener('activate', (event) => {
-  console.log('[SW v4] Activate');
+  console.log('[SW v5] Activate');
   event.waitUntil(self.clients.claim());
 });
 
-// ─── FETCH : gère les requêtes ───
+// ─── FETCH ───
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // ❌ IGNORER : schemes non-HTTP (chrome-extension, etc.)
   if (!url.protocol.startsWith('http')) return;
-
-  // ❌ IGNORER : POST/PUT/DELETE
   if (request.method !== 'GET') return;
 
-  // ❌ IGNORER : Supabase API (toujours frais)
-  if (url.hostname.includes('supabase.co')) return;
-
-  // ❌ IGNORER : Google Analytics, Tag Manager
-  if (url.hostname.includes('google-analytics') || 
+  if (url.hostname.includes('google-analytics') ||
       url.hostname.includes('googletagmanager')) return;
 
-  // ✅ CACHE-FIRST pour images & assets statiques
-  if (request.destination === 'image' || 
-      request.destination === 'font' ||
-      url.pathname.match(/\.(png|jpg|jpeg|gif|webp|svg|woff2?|ttf|ico|mp3|mp4)$/i)) {
-    event.respondWith(cacheFirst(request));
+  // ─── 1. Supabase GET → stale-while-revalidate (LITE) ───
+  if (url.hostname.includes('supabase.co')) {
+    // Auth endpoint → JAMAIS cacher (sensible)
+    if (url.pathname.includes('/auth/')) return;
+    // Realtime → laisser passer
+    if (url.pathname.includes('/realtime')) return;
+    // Storage (images) → cache-first long
+    if (url.pathname.includes('/storage/')) {
+      event.respondWith(cacheFirstLong(request));
+      return;
+    }
+    // REST API (products, brands, categories, etc.) → stale-while-revalidate
+    if (url.pathname.includes('/rest/v1/')) {
+      event.respondWith(staleWhileRevalidate(request));
+      return;
+    }
     return;
   }
 
-  // ✅ NETWORK-FIRST pour l'app (HTML/JS/CSS)
+  // ─── 2. Images & fonts → cache-first ───
+  if (request.destination === 'image' ||
+      request.destination === 'font' ||
+      url.pathname.match(/\.(png|jpg|jpeg|gif|webp|svg|woff2?|ttf|ico|mp3|mp4)$/i)) {
+    event.respondWith(cacheFirstLong(request));
+    return;
+  }
+
+  // ─── 3. Reste (HTML/JS/CSS) → network-first ───
   event.respondWith(networkFirst(request));
 });
 
@@ -83,59 +92,78 @@ self.addEventListener('fetch', (event) => {
 async function networkFirst(request) {
   try {
     const response = await fetch(request);
-    
-    // Cache la réponse si succès
     if (response.ok && request.url.startsWith('http')) {
       try {
         const cache = await caches.open(CACHE_STATIC);
         await cache.put(request, response.clone());
-      } catch (e) {
-        // Ignore les erreurs de cache (extensions, etc.)
-      }
+      } catch {}
     }
     return response;
   } catch (error) {
-    // Si réseau down → essai cache
     const cached = await caches.match(request);
     if (cached) return cached;
-    
-    // Si page HTML → offline fallback
     if (request.destination === 'document') {
-      return caches.match('/offline.html');
+      return caches.match('/index.html');
     }
-    
     return new Response('Network error', { status: 503 });
   }
 }
 
-async function cacheFirst(request) {
+async function cacheFirstLong(request) {
   const cached = await caches.match(request);
   if (cached) {
-    // Pour les images : refresh en background
-    fetch(request).then(response => {
-      if (response.ok && request.url.startsWith('http')) {
-        caches.open(CACHE_STATIC).then(cache => {
-          cache.put(request, response).catch(() => {});
-        });
+    // Refresh BG si > 7 jours
+    const dateHeader = cached.headers.get('date');
+    if (dateHeader) {
+      const age = Date.now() - new Date(dateHeader).getTime();
+      if (age > 7 * 24 * 60 * 60 * 1000) {
+        fetch(request).then(r => {
+          if (r.ok) caches.open(CACHE_STATIC).then(c => c.put(request, r).catch(() => {}));
+        }).catch(() => {});
       }
-    }).catch(() => {});
+    }
     return cached;
   }
-
   try {
     const response = await fetch(request);
     if (response.ok && request.url.startsWith('http')) {
       try {
         const cache = await caches.open(CACHE_STATIC);
         await cache.put(request, response.clone());
-      } catch (e) {
-        // Ignore
-      }
+      } catch {}
     }
     return response;
-  } catch (error) {
+  } catch {
     return new Response('', { status: 404 });
   }
+}
+
+// Stale-while-revalidate : pour Supabase REST
+// - Renvoie la cache tout de suite (RAPIDE)
+// - Fetch en BG pour la prochaine fois
+async function staleWhileRevalidate(request) {
+  const cache = await caches.open(CACHE_SUPABASE);
+  const cached = await cache.match(request);
+
+  // Fetch en BG, met à jour le cache
+  const fetchPromise = fetch(request).then(response => {
+    if (response.ok) {
+      try {
+        cache.put(request, response.clone()).catch(() => {});
+      } catch {}
+    }
+    return response;
+  }).catch(() => null);
+
+  // Si on a un cache : renvoie tout de suite (snappy)
+  if (cached) {
+    return cached;
+  }
+
+  // Sinon : attend le fetch (premier load)
+  const response = await fetchPromise;
+  if (response) return response;
+  return new Response('Network error', { status: 503 });
 }
 
 // ─── PUSH NOTIFICATIONS ───
@@ -151,7 +179,7 @@ self.addEventListener('push', (event) => {
       data: { url: data.url || '/' },
     }));
   } catch (e) {
-    console.error('[SW v4] Push error:', e);
+    console.error('[SW v5] Push error:', e);
   }
 });
 
@@ -173,4 +201,4 @@ self.addEventListener('message', (event) => {
   if (event.data === 'skipWaiting') self.skipWaiting();
 });
 
-console.log('[SW YARAM v4] Loaded');
+console.log('[SW YARAM v5] Loaded — perf-mode ON');
