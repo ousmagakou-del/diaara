@@ -21,7 +21,7 @@ export default function PharmaciesSection() {
   const handleSave = async (p) => {
     if (p.id) {
       await supabase.from('pharmacies').update({
-        name: p.name, owner: p.owner, address: p.address,
+        name: p.name, owner_name: p.owner_name, address: p.address,
         city: p.city, neighborhood: p.neighborhood, phone: p.phone,
         whatsapp: p.whatsapp, lat: p.lat ? parseFloat(p.lat) : null,
         lng: p.lng ? parseFloat(p.lng) : null,
@@ -48,7 +48,7 @@ export default function PharmaciesSection() {
 
   const handleNew = () => {
     setEditing({
-      name: '', owner: '', address: '', city: 'Dakar', neighborhood: '',
+      name: '', owner_name: '', address: '', city: 'Dakar', neighborhood: '',
       phone: '', whatsapp: '', lat: '', lng: '',
       hours: '8h-20h', pin: '0000', commission: 8, active: true,
       logo: '', cover: '', tagline: '',
@@ -93,7 +93,7 @@ export default function PharmaciesSection() {
                 </div>
                 {p.tagline && <p className="adm-ph-tagline">{p.tagline}</p>}
                 <div className="adm-ph-info">
-                  <div>👤 {p.owner || '—'}</div>
+                  <div>👤 {p.owner_name || '—'}</div>
                   <div>📞 {p.phone || '—'}</div>
                   <div>💬 {p.whatsapp || '—'}</div>
                   <div>🕐 {p.hours || '—'}</div>
@@ -142,7 +142,7 @@ function PharmacyEditor({ pharmacy, onSave, onCancel }) {
         <div className="adm-form-section">
           <h3>Informations générales</h3>
           <label>Nom *<input value={p.name} onChange={e => upd('name', e.target.value)} placeholder="Pharmacie de l'Avenue" /></label>
-          <label>Propriétaire<input value={p.owner} onChange={e => upd('owner', e.target.value)} placeholder="Dr. Aïssatou Diop" /></label>
+          <label>Propriétaire<input value={p.owner_name || ''} onChange={e => upd('owner_name', e.target.value)} placeholder="Dr. Aïssatou Diop" /></label>
           <label>Tagline<input value={p.tagline} onChange={e => upd('tagline', e.target.value)} placeholder="Votre santé, notre priorité" /></label>
           <label className="adm-form-checkbox">
             <input type="checkbox" checked={p.active} onChange={e => upd('active', e.target.checked)} />
