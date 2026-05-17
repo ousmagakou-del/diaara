@@ -1,12 +1,24 @@
 // src/lib/useOrderAlerts.js
 // Écoute en temps réel les nouvelles commandes pour une pharmacie,
-// joue un son ding répétitif et affiche une notif navigateur tant qu'il y a
-// des commandes en attente non traitées et que la pharmacie n'a pas mute.
+// joue un son ding (decroissant, pas en continu) et affiche une notif
+// navigateur tant qu'il y a des commandes en attente non traitees.
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { supabase } from './supabase';
+import { supabase, getPharmacyOrders } from './supabase';
 
 const PENDING_STATUSES = ['paid', 'awaiting_confirm', 'awaiting_cash', 'pending'];
+
+// Une commande "appartient" a une pharmacie si elle lui est assignee
+// OU si l'un de ses items provient de cette pharmacie (commande split).
+// Cette logique reproduit celle de getPharmacyOrders dans supabase.js.
+function orderBelongsTo(order, pharmacyId) {
+  if (!order || !pharmacyId) return false;
+  if (order.assigned_pharmacy_id === pharmacyId) return true;
+  if (Array.isArray(order.items)) {
+    return order.items.some(it => it.pharmacyId === pharmacyId);
+  }
+  return false;
+}
 
 // URL d'un son court "ding" en base64 (Web Audio) — on génère un beep doux 880Hz
 // Pour éviter une dépendance externe, on synthétise via AudioContext
@@ -58,8 +70,10 @@ export function useOrderAlerts(pharmacyId) {
     typeof Notification !== 'undefined' ? Notification.permission : 'default'
   );
 
-  const intervalRef = useRef(null);
   const knownIdsRef = useRef(new Set());
+  // Ref sur muted pour eviter de resubscribe a chaque toggle
+  const mutedRef = useRef(muted);
+  useEffect(() => { mutedRef.current = muted; }, [muted]);
 
   // Persistance mute
   const setMuted = useCallback((v) => {
@@ -78,17 +92,17 @@ export function useOrderAlerts(pharmacyId) {
   }, []);
 
   // Charge le nombre initial de commandes en attente
+  // -> on utilise getPharmacyOrders qui filtre correctement (assigned + items)
   const refresh = useCallback(async () => {
     if (!pharmacyId) return;
-    const { data, error } = await supabase
-      .from('orders')
-      .select('id, status, created_at')
-      .eq('pharmacy_id', pharmacyId)
-      .in('status', PENDING_STATUSES);
-    if (error) return;
-    const ids = (data || []).map(o => o.id);
-    knownIdsRef.current = new Set(ids);
-    setPendingCount(ids.length);
+    try {
+      const orders = await getPharmacyOrders(pharmacyId, PENDING_STATUSES);
+      const ids = (orders || []).map(o => o.id);
+      knownIdsRef.current = new Set(ids);
+      setPendingCount(ids.length);
+    } catch (e) {
+      // silencieux : la pharmacie n'est juste pas mise a jour cette fois
+    }
   }, [pharmacyId]);
 
   // Subscribe Realtime + polling backup
@@ -97,32 +111,34 @@ export function useOrderAlerts(pharmacyId) {
 
     refresh();
 
-    // Realtime sur les INSERT et UPDATE
+    // Realtime : on s'abonne SANS filtre serveur (la colonne `pharmacy_id`
+    // n'existe pas, et items[].pharmacyId est dans un JSON non-filtrable).
+    // Le tri se fait cote client via orderBelongsTo.
     const channel = supabase
       .channel(`pharmacy-orders-${pharmacyId}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'orders', filter: `pharmacy_id=eq.${pharmacyId}` },
+        { event: 'INSERT', schema: 'public', table: 'orders' },
         (payload) => {
           const row = payload.new;
-          if (PENDING_STATUSES.includes(row.status)) {
-            if (!knownIdsRef.current.has(row.id)) {
-              knownIdsRef.current.add(row.id);
-              setPendingCount(c => c + 1);
-              // Première sonnerie immédiate
-              if (!muted) {
-                playDing();
-                showSystemNotification(knownIdsRef.current.size);
-              }
-            }
+          if (!orderBelongsTo(row, pharmacyId)) return;
+          if (!PENDING_STATUSES.includes(row.status)) return;
+          if (knownIdsRef.current.has(row.id)) return;
+          knownIdsRef.current.add(row.id);
+          setPendingCount(c => c + 1);
+          // Première sonnerie immediate (lit le mute le plus recent via ref)
+          if (!mutedRef.current) {
+            playDing();
+            showSystemNotification(knownIdsRef.current.size);
           }
         }
       )
       .on(
         'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'orders', filter: `pharmacy_id=eq.${pharmacyId}` },
+        { event: 'UPDATE', schema: 'public', table: 'orders' },
         (payload) => {
           const row = payload.new;
+          if (!orderBelongsTo(row, pharmacyId)) return;
           const was = knownIdsRef.current.has(row.id);
           const isPending = PENDING_STATUSES.includes(row.status);
           if (was && !isPending) {
@@ -131,7 +147,7 @@ export function useOrderAlerts(pharmacyId) {
           } else if (!was && isPending) {
             knownIdsRef.current.add(row.id);
             setPendingCount(c => c + 1);
-            if (!muted) {
+            if (!mutedRef.current) {
               playDing();
               showSystemNotification(knownIdsRef.current.size);
             }
@@ -147,22 +163,37 @@ export function useOrderAlerts(pharmacyId) {
       supabase.removeChannel(channel);
       clearInterval(poll);
     };
-  }, [pharmacyId, refresh, muted]);
+    // muted n'est PAS dans les deps : on lit via mutedRef pour eviter de
+    // resubscribe au Realtime a chaque toggle mute/unmute.
+  }, [pharmacyId, refresh]);
 
-  // Ding répétitif tant qu'il y a des commandes en attente et non mute
+  // Ding decroissant tant qu'il y a des commandes en attente et non mute.
+  // Schedule : 8s, 30s, 60s, 120s, 240s puis stop (max 5 rappels apres le 1er).
+  // Si une nouvelle commande arrive, le schedule reset automatiquement (effet relance).
   useEffect(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    if (pendingCount > 0 && !muted) {
-      // Ding toutes les 8 secondes
-      intervalRef.current = setInterval(() => {
-        playDing();
-      }, 8000);
-    }
+    if (pendingCount <= 0 || muted) return;
+
+    const SCHEDULE = [8000, 30000, 60000, 120000, 240000]; // ms
+    let reminderCount = 0;
+    let timeoutId = null;
+
+    const scheduleNext = () => {
+      if (reminderCount >= SCHEDULE.length) return; // stop apres 5 rappels
+      const delay = SCHEDULE[reminderCount];
+      timeoutId = setTimeout(() => {
+        // Re-check au moment du tick au cas ou le state a change
+        if (!mutedRef.current) {
+          playDing();
+        }
+        reminderCount++;
+        scheduleNext();
+      }, delay);
+    };
+
+    scheduleNext();
+
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [pendingCount, muted]);
 

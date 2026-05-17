@@ -33,13 +33,13 @@ export default function CommissionsSection() {
 
   const rows = Object.entries(byPharmacy).map(([id, d]) => {
     const ph = pharmacies.find(p => p.id === id);
-    const rate = (ph?.commission || 17.5) / 100;
+    const rate = (ph?.commission || 8) / 100;
     return {
       id, name: d.name, total: d.total, articles: d.articles,
       orders: d.orders.size,
       commission: Math.round(d.total * rate),
       payout: Math.round(d.total * (1 - rate)),
-      rate: ph?.commission || 17.5,
+      rate: ph?.commission || 8,
     };
   }).sort((a, b) => b.total - a.total);
 

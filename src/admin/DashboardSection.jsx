@@ -28,7 +28,7 @@ export default function DashboardSection({ setSection }) {
       setStats({
         orders: orders.length,
         revenue,
-        commission: Math.round(revenue * 0.175),
+        commission: Math.round(revenue * 0.08),
         users: usersRes.count || 0,
         pharmacies: pharmaciesRes.count || 0,
         products: productsRes.count || 0,

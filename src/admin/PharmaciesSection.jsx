@@ -25,7 +25,7 @@ export default function PharmaciesSection() {
         city: p.city, neighborhood: p.neighborhood, phone: p.phone,
         whatsapp: p.whatsapp, lat: p.lat ? parseFloat(p.lat) : null,
         lng: p.lng ? parseFloat(p.lng) : null,
-        hours: p.hours, pin: p.pin, commission: parseFloat(p.commission || 17.5),
+        hours: p.hours, pin: p.pin, commission: parseFloat(p.commission || 8),
         active: p.active, logo: p.logo, cover: p.cover, tagline: p.tagline,
       }).eq('id', p.id);
     } else {
@@ -33,7 +33,7 @@ export default function PharmaciesSection() {
         ...p,
         lat: p.lat ? parseFloat(p.lat) : null,
         lng: p.lng ? parseFloat(p.lng) : null,
-        commission: parseFloat(p.commission || 17.5),
+        commission: parseFloat(p.commission || 8),
       });
     }
     setEditing(null);
@@ -50,7 +50,7 @@ export default function PharmaciesSection() {
     setEditing({
       name: '', owner: '', address: '', city: 'Dakar', neighborhood: '',
       phone: '', whatsapp: '', lat: '', lng: '',
-      hours: '8h-20h', pin: '0000', commission: 17.5, active: true,
+      hours: '8h-20h', pin: '0000', commission: 8, active: true,
       logo: '', cover: '', tagline: '',
     });
   };
@@ -97,7 +97,7 @@ export default function PharmaciesSection() {
                   <div>📞 {p.phone || '—'}</div>
                   <div>💬 {p.whatsapp || '—'}</div>
                   <div>🕐 {p.hours || '—'}</div>
-                  <div>💰 Commission {p.commission || 17.5}%</div>
+                  <div>💰 Commission {p.commission || 8}%</div>
                   <div>🔐 PIN {p.pin || '—'}</div>
                 </div>
                 <div className="adm-ph-actions">

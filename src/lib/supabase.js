@@ -595,10 +595,12 @@ export async function getPharmacyCommissions(pharmacyId) {
   const pharmacyOrders = (orders || []).filter(o =>
     Array.isArray(o.items) && o.items.some(it => it.pharmacyId === pharmacyId)
   );
+  // ⚠️ Taux unique 8% : doit rester aligne avec PharmaOrders.jsx et le label de PharmaCommission.jsx
+  const COMMISSION_RATE = 0.08;
   const enrichedOrders = pharmacyOrders.map(o => {
     const items = o.items.filter(it => it.pharmacyId === pharmacyId);
     const revenue = items.reduce((sum, it) => sum + (it.price || 0) * (it.qty || 1), 0);
-    const commission = Math.round(revenue * 0.08);
+    const commission = Math.round(revenue * COMMISSION_RATE);
     const net = revenue - commission;
     return { ...o, pharmacy_revenue: revenue, pharmacy_commission: commission, pharmacy_net: net };
   });

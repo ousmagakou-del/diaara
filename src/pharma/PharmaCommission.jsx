@@ -56,7 +56,7 @@ export default function PharmaCommission({ pharmacyId, pharmacyName }) {
           <div className="phar-kpi-value" style={{ color: '#F4B53A' }}>
             -{data.monthCommission.toLocaleString('fr-FR')}
           </div>
-          <div className="phar-kpi-meta">17.5%</div>
+          <div className="phar-kpi-meta">8%</div>
         </div>
         <div className="phar-kpi">
           <div className="phar-kpi-label">✅ Net à recevoir</div>
@@ -157,7 +157,7 @@ export default function PharmaCommission({ pharmacyId, pharmacyName }) {
         <h3>💡 Comment fonctionne le paiement</h3>
         <ul style={{ fontSize: 13, lineHeight: 1.8, paddingLeft: 20 }}>
           <li>Paiement <strong>mensuel</strong>, le dernier jour de chaque mois</li>
-          <li>Commission YARAM : <strong>17.5%</strong> sur chaque commande livrée</li>
+          <li>Commission YARAM : <strong>8%</strong> sur chaque commande livrée</li>
           <li>Méthodes de paiement : Wave, Orange Money, virement bancaire</li>
           <li>Contact pour question : <a href="https://wa.me/221777608983">+221 77 760 89 83</a></li>
         </ul>

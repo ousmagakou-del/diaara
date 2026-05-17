@@ -11,6 +11,15 @@ import './Pharma.css';
 
 const ADMIN_WHATSAPP = '221777608983';
 
+// ⚠️ Securite : on ne persiste JAMAIS le PIN ni pin_set_at dans le localStorage
+// (n'importe quelle extension ou script tiers peut lire localStorage).
+function sanitizeForStorage(pharmacy) {
+  if (!pharmacy) return pharmacy;
+  // eslint-disable-next-line no-unused-vars
+  const { pin, pin_set_at, ...safe } = pharmacy;
+  return safe;
+}
+
 const NAV = [
   { id: 'dashboard',  icon: '🏠', label: "Vue d'ensemble" },
   { id: 'orders',     icon: '📦', label: 'Commandes', badge: true },
@@ -82,7 +91,7 @@ export default function Pharma() {
     const result = await pharmacyLogin(selectedPharmacy.id, pinInput);
     if (result.success) {
       setSelectedPharmacy(result.pharmacy);
-      localStorage.setItem('yaram-pharma-session', JSON.stringify(result.pharmacy));
+      localStorage.setItem('yaram-pharma-session', JSON.stringify(sanitizeForStorage(result.pharmacy)));
       setPhase('dashboard');
       setPinError('');
     } else {
@@ -114,7 +123,7 @@ export default function Pharma() {
 
     const updated = { ...selectedPharmacy, pin: pinInput };
     setSelectedPharmacy(updated);
-    localStorage.setItem('yaram-pharma-session', JSON.stringify(updated));
+    localStorage.setItem('yaram-pharma-session', JSON.stringify(sanitizeForStorage(updated)));
     setPhase('dashboard');
     setPinError('');
     setPinInput('');
@@ -138,7 +147,7 @@ export default function Pharma() {
   // Callback pour PharmaSettings : remet à jour la pharmacie courante
   const handlePharmacyUpdate = (updated) => {
     setSelectedPharmacy(updated);
-    localStorage.setItem('yaram-pharma-session', JSON.stringify(updated));
+    localStorage.setItem('yaram-pharma-session', JSON.stringify(sanitizeForStorage(updated)));
   };
 
   // === RENDER LOGIN PHASES ===

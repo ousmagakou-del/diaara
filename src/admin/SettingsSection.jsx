@@ -3,7 +3,7 @@ import { useState } from 'react';
 export default function SettingsSection() {
   const [settings, setSettings] = useState({
     siteName: 'YARAM',
-    commission: 17.5,
+    commission: 8,
     deliveryFee: 1500,
     freeDeliveryFrom: 50000,
     whatsapp: '+221 78 521 12 34',
@@ -54,7 +54,7 @@ export default function SettingsSection() {
             <strong>YARAM v0.1</strong><br />
             Marketplace beauté Sénégal 🇸🇳<br />
             10 pharmacies partenaires<br />
-            Commission marketplace : 17.5%<br />
+            Commission marketplace : 8%<br />
             Livraison YARAM mutualisée
           </p>
         </div>

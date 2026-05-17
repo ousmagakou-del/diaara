@@ -183,8 +183,8 @@ export default function PharmaOrders({ pharmacyId, pharmacyName, onPendingChange
                     <strong>{myRevenue.toLocaleString('fr-FR')} FCFA</strong>
                   </div>
                   <div className="phar-order-row phar-order-commission">
-                    <span>Net après commission 17.5%</span>
-                    <strong>{(myRevenue - Math.round(myRevenue * 0.175)).toLocaleString('fr-FR')} FCFA</strong>
+                    <span>Net après commission 8%</span>
+                    <strong>{(myRevenue - Math.round(myRevenue * 0.08)).toLocaleString('fr-FR')} FCFA</strong>
                   </div>
                 </div>
 
