@@ -4,6 +4,10 @@ import './lib/theme'
 import './index.css'
 import App from './App.jsx'
 import { loadSiteSettings, subscribeSettings } from './lib/supabase'
+import { initSentry } from './lib/sentry'
+
+// Init Sentry (no-op si VITE_SENTRY_DSN n'est pas defini)
+initSentry();
 
 // ─── Splash inline : retire le bloc HTML pre-React avec un crossfade ───
 // Le boot inline est defini dans index.html (#yaram-boot). On le marque .gone
