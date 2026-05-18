@@ -55,10 +55,10 @@ export default function MarketingSection() {
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(personalizedMsg)}`, '_blank');
   };
 
-  const sendAll = () => {
+  const sendAll = async () => {
     const targets = filtered.filter(u => selectedUsers.includes(u.id));
     if (targets.length === 0) return toast.info('Sélectionne au moins une cliente');
-    if (!await confirmDialog(`Envoyer ${targets.length} messages WhatsApp ?`)) return;
+    if (!(await confirmDialog(`Envoyer ${targets.length} messages WhatsApp ?`))) return;
     targets.forEach((u, i) => setTimeout(() => sendWhatsApp(u), i * 500));
   };
 
