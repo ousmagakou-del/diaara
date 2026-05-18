@@ -64,7 +64,7 @@ export default function Referral() {
     );
   }
 
-  const shareUrl = `https://diaara-brg.pages.dev/?ref=${code}`;
+  const shareUrl = `https://yaram.app/?ref=${code}`;
   const shareText = `Salut ! 💚 Je t'invite sur YARAM, la marketplace beauté pour la peau africaine. Utilise mon code ${code} et reçois 500 points (= 2500 FCFA de réduction) à ton inscription ! ${shareUrl}`;
 
   const handleShare = async () => {

@@ -9,7 +9,7 @@
 
 import { supabase, sendWhatsApp } from './supabase';
 
-const APP_URL = 'https://diaara-brg.pages.dev';
+const APP_URL = 'https://yaram.app';
 
 // ───────────────────── TEMPLATES NOTIFICATIONS PROACTIVES ─────────────────────
 
