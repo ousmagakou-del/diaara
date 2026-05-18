@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { adminListStaff, adminUpsertStaff, adminDeleteStaff } from '../lib/adminApi';
 import { confirmDialog } from '../lib/toast';
 
 const ROLES = [
@@ -19,7 +20,7 @@ export default function StaffSection() {
 
   const refresh = async () => {
     const [sRes, pRes] = await Promise.all([
-      supabase.from('staff').select('*').order('created_at', { ascending: false }),
+      adminListStaff(),
       supabase.from('pharmacies').select('id, name'),
     ]);
     setStaff(sRes.data || []);
@@ -32,18 +33,14 @@ export default function StaffSection() {
       name: s.name, email: s.email || null, phone: s.phone,
       role: s.role, pharmacy_id: s.pharmacy_id || null, active: s.active,
     };
-    if (s.id) {
-      await supabase.from('staff').update(payload).eq('id', s.id);
-    } else {
-      await supabase.from('staff').insert(payload);
-    }
+    await adminUpsertStaff(s.id || null, payload);
     setEditing(null);
     refresh();
   };
 
   const handleDelete = async (id) => {
     if (!await confirmDialog('Retirer ce membre ?')) return;
-    await supabase.from('staff').delete().eq('id', id);
+    await adminDeleteStaff(id);
     refresh();
   };
 

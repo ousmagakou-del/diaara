@@ -181,3 +181,35 @@ export async function adminListUsersFull() {
   const { data, error } = await supabase.rpc('admin_list_users_full', { p_token: token });
   return { data: data || [], error };
 }
+
+// ─────────────────────────────────────────────────────────────────────
+// STAFF
+// ─────────────────────────────────────────────────────────────────────
+
+export async function adminListStaff() {
+  const { token, err } = requireToken();
+  if (err) return { data: null, error: err };
+  const { data, error } = await supabase.rpc('admin_list_staff', { p_token: token });
+  return { data: data || [], error };
+}
+
+export async function adminUpsertStaff(id, payload) {
+  const { token, err } = requireToken();
+  if (err) return { error: err };
+  const { error } = await supabase.rpc('admin_upsert_staff', {
+    p_token:   token,
+    p_id:      id || null,
+    p_payload: payload,
+  });
+  return { error };
+}
+
+export async function adminDeleteStaff(id) {
+  const { token, err } = requireToken();
+  if (err) return { error: err };
+  const { error } = await supabase.rpc('admin_delete_staff', {
+    p_token: token,
+    p_id:    id,
+  });
+  return { error };
+}

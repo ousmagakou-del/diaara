@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { adminListAuditLog, adminListOrders } from '../lib/adminApi';
 
 export default function HistorySection() {
   const [logs, setLogs] = useState([]);
@@ -9,8 +9,8 @@ export default function HistorySection() {
   useEffect(() => {
     (async () => {
       const [lRes, oRes] = await Promise.all([
-        supabase.from('audit_log').select('*').order('created_at', { ascending: false }).limit(100),
-        supabase.from('orders').select('id, status, total, created_at').order('created_at', { ascending: false }).limit(50),
+        adminListAuditLog({ limit: 100 }),
+        adminListOrders({ limit: 50, offset: 0 }),
       ]);
       setLogs(lRes.data || []);
       setOrders(oRes.data || []);
