@@ -215,7 +215,7 @@ export default function ScanResult({ scanId }) {
                   className="sr-product"
                   onClick={() => navigate({ name: 'product', params: { id: p.id } })}
                 >
-                  <img src={p.image_url} alt={p.name} onError={(e) => e.target.style.display = 'none'} />
+                  <img src={p.img || p.image_url} alt={p.name} onError={(e) => e.target.style.display = 'none'} />
                   <strong>{p.name}</strong>
                   <span>{(p.price || 0).toLocaleString('fr-FR')} FCFA</span>
                 </div>
@@ -223,8 +223,8 @@ export default function ScanResult({ scanId }) {
             </div>
             <button
               className="sr-btn-see-all"
-              onClick={() => navigate({ name: 'search', params: { category: 'compatible' } })}
-            >Voir tous les produits compatibles →</button>
+              onClick={() => navigate('search')}
+            >Voir tous les produits →</button>
           </div>
         )}
 
@@ -236,7 +236,7 @@ export default function ScanResult({ scanId }) {
             <div className="sr-products-grid">
               {avoid.map(p => (
                 <div key={p.id} className="sr-product sr-product-bad">
-                  <img src={p.image_url} alt={p.name} onError={(e) => e.target.style.display = 'none'} />
+                  <img src={p.img || p.image_url} alt={p.name} onError={(e) => e.target.style.display = 'none'} />
                   <strong>{p.name}</strong>
                   <span style={{ color: '#D9342B' }}>Non recommandé</span>
                 </div>

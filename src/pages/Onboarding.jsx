@@ -53,6 +53,19 @@ export default function Onboarding({ onComplete }) {
     else setStep('auth');
   };
 
+  // Mapper les codes d'erreur Supabase Auth en messages user-friendly FR
+  const friendlyAuthError = (err) => {
+    const m = (err?.message || '').toLowerCase();
+    if (m.includes('user already registered')) return 'Cet email a déjà un compte. Connecte-toi.';
+    if (m.includes('invalid login credentials')) return 'Email ou mot de passe incorrect.';
+    if (m.includes('email rate limit') || m.includes('over_email_send_rate_limit')) return 'Trop de tentatives. Réessaie dans quelques minutes.';
+    if (m.includes('email not confirmed')) return 'Vérifie ton email pour confirmer ton compte avant de te connecter.';
+    if (m.includes('invalid email') || m.includes('email_address_invalid')) return 'Email invalide.';
+    if (m.includes('password should be at least')) return 'Mot de passe trop court (6+ caractères).';
+    if (m.includes('network') || m.includes('fetch')) return 'Pas de connexion. Vérifie ton réseau.';
+    return err?.message || 'Erreur inattendue. Réessaie.';
+  };
+
   const handleSignUp = async () => {
     setError(null);
     if (!firstName.trim() || !email.trim() || !password.trim()) {
@@ -68,6 +81,22 @@ export default function Onboarding({ onComplete }) {
       const { data, error } = await signUp(email, password, firstName);
       if (error) throw error;
       if (data.user) {
+        // ─── IMPORTANT : sauvegarder phone + first_name dans users_profile ───
+        // Avant : ces 2 valeurs etaient saisies par la cliente mais JAMAIS persistees.
+        // Resultat : aucune notif WhatsApp ne marchait (welcome, panier abandonne,
+        // livreur, etc.) car users_profile.phone restait null. Bug fatal.
+        // upsert pour creer la row si le trigger DB ne l'a pas faite, ou la mettre a jour si oui.
+        try {
+          await supabase.from('users_profile').upsert({
+            id: data.user.id,
+            email: email.trim(),
+            first_name: firstName.trim(),
+            phone: phone.trim() || null,
+          }, { onConflict: 'id' });
+        } catch (e) {
+          console.warn('[signup] users_profile upsert failed:', e.message);
+        }
+
         if (phone.trim()) {
           notifyWelcome({
             userId: data.user.id,
@@ -78,7 +107,7 @@ export default function Onboarding({ onComplete }) {
         setStep('done');
       }
     } catch (err) {
-      setError(err.message);
+      setError(friendlyAuthError(err));
     } finally {
       setLoading(false);
     }
@@ -98,7 +127,7 @@ export default function Onboarding({ onComplete }) {
         if (onComplete) await onComplete();
       }
     } catch (err) {
-      setError(err.message);
+      setError(friendlyAuthError(err));
     } finally {
       setLoading(false);
     }

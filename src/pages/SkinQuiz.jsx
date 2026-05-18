@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { updateProfile } from '../lib/supabase';
 import { haptic } from '../lib/haptic';
+import { toast } from '../lib/toast';
 import './SkinQuiz.css';
 
 const STEPS = [
@@ -94,9 +95,11 @@ export default function SkinQuiz({ onComplete }) {
     if (step < STEPS.length - 1) {
       setStep(step + 1);
       haptic('medium');
-    } else {
-      setSaving(true);
-      haptic('success');
+      return;
+    }
+    setSaving(true);
+    haptic('success');
+    try {
       await updateProfile({
         skin_type: answers.skin_type,
         skin_phototype: answers.skin_phototype,
@@ -105,11 +108,32 @@ export default function SkinQuiz({ onComplete }) {
         budget: answers.budget,
       });
       if (onComplete) await onComplete();
+    } catch (e) {
+      // Si la sauvegarde DB rate, on debloque le bouton + on previent
+      toast.error('Échec sauvegarde : ' + (e?.message || 'Réessaie'));
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleSkip = () => {
-    if (onComplete) onComplete();
+  // Skip = sauvegarde des valeurs minimales pour ne pas re-trigger le quiz
+  // (sinon App.jsx voit user.skin_type === null et re-route ici en boucle).
+  const handleSkip = async () => {
+    setSaving(true);
+    try {
+      await updateProfile({
+        skin_type: 'normale',          // defaut neutre
+        skin_phototype: 'V',           // phototype median pour Senegal
+        skin_concerns: [],
+        skin_sensitivity: 'aucune',
+        budget: 'medium',
+      });
+      if (onComplete) await onComplete();
+    } catch (e) {
+      toast.error('Erreur : ' + (e?.message || 'Réessaie'));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const progress = ((step + 1) / STEPS.length) * 100;

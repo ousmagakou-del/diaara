@@ -26,11 +26,15 @@ export default function Scan() {
   const canvasRef = useRef(null);
   const photosRef = useRef({ front: null, left: null, right: null }); // ⚡ ref pour éviter closure stale
   const runningRef = useRef(false); // ⚡ évite double lancement
+  // ⚡ Cleanup : on garde refs sur les timers/intervals/aborts pour pouvoir
+  // tout couper si l'utilisatrice quitte la page pendant le scan.
+  const intervalRef = useRef(null);
+  const timeoutRef = useRef(null);
+  const cancelledRef = useRef(false);
   
   // Démarrer la caméra
   const startCamera = async () => {
     try {
-      console.log('[Scan] Requesting camera...');
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: 'user',
@@ -39,8 +43,8 @@ export default function Scan() {
         },
         audio: false,
       });
-      console.log('[Scan] Camera granted');
       streamRef.current = stream;
+      cancelledRef.current = false;
       setPhase('camera');
       // setPhase change DOM → on attend que video soit dans le DOM avant d'attacher le stream
     } catch (e) {
@@ -53,30 +57,24 @@ export default function Scan() {
       setPhase('error');
     }
   };
-  
+
   // Attacher le stream à <video> dès que dispo
   useEffect(() => {
     if (phase === 'camera' && videoRef.current && streamRef.current && !videoRef.current.srcObject) {
-      console.log('[Scan] Attaching stream to video');
       videoRef.current.srcObject = streamRef.current;
       videoRef.current.onloadedmetadata = () => {
-        console.log('[Scan] Video loaded, playing...');
         videoRef.current.play()
-          .then(() => {
-            console.log('[Scan] Video playing!');
-            setVideoReady(true);
-          })
+          .then(() => setVideoReady(true))
           .catch(e => console.error('[Scan] Play error:', e));
       };
     }
   }, [phase]);
-  
+
   // Auto-démarrer le scanning quand vidéo prête (2 sec après)
   useEffect(() => {
     if (videoReady && phase === 'camera' && !runningRef.current) {
-      console.log('[Scan] Video ready, starting scan in 2s...');
       runningRef.current = true;
-      setTimeout(() => startScanning(), 2000);
+      timeoutRef.current = setTimeout(() => startScanning(), 2000);
     }
   }, [videoReady, phase]);
   
@@ -91,7 +89,13 @@ export default function Scan() {
   };
   
   useEffect(() => {
-    return () => stopCamera();
+    return () => {
+      // Cleanup complet au demontage : camera + interval + timeout + flag cancel.
+      cancelledRef.current = true;
+      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
+      if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
+      stopCamera();
+    };
   }, []);
   
   // Capturer une frame
@@ -126,13 +130,11 @@ export default function Scan() {
     // Pas de flip — Gemini doit voir le visage normal
     ctx.drawImage(video, 0, 0, w, h);
     const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
-    console.log('[Scan] Captured frame, size:', Math.round(dataUrl.length / 1024), 'KB');
     return dataUrl;
   };
-  
+
   // Lancer la séquence
   const startScanning = () => {
-    console.log('[Scan] Start scanning');
     setPhase('scanning');
     setStepIndex(0);
     runStep(0);
@@ -140,38 +142,45 @@ export default function Scan() {
   
   // Compte à rebours puis capture
   const runStep = (idx) => {
-    console.log('[Scan] runStep', idx, STEPS[idx].id);
+    if (cancelledRef.current) return;
     setStepIndex(idx);
     let count = 3;
     setCountdown(count);
-    
-    const interval = setInterval(() => {
+
+    // Stocke l'interval pour cleanup au demontage
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = setInterval(() => {
+      if (cancelledRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+        return;
+      }
       count--;
       if (count > 0) {
         setCountdown(count);
       } else {
-        clearInterval(interval);
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
         setCountdown(null);
-        
+
         // ⚡ Capture
         const dataUrl = captureFrame();
         if (!dataUrl) {
-          console.error('[Scan] Capture failed, retry in 1s');
-          setTimeout(() => runStep(idx), 1000);
+          // Retry une seule fois apres 1s, puis abandon si toujours pas OK
+          timeoutRef.current = setTimeout(() => runStep(idx), 1000);
           return;
         }
-        
+
         const stepId = STEPS[idx].id;
         // Stocker dans ref + state
         photosRef.current = { ...photosRef.current, [stepId]: dataUrl };
         setPhotos({ ...photosRef.current });
-        
+
         // Suite
         if (idx < STEPS.length - 1) {
-          setTimeout(() => runStep(idx + 1), 800);
+          timeoutRef.current = setTimeout(() => runStep(idx + 1), 800);
         } else {
-          console.log('[Scan] All photos captured', Object.keys(photosRef.current));
-          setTimeout(() => {
+          timeoutRef.current = setTimeout(() => {
             stopCamera();
             analyzeAll();
           }, 600);
@@ -180,30 +189,34 @@ export default function Scan() {
     }, 1000);
   };
   
-  // Analyse Gemini
+  // Analyse Gemini (avec timeout pour eviter de rester bloque sur "analyse en cours")
   const analyzeAll = async () => {
-    console.log('[Scan] analyzeAll, photos:', {
-      front: !!photosRef.current.front,
-      left: !!photosRef.current.left,
-      right: !!photosRef.current.right,
-    });
     setPhase('analyzing');
     setError('');
-    
+
+    // Timeout 60s : si Gemini ne repond pas, on bascule sur l'ecran erreur
+    // au lieu de laisser l'utilisatrice attendre indefiniment.
+    const timeoutPromise = new Promise((_, reject) => {
+      timeoutRef.current = setTimeout(
+        () => reject(new Error('L\'analyse prend trop de temps. Vérifie ta connexion et réessaie.')),
+        60000
+      );
+    });
+
     try {
-      const result = await analyzeSkinPhotos({
-        frontBase64: photosRef.current.front,
-        leftBase64: photosRef.current.left,
-        rightBase64: photosRef.current.right,
-      });
-      
-      console.log('[Scan] Gemini result:', result);
-      
+      const result = await Promise.race([
+        analyzeSkinPhotos({
+          frontBase64: photosRef.current.front,
+          leftBase64: photosRef.current.left,
+          rightBase64: photosRef.current.right,
+        }),
+        timeoutPromise,
+      ]);
+      if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
+
       if (!result.success) {
         setError(result.error || 'Erreur d\'analyse');
-        if (result.detail) {
-          console.error('[Scan] Gemini detail:', result.detail);
-        }
+        if (result.detail) console.error('[Scan] Gemini detail:', result.detail);
         setPhase('error');
         return;
       }
@@ -317,7 +330,7 @@ export default function Scan() {
         <div className="fs-analyzing-content">
           <div className="fs-analyzing-icon">🤖</div>
           <h2>L'IA analyse ta peau...</h2>
-          <p>Quelques secondes seulement</p>
+          <p>Jusqu'à 1 minute selon ta connexion</p>
           <div className="fs-analyzing-bar">
             <div className="fs-analyzing-fill" />
           </div>
@@ -327,6 +340,29 @@ export default function Scan() {
             <li className="active">⏳ Analyse Gemini Vision...</li>
             <li>○ Diagnostic personnalisé</li>
           </ul>
+          {/* Bouton Annuler : avant l'utilisatrice pouvait rester bloquee
+              sur cet ecran si Gemini timeout. Maintenant elle peut sortir. */}
+          <button
+            onClick={() => {
+              cancelledRef.current = true;
+              if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
+              navigate('/');
+            }}
+            style={{
+              marginTop: 24,
+              padding: '10px 18px',
+              background: 'rgba(255,255,255,0.15)',
+              color: 'white',
+              border: '1px solid rgba(255,255,255,0.3)',
+              borderRadius: 10,
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            Annuler
+          </button>
         </div>
       </div>
     );
