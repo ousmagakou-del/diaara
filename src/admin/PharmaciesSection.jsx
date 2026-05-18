@@ -11,27 +11,42 @@ export default function PharmaciesSection() {
   useEffect(() => { refresh(); }, []);
 
   const refresh = async () => {
-    const { data } = await supabase
+    // ⚠️ Select EXPLICITE (pas de *) : la colonne `pin` n'est pas SELECTable
+    // pour le role anon (cf migration GRANT SELECT). Si on faisait *, Postgres
+    // refuse toute la query car * demande la permission sur toutes les colonnes.
+    const { data, error } = await supabase
       .from('pharmacies')
-      .select('*')
+      .select('id, name, tagline, owner_name, manager_name, city, neighborhood, address, lat, lng, phone, whatsapp, hours, delivery_hours, logo, cover, description, commission, commission_rate, active, rating, review_count, pin_set_at, created_at, updated_at, notification_email, notification_phone')
       .order('created_at', { ascending: false });
+    if (error) console.warn('[PharmaciesSection] fetch error:', error.message);
     setPharmacies(data || []);
     setLoading(false);
   };
 
   const handleSave = async (p) => {
     if (p.id) {
-      await supabase.from('pharmacies').update({
+      // Update : on N'INCLUT PAS `pin` (sauf si on l'a explicitement remis a jour
+      // via le champ "Reset PIN" -> dans ce cas p._resetPin contient le nouveau pin).
+      const payload = {
         name: p.name, owner_name: p.owner_name, address: p.address,
         city: p.city, neighborhood: p.neighborhood, phone: p.phone,
         whatsapp: p.whatsapp, lat: p.lat ? parseFloat(p.lat) : null,
         lng: p.lng ? parseFloat(p.lng) : null,
-        hours: p.hours, pin: p.pin, commission: parseFloat(p.commission || 8),
+        hours: p.hours, commission: parseFloat(p.commission || 8),
         active: p.active, logo: p.logo, cover: p.cover, tagline: p.tagline,
-      }).eq('id', p.id);
+      };
+      if (p._resetPin && p._resetPin.trim()) {
+        payload.pin = p._resetPin.trim();
+        payload.pin_set_at = new Date().toISOString();
+      }
+      await supabase.from('pharmacies').update(payload).eq('id', p.id);
     } else {
+      // Insert : on garde le pin (0000 par defaut) pour la 1ere connexion staff.
+      // pin_set_at reste null tant que la pharmacie n'a pas choisi son propre PIN.
+      // eslint-disable-next-line no-unused-vars
+      const { _resetPin, ...rest } = p;
       await supabase.from('pharmacies').insert({
-        ...p,
+        ...rest,
         lat: p.lat ? parseFloat(p.lat) : null,
         lng: p.lng ? parseFloat(p.lng) : null,
         commission: parseFloat(p.commission || 8),
@@ -99,7 +114,7 @@ export default function PharmaciesSection() {
                   <div>💬 {p.whatsapp || '—'}</div>
                   <div>🕐 {p.hours || '—'}</div>
                   <div>💰 Commission {p.commission || 8}%</div>
-                  <div>🔐 PIN {p.pin || '—'}</div>
+                  <div>🔐 {p.pin_set_at ? 'PIN défini' : 'PIN par défaut (0000)'}</div>
                 </div>
                 <div className="adm-ph-actions">
                   <button className="adm-btn-sec" onClick={() => setShowInventory(p)}>📦 Stock</button>
@@ -178,7 +193,24 @@ function PharmacyEditor({ pharmacy, onSave, onCancel }) {
         <div className="adm-form-section">
           <h3>Business</h3>
           <label>Commission YARAM (%)<input type="number" step="0.1" value={p.commission} onChange={e => upd('commission', e.target.value)} /></label>
-          <label>PIN d'accès staff<input value={p.pin} onChange={e => upd('pin', e.target.value)} placeholder="4 chiffres" /></label>
+          {!p.id ? (
+            <label>PIN d'accès staff initial<input value={p.pin || ''} onChange={e => upd('pin', e.target.value)} placeholder="0000" maxLength={6} /></label>
+          ) : (
+            <label>
+              Réinitialiser le PIN (laisse vide pour ne pas changer)
+              <input
+                value={p._resetPin || ''}
+                onChange={e => upd('_resetPin', e.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="Tape un nouveau PIN…"
+                maxLength={6}
+                type="password"
+                inputMode="numeric"
+              />
+              <small style={{ display: 'block', marginTop: 4, color: '#9B9B9B', fontSize: 11 }}>
+                {p.pin_set_at ? `PIN actuel défini le ${new Date(p.pin_set_at).toLocaleDateString('fr-FR')}` : 'PIN jamais personnalisé (0000)'}
+              </small>
+            </label>
+          )}
         </div>
       </div>
 

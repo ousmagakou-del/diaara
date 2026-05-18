@@ -597,15 +597,21 @@ export async function incrementBannerClick(id) {
 // ═══════════════════════════════════════════════
 
 export async function pharmacyLogin(pharmacyId, pin) {
-  // On lit le PIN pour comparaison, puis on le STRIP avant de retourner.
-  // (Idealement : RPC verify_pharmacy_pin cote DB pour que le PIN ne transite jamais.
-  //  En attendant, le PIN ne fuit que pendant CE login, plus a chaque visite.)
-  const { data, error } = await supabase.from('pharmacies').select('*').eq('id', pharmacyId).single();
-  if (error || !data) return { success: false, error: 'Pharmacie introuvable' };
-  if (data.pin !== pin) return { success: false, error: 'PIN incorrect' };
-  // eslint-disable-next-line no-unused-vars
-  const { pin: _pin, ...safe } = data;
-  return { success: true, pharmacy: safe };
+  // Verification du PIN cote serveur via RPC SECURITY DEFINER.
+  // Le PIN ne transite que dans un sens (client -> serveur), jamais retour.
+  // L'RPC retourne la pharmacie complete SANS le pin si match, NULL sinon.
+  const { data, error } = await supabase.rpc('verify_pharmacy_pin', {
+    p_id: String(pharmacyId),
+    p_pin: pin,
+  });
+  if (error) {
+    console.error('[pharmacyLogin] RPC error:', error.message);
+    return { success: false, error: 'Erreur serveur (RPC indisponible ?)' };
+  }
+  if (!data) {
+    return { success: false, error: 'PIN incorrect ou pharmacie inactive' };
+  }
+  return { success: true, pharmacy: data };
 }
 
 export async function setPharmacyPin(pharmacyId, pin) {
