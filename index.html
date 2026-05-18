@@ -129,21 +129,10 @@
       }
       #yaram-boot .yb-logo {
         position: relative; z-index: 2;
-        display: flex; align-items: baseline;
-        font-size: 64px; font-weight: 900;
-        letter-spacing: -0.04em; line-height: 1;
-        color: white;
-        text-shadow: 0 4px 24px rgba(0,0,0,0.2);
+        width: 120px; height: 120px;
         animation: yaramBootFadeUp 600ms cubic-bezier(.2,.9,.3,1.2) both;
       }
-      #yaram-boot .yb-dot {
-        width: 14px; height: 14px;
-        background: #E87722;
-        border-radius: 50%;
-        margin-left: 4px; margin-bottom: 6px;
-        box-shadow: 0 0 24px rgba(232,119,34,0.6);
-        animation: yaramBootDot 700ms cubic-bezier(.2,.9,.3,1.2) 200ms both;
-      }
+      #yaram-boot .yb-logo svg { width: 100%; height: 100%; display: block; }
       #yaram-boot .yb-tag {
         color: rgba(255,255,255,0.85);
         font-size: 11px; font-weight: 600;
@@ -169,11 +158,6 @@
         from { opacity: 0; transform: translateY(12px) }
         to   { opacity: 1; transform: translateY(0) }
       }
-      @keyframes yaramBootDot {
-        0%   { transform: scale(0); opacity: 0 }
-        60%  { transform: scale(1.4); opacity: 1 }
-        100% { transform: scale(1); opacity: 1 }
-      }
       @keyframes yaramBootBar {
         0%   { transform: translateX(-100%) }
         100% { transform: translateX(350%) }
@@ -181,9 +165,18 @@
     </style>
   </head>
   <body>
-    <!-- Splash : retire des que React monte (cf main.jsx — window.__yaramHideBoot) -->
+    <!-- Splash : retire des que React monte (cf main.jsx — window.__yaramHideBoot).
+         Le SVG est inline pour s'afficher en 50ms sans aucun fetch supplementaire. -->
     <div id="yaram-boot" aria-hidden="true">
-      <div class="yb-logo">YARAM<span class="yb-dot"></span></div>
+      <div class="yb-logo">
+        <svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+          <rect fill="rgba(255,255,255,0.1)" x="0" y="0" width="256" height="256" rx="40" ry="40"/>
+          <g transform="translate(-23 -36) scale(1.45)">
+            <path fill="#fff" d="M153.9,64.45l-20.93,30.57-21.02-30.57h-24.32l28.48,41.39v58.66h23.8v-60.88l26.87-39.16h-12.87Z"/>
+          </g>
+          <circle fill="#e94e1b" cx="206" cy="207" r="18"/>
+        </svg>
+      </div>
       <div class="yb-tag">Beauté Sénégal</div>
       <div class="yb-progress"></div>
     </div>
