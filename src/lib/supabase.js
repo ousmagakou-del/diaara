@@ -776,76 +776,82 @@ export async function getPharmacyOrders(pharmacyId, status = null) {
   return data || [];
 }
 
-export async function acceptOrder(orderId, pharmacyId) {
-  return supabase.from('orders').update({
-    status: 'preparing', assigned_pharmacy_id: pharmacyId, accepted_at: new Date().toISOString(),
-  }).eq('id', orderId);
+// Vague 9.5 : ces 3 fonctions passent par pharma_update_order (SECURITY DEFINER,
+// requiert token pharma, verifie que la commande appartient bien a la pharmacie).
+export async function acceptOrder(orderId, _pharmacyId) {
+  const token = getPharmaToken();
+  if (!token) return { error: { message: 'Session pharma expirée' } };
+  return supabase.rpc('pharma_update_order', {
+    p_token: token, p_order_id: orderId, p_action: 'accept',
+  });
 }
 
 export async function refuseOrder(orderId, reason) {
-  return supabase.from('orders').update({
-    status: 'refused', refused_at: new Date().toISOString(), refusal_reason: reason,
-  }).eq('id', orderId);
+  const token = getPharmaToken();
+  if (!token) return { error: { message: 'Session pharma expirée' } };
+  return supabase.rpc('pharma_update_order', {
+    p_token: token, p_order_id: orderId, p_action: 'refuse', p_reason: reason,
+  });
 }
 
 export async function markOrderReady(orderId) {
-  return supabase.from('orders').update({ status: 'ready', prepared_at: new Date().toISOString() }).eq('id', orderId);
+  const token = getPharmaToken();
+  if (!token) return { error: { message: 'Session pharma expirée' } };
+  return supabase.rpc('pharma_update_order', {
+    p_token: token, p_order_id: orderId, p_action: 'ready',
+  });
 }
 
-export async function getPharmacyCommissions(pharmacyId) {
-  const { data: orders } = await supabase.from('orders')
-    .select('id, total, items, status, created_at, delivered_at')
-    .in('status', ['delivered']).order('created_at', { ascending: false });
-  const pharmacyOrders = (orders || []).filter(o =>
-    Array.isArray(o.items) && o.items.some(it => it.pharmacyId === pharmacyId)
-  );
-  // Taux lu depuis site_settings (fallback 8% si DB indisponible).
-  const COMMISSION_RATE = getCachedSetting('commission', 8) / 100;
-  const enrichedOrders = pharmacyOrders.map(o => {
-    const items = o.items.filter(it => it.pharmacyId === pharmacyId);
-    const revenue = items.reduce((sum, it) => sum + (it.price || 0) * (it.qty || 1), 0);
-    const commission = Math.round(revenue * COMMISSION_RATE);
-    const net = revenue - commission;
-    return { ...o, pharmacy_revenue: revenue, pharmacy_commission: commission, pharmacy_net: net };
-  });
-  const totalRevenue = enrichedOrders.reduce((sum, o) => sum + o.pharmacy_revenue, 0);
-  const totalCommission = enrichedOrders.reduce((sum, o) => sum + o.pharmacy_commission, 0);
-  const totalNet = enrichedOrders.reduce((sum, o) => sum + o.pharmacy_net, 0);
+export async function getPharmacyCommissions(_pharmacyId) {
+  // Vague 9.5 : tout est aggrege cote serveur par pharma_get_commissions.
+  // pharmacyId param ignore (la RPC connait deja le pharmacyId via le token).
+  const token = getPharmaToken();
+  if (!token) return {
+    orders: [], totalRevenue: 0, totalCommission: 0, totalNet: 0,
+    monthOrders: [], monthRevenue: 0, monthCommission: 0, monthNet: 0, payments: [],
+  };
+  const { data } = await supabase.rpc('pharma_get_commissions', { p_token: token });
+  if (!data) return {
+    orders: [], totalRevenue: 0, totalCommission: 0, totalNet: 0,
+    monthOrders: [], monthRevenue: 0, monthCommission: 0, monthNet: 0, payments: [],
+  };
+
+  const enrichedOrders = data.orders || [];
+  const totalRevenue    = enrichedOrders.reduce((s, o) => s + (Number(o.pharmacy_revenue)    || 0), 0);
+  const totalCommission = enrichedOrders.reduce((s, o) => s + (Number(o.pharmacy_commission) || 0), 0);
+  const totalNet        = enrichedOrders.reduce((s, o) => s + (Number(o.pharmacy_net)        || 0), 0);
+
   const now = new Date();
   const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
   const monthOrders = enrichedOrders.filter(o => new Date(o.created_at) >= firstDay);
-  const monthRevenue = monthOrders.reduce((sum, o) => sum + o.pharmacy_revenue, 0);
-  const monthCommission = monthOrders.reduce((sum, o) => sum + o.pharmacy_commission, 0);
-  const monthNet = monthOrders.reduce((sum, o) => sum + o.pharmacy_net, 0);
-  const { data: payments } = await supabase.from('commission_payments').select('*')
-    .eq('pharmacy_id', pharmacyId).order('period_end', { ascending: false });
+  const monthRevenue    = monthOrders.reduce((s, o) => s + (Number(o.pharmacy_revenue)    || 0), 0);
+  const monthCommission = monthOrders.reduce((s, o) => s + (Number(o.pharmacy_commission) || 0), 0);
+  const monthNet        = monthOrders.reduce((s, o) => s + (Number(o.pharmacy_net)        || 0), 0);
+
   return {
     orders: enrichedOrders, totalRevenue, totalCommission, totalNet,
-    monthOrders, monthRevenue, monthCommission, monthNet, payments: payments || [],
+    monthOrders, monthRevenue, monthCommission, monthNet,
+    payments: data.payments || [],
   };
 }
 
 export async function getPharmacyStats(pharmacyId) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayISO = today.toISOString();
-  const { data: todayOrders } = await supabase.from('orders')
-    .select('id, total, items, status, created_at').gte('created_at', todayISO);
-  const myTodayOrders = (todayOrders || []).filter(o =>
-    Array.isArray(o.items) && o.items.some(it => it.pharmacyId === pharmacyId)
-  );
-  const pendingCount = myTodayOrders.filter(o => o.status === 'paid').length;
-  const preparingCount = myTodayOrders.filter(o => o.status === 'preparing').length;
-  const deliveredToday = myTodayOrders.filter(o => o.status === 'delivered');
-  const todayRevenue = deliveredToday.reduce((sum, o) => {
-    const items = (o.items || []).filter(it => it.pharmacyId === pharmacyId);
-    return sum + items.reduce((s, it) => s + (it.price || 0) * (it.qty || 1), 0);
-  }, 0);
+  // Vague 9.5 : compteurs orders via RPC pharma_get_stats (SECURITY DEFINER).
+  // Le count des produits actifs reste un SELECT direct (products SELECT public).
+  const token = getPharmaToken();
+  const statsRpc = token
+    ? (await supabase.rpc('pharma_get_stats', { p_token: token })).data
+    : null;
+
   const { data: products } = await supabase.from('products')
     .select('id').eq('submitted_by_pharmacy_id', pharmacyId).eq('status', 'approved');
+
   return {
-    todayOrdersCount: myTodayOrders.length, pendingCount, preparingCount,
-    deliveredTodayCount: deliveredToday.length, todayRevenue,
+    todayOrdersCount:    (statsRpc?.today_pending || 0) + (statsRpc?.today_preparing || 0) + (statsRpc?.today_delivered || 0),
+    pendingCount:        statsRpc?.today_pending   || 0,
+    preparingCount:      statsRpc?.today_preparing || 0,
+    deliveredTodayCount: statsRpc?.today_delivered || 0,
+    todayRevenue:        Number(statsRpc?.today_revenue || 0),
     activeProductsCount: products?.length || 0,
   };
 }
