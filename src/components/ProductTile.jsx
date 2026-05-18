@@ -33,7 +33,9 @@ export default function ProductTile({ product, size = 'normal' }) {
       <div className="pt-img-wrap">
         <img
           src={product.img}
-          alt={product.name}
+          alt={`${product.brand || ''} ${product.name || 'Produit'}`.trim()}
+          loading="lazy"
+          decoding="async"
           onError={(e) => { e.target.src = fallbackImg; }}
         />
         <div className={`pt-score ${sc}`}>{product.score}</div>

@@ -22,8 +22,11 @@ export default function ProductsValidationSection() {
   };
 
   const approve = async (product) => {
-    await supabase.from('products').update({ status: 'approved' }).eq('id', product.id);
+    await supabase.from('products').update({ status: 'approved', active: true }).eq('id', product.id);
     refresh();
+    // Notifie les moteurs de recherche que le sitemap a change (fire-and-forget).
+    // L'utilisateur n'a pas besoin d'attendre la reponse.
+    fetch('/ping-sitemap', { method: 'POST' }).catch(() => { /* ignore */ });
   };
 
   const reject = async (product) => {

@@ -3,7 +3,7 @@ import { useNav } from '../App';
 import { getAllProducts, getAllBrands } from '../lib/supabase';
 import ProductTile from '../components/ProductTile';
 import TabBar from '../components/TabBar';
-import { usePageSEO } from '../lib/seo';
+import { usePageSEO, useJsonLd } from '../lib/seo';
 import './Search.css';
 
 const RECENT = ['niacinamide', 'spf peau noire', 'karité', 'sérum vitamine c'];
@@ -62,7 +62,13 @@ export default function Search({ initialCategory, initialBrand }) {
     : initialCategory
       ? `${catLabel(initialCategory)} pour ta peau africaine · 800+ références validées par dermato · Livraison Dakar`
       : 'Recherche produits beauté validés par YARAM · Filtres par marque, prix, score, badges';
-  usePageSEO({ title: seoTitle, description: seoDesc });
+  // SEO : canonical change si on a une categorie / marque (evite duplicate content)
+  const seoCanonical = initialBrand
+    ? `https://yaram.app/search?brand=${encodeURIComponent(initialBrand)}`
+    : initialCategory
+      ? `https://yaram.app/search?category=${encodeURIComponent(initialCategory)}`
+      : 'https://yaram.app/search';
+  usePageSEO({ title: seoTitle, description: seoDesc, canonical: seoCanonical });
   const [q, setQ] = useState('');
   const [category, setCategory] = useState(initialCategory || null);
   const [products, setProducts] = useState([]);
@@ -126,6 +132,7 @@ export default function Search({ initialCategory, initialBrand }) {
     if (selectedBadges.length > 0) list = list.filter(p => selectedBadges.every(b => p.badges?.includes(b)));
     if (sort === 'score-desc') list.sort((a, b) => (b.score || 0) - (a.score || 0));
     else if (sort === 'price-asc') list.sort((a, b) => a.price - b.price);
+    // (suite du tri ci-dessous)
     else if (sort === 'price-desc') list.sort((a, b) => b.price - a.price);
     else if (sort === 'reviews') list.sort((a, b) => (b.review_count || 0) - (a.review_count || 0));
     return list;
@@ -148,6 +155,27 @@ export default function Search({ initialCategory, initialBrand }) {
 
   const toggleBrand = (b) => setSelectedBrands(prev => prev.includes(b) ? prev.filter(x => x !== b) : [...prev, b]);
   const toggleBadge = (b) => setSelectedBadges(prev => prev.includes(b) ? prev.filter(x => x !== b) : [...prev, b]);
+
+  // ─── ItemList JSON-LD : aide Google a indexer les premiers resultats ───
+  // Ne genere que si on a une categorie OU une marque (pages "stables" indexables)
+  // et limite aux 20 premiers pour ne pas surcharger.
+  useJsonLd(
+    (initialCategory || initialBrand) && filtered.length > 0
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'ItemList',
+          name: seoTitle,
+          numberOfItems: filtered.length,
+          itemListElement: filtered.slice(0, 20).map((p, i) => ({
+            '@type': 'ListItem',
+            position: i + 1,
+            url: `https://yaram.app/product/${p.id}`,
+            name: p.name,
+          })),
+        }
+      : null,
+    `searchitemlist-${initialCategory || initialBrand || 'none'}`
+  );
 
   return (
     <div className="search-screen page-anim">

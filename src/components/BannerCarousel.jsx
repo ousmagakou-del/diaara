@@ -102,7 +102,7 @@ export default function BannerCarousel() {
         </div>
         {banner.image_url && (
           <div className="bc-image">
-            <img src={banner.image_url} alt="" onError={(e) => e.target.style.display = 'none'} />
+            <img src={banner.image_url} alt={banner.title || 'Promo YARAM'} loading="lazy" decoding="async" onError={(e) => e.target.style.display = 'none'} />
           </div>
         )}
       </div>

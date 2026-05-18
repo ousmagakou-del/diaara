@@ -6,6 +6,7 @@ import { haptic } from '../lib/haptic';
 import { addToCart as cartAddToCart } from '../lib/cart';
 import { toast } from '../lib/toast';
 import { usePageSEO, useJsonLd } from '../lib/seo';
+import ProductTile from '../components/ProductTile';
 import ReviewsSection from '../components/ReviewsSection';
 import './Product.css';
 
@@ -59,6 +60,8 @@ export default function Product({ id }) {
   const [qty, setQty] = useState(1);
   const [showCartToast, setShowCartToast] = useState(false);
   const [cartBounce, setCartBounce] = useState(false);
+  // Produits similaires (meme categorie, exclu le produit courant) — interne linking SEO
+  const [similar, setSimilar] = useState([]);
 
   // SEO : titre + meta description + canonical
   usePageSEO({
@@ -94,6 +97,35 @@ export default function Product({ id }) {
     },
   } : null, `product-${id}`);
 
+  // Schema.org BreadcrumbList → Google affiche le fil d'Ariane dans les SERP
+  useJsonLd(product ? {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Accueil', item: 'https://yaram.app/' },
+      ...(product.category ? [{
+        '@type': 'ListItem',
+        position: 2,
+        name: product.category.charAt(0).toUpperCase() + product.category.slice(1),
+        item: `https://yaram.app/search?category=${encodeURIComponent(product.category)}`,
+      }] : []),
+      { '@type': 'ListItem', position: product.category ? 3 : 2, name: product.name, item: `https://yaram.app/product/${id}` },
+    ],
+  } : null, `breadcrumb-${id}`);
+
+  // Schema.org ItemList → les produits similaires aident Google a indexer plus de URLs
+  useJsonLd(similar.length > 0 ? {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'Produits similaires',
+    itemListElement: similar.map((p, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      url: `https://yaram.app/product/${p.id}`,
+      name: p.name,
+    })),
+  } : null, `similar-${id}`);
+
   useEffect(() => {
     let cancelled = false;
     // Reset l'etat a chaque navigation vers un nouveau produit
@@ -101,6 +133,7 @@ export default function Product({ id }) {
     setProduct(null);
     setPharmacies([]);
     setSelectedPh(null);
+    setSimilar([]);
 
     (async () => {
       try {
@@ -124,6 +157,20 @@ export default function Product({ id }) {
         setPharmacies(av || []);
         setFav(isFav);
         if (av && av.length > 0) setSelectedPh(av[0]);
+
+        // ─── Produits similaires (meme categorie) ───
+        // Boost SEO (internal linking) + dwell time + conversion
+        if (p.category) {
+          const { data: sim } = await supabase
+            .from('products')
+            .select('id, name, brand, img, price, rating, score, review_count')
+            .eq('category', p.category)
+            .eq('active', true)
+            .neq('id', p.id)
+            .order('review_count', { ascending: false })
+            .limit(4);
+          if (!cancelled) setSimilar(sim || []);
+        }
       } catch (e) {
         console.warn('[Product] load failed:', e?.message);
       } finally {
@@ -372,6 +419,35 @@ export default function Product({ id }) {
         </div>
 
         <div className="prod-info">
+          {/* ────── Breadcrumb visuel + JSON-LD couvert plus haut ────── */}
+          <nav aria-label="Fil d'Ariane" style={{
+            fontSize: 11,
+            color: 'var(--ink-soft)',
+            marginBottom: 6,
+            display: 'flex',
+            gap: 6,
+            alignItems: 'center',
+            flexWrap: 'wrap',
+          }}>
+            <button
+              onClick={() => navigate('/')}
+              style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', padding: 0, fontSize: 'inherit' }}
+            >Accueil</button>
+            {product.category && (
+              <>
+                <span aria-hidden="true">›</span>
+                <button
+                  onClick={() => navigate({ name: 'search', params: { category: product.category } })}
+                  style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', padding: 0, fontSize: 'inherit', textTransform: 'capitalize' }}
+                >{product.category}</button>
+              </>
+            )}
+            <span aria-hidden="true">›</span>
+            <span style={{ color: 'var(--ink)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 160 }}>
+              {product.name}
+            </span>
+          </nav>
+
           <div className="prod-brand">{product.brand}</div>
           <h1 className="prod-name">{product.name}</h1>
           <p className="prod-short">{product.short_desc}</p>
@@ -463,6 +539,25 @@ export default function Product({ id }) {
           <a href={waUrl} target="_blank" rel="noopener noreferrer" className="prod-wa-btn">
             💬 Conseil WhatsApp
           </a>
+
+          {/* ────── Produits similaires (boost SEO + dwell time + conversion) ────── */}
+          {similar.length > 0 && (
+            <section className="prod-section" style={{ marginTop: 28 }}>
+              <h3 className="prod-section-title">
+                ✨ Tu pourrais aussi aimer
+              </h3>
+              <p style={{ fontSize: 11, color: 'var(--ink-soft)', marginTop: -4, marginBottom: 12 }}>
+                {product.category ? `Dans la catégorie ${product.category}` : 'Dans le même style'}
+              </p>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: 10,
+              }}>
+                {similar.map(p => <ProductTile key={p.id} product={p} />)}
+              </div>
+            </section>
+          )}
         </div>
         <div style={{ height: 160 }} />
       </div>

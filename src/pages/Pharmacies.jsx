@@ -78,7 +78,7 @@ export default function Pharmacies() {
                 )}
                 <div className="ph-body">
                   <div className="ph-head">
-                    {p.logo && <img src={p.logo} alt="" className="ph-logo" />}
+                    {p.logo && <img src={p.logo} alt={`Logo ${p.name}`} loading="lazy" decoding="async" className="ph-logo" />}
                     <div style={{flex: 1}}>
                       <h3>{p.name}</h3>
                       <div className="ph-meta">📍 {p.neighborhood}, {p.city}</div>

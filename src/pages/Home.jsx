@@ -378,7 +378,7 @@ export default function Home() {
           <div className="yhome-hero-top">
             <button className="yhome-avatar-btn" onClick={() => navigate('/profile')}>
               {user?.avatar ? (
-                <img src={user.avatar} alt="" className="yhome-avatar-img" />
+                <img src={user.avatar} alt={user.first_name || 'Avatar'} loading="eager" decoding="async" className="yhome-avatar-img" />
               ) : (
                 <div className="yhome-avatar-letter">{avatarLetter}</div>
               )}
@@ -476,7 +476,7 @@ export default function Home() {
                 >
                   <div className="yhome-brand-circle">
                     {brand.img ? (
-                      <img src={brand.img} alt={brand.name} onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.textContent = brand.name.substring(0, 8); }} />
+                      <img src={brand.img} alt={`Logo ${brand.name}`} loading="lazy" decoding="async" onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.textContent = brand.name.substring(0, 8); }} />
                     ) : (
                       <span className="yhome-brand-initials">{brand.name.substring(0, 8)}</span>
                     )}
@@ -558,7 +558,7 @@ export default function Home() {
                     }}
                   >
                     {cat.icon_url ? (
-                      <img src={cat.icon_url} alt="" onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.textContent = cat.name.charAt(0); }} />
+                      <img src={cat.icon_url} alt={`Catégorie ${cat.name}`} loading="lazy" decoding="async" onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.textContent = cat.name.charAt(0); }} />
                     ) : (
                       <span>{cat.name.charAt(0)}</span>
                     )}

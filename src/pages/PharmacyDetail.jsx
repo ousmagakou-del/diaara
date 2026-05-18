@@ -75,7 +75,7 @@ export default function PharmacyDetail({ pharmacyId }) {
 
       <div style={{ height: 200, background: 'linear-gradient(135deg, #1F8B4C, #166635)', position: 'relative' }}>
         {pharmacy.cover && (
-          <img src={pharmacy.cover} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => e.target.style.display = 'none'} />
+          <img src={pharmacy.cover} alt={`${pharmacy.name} — ${pharmacy.city || ''}`} loading="eager" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => e.target.style.display = 'none'} />
         )}
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.6))' }} />
         <div style={{ position: 'absolute', bottom: 16, left: 16, right: 16, color: 'white' }}>

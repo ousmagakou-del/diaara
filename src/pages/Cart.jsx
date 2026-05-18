@@ -101,7 +101,7 @@ export default function Cart() {
               const globalIdx = items.indexOf(it);
               return (
                 <div key={it.productId + phId} className="cart-item">
-                  <img src={it.img} alt="" />
+                  <img src={it.img} alt={it.name || 'Produit'} loading="lazy" decoding="async" />
                   <div className="cart-item-info">
                     <div className="cart-item-brand">{it.brand}</div>
                     <div className="cart-item-name">{it.name}</div>
