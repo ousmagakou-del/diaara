@@ -44,19 +44,43 @@ export default function PharmaProducts({ pharmacyId, pharmacyName }) {
   };
 
   const handleSave = async (product) => {
+    const wasApproved = editing?.status === 'approved';
     const data = {
       ...product,
       submitted_by_pharmacy_id: pharmacyId,
+      // Au save, on remet TOUJOURS en pending + inactive : un produit modifie doit
+      // etre re-valide par l'admin avant de reapparaitre dans le catalogue.
+      // C'est la garde-fou : evite qu'une pharmacie change le prix ou la photo d'un
+      // produit deja listé sans controle.
       status: 'pending',
       active: false,
+      // Reset le motif de rejet eventuel pour ne pas afficher l'ancien message
+      rejection_reason: null,
     };
-    
+
+    let error;
     if (editing?.id) {
-      await supabase.from('products').update(data).eq('id', editing.id);
+      ({ error } = await supabase.from('products').update(data).eq('id', editing.id));
     } else {
-      await supabase.from('products').insert(data);
+      ({ error } = await supabase.from('products').insert(data));
     }
-    
+
+    if (error) {
+      toast.error('Erreur sauvegarde : ' + error.message);
+      return;
+    }
+
+    if (editing?.id) {
+      toast.success(
+        wasApproved
+          ? 'Modifications soumises — YARAM doit re-valider avant que le produit réapparaisse'
+          : 'Modifications enregistrées',
+        { duration: wasApproved ? 6000 : 3000 }
+      );
+    } else {
+      toast.success('Produit proposé — YARAM va le valider sous 24-48h');
+    }
+
     setShowForm(false);
     setEditing(null);
     refresh();
@@ -136,9 +160,9 @@ export default function PharmaProducts({ pharmacyId, pharmacyName }) {
                   <p className="ph-rejection">⚠️ {p.rejection_reason}</p>
                 )}
                 <div className="ph-product-actions">
-                  {p.status === 'pending' && (
-                    <button className="ph-mini-btn" onClick={() => { setEditing(p); setShowForm(true); }}>✏️ Modifier</button>
-                  )}
+                  {/* Modif autorisée pour tous les statuts. Au save, le produit
+                      repasse en "pending" → admin re-valide. */}
+                  <button className="ph-mini-btn" onClick={() => { setEditing(p); setShowForm(true); }}>✏️ Modifier</button>
                   {p.status !== 'approved' && (
                     <button className="ph-mini-btn ph-mini-btn-danger" onClick={() => handleDelete(p.id)}>🗑️ Supprimer</button>
                   )}
@@ -199,6 +223,8 @@ function ProductForm({ product, brands, onSave, onCancel }) {
     setSaving(false);
   };
 
+  const isEditingApproved = product.id && product.status === 'approved';
+
   return (
     <div className="ph-modal-overlay" onClick={onCancel}>
       <div className="ph-modal" onClick={e => e.stopPropagation()}>
@@ -206,6 +232,25 @@ function ProductForm({ product, brands, onSave, onCancel }) {
         <p style={{ fontSize: 12, color: '#6B6B6B', marginBottom: 16 }}>
           Le produit sera vérifié par YARAM avant d'apparaître dans le catalogue
         </p>
+        {isEditingApproved && (
+          <div style={{
+            background: '#FEF6E5',
+            border: '1.5px solid #F4B53A',
+            borderRadius: 10,
+            padding: 12,
+            marginBottom: 16,
+            display: 'flex',
+            gap: 10,
+            alignItems: 'flex-start',
+          }}>
+            <span style={{ fontSize: 18, lineHeight: 1 }}>⚠️</span>
+            <div style={{ fontSize: 12, lineHeight: 1.5, color: '#7A5A0A' }}>
+              <strong>Ce produit est actuellement dans le catalogue.</strong>{' '}
+              Le modifier le retirera temporairement et il devra être re-validé par YARAM
+              avant de réapparaître pour les clientes.
+            </div>
+          </div>
+        )}
 
         {/* PHOTO UPLOAD */}
         <div className="ph-photo-section">
@@ -273,7 +318,11 @@ function ProductForm({ product, brands, onSave, onCancel }) {
         <div className="ph-form-actions">
           <button className="ph-btn-sec" onClick={onCancel}>Annuler</button>
           <button className="ph-btn-pri" onClick={handleSubmit} disabled={saving || uploading}>
-            {saving ? 'Envoi...' : '📤 Proposer le produit'}
+            {saving
+              ? 'Envoi...'
+              : product.id
+                ? (isEditingApproved ? '📤 Soumettre la modification' : '💾 Enregistrer')
+                : '📤 Proposer le produit'}
           </button>
         </div>
       </div>
