@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { toast, confirmDialog } from '../lib/toast';
 
 export default function PharmaciesSection() {
   const [pharmacies, setPharmacies] = useState([]);
@@ -41,7 +42,7 @@ export default function PharmaciesSection() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Supprimer cette pharmacie ?')) return;
+    if (!await confirmDialog('Supprimer cette pharmacie ?')) return;
     await supabase.from('pharmacies').delete().eq('id', id);
     refresh();
   };
@@ -121,7 +122,7 @@ function PharmacyEditor({ pharmacy, onSave, onCancel }) {
 
   const handleSubmit = async () => {
     if (!p.name?.trim() || !p.city?.trim()) {
-      alert('Nom et ville requis');
+      toast.error('Nom et ville requis');
       return;
     }
     setSaving(true);
@@ -242,7 +243,7 @@ function InventoryEditor({ pharmacy, onClose }) {
         });
       }
     }
-    alert('Stock enregistré ✅');
+    toast.success('Stock enregistré ✅');
     onClose();
   };
 

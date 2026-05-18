@@ -4,6 +4,7 @@ import { createOrder, getMyAddresses, validatePromoCode, applyPromoCode } from '
 import { formatPrice, getShippingZone } from '../lib/utils';
 import { getPendingPromo, clearPendingPromo, getLoyaltyCredit, clearLoyaltyCredit } from '../lib/promoStorage';
 import { getCart, clearCart } from '../lib/cart';
+import { toast } from '../lib/toast';
 import './Checkout.css';
 
 // ─── URLs des logos paiement (Supabase Storage) ───
@@ -146,7 +147,7 @@ export default function Checkout({ items: propsItems, paymentMethod }) {
   // ─── Submit ───
   const handleSubmit = async () => {
     if (!selectedAddr) {
-      alert('Sélectionne une adresse de livraison');
+      toast.error('Sélectionne une adresse de livraison');
       return;
     }
     setSubmitting(true);
@@ -180,10 +181,10 @@ export default function Checkout({ items: propsItems, paymentMethod }) {
 
         navigate({ name: 'payment', params: { orderId: order.id } });
       } else {
-        alert('Erreur création commande');
+        toast.error('Erreur création commande');
       }
     } catch (e) {
-      alert(e.message);
+      toast.error(e.message);
     } finally {
       setSubmitting(false);
     }

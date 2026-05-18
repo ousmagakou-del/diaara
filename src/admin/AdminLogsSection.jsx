@@ -13,46 +13,73 @@ const ACTION_LABELS = {
   change_admin_role:   { label: 'Rôle changé',        color: '#A07700', icon: '🎭' },
 };
 
+const PAGE_SIZE = 100;
+
 export default function AdminLogsSection() {
   const [logs, setLogs] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(0);
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [adminFilter, setAdminFilter] = useState('all');
   const [actionFilter, setActionFilter] = useState('all');
   const [period, setPeriod] = useState('30d');
 
+  // Charge la liste des admins une seule fois (independant des logs)
   useEffect(() => {
     (async () => {
-      setLoading(true);
-      const [logsRes, adminsRes] = await Promise.all([
-        supabase.from('admin_logs').select('*').order('created_at', { ascending: false }).limit(500),
-        supabase.from('admin_users').select('id, email, name'),
-      ]);
-      setLogs(logsRes.data || []);
-      setAdmins(adminsRes.data || []);
-      setLoading(false);
+      const { data } = await supabase.from('admin_users').select('id, email, name');
+      setAdmins(data || []);
     })();
   }, []);
 
-  const filtered = useMemo(() => {
-    let list = logs;
-    if (adminFilter !== 'all') list = list.filter(l => l.admin_id === adminFilter);
-    if (actionFilter !== 'all') list = list.filter(l => l.action === actionFilter);
-    if (period !== 'all') {
-      const days = { '24h': 1, '7d': 7, '30d': 30, '90d': 90 }[period] || 30;
-      const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
-      list = list.filter(l => new Date(l.created_at).getTime() >= cutoff);
-    }
-    return list;
-  }, [logs, adminFilter, actionFilter, period]);
+  // Logs : refetch quand page OU filtre change.
+  // Server-side : range + filtres .eq sur admin_id/action + .gte sur created_at.
+  // (Avant : limit 500 fixe + filtres cote client = on perdait les vieux logs et on chargeait trop.)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      let q = supabase
+        .from('admin_logs')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
 
+      if (adminFilter !== 'all') q = q.eq('admin_id', adminFilter);
+      if (actionFilter !== 'all') q = q.eq('action', actionFilter);
+      if (period !== 'all') {
+        const days = { '24h': 1, '7d': 7, '30d': 30, '90d': 90 }[period] || 30;
+        const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+        q = q.gte('created_at', cutoff);
+      }
+
+      const { data, count } = await q;
+      if (cancelled) return;
+      setLogs(data || []);
+      setTotalCount(count || 0);
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [page, adminFilter, actionFilter, period]);
+
+  // Reset page a 0 quand un filtre change
+  useEffect(() => { setPage(0); }, [adminFilter, actionFilter, period]);
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+
+  // Les filtres sont desormais cote serveur — `logs` represente la page courante deja filtree.
   const allActions = useMemo(() => {
+    // Liste des actions connues : on prend l'union de ce qu'on a en page courante.
+    // Pas exhaustif si une action rare est sur la page 5, mais utile pour le select.
     const set = new Set(logs.map(l => l.action).filter(Boolean));
     return Array.from(set);
   }, [logs]);
 
   const handleExport = (format) => {
-    const rows = filtered.map(l => ({
+    // Note: l'export ne couvre que la page courante (limite Supabase row count).
+    // Pour un export complet -> utiliser une edge function / RPC dediee.
+    const rows = logs.map(l => ({
       date: fmtDateTime(l.created_at),
       admin: l.admin_email,
       action: ACTION_LABELS[l.action]?.label || l.action,
@@ -93,7 +120,9 @@ export default function AdminLogsSection() {
     <div style={S.section}>
       <h1 style={S.h1}>📜 Logs activité admin</h1>
       <p style={S.sub}>
-        Audit trail : qui a fait quoi, quand. Limité aux 500 derniers logs.
+        Audit trail : qui a fait quoi, quand.
+        {' '}{totalCount} log{totalCount > 1 ? 's' : ''} au total
+        {totalPages > 1 && ` · page ${page + 1}/${totalPages}`}
       </p>
 
       <div style={S.filters}>
@@ -127,12 +156,38 @@ export default function AdminLogsSection() {
         </div>
       </div>
 
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '8px 0',
+          marginBottom: 8,
+          fontSize: 12,
+        }}>
+          <button
+            style={S.btnOutline}
+            onClick={() => setPage(p => Math.max(0, p - 1))}
+            disabled={page === 0 || loading}
+          >← Préc.</button>
+          <span style={{ color: '#6B6B6B', fontWeight: 600 }}>
+            Page {page + 1} / {totalPages}
+          </span>
+          <button
+            style={S.btnOutline}
+            onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+            disabled={page >= totalPages - 1 || loading}
+          >Suiv. →</button>
+        </div>
+      )}
+
       {loading ? (
         <p style={{ color: '#9B9B9B' }}>Chargement…</p>
       ) : (
         <div style={S.card}>
           <div style={{ marginBottom: 8, fontSize: 12, color: '#6B6B6B' }}>
-            {filtered.length} log{filtered.length > 1 ? 's' : ''} affiché{filtered.length > 1 ? 's' : ''}
+            {logs.length} log{logs.length > 1 ? 's' : ''} sur cette page
           </div>
           <div style={{ overflowX: 'auto' }}>
             <table style={S.table}>
@@ -146,9 +201,9 @@ export default function AdminLogsSection() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.length === 0 ? (
+                {logs.length === 0 ? (
                   <tr><td colSpan={5} style={{ ...S.td, textAlign: 'center', color: '#9B9B9B', padding: 30 }}>Aucun log pour cette période</td></tr>
-                ) : filtered.map(l => {
+                ) : logs.map(l => {
                   const a = ACTION_LABELS[l.action] || { label: l.action, color: '#6B6B6B', icon: '•' };
                   return (
                     <tr key={l.id}>

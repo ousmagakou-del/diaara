@@ -5,6 +5,7 @@ import {
   subscribeToPush, unsubscribeFromPush,
   showLocalNotification, scheduleSkinRoutineReminders,
 } from '../lib/supabase';
+import { toast, confirmDialog } from '../lib/toast';
 import './NotifSettings.css';
 
 export default function NotifSettings() {
@@ -43,13 +44,13 @@ export default function NotifSettings() {
         showLocalNotification('🎉 Notifications activées !', 'Tu seras notifiée à chaque étape de ta commande.');
       }, 1000);
     } else {
-      alert(result.error);
+      toast.error(result.error);
     }
     setLoading(false);
   };
 
   const handleDisable = async () => {
-    if (!confirm('Désactiver les notifications ?')) return;
+    if (!(await confirmDialog('Désactiver les notifications ?'))) return;
     setLoading(true);
     await unsubscribeFromPush(user.id);
     setPermission('default');
@@ -60,7 +61,7 @@ export default function NotifSettings() {
     const morning = enableMorning ? morningTime : '';
     const evening = enableEvening ? eveningTime : '';
     scheduleSkinRoutineReminders(morning, evening);
-    alert('✓ Rappels sauvegardés');
+    toast.success('Rappels sauvegardés');
   };
 
   const handleTestNotif = () => {

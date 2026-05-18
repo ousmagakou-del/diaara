@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useUser } from '../App';
 import { getProductReviews, createReview, uploadReviewPhoto, getReviewStats, markReviewHelpful } from '../lib/supabase';
+import { toast } from '../lib/toast';
 import './ReviewsSection.css';
 
 export default function ReviewsSection({ productId }) {
@@ -185,7 +186,7 @@ function ReviewForm({ onSubmit, onCancel }) {
     const file = e.target.files[0];
     if (!file) return;
     if (photos.length >= 3) {
-      alert('Maximum 3 photos');
+      toast.error('Maximum 3 photos');
       return;
     }
     setUploading(true);
@@ -195,7 +196,7 @@ function ReviewForm({ onSubmit, onCancel }) {
   };
 
   const handleSubmit = () => {
-    if (!comment.trim()) return alert('Ajoute un commentaire');
+    if (!comment.trim()) { toast.error('Ajoute un commentaire'); return; }
     onSubmit({ rating, title, comment, photoUrls: photos });
   };
 

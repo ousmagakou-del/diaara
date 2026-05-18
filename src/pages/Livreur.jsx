@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase, sendWhatsApp, WhatsAppTemplates, generateConfirmToken } from '../lib/supabase';
 import { BrowserMultiFormatReader } from '@zxing/browser';
+import { toast, confirmDialog } from '../lib/toast';
 import './Livreur.css';
 
 const SUPABASE_URL = 'https://qxhhnrnworwrnwmqekmb.supabase.co';
@@ -67,7 +68,7 @@ export default function Livreur() {
   };
 
   const startGPS = () => {
-    if (!navigator.geolocation) { alert('GPS non disponible'); return; }
+    if (!navigator.geolocation) { toast.error('GPS non disponible'); return; }
     setSharingGPS(true);
     watchIdRef.current = navigator.geolocation.watchPosition(
       async (pos) => {
@@ -79,7 +80,7 @@ export default function Livreur() {
           last_update: new Date().toISOString(),
         }).eq('delivery_token', token);
       },
-      (err) => { alert('Erreur GPS : ' + err.message); setSharingGPS(false); },
+      (err) => { toast.error('Erreur GPS : ' + err.message); setSharingGPS(false); },
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 30000 }
     );
   };
@@ -116,7 +117,7 @@ export default function Livreur() {
     const { error } = await supabase.storage
       .from('delivery-proofs')
       .upload(fileName, file, { contentType: 'image/jpeg', upsert: true });
-    if (error) { alert('Erreur upload : ' + error.message); return null; }
+    if (error) { toast.error('Erreur upload : ' + error.message); return null; }
     const { data } = supabase.storage.from('delivery-proofs').getPublicUrl(fileName);
     return data.publicUrl;
   };
@@ -138,10 +139,10 @@ export default function Livreur() {
     if (type === 'delivery') {
       setProofMethod('photo');
       loadTracking(token);
-      alert('📸 Photo enregistrée ! Confirme la livraison maintenant.');
+      toast.success('Photo enregistrée ! Confirme la livraison maintenant.');
     } else {
       loadTracking(token);
-      alert('✅ Photo enregistrée');
+      toast.success('Photo enregistrée');
     }
   };
 
@@ -169,7 +170,7 @@ export default function Livreur() {
     setShowSignature(false);
     setProofMethod('signature');
     loadTracking(token);
-    alert('✍️ Signature enregistrée ! Confirme la livraison maintenant.');
+    toast.success('Signature enregistrée ! Confirme la livraison maintenant.');
   };
 
   const handlePinSubmit = async (pin) => {
@@ -178,7 +179,7 @@ export default function Livreur() {
     setShowPinEntry(false);
     setProofMethod('pin');
     loadTracking(token);
-    alert('🔢 PIN enregistré ! Confirme la livraison maintenant.');
+    toast.success('PIN enregistré ! Confirme la livraison maintenant.');
   };
 
   const markCashReceived = async () => {
@@ -187,18 +188,18 @@ export default function Livreur() {
       cash_received_at: new Date().toISOString(),
     }).eq('id', order.id);
     await updateStatus('cash_collected');
-    alert('💵 Cash de ' + order.total.toLocaleString('fr-FR') + ' FCFA confirmé reçu.');
+    toast.success('Cash de ' + order.total.toLocaleString('fr-FR') + ' FCFA confirmé reçu.');
     setOrder({ ...order, cash_received: true });
   };
 
   const confirmDelivery = async () => {
     if (!proofMethod) {
-      alert('⚠️ Tu dois fournir au moins une preuve : photo, signature ou PIN');
+      toast.error('Tu dois fournir au moins une preuve : photo, signature ou PIN');
       return;
     }
     
     if (order.payment_method === 'cod' && !order.cash_received) {
-      alert('⚠️ Tu dois d\'abord confirmer la réception du cash !');
+      toast.error('Tu dois d\'abord confirmer la réception du cash !');
       return;
     }
     
@@ -229,7 +230,7 @@ export default function Livreur() {
     
     stopGPS();
     setConfirming(false);
-    alert('✅ Livraison signalée ! La cliente reçoit un WhatsApp pour confirmer.\n\nMerci pour ton service 💚');
+    toast.success('Livraison signalée ! La cliente reçoit un WhatsApp pour confirmer. Merci pour ton service 💚', { duration: 5000 });
   };
 
   if (loading) return <div className="liv-screen"><p style={{padding:40,textAlign:'center'}}>Chargement…</p></div>;
@@ -521,7 +522,7 @@ export default function Livreur() {
                     <button 
                       className="liv-mini-btn"
                       onClick={async () => {
-                        if (confirm('Pas de code-barres sur certains produits ? On skip le scan ?')) {
+                        if (await confirmDialog('Pas de code-barres sur certains produits ? On skip le scan ?')) {
                           await supabase.from('delivery_tracking')
                             .update({ scanned_barcodes: [{ code: 'SKIPPED', scanned_at: new Date().toISOString() }] })
                             .eq('delivery_token', token);
@@ -1096,7 +1097,7 @@ function SignatureModal({ onSubmit, onCancel }) {
   };
 
   const submit = () => {
-    if (!hasDrawn) { alert('La cliente doit signer'); return; }
+    if (!hasDrawn) { toast.error('La cliente doit signer'); return; }
     onSubmit(canvasRef.current.toDataURL('image/png'));
   };
 
@@ -1126,7 +1127,7 @@ function SignatureModal({ onSubmit, onCancel }) {
 function PinEntryModal({ onSubmit, onCancel }) {
   const [pin, setPin] = useState('');
   const submit = () => {
-    if (pin.length !== 4 || !/^\d{4}$/.test(pin)) { alert('PIN = 4 chiffres'); return; }
+    if (pin.length !== 4 || !/^\d{4}$/.test(pin)) { toast.error('PIN = 4 chiffres'); return; }
     onSubmit(pin);
   };
   return (

@@ -1,27 +1,68 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
+const PAGE_SIZE = 50;
+
 export default function UsersSection() {
   const [users, setUsers] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState(null);
   const [userOrders, setUserOrders] = useState([]);
+  const [diagnostiquedCount, setDiagnostiquedCount] = useState(0);
 
+  // Debounce simple sur la recherche : 350ms apres la derniere frappe
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 350);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  // Re-fetch quand on change de page ou de recherche
+  useEffect(() => {
+    let cancelled = false;
     (async () => {
+      setLoading(true);
       try {
-        const { data, error } = await supabase
+        // Recherche server-side via .or(ilike) sur les champs principaux
+        let q = supabase
           .from('users_profile')
-          .select('*')
-          .order('created_at', { ascending: false });
+          .select('*', { count: 'exact' })
+          .order('created_at', { ascending: false })
+          .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
+
+        if (debouncedSearch.trim()) {
+          const s = debouncedSearch.trim().replace(/[%,]/g, ''); // sanitize pour ilike
+          q = q.or(`first_name.ilike.%${s}%,last_name.ilike.%${s}%,email.ilike.%${s}%,phone.ilike.%${s}%`);
+        }
+
+        const { data, count, error } = await q;
+        if (cancelled) return;
         if (error) console.error('Users fetch error:', error);
         setUsers(data || []);
+        setTotalCount(count || 0);
       } catch (e) {
         console.error('Users error:', e);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
+    })();
+    return () => { cancelled = true; };
+  }, [page, debouncedSearch]);
+
+  // Reset page a 0 quand on change le terme de recherche
+  useEffect(() => { setPage(0); }, [debouncedSearch]);
+
+  // Stats globales : nb total user + nb avec skin_type (independant de la page)
+  useEffect(() => {
+    (async () => {
+      const { count } = await supabase
+        .from('users_profile')
+        .select('id', { count: 'exact', head: true })
+        .not('skin_type', 'is', null);
+      setDiagnostiquedCount(count || 0);
     })();
   }, []);
 
@@ -30,19 +71,12 @@ export default function UsersSection() {
     try {
       const { data } = await supabase.from('orders').select('*').eq('user_id', u.id).order('created_at', { ascending: false });
       setUserOrders(data || []);
-    } catch (e) {
+    } catch {
       setUserOrders([]);
     }
   };
 
-  const filtered = search.trim()
-    ? users.filter(u =>
-        u.first_name?.toLowerCase().includes(search.toLowerCase()) ||
-        u.last_name?.toLowerCase().includes(search.toLowerCase()) ||
-        u.email?.toLowerCase().includes(search.toLowerCase()) ||
-        u.phone?.includes(search)
-      )
-    : users;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   if (selected) {
     return <UserDetail user={selected} orders={userOrders} onBack={() => setSelected(null)} />;
@@ -53,7 +87,10 @@ export default function UsersSection() {
       <header className="adm-header">
         <div>
           <h1>Utilisatrices</h1>
-          <p>{users.length} clientes · {users.filter(u => u.skin_type).length} diagnostics complétés</p>
+          <p>
+            {totalCount} cliente{totalCount > 1 ? 's' : ''} · {diagnostiquedCount} diagnostic{diagnostiquedCount > 1 ? 's' : ''} complété{diagnostiquedCount > 1 ? 's' : ''}
+            {totalPages > 1 && ` · page ${page + 1}/${totalPages}`}
+          </p>
         </div>
       </header>
 
@@ -67,40 +104,70 @@ export default function UsersSection() {
 
       {loading ? (
         <div className="adm-empty">Chargement…</div>
-      ) : filtered.length === 0 ? (
+      ) : users.length === 0 ? (
         <div className="adm-empty">
           <div style={{ fontSize: 48, opacity: 0.2 }}>👥</div>
-          <p>Aucune cliente inscrite</p>
+          <p>{debouncedSearch ? `Aucune cliente ne correspond à "${debouncedSearch}"` : 'Aucune cliente inscrite'}</p>
         </div>
       ) : (
-        <table className="adm-table">
-          <thead>
-            <tr>
-              <th>Cliente</th>
-              <th>Email</th>
-              <th>Téléphone</th>
-              <th>Localisation</th>
-              <th>Profil peau</th>
-              <th>Inscrite le</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map(u => (
-              <tr key={u.id} onClick={() => selectUser(u)} style={{ cursor: 'pointer' }}>
-                <td><strong>{u.first_name} {u.last_name}</strong></td>
-                <td>{u.email}</td>
-                <td>{u.phone || '—'}</td>
-                <td>{u.neighborhood ? `${u.neighborhood}, ` : ''}{u.city || '—'}</td>
-                <td>
-                  {u.skin_type
-                    ? <span className="adm-badge good">{u.skin_type} {u.skin_phototype}</span>
-                    : <span className="adm-badge medium">À compléter</span>}
-                </td>
-                <td>{new Date(u.created_at).toLocaleDateString('fr-FR')}</td>
+        <>
+          <table className="adm-table">
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>Email</th>
+                <th>Téléphone</th>
+                <th>Localisation</th>
+                <th>Profil peau</th>
+                <th>Inscrite le</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {users.map(u => (
+                <tr key={u.id} onClick={() => selectUser(u)} style={{ cursor: 'pointer' }}>
+                  <td><strong>{u.first_name} {u.last_name}</strong></td>
+                  <td>{u.email}</td>
+                  <td>{u.phone || '—'}</td>
+                  <td>{u.neighborhood ? `${u.neighborhood}, ` : ''}{u.city || '—'}</td>
+                  <td>
+                    {u.skin_type
+                      ? <span className="adm-badge good">{u.skin_type} {u.skin_phototype}</span>
+                      : <span className="adm-badge medium">À compléter</span>}
+                  </td>
+                  <td>{new Date(u.created_at).toLocaleDateString('fr-FR')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {totalPages > 1 && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '14px 8px',
+              marginTop: 8,
+              borderTop: '1px solid #EEE',
+              fontSize: 12,
+            }}>
+              <button
+                className="adm-btn-sec"
+                onClick={() => setPage(p => Math.max(0, p - 1))}
+                disabled={page === 0 || loading}
+                style={{ minWidth: 100 }}
+              >← Précédent</button>
+              <span style={{ color: '#6B6B6B', fontWeight: 600 }}>
+                Page {page + 1} / {totalPages}
+              </span>
+              <button
+                className="adm-btn-sec"
+                onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                disabled={page >= totalPages - 1 || loading}
+                style={{ minWidth: 100 }}
+              >Suivant →</button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

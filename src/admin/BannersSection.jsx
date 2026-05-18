@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getAllBanners, createBanner, updateBanner, deleteBanner, uploadBannerImage } from '../lib/supabase';
+import { toast, confirmDialog } from '../lib/toast';
 
 const BG_COLORS = [
   { color: '#1F8B4C', label: 'Vert YARAM' },
@@ -48,7 +49,7 @@ export default function BannersSection() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Supprimer cette bannière ?')) return;
+    if (!await confirmDialog('Supprimer cette bannière ?')) return;
     await deleteBanner(id);
     refresh();
   };
@@ -183,13 +184,13 @@ function BannerForm({ banner, onSave, onCancel }) {
     if (url) {
       setForm(f => ({ ...f, image_url: url }));
     } else {
-      alert('Erreur upload');
+      toast.error('Erreur upload');
     }
     setUploading(false);
   };
 
   const handleSubmit = async () => {
-    if (!form.title.trim()) { alert('Titre requis'); return; }
+    if (!form.title.trim()) { toast.error('Titre requis'); return; }
     setSaving(true);
     const data = { ...form };
     if (data.end_date) {

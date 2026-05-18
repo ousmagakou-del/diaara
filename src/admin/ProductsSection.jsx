@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { toast, confirmDialog } from '../lib/toast';
 
 const CATEGORIES = ['serum', 'solaire', 'nettoyant', 'hydratant', 'masque', 'corps', 'levres', 'maquillage', 'cheveux', 'huile'];
 const COMMON_BADGES = ['Made in Sénégal', 'Bio', 'Vegan', 'Sans parfum', 'Sans alcool', 'Recommandé dermato', 'Pharmacie'];
@@ -60,7 +61,7 @@ export default function ProductsSection() {
 
   // ─── Soft delete : juste désactiver ───
   const handleSoftDelete = async (p) => {
-    if (!confirm(`Désactiver "${p.name}" ?\n\nLe produit ne sera plus visible côté client mais l'historique des commandes reste intact.`)) return;
+    if (!await confirmDialog(`Désactiver "${p.name}" ?\n\nLe produit ne sera plus visible côté client mais l'historique des commandes reste intact.`)) return;
     setBusyId(p.id);
     const { error } = await supabase
       .from('products')
@@ -276,7 +277,7 @@ function ProductEditor({ product, brands, onSave, onCancel }) {
 
   const handleSubmit = async () => {
     if (!p.name?.trim() || !p.brand?.trim()) {
-      alert('Nom et marque requis');
+      toast.error('Nom et marque requis');
       return;
     }
     setSaving(true);

@@ -22,6 +22,7 @@ import NotifSettings from './pages/NotifSettings';
 import Promos from './pages/Promos';
 import InstallPrompt from './components/InstallPrompt';
 import WhatsAppButton from './components/WhatsAppButton';
+import Toaster from './components/Toaster';
 
 // ─── Lazy-load : pages lourdes / rarement visitees par le client lambda ───
 // Ces chunks ne sont telecharges qu'au moment ou la page est demandee.
@@ -112,12 +113,13 @@ function pathToRoute(pathname, search = '') {
 
 export default function App() {
   const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
-  // Routes top-level (non-client) : chunks separes, wrap dans Suspense
-  if (params.has('admin'))   return <Suspense fallback={<SplashScreen />}><Admin /></Suspense>;
-  if (params.has('pharma'))  return <Suspense fallback={<SplashScreen />}><Pharma /></Suspense>;
-  if (params.has('livreur')) return <Suspense fallback={<SplashScreen />}><Livreur /></Suspense>;
-  if (params.has('confirm')) return <Suspense fallback={<SplashScreen />}><ClientConfirm /></Suspense>;
-  if (params.has('pispi'))   return <Suspense fallback={<SplashScreen />}><PiSpiTest /></Suspense>;
+  // Routes top-level (non-client) : chunks separes, wrap dans Suspense.
+  // Toaster est monte autour pour que toast.*() marche partout (admin, pharma, livreur, etc.).
+  if (params.has('admin'))   return <><Suspense fallback={<SplashScreen />}><Admin /></Suspense><Toaster /></>;
+  if (params.has('pharma'))  return <><Suspense fallback={<SplashScreen />}><Pharma /></Suspense><Toaster /></>;
+  if (params.has('livreur')) return <><Suspense fallback={<SplashScreen />}><Livreur /></Suspense><Toaster /></>;
+  if (params.has('confirm')) return <><Suspense fallback={<SplashScreen />}><ClientConfirm /></Suspense><Toaster /></>;
+  if (params.has('pispi'))   return <><Suspense fallback={<SplashScreen />}><PiSpiTest /></Suspense><Toaster /></>;
 
   return <ClientApp />;
 }
@@ -289,6 +291,7 @@ function ClientApp() {
             <InstallPrompt />
             <WhatsAppButton />
           </div>
+          <Toaster />
         </UserContext.Provider>
       </NavContext.Provider>
     );
@@ -306,6 +309,7 @@ function ClientApp() {
             <InstallPrompt />
             <WhatsAppButton />
           </div>
+          <Toaster />
         </UserContext.Provider>
       </NavContext.Provider>
     );
@@ -348,6 +352,7 @@ function ClientApp() {
           <InstallPrompt />
           <WhatsAppButton />
         </div>
+        <Toaster />
       </UserContext.Provider>
     </NavContext.Provider>
   );

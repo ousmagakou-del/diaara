@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { confirmDialog } from '../lib/toast';
 
 const ROLES = [
   { id: 'super_admin', label: 'Super Admin', desc: 'Accès total YARAM' },
@@ -41,7 +42,7 @@ export default function StaffSection() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Retirer ce membre ?')) return;
+    if (!await confirmDialog('Retirer ce membre ?')) return;
     await supabase.from('staff').delete().eq('id', id);
     refresh();
   };

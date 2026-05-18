@@ -4,6 +4,7 @@ import { supabase, getProductAvailability, isFavorite, toggleFavorite } from '..
 import { scoreClass, formatPrice, YARAM_WHATSAPP } from '../lib/utils';
 import { haptic } from '../lib/haptic';
 import { addToCart as cartAddToCart } from '../lib/cart';
+import { toast } from '../lib/toast';
 import ReviewsSection from '../components/ReviewsSection';
 import './Product.css';
 
@@ -70,7 +71,7 @@ export default function Product({ id }) {
       } else {
         // Fallback : copier le lien
         await navigator.clipboard.writeText(window.location.href);
-        alert('Lien copié ! Partage-le avec tes amies 💚');
+        toast.success('Lien copié ! Partage-le avec tes amies 💚');
       }
     } catch (e) {
       console.log('Share canceled');
@@ -79,7 +80,7 @@ export default function Product({ id }) {
 
   const addToCart = () => {
     if (!selectedPh) {
-      alert('Sélectionne une pharmacie');
+      toast.error('Sélectionne une pharmacie');
       return;
     }
     // Passe par lib/cart.js : dispatch yaram-cart-updated (badge TabBar)
@@ -90,7 +91,7 @@ export default function Product({ id }) {
       qty,
     });
     if (!result.success) {
-      alert(result.error || 'Erreur panier');
+      toast.error(result.error || 'Erreur panier');
       return;
     }
     haptic('success');

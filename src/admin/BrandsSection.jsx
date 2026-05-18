@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { confirmDialog } from '../lib/toast';
 
 export default function BrandsSection() {
   const [brands, setBrands] = useState([]);
@@ -50,7 +51,7 @@ export default function BrandsSection() {
   };
 
   const handleDelete = async (b) => {
-    if (!confirm(`Supprimer "${b.name}" ?\n\nLes produits de cette marque ne seront pas supprimés.`)) return;
+    if (!await confirmDialog(`Supprimer "${b.name}" ?\n\nLes produits de cette marque ne seront pas supprimés.`)) return;
     const { error } = await supabase.from('brands').delete().eq('id', b.id);
     if (error) { flash('Erreur : ' + error.message, 'err'); return; }
     flash('Marque supprimée');
@@ -125,7 +126,7 @@ export default function BrandsSection() {
   };
 
   const handleRemoveLogo = async (b) => {
-    if (!confirm(`Retirer le logo de "${b.name}" ?`)) return;
+    if (!await confirmDialog(`Retirer le logo de "${b.name}" ?`)) return;
     const { error } = await supabase.from('brands').update({ img: null }).eq('id', b.id);
     if (error) { flash('Erreur : ' + error.message, 'err'); return; }
     flash('Logo retiré');

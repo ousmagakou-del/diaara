@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { toast, confirmDialog } from '../lib/toast';
 
 const TEMPLATES = [
   { id: 'welcome', label: '🎁 Bienvenue', text: 'Salut {name} 👋 Bienvenue chez YARAM ! Avec le code BIENVENUE tu as -10% sur ta 1ère commande. https://yaram.pages.dev' },
@@ -48,7 +49,7 @@ export default function MarketingSection() {
       .replace(/{skinType}/g, u.skin_type || '');
     const phone = (u.phone || '').replace(/\D/g, '');
     if (!phone) {
-      alert('Pas de numéro pour ' + u.first_name);
+      toast.error('Pas de numéro pour ' + u.first_name);
       return;
     }
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(personalizedMsg)}`, '_blank');
@@ -56,8 +57,8 @@ export default function MarketingSection() {
 
   const sendAll = () => {
     const targets = filtered.filter(u => selectedUsers.includes(u.id));
-    if (targets.length === 0) return alert('Sélectionne au moins une cliente');
-    if (!confirm(`Envoyer ${targets.length} messages WhatsApp ?`)) return;
+    if (targets.length === 0) return toast.info('Sélectionne au moins une cliente');
+    if (!await confirmDialog(`Envoyer ${targets.length} messages WhatsApp ?`)) return;
     targets.forEach((u, i) => setTimeout(() => sendWhatsApp(u), i * 500));
   };
 

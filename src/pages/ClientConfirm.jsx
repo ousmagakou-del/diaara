@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase, getOrderByConfirmToken, clientConfirmDelivery, clientReportDispute, sendWhatsApp, WhatsAppTemplates } from '../lib/supabase';
+import { toast } from '../lib/toast';
 import './ClientConfirm.css';
 
 export default function ClientConfirm() {
@@ -64,7 +65,7 @@ export default function ClientConfirm() {
     await clientReportDispute(order.id, reason);
     setSubmitting(false);
     setShowDispute(false);
-    alert('⚠️ Ton problème a été signalé à YARAM. Notre équipe va te contacter rapidement.');
+    toast.success('Ton problème a été signalé à YARAM. Notre équipe va te contacter rapidement.', { duration: 6000 });
   };
 
   if (loading) {
@@ -242,7 +243,7 @@ function DisputeModal({ onSubmit, onCancel }) {
   const submit = () => {
     const finalReason = reason === 'Autre' ? customReason : reason;
     if (!finalReason.trim()) {
-      alert('Sélectionne un motif');
+      toast.error('Sélectionne un motif');
       return;
     }
     onSubmit(finalReason);
@@ -292,7 +293,7 @@ function RatingModal({ order, driverName, onClose }) {
   const [saving, setSaving] = useState(false);
 
   const submit = async () => {
-    if (rating === 0) { alert('Sélectionne au moins 1 étoile'); return; }
+    if (rating === 0) { toast.error('Sélectionne au moins 1 étoile'); return; }
     setSaving(true);
     await supabase.from('orders').update({
       delivery_rating: rating,

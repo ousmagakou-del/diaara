@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNav, useUser } from '../App';
 import { supabase } from '../lib/supabase';
+import { confirmDialog } from '../lib/toast';
 import TabBar from '../components/TabBar';
 import './Loyalty.css';
 
@@ -69,7 +70,7 @@ export default function Loyalty() {
   };
 
   const handleRedeem = async (points) => {
-    if (!confirm(`Échanger ${points} points contre ${(points / 100) * 1000} FCFA de réduction ?`)) return;
+    if (!(await confirmDialog(`Échanger ${points} points contre ${(points / 100) * 1000} FCFA de réduction ?`, { confirmLabel: 'Échanger' }))) return;
     setRedeeming(points);
     const { data, error } = await supabase.rpc('redeem_loyalty_points', {
       p_user_id: user.id,

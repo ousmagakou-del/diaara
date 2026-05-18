@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { getAdminSession } from '../lib/adminAuth';
 import { fmtDateTime } from '../lib/exports';
+import { confirmDialog } from '../lib/toast';
 
 const ROLES = [
   { id: 'super_admin', label: 'Super Admin',         desc: 'Acces total + gestion des admins' },
@@ -95,7 +96,7 @@ export default function AdminUsersSection() {
   };
 
   const handleToggleActive = async (target) => {
-    if (!confirm(`${target.active ? 'Desactiver' : 'Reactiver'} ${target.name} ?`)) return;
+    if (!await confirmDialog(`${target.active ? 'Desactiver' : 'Reactiver'} ${target.name} ?`)) return;
     const callerId = await getCallerId();
     if (!callerId) return flash('Session corrompue', 'err');
 

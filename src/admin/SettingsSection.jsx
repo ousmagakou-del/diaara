@@ -1,16 +1,32 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getSiteSettings, updateSiteSettings } from '../lib/supabase';
+import { toast, confirmDialog } from '../lib/toast';
 
-// ⚠️ Cette section est en mode "lecture seule + bac a sable".
-// Les valeurs ne sont PAS persistees en base de donnees pour l'instant :
-// elles vivent uniquement dans le localStorage du navigateur de l'admin courant,
-// donc tu peux y jouer, mais ca n'a aucun effet sur l'app cliente.
+// ─────────────────────────────────────────────────────────────────────────────
+// Configuration generale du site — persistee en DB (table site_settings).
 //
-// Les valeurs effectivement utilisees par l'app sont actuellement EN DUR dans le code :
-//   - Commission : 0.08 dans src/lib/supabase.js (getPharmacyCommissions) et plusieurs sections admin
-//   - Frais livraison : src/lib/utils.js getShippingZone (par ville)
-//   - WhatsApp ops : src/components/WhatsAppButton.jsx + src/pharma/Pharma.jsx ADMIN_WHATSAPP
+// MIGRATION SQL A LANCER UNE FOIS dans Supabase Studio :
 //
-// TODO : creer une table `settings` (key, value jsonb) cote DB et reecrire cette page.
+//   CREATE TABLE IF NOT EXISTS public.site_settings (
+//     key         text PRIMARY KEY,
+//     value       jsonb NOT NULL,
+//     updated_at  timestamptz DEFAULT now()
+//   );
+//   ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;
+//   -- Lecture publique (l'app cliente peut lire les settings publics)
+//   CREATE POLICY "settings_read_all" ON public.site_settings
+//     FOR SELECT USING (true);
+//   -- Ecriture : service_role uniquement (l'admin passe par RPC ou edge function)
+//   -- Pour le MVP on autorise l'ecriture cote anon mais a securiser en prod !
+//   CREATE POLICY "settings_write_anon_TEMP" ON public.site_settings
+//     FOR ALL USING (true) WITH CHECK (true);
+//
+// Note : les VRAIES sources d'info de l'app (commission 8% dans supabase.js,
+// frais livraison par ville dans utils.js, etc.) ne sont PAS encore branchees
+// sur cette table. Pour le moment cette page persiste les valeurs en DB mais
+// le code ne les lit pas. Prochaine etape : remplacer les constantes par des
+// lectures de getSiteSettings() dans les helpers concernes.
+// ─────────────────────────────────────────────────────────────────────────────
 
 const DEFAULTS = {
   siteName: 'YARAM',
@@ -23,34 +39,39 @@ const DEFAULTS = {
   accentColor: '#FFD700',
 };
 
-function loadFromLS() {
-  try {
-    const raw = localStorage.getItem('yaram_settings');
-    if (!raw) return DEFAULTS;
-    return { ...DEFAULTS, ...JSON.parse(raw) };
-  } catch {
-    return DEFAULTS;
-  }
-}
-
 export default function SettingsSection() {
-  const [settings, setSettings] = useState(loadFromLS);
-  const [savedMsg, setSavedMsg] = useState('');
+  const [settings, setSettings] = useState(DEFAULTS);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = () => {
-    try {
-      localStorage.setItem('yaram_settings', JSON.stringify(settings));
-      setSavedMsg('✓ Enregistré dans ton navigateur (pas en base de données)');
-      setTimeout(() => setSavedMsg(''), 4000);
-    } catch (e) {
-      setSavedMsg('Erreur localStorage : ' + e.message);
+  useEffect(() => {
+    (async () => {
+      const remote = await getSiteSettings();
+      // Merge DB sur defaults pour gerer le cas d'une table vide ou partielle
+      setSettings({ ...DEFAULTS, ...remote });
+      setLoading(false);
+    })();
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    const result = await updateSiteSettings(settings);
+    setSaving(false);
+    if (result.success) {
+      toast.success('Paramètres enregistrés en base de données');
+    } else {
+      toast.error('Échec sauvegarde : ' + (result.error || 'erreur inconnue'));
     }
   };
 
-  const handleReset = () => {
-    if (!confirm('Réinitialiser aux valeurs par défaut ?')) return;
+  const handleReset = async () => {
+    if (!(await confirmDialog('Réinitialiser aux valeurs par défaut ?', { confirmLabel: 'Réinitialiser', danger: true }))) return;
     setSettings(DEFAULTS);
-    try { localStorage.removeItem('yaram_settings'); } catch {}
+    setSaving(true);
+    const result = await updateSiteSettings(DEFAULTS);
+    setSaving(false);
+    if (result.success) toast.success('Paramètres réinitialisés');
+    else toast.error('Échec : ' + (result.error || 'erreur inconnue'));
   };
 
   return (
@@ -58,18 +79,20 @@ export default function SettingsSection() {
       <header className="adm-header">
         <div>
           <h1>Paramètres</h1>
-          <p>Configuration générale YARAM</p>
+          <p>Configuration générale YARAM (persistée en DB)</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="adm-btn-sec" onClick={handleReset}>↺ Réinitialiser</button>
-          <button className="adm-btn-pri" onClick={handleSave}>💾 Enregistrer (local)</button>
+          <button className="adm-btn-sec" onClick={handleReset} disabled={saving || loading}>↺ Réinitialiser</button>
+          <button className="adm-btn-pri" onClick={handleSave} disabled={saving || loading}>
+            {saving ? '💾 Sauvegarde…' : '💾 Enregistrer'}
+          </button>
         </div>
       </header>
 
-      {/* ────────── WARNING ────────── */}
+      {/* ────────── INFO sur quoi est branche / pas encore ────────── */}
       <div style={{
-        background: '#FEF6E5',
-        border: '2px solid #F4B53A',
+        background: '#E6F1FB',
+        border: '1.5px solid #4285F4',
         borderRadius: 12,
         padding: 14,
         marginBottom: 20,
@@ -77,55 +100,51 @@ export default function SettingsSection() {
         gap: 12,
         alignItems: 'flex-start',
       }}>
-        <span style={{ fontSize: 24, lineHeight: 1 }}>⚠️</span>
-        <div style={{ fontSize: 13, lineHeight: 1.5, color: '#7A5A0A' }}>
-          <strong>Cette section est un bac à sable.</strong> Les valeurs sont sauvegardées
-          uniquement dans <em>ton navigateur</em> et ne sont pas appliquées à l'app cliente.
-          Les vraies valeurs utilisées par YARAM sont actuellement en dur dans le code
-          (commission 8%, frais livraison par ville, etc.).
-          <br/>
-          Pour activer cette page, il faut créer une table <code>settings</code> en base et
-          y câbler la lecture/écriture.
+        <span style={{ fontSize: 22, lineHeight: 1 }}>ℹ️</span>
+        <div style={{ fontSize: 13, lineHeight: 1.5, color: '#185FA5' }}>
+          <strong>Les valeurs sont sauvegardées en base</strong> (table <code>site_settings</code>).
+          Toutefois certains modules de l'app (calcul de la commission dans <code>supabase.js</code>,
+          frais de livraison par ville dans <code>utils.js</code>) utilisent encore des valeurs
+          en dur dans le code. Modifier ici ne les affecte pas <em>encore</em> — la prochaine
+          étape sera de les brancher sur <code>getSiteSettings()</code>.
         </div>
       </div>
 
-      {savedMsg && (
-        <div style={{ background: '#E8F5EC', color: '#1F8B4C', padding: '10px 14px', borderRadius: 8, marginBottom: 12, fontSize: 13, fontWeight: 600 }}>
-          {savedMsg}
+      {loading ? (
+        <p style={{ color: '#9B9B9B' }}>Chargement…</p>
+      ) : (
+        <div className="adm-form-grid">
+          <div className="adm-form-section">
+            <h3>🏢 Identité</h3>
+            <label>Nom de la boutique<input value={settings.siteName} onChange={e => setSettings({ ...settings, siteName: e.target.value })} /></label>
+            <label>Email contact<input value={settings.email} onChange={e => setSettings({ ...settings, email: e.target.value })} /></label>
+            <label>WhatsApp<input value={settings.whatsapp} onChange={e => setSettings({ ...settings, whatsapp: e.target.value })} /></label>
+          </div>
+
+          <div className="adm-form-section">
+            <h3>💰 Business <small style={{ color: '#9B9B9B', fontWeight: 500, fontSize: 11 }}>(à câbler côté code)</small></h3>
+            <label>Commission YARAM (%)<input type="number" step="0.1" value={settings.commission} onChange={e => setSettings({ ...settings, commission: parseFloat(e.target.value) || 0 })} /></label>
+            <label>Frais livraison Dakar (FCFA)<input type="number" value={settings.deliveryFee} onChange={e => setSettings({ ...settings, deliveryFee: parseInt(e.target.value) || 0 })} /></label>
+            <label>Livraison gratuite dès (FCFA)<input type="number" value={settings.freeDeliveryFrom} onChange={e => setSettings({ ...settings, freeDeliveryFrom: parseInt(e.target.value) || 0 })} /></label>
+          </div>
+
+          <div className="adm-form-section">
+            <h3>🎨 Couleurs <small style={{ color: '#9B9B9B', fontWeight: 500, fontSize: 11 }}>(à câbler côté CSS)</small></h3>
+            <label>Couleur principale<input type="color" value={settings.primaryColor} onChange={e => setSettings({ ...settings, primaryColor: e.target.value })} style={{ height: 44 }} /></label>
+            <label>Couleur accent<input type="color" value={settings.accentColor} onChange={e => setSettings({ ...settings, accentColor: e.target.value })} style={{ height: 44 }} /></label>
+          </div>
+
+          <div className="adm-form-section">
+            <h3>ℹ️ À propos</h3>
+            <p style={{ fontSize: 13, lineHeight: 1.6, color: '#6B6B6B' }}>
+              <strong>YARAM v0.1</strong><br />
+              Marketplace beauté Sénégal 🇸🇳<br />
+              Commission marketplace : {settings.commission}%<br />
+              Livraison YARAM mutualisée
+            </p>
+          </div>
         </div>
       )}
-
-      <div className="adm-form-grid">
-        <div className="adm-form-section">
-          <h3>🏢 Identité</h3>
-          <label>Nom de la boutique<input value={settings.siteName} onChange={e => setSettings({ ...settings, siteName: e.target.value })} /></label>
-          <label>Email contact<input value={settings.email} onChange={e => setSettings({ ...settings, email: e.target.value })} /></label>
-          <label>WhatsApp<input value={settings.whatsapp} onChange={e => setSettings({ ...settings, whatsapp: e.target.value })} /></label>
-        </div>
-
-        <div className="adm-form-section">
-          <h3>💰 Business <small style={{ color: '#9B9B9B', fontWeight: 500, fontSize: 11 }}>(non appliqué — voir warning)</small></h3>
-          <label>Commission YARAM (%)<input type="number" step="0.1" value={settings.commission} onChange={e => setSettings({ ...settings, commission: parseFloat(e.target.value) || 0 })} /></label>
-          <label>Frais livraison Dakar (FCFA)<input type="number" value={settings.deliveryFee} onChange={e => setSettings({ ...settings, deliveryFee: parseInt(e.target.value) || 0 })} /></label>
-          <label>Livraison gratuite dès (FCFA)<input type="number" value={settings.freeDeliveryFrom} onChange={e => setSettings({ ...settings, freeDeliveryFrom: parseInt(e.target.value) || 0 })} /></label>
-        </div>
-
-        <div className="adm-form-section">
-          <h3>🎨 Couleurs <small style={{ color: '#9B9B9B', fontWeight: 500, fontSize: 11 }}>(non appliqué)</small></h3>
-          <label>Couleur principale<input type="color" value={settings.primaryColor} onChange={e => setSettings({ ...settings, primaryColor: e.target.value })} style={{ height: 44 }} /></label>
-          <label>Couleur accent<input type="color" value={settings.accentColor} onChange={e => setSettings({ ...settings, accentColor: e.target.value })} style={{ height: 44 }} /></label>
-        </div>
-
-        <div className="adm-form-section">
-          <h3>ℹ️ À propos</h3>
-          <p style={{ fontSize: 13, lineHeight: 1.6, color: '#6B6B6B' }}>
-            <strong>YARAM v0.1</strong><br />
-            Marketplace beauté Sénégal 🇸🇳<br />
-            Commission marketplace : 8% (en dur dans le code)<br />
-            Livraison YARAM mutualisée
-          </p>
-        </div>
-      </div>
     </div>
   );
 }

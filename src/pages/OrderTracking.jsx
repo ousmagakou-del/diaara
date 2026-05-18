@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNav } from '../App';
 import { supabase, sendWhatsApp } from '../lib/supabase';
+import { toast } from '../lib/toast';
 import './OrderTracking.css';
 
 const STEPS = [
@@ -243,7 +244,7 @@ function RatingModal({ orderId, driverName, onClose }) {
 
   const submit = async () => {
     if (rating === 0) {
-      alert('Sélectionne au moins 1 étoile');
+      toast.error('Sélectionne au moins 1 étoile');
       return;
     }
     setSaving(true);

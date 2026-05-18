@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase, uploadProductImage, getAllBrands } from '../lib/supabase';
+import { toast, confirmDialog } from '../lib/toast';
 import './PharmaProducts.css';
 
 const CATEGORIES = [
@@ -62,7 +63,7 @@ export default function PharmaProducts({ pharmacyId, pharmacyName }) {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Supprimer cette proposition ?')) return;
+    if (!(await confirmDialog('Supprimer cette proposition ?', { confirmLabel: 'Supprimer', danger: true }))) return;
     await supabase.from('products').delete().eq('id', id);
     refresh();
   };
@@ -176,18 +177,18 @@ function ProductForm({ product, brands, onSave, onCancel }) {
       if (url) {
         setForm(f => ({ ...f, image_url: url }));
       } else {
-        alert('Erreur upload. Réessaie.');
+        toast.error('Erreur upload. Réessaie.');
       }
     } catch (err) {
       console.error(err);
-      alert('Erreur : ' + err.message);
+      toast.error('Erreur : ' + err.message);
     }
     setUploading(false);
   };
 
   const handleSubmit = async () => {
-    if (!form.name.trim()) { alert('Nom du produit requis'); return; }
-    if (!form.price || form.price <= 0) { alert('Prix requis'); return; }
+    if (!form.name.trim()) { toast.error('Nom du produit requis'); return; }
+    if (!form.price || form.price <= 0) { toast.error('Prix requis'); return; }
     setSaving(true);
     const data = { ...form, price: parseInt(form.price) };
     delete data.created_at;

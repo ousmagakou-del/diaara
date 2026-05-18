@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getPharmacyOrders, acceptOrder, refuseOrder, markOrderReady, sendWhatsApp } from '../lib/supabase';
 import { YARAM_WHATSAPP_INTL } from '../lib/utils';
+import { toast, confirmDialog } from '../lib/toast';
 
 const REFUSAL_REASONS = [
   'Produit en rupture de stock',
@@ -37,7 +38,7 @@ export default function PharmaOrders({ pharmacyId, pharmacyName, onPendingChange
   };
 
   const handleAccept = async (order) => {
-    if (!confirm(`Accepter cette commande ${order.id} ?`)) return;
+    if (!(await confirmDialog(`Accepter cette commande ${order.id} ?`, { confirmLabel: 'Accepter' }))) return;
     await acceptOrder(order.id, pharmacyId);
     
     // WhatsApp à la cliente
@@ -68,7 +69,7 @@ export default function PharmaOrders({ pharmacyId, pharmacyName, onPendingChange
   };
 
   const handleReady = async (order) => {
-    if (!confirm('Marquer cette commande prête à livrer ?')) return;
+    if (!(await confirmDialog('Marquer cette commande prête à livrer ?', { confirmLabel: 'Prête' }))) return;
     await markOrderReady(order.id);
     
     // WhatsApp à YARAM admin pour assigner livreur
@@ -251,7 +252,7 @@ function RefuseModal({ order, onRefuse, onCancel }) {
   const handleSubmit = () => {
     const final = reason === 'Autre' ? customReason : reason;
     if (!final.trim()) {
-      alert('Sélectionne un motif');
+      toast.error('Sélectionne un motif');
       return;
     }
     onRefuse(final);

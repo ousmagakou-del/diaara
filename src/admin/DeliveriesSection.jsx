@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase, updateOrderStatus, sendWhatsApp, WhatsAppTemplates, generateConfirmToken } from '../lib/supabase';
+import { toast, confirmDialog } from '../lib/toast';
 
 export default function DeliveriesSection() {
   const [orders, setOrders] = useState([]);
@@ -64,14 +65,14 @@ export default function DeliveriesSection() {
     if (phone) {
       const msg = WhatsAppTemplates.driverAssigned(name, order, url);
       const result = await sendWhatsApp(phone, msg);
-      if (result.success) alert(`✅ WhatsApp envoyé à ${name}`);
+      if (result.success) toast.success(`✅ WhatsApp envoyé à ${name}`);
       else {
         navigator.clipboard.writeText(url);
-        alert(`⚠️ Échec WhatsApp. Lien copié :\n${url}`);
+        toast.error(`⚠️ Échec WhatsApp. Lien copié :\n${url}`);
       }
     } else {
       navigator.clipboard.writeText(url);
-      alert(`Lien copié :\n${url}`);
+      toast.success(`Lien copié :\n${url}`);
     }
     setAssigningOrder(null);
     refresh();
@@ -82,35 +83,35 @@ export default function DeliveriesSection() {
     if (tracking.delivery_person_phone) {
       const msg = WhatsAppTemplates.driverAssigned(tracking.delivery_person_name, order, url);
       const result = await sendWhatsApp(tracking.delivery_person_phone, msg);
-      if (result.success) alert(`✅ Lien renvoyé`);
+      if (result.success) toast.success(`✅ Lien renvoyé`);
       else {
         navigator.clipboard.writeText(url);
-        alert(`Lien copié:\n${url}`);
+        toast.success(`Lien copié:\n${url}`);
       }
     } else {
       navigator.clipboard.writeText(url);
-      alert(`Lien copié:\n${url}`);
+      toast.success(`Lien copié:\n${url}`);
     }
   };
 
   const resendConfirmLink = async (order) => {
-    if (!order.confirmation_token) return alert('Pas de token de confirmation');
+    if (!order.confirmation_token) return toast.error('Pas de token de confirmation');
     const url = `${window.location.origin}/?confirm=${order.confirmation_token}`;
     const phone = order.address?.phone;
     if (!phone) {
       navigator.clipboard.writeText(url);
-      return alert('Lien copié:\n' + url);
+      return toast.success('Lien copié:\n' + url);
     }
     const msg = order.payment_method === 'cod'
       ? WhatsAppTemplates.orderAwaitingConfirmCash(order.address.name, order.id, order.total, url)
       : WhatsAppTemplates.orderAwaitingConfirm(order.address.name, order.id, url);
     const result = await sendWhatsApp(phone, msg);
-    if (result.success) alert('✅ Lien de confirmation renvoyé à la cliente');
-    else alert('Échec WhatsApp');
+    if (result.success) toast.success('✅ Lien de confirmation renvoyé à la cliente');
+    else toast.error('Échec WhatsApp');
   };
 
   const forceDeliver = async (order) => {
-    if (!confirm('Forcer la livraison à "livrée" sans confirmation cliente ?')) return;
+    if (!await confirmDialog('Forcer la livraison à "livrée" sans confirmation cliente ?')) return;
     await supabase.from('orders').update({
       status: 'delivered',
       client_confirmed: true,
@@ -272,7 +273,7 @@ function AssignDriverModal({ order, onAssign, onCancel }) {
   const [assigning, setAssigning] = useState(false);
 
   const handleSubmit = async () => {
-    if (!name.trim()) { alert('Nom requis'); return; }
+    if (!name.trim()) { toast.error('Nom requis'); return; }
     setAssigning(true);
     await onAssign(order, name.trim(), phone.trim());
     setAssigning(false);

@@ -3,6 +3,7 @@ import { useNav, useUser } from '../App';
 import { supabase, signOut } from '../lib/supabase';
 import { toggleTheme, getTheme } from '../lib/theme';
 import { YARAM_WHATSAPP, YARAM_WHATSAPP_DISPLAY } from '../lib/utils';
+import { toast, confirmDialog } from '../lib/toast';
 import TabBar from '../components/TabBar';
 import './Profile.css';
 
@@ -57,7 +58,7 @@ export default function Profile() {
   }, [user?.id]);
 
   const handleLogout = async () => {
-    if (confirm('Te déconnecter ?')) {
+    if (await confirmDialog('Te déconnecter ?', { confirmLabel: 'Déconnexion', danger: true })) {
       await signOut();
       await refreshUser();
     }
@@ -254,7 +255,7 @@ export default function Profile() {
 
           <div className="prof-menu-sep" />
 
-          <button className="prof-menu-row" onClick={() => alert('Bientôt : Wolof + Anglais')}>
+          <button className="prof-menu-row" onClick={() => toast.info('Bientôt : Wolof + Anglais')}>
             <div className="prof-menu-icon">🌍</div>
             <div className="prof-menu-text">
               <strong>Langue</strong>

@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { cachedFetch, invalidateCache } from './dataCache';
+import { toast } from './toast';
 
 const SUPABASE_URL = 'https://qxhhnrnworwrnwmqekmb.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF4aGhucm53b3J3cm53bXFla21iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MTExMzYsImV4cCI6MjA5NDA4NzEzNn0.l_7-Eg06UFnXvSw1BQiuNw0yU94jillHNycx-jvP1Aw';
@@ -16,6 +17,45 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 
 // Re-export utility for admin sections
 export { invalidateCache };
+
+// ═══════════════════════════════════════════════
+// SITE SETTINGS (admin) — table site_settings (key, value JSONB, updated_at)
+// ═══════════════════════════════════════════════
+
+export async function getSiteSettings() {
+  // Lit toutes les rows et merge en { key: value }
+  const { data, error } = await supabase
+    .from('site_settings')
+    .select('key, value');
+  if (error) {
+    console.warn('[settings] read error:', error.message);
+    return {};
+  }
+  const out = {};
+  for (const row of (data || [])) {
+    out[row.key] = row.value;
+  }
+  return out;
+}
+
+export async function updateSiteSettings(updates) {
+  // updates = { commission: 8, deliveryFee: 1500, ... }
+  // On upsert chaque entree separement (1 row par key)
+  const rows = Object.entries(updates).map(([key, value]) => ({
+    key,
+    value,
+    updated_at: new Date().toISOString(),
+  }));
+  if (rows.length === 0) return { success: true };
+  const { error } = await supabase
+    .from('site_settings')
+    .upsert(rows, { onConflict: 'key' });
+  if (error) {
+    console.error('[settings] write error:', error.message);
+    return { success: false, error: error.message };
+  }
+  return { success: true };
+}
 
 // ═══════════════════════════════════════════════
 // AUTH
@@ -251,7 +291,7 @@ export async function getMyAddresses() {
 export async function saveAddress(address) {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.user) {
-    alert('Tu dois être connectée');
+    toast.error('Tu dois être connectée');
     return null;
   }
   // Invalide le cache adresses a la sauvegarde
@@ -272,7 +312,7 @@ export async function saveAddress(address) {
           line: address.line, is_default: address.is_default,
         })
         .eq('id', address.id).select().single();
-      if (error) { alert('Erreur update : ' + error.message); return null; }
+      if (error) { toast.error('Erreur update : ' + error.message); return null; }
       return data;
     } else {
       const newAddr = {
@@ -283,11 +323,11 @@ export async function saveAddress(address) {
         line: address.line, is_default: address.is_default || false,
       };
       const { data, error } = await supabase.from('addresses').insert(newAddr).select().single();
-      if (error) { alert('Erreur insert : ' + error.message); return null; }
+      if (error) { toast.error('Erreur insert : ' + error.message); return null; }
       return data;
     }
   } catch (e) {
-    alert('Erreur technique : ' + e.message);
+    toast.error('Erreur technique : ' + e.message);
     return null;
   }
 }

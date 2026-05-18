@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase, updateOrderStatus } from '../lib/supabase';
+import { confirmDialog } from '../lib/toast';
 
 // Flow lineaire des statuts "normaux" d'une commande. Une commande peut sortir
 // de ce flow (refused, cancelled, disputed...) et ne plus etre "avancable".
@@ -19,27 +20,50 @@ const STATUS_LABELS = {
   disputed:          { label: 'Litige',               color: 'bad',       emoji: '⚠️' },
 };
 
+const PAGE_SIZE = 50;
+
 export default function OrdersSection() {
   const [orders, setOrders] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(0);
   const [filter, setFilter] = useState('all');
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
-  useEffect(() => { refresh(); }, []);
+  // Re-fetch quand on change de page OU de filtre
+  useEffect(() => { refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [page, filter]);
 
   const refresh = async () => {
-    const { data } = await supabase
+    setLoading(true);
+    // ─── Server-side pagination + filtrage par statut ───
+    // (Avant : on chargeait TOUTES les commandes a chaque fois — pas tenable a 10k+.)
+    let q = supabase
       .from('orders')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
+
+    if (filter === 'active') {
+      q = q.not('status', 'in', '(delivered,cancelled,refused,disputed)');
+    } else if (filter !== 'all') {
+      q = q.eq('status', filter);
+    }
+
+    const { data, count } = await q;
     setOrders(data || []);
+    setTotalCount(count || 0);
     if (selected) {
       const upd = (data || []).find(o => o.id === selected.id);
       if (upd) setSelected(upd);
     }
     setLoading(false);
   };
+
+  // Reset page a 0 quand on change de filtre (via setFilter helper)
+  const changeFilter = (f) => { setFilter(f); setPage(0); };
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   const advance = async (order) => {
     const idx = STATUS_FLOW.indexOf(order.status);
@@ -52,15 +76,14 @@ export default function OrdersSection() {
   };
 
   const cancel = async (order) => {
-    if (!confirm('Annuler cette commande ?')) return;
+    if (!await confirmDialog('Annuler cette commande ?')) return;
     await updateOrderStatus(order.id, 'cancelled');
     refresh();
   };
 
-  let filtered = filter === 'all' ? orders
-    : filter === 'active' ? orders.filter(o => !['delivered', 'cancelled'].includes(o.status))
-    : orders.filter(o => o.status === filter);
-
+  // Le filtrage par statut est deja fait cote serveur via .range/.eq.
+  // La recherche reste cote client mais SEULEMENT sur la page courante.
+  let filtered = orders;
   if (search.trim()) {
     const s = search.toLowerCase();
     filtered = filtered.filter(o =>
@@ -75,7 +98,10 @@ export default function OrdersSection() {
       <header className="adm-header">
         <div>
           <h1>Commandes</h1>
-          <p>{orders.length} commandes au total</p>
+          <p>
+            {totalCount} commande{totalCount > 1 ? 's' : ''} au total
+            {totalPages > 1 && ` · page ${page + 1}/${totalPages}`}
+          </p>
         </div>
         <button className="adm-btn-sec" onClick={refresh}>🔄 Actualiser</button>
       </header>
@@ -101,14 +127,10 @@ export default function OrdersSection() {
           <button
             key={f.id}
             className={`adm-filter ${filter === f.id ? 'active' : ''}`}
-            onClick={() => setFilter(f.id)}
+            onClick={() => changeFilter(f.id)}
           >
             {f.label}
-            <span className="adm-filter-count">
-              {f.id === 'all' ? orders.length
-                : f.id === 'active' ? orders.filter(o => !['delivered', 'cancelled'].includes(o.status)).length
-                : orders.filter(o => o.status === f.id).length}
-            </span>
+            {/* Compteur de la page courante uniquement — pour le total appliquer le filtre */}
           </button>
         ))}
       </div>
@@ -143,6 +165,34 @@ export default function OrdersSection() {
                 </button>
               );
             })
+          )}
+
+          {/* ─── Pagination ─── */}
+          {totalPages > 1 && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '12px 8px',
+              borderTop: '1px solid #EEE',
+              fontSize: 12,
+            }}>
+              <button
+                className="adm-btn-sec"
+                onClick={() => setPage(p => Math.max(0, p - 1))}
+                disabled={page === 0 || loading}
+                style={{ minWidth: 80 }}
+              >← Préc.</button>
+              <span style={{ color: '#6B6B6B', fontWeight: 600 }}>
+                {page + 1} / {totalPages}
+              </span>
+              <button
+                className="adm-btn-sec"
+                onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                disabled={page >= totalPages - 1 || loading}
+                style={{ minWidth: 80 }}
+              >Suiv. →</button>
+            </div>
           )}
         </div>
 

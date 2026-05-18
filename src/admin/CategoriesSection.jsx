@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { confirmDialog } from '../lib/toast';
 
 const CATEGORY_PRESETS = [
   { bg: '#FFE4D6', text: '#993C1D', label: 'Orange doux' },
@@ -110,7 +111,7 @@ export default function CategoriesSection() {
 
   // ─── Retirer l'icone SVG (revient au fallback) ───
   const handleRemoveSVG = async (cat) => {
-    if (!confirm(`Retirer l'icone de "${cat.name}" ?`)) return;
+    if (!await confirmDialog(`Retirer l'icone de "${cat.name}" ?`)) return;
     const { error } = await supabase
       .from('categories')
       .update({ icon_url: null })
@@ -147,7 +148,7 @@ export default function CategoriesSection() {
 
   // ─── Delete ───
   const handleDelete = async (cat) => {
-    if (!confirm(`Supprimer definitivement "${cat.name}" ?\n\nLes produits avec cette categorie ne seront PAS supprimes mais n'apparaitront plus dans le filtre.`)) return;
+    if (!await confirmDialog(`Supprimer definitivement "${cat.name}" ?\n\nLes produits avec cette categorie ne seront PAS supprimes mais n'apparaitront plus dans le filtre.`)) return;
     const { error } = await supabase.from('categories').delete().eq('id', cat.id);
     if (error) { flash('Erreur : ' + error.message, 'err'); return; }
     flash('Categorie supprimee');

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNav, useUser } from '../App';
 import { getMyAddresses, saveAddress, deleteAddress, setDefaultAddress } from '../lib/supabase';
 import { haptic } from '../lib/haptic';
+import { toast, confirmDialog } from '../lib/toast';
 import './Addresses.css';
 
 const PRESET_ICONS = [
@@ -44,7 +45,7 @@ export default function Addresses() {
 
   const handleSave = async (addr) => {
     if (!addr.label.trim() || !addr.city.trim() || !addr.line.trim()) {
-      alert('Remplis les champs requis');
+      toast.error('Remplis les champs requis');
       return;
     }
     haptic('success');
@@ -54,7 +55,7 @@ export default function Addresses() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Supprimer cette adresse ?')) return;
+    if (!(await confirmDialog('Supprimer cette adresse ?', { confirmLabel: 'Supprimer', danger: true }))) return;
     await deleteAddress(id);
     await refresh();
   };
@@ -144,7 +145,7 @@ function AddressEditor({ address, onSave, onCancel }) {
 
   const detectLocation = async () => {
     if (!navigator.geolocation) {
-      alert('Géolocalisation non disponible');
+      toast.error('Géolocalisation non disponible');
       return;
     }
     navigator.geolocation.getCurrentPosition(
@@ -157,10 +158,10 @@ function AddressEditor({ address, onSave, onCancel }) {
           update('neighborhood', addr.suburb || addr.neighbourhood || '');
           update('line', data.display_name?.split(',').slice(0, 2).join(',') || '');
         } catch {
-          alert('Impossible de détecter la position');
+          toast.error('Impossible de détecter la position');
         }
       },
-      () => alert('Permission de localisation refusée'),
+      () => toast.error('Permission de localisation refusée'),
     );
   };
 

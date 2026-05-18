@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { confirmDialog } from '../lib/toast';
 
 const TEMPLATE_LABELS = {
   welcome: { icon: '🎉', label: 'Bienvenue', desc: 'À l\'inscription' },
@@ -46,7 +47,7 @@ export default function NotificationsSection() {
   useEffect(() => { refresh(); }, []);
 
   const handleSendReviewReminders = async () => {
-    if (!confirm('Envoyer les rappels d\'avis pour toutes les commandes livrées hier ?\n\nUn WhatsApp sera envoyé à chaque cliente.')) return;
+    if (!await confirmDialog('Envoyer les rappels d\'avis pour toutes les commandes livrées hier ?\n\nUn WhatsApp sera envoyé à chaque cliente.')) return;
     
     setReminderLoading(true);
     try {

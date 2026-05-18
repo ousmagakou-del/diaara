@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { confirmDialog } from '../lib/toast';
 
 // ⚠️ Doit etre aligne avec validatePromoCode dans src/lib/supabase.js qui lit la table 'promo_codes'.
 // Auparavant cette page lisait la table 'promos' qui n'etait pas branchee au checkout.
@@ -51,7 +52,7 @@ export default function PromosSection() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Supprimer ce code promo ?')) return;
+    if (!(await confirmDialog('Supprimer ce code promo ?', { confirmLabel: 'Supprimer', danger: true }))) return;
     const { error } = await supabase.from('promo_codes').delete().eq('id', id);
     if (error) { setErrMsg('Erreur suppression : ' + error.message); return; }
     refresh();
