@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { getAdminToken } from '../lib/adminAuth';
 import { confirmDialog } from '../lib/toast';
 
 // ⚠️ Doit etre aligne avec validatePromoCode dans src/lib/supabase.js qui lit la table 'promo_codes'.
@@ -16,10 +17,9 @@ export default function PromosSection() {
   useEffect(() => { refresh(); }, []);
 
   const refresh = async () => {
-    const { data, error } = await supabase
-      .from('promo_codes')
-      .select('*')
-      .order('created_at', { ascending: false });
+    const token = getAdminToken();
+    if (!token) { setErrMsg('Session admin expirée'); setLoading(false); return; }
+    const { data, error } = await supabase.rpc('admin_list_promos', { p_token: token });
     if (error) setErrMsg('Erreur lecture promos : ' + error.message);
     setPromos(data || []);
     setLoading(false);
@@ -31,21 +31,25 @@ export default function PromosSection() {
     const value = parseFloat(p.value);
     if (Number.isNaN(value) || value < 0) { setErrMsg('Valeur invalide'); return; }
 
+    const token = getAdminToken();
+    if (!token) { setErrMsg('Session admin expirée'); return; }
+
     const payload = {
       code: p.code.trim().toUpperCase(),
       type: p.type, // percent | fixed | free_shipping
       value,
       min_order: parseFloat(p.min_order) || 0,
-      max_uses: p.max_uses ? parseInt(p.max_uses) : null,
-      per_user_limit: p.per_user_limit ? parseInt(p.per_user_limit) : null,
+      max_uses: p.max_uses || null,
+      per_user_limit: p.per_user_limit || null,
       active: !!p.active,
       expires_at: p.expires_at || null,
       starts_at: p.starts_at || null,
     };
-    const op = p.id
-      ? supabase.from('promo_codes').update(payload).eq('id', p.id)
-      : supabase.from('promo_codes').insert(payload);
-    const { error } = await op;
+    const { error } = await supabase.rpc('admin_upsert_promo', {
+      p_token: token,
+      p_id: p.id || null,
+      p_payload: payload,
+    });
     if (error) { setErrMsg('Erreur sauvegarde : ' + error.message); return; }
     setEditing(null);
     refresh();
@@ -53,7 +57,9 @@ export default function PromosSection() {
 
   const handleDelete = async (id) => {
     if (!(await confirmDialog('Supprimer ce code promo ?', { confirmLabel: 'Supprimer', danger: true }))) return;
-    const { error } = await supabase.from('promo_codes').delete().eq('id', id);
+    const token = getAdminToken();
+    if (!token) { setErrMsg('Session admin expirée'); return; }
+    const { error } = await supabase.rpc('admin_delete_promo', { p_token: token, p_id: id });
     if (error) { setErrMsg('Erreur suppression : ' + error.message); return; }
     refresh();
   };

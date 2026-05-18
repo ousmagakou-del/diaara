@@ -76,20 +76,33 @@ export async function getSiteSettings() {
 }
 
 export async function updateSiteSettings(updates) {
-  // updates = { commission: 8, deliveryFee: 1500, ... }
-  // On upsert chaque entree separement (1 row par key)
-  const rows = Object.entries(updates).map(([key, value]) => ({
-    key,
-    value,
-    updated_at: new Date().toISOString(),
-  }));
-  if (rows.length === 0) return { success: true };
-  const { error } = await supabase
-    .from('site_settings')
-    .upsert(rows, { onConflict: 'key' });
+  // Phase 2 RLS : on passe par la RPC admin_update_site_settings (SECURITY DEFINER,
+  // requiert token admin). L'INSERT/UPDATE direct sur site_settings est bloque
+  // pour anon depuis la vague 5.
+  const keys = Object.keys(updates || {});
+  if (keys.length === 0) return { success: true };
+
+  // Recupere le token admin courant
+  let token = null;
+  try {
+    const raw = sessionStorage.getItem('yaram-admin-session');
+    if (raw) token = JSON.parse(raw)?.token || null;
+  } catch { /* ignore */ }
+
+  if (!token) {
+    return { success: false, error: 'Session admin requise pour modifier les paramètres' };
+  }
+
+  const { data, error } = await supabase.rpc('admin_update_site_settings', {
+    p_token:    token,
+    p_settings: updates,
+  });
   if (error) {
     console.error('[settings] write error:', error.message);
     return { success: false, error: error.message };
+  }
+  if (!data?.success) {
+    return { success: false, error: data?.error || 'Echec mise a jour parametres' };
   }
   // Refresh le cache + notify les listeners (CSS variables, etc.)
   await loadSiteSettings();
@@ -886,10 +899,9 @@ export async function applyPromoCode(promoId, userId, orderId, discount) {
     promo_id: promoId, user_id: userId, order_id: orderId, discount_amount: discount,
   });
   if (error) return false;
-  const { data: promo } = await supabase.from('promo_codes').select('uses_count').eq('id', promoId).single();
-  if (promo) {
-    await supabase.from('promo_codes').update({ uses_count: (promo.uses_count || 0) + 1 }).eq('id', promoId);
-  }
+  // Vague 6 RLS : UPDATE direct sur promo_codes bloque pour anon.
+  // On passe par la RPC dediee qui incremente le compteur en SECURITY DEFINER.
+  await supabase.rpc('increment_promo_uses', { p_promo_id: promoId });
   return true;
 }
 
