@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
+import { adminListOrdersFull } from '../lib/adminApi';
 import { fmtFCFA } from '../lib/exports';
 
 const HOUR = 60 * 60 * 1000;
@@ -24,7 +25,7 @@ export default function PerformanceSection() {
     (async () => {
       setLoading(true);
       const [oRes, pRes] = await Promise.all([
-        supabase.from('orders').select('id, assigned_pharmacy_id, pharmacy_splits, status, total, created_at, accepted_at, prepared_at, refused_at'),
+        adminListOrdersFull(),
         supabase.from('pharmacies').select('id, name, city, neighborhood, active, rating, review_count, phone, whatsapp'),
       ]);
       setOrders(oRes.data || []);

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { supabase, updateOrderStatus, sendWhatsApp, WhatsAppTemplates, generateConfirmToken } from '../lib/supabase';
+import { supabase, sendWhatsApp, WhatsAppTemplates, generateConfirmToken } from '../lib/supabase';
+import { adminListOrdersFull, adminUpdateOrder } from '../lib/adminApi';
 import { toast, confirmDialog } from '../lib/toast';
 
 export default function DeliveriesSection() {
@@ -24,14 +25,10 @@ export default function DeliveriesSection() {
       else if (view === 'completed') statuses = ['delivered'];
       else if (view === 'disputed') statuses = ['disputed'];
       
-      const ordersRes = await supabase
-        .from('orders')
-        .select('*')
-        .in('status', statuses)
-        .order('created_at', { ascending: false })
-        .limit(view === 'completed' ? 50 : 100);
-      
-      setOrders(ordersRes.data || []);
+      const ordersRes = await adminListOrdersFull({ statuses });
+      // Limite cote client pour rester leger (la RPC peut renvoyer beaucoup de rows)
+      const cap = view === 'completed' ? 50 : 100;
+      setOrders((ordersRes.data || []).slice(0, cap));
 
       const trackingsRes = await supabase.from('delivery_tracking').select('*');
       const trackMap = {};
@@ -56,9 +53,7 @@ export default function DeliveriesSection() {
     
     // S'assurer qu'il y a un confirmation_token sur la commande
     if (!order.confirmation_token) {
-      await supabase.from('orders').update({
-        confirmation_token: generateConfirmToken(),
-      }).eq('id', order.id);
+      await adminUpdateOrder(order.id, { confirmation_token: generateConfirmToken() });
     }
     
     const url = `${window.location.origin}/?livreur=${token}`;
@@ -112,11 +107,11 @@ export default function DeliveriesSection() {
 
   const forceDeliver = async (order) => {
     if (!await confirmDialog('Forcer la livraison à "livrée" sans confirmation cliente ?')) return;
-    await supabase.from('orders').update({
+    await adminUpdateOrder(order.id, {
       status: 'delivered',
       client_confirmed: true,
       client_confirmed_at: new Date().toISOString(),
-    }).eq('id', order.id);
+    });
     refresh();
   };
 

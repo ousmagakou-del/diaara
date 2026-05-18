@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase, getCachedSetting } from '../lib/supabase';
+import { adminListOrdersFull } from '../lib/adminApi';
 import { exportCSV, openInvoicePrintWindow, fmtDate, fmtDateTime, fmtFCFA } from '../lib/exports';
 
 // Taux lu dynamiquement depuis les site_settings (fallback 8%).
@@ -25,10 +26,7 @@ export default function FinancesSection() {
     (async () => {
       setLoading(true);
       const [ordersRes, pharmaciesRes] = await Promise.all([
-        supabase.from('orders')
-          .select('id, total, items, status, created_at, accepted_at, prepared_at, assigned_pharmacy_id, pharmacy_splits, address')
-          .in('status', REVENUE_STATUSES)
-          .order('created_at', { ascending: false }),
+        adminListOrdersFull({ statuses: REVENUE_STATUSES }),
         supabase.from('pharmacies').select('id, name, city, neighborhood, address, phone, whatsapp'),
       ]);
       setOrders(ordersRes.data || []);

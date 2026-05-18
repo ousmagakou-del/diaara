@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { adminListOrdersFull } from '../lib/adminApi';
 
 export default function CommissionsSection() {
   const [orders, setOrders] = useState([]);
@@ -9,7 +10,7 @@ export default function CommissionsSection() {
   useEffect(() => {
     (async () => {
       const [oRes, pRes] = await Promise.all([
-        supabase.from('orders').select('*').eq('status', 'delivered'),
+        adminListOrdersFull({ statuses: ['delivered'] }),
         supabase.from('pharmacies').select('id, name, commission'),
       ]);
       setOrders(oRes.data || []);

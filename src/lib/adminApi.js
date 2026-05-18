@@ -213,3 +213,18 @@ export async function adminDeleteStaff(id) {
   });
   return { error };
 }
+
+// ─────────────────────────────────────────────────────────────────────
+// ORDERS — variante full pour aggregations admin (Commissions, Performance, ...)
+// ─────────────────────────────────────────────────────────────────────
+
+export async function adminListOrdersFull({ since = null, statuses = null } = {}) {
+  const { token, err } = requireToken();
+  if (err) return { data: null, error: err };
+  const { data, error } = await supabase.rpc('admin_list_orders_full', {
+    p_token:    token,
+    p_since:    since,
+    p_statuses: statuses,
+  });
+  return { data: data || [], error };
+}

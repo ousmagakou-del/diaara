@@ -171,21 +171,12 @@ export default function Home() {
       }
 
       try {
-        // Perf : on ne scanne que les commandes livrees/expediees recentes (200 max)
-        // -> evite de retelecharger tout l'historique a chaque ouverture du Home.
-        const { data: orders } = await supabase
-          .from('orders').select('items')
-          .in('status', ['delivered', 'shipped'])
-          .order('created_at', { ascending: false })
-          .limit(200);
-        const productSales = {};
-        (orders || []).forEach(o => {
-          (o.items || []).forEach(item => {
-            if (item.productId) productSales[item.productId] = (productSales[item.productId] || 0) + (item.qty || 1);
-          });
-        });
-        const sortedIds = Object.entries(productSales).sort((a, b) => b[1] - a[1]).map(([id]) => id);
-        const best = sortedIds.map(id => p.find(pr => pr.id === id)).filter(Boolean);
+        // Vague 11 RLS : aggregation cote serveur via RPC public_best_sellers.
+        // Plus de lecture directe sur orders (qui sera bloquee apres lockdown).
+        const { data: rows } = await supabase.rpc('public_best_sellers', { p_limit: 30 });
+        const best = (rows || [])
+          .map(r => p.find(pr => pr.id === r.product_id))
+          .filter(Boolean);
         setBestSellers(best);
         homeDataCache.bestSellers = best;
       } catch (e) { console.error('best sellers error:', e); }
