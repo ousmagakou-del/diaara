@@ -263,12 +263,22 @@ export async function getMyOrders() {
 }
 
 export async function updateOrderStatus(id, status) {
-  // Invalide le cache global orders
+  // Vague 13 RLS : UPDATE direct bloque pour anon. Cette fonction n'est
+  // utilisee QUE par Payment.jsx pour passer pending_payment -> paid.
+  // Donc on route vers la RPC dediee client_mark_order_paid.
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.user?.id) invalidateCache(`my_orders_${session.user.id}`);
   } catch {}
-  return supabase.from('orders').update({ status }).eq('id', id);
+  if (status === 'paid') {
+    const { data, error } = await supabase.rpc('client_mark_order_paid', { p_order_id: id });
+    if (error) return { error };
+    if (!data?.success) return { error: { message: data?.error || 'paiement refuse' } };
+    return { data };
+  }
+  // Autres statuts : il n'y en a pas en client. Si un futur cas apparait,
+  // creer une RPC dediee plutot que d'autoriser l'UPDATE direct.
+  return { error: { message: 'updateOrderStatus: status ' + status + ' non autorise cote client' } };
 }
 
 export function subscribeToNewOrders(callback) {
@@ -436,20 +446,16 @@ export async function getOrderByConfirmToken(token) {
   return data;
 }
 
-export async function clientConfirmDelivery(orderId) {
-  return supabase.from('orders').update({
-    status: 'delivered',
-    client_confirmed: true,
-    client_confirmed_at: new Date().toISOString(),
-  }).eq('id', orderId);
+export async function clientConfirmDelivery(tokenOrOrderId) {
+  // Vague 13 RLS : passe par RPC SECURITY DEFINER.
+  // La RPC accepte le token (ClientConfirm.jsx l'utilise depuis l'URL).
+  // Pour back-compat, si on recoit un orderId, on cherche d'abord par token.
+  return supabase.rpc('client_confirm_delivery', { p_token: tokenOrOrderId });
 }
 
-export async function clientReportDispute(orderId, reason) {
-  return supabase.from('orders').update({
-    status: 'disputed',
-    client_dispute_reason: reason,
-    client_confirmed: false,
-  }).eq('id', orderId);
+export async function clientReportDispute(tokenOrOrderId, reason) {
+  // eslint-disable-next-line no-unused-vars
+  return supabase.rpc('client_dispute_delivery', { p_token: tokenOrOrderId, p_reason: reason });
 }
 
 export async function sendWhatsApp(to, text) {

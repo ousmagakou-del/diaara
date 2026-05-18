@@ -251,11 +251,12 @@ function RatingModal({ orderId, driverName, onClose }) {
       return;
     }
     setSaving(true);
-    await supabase.from('orders').update({
-      delivery_rating: rating,
-      delivery_comment: comment.trim() || null,
-      rated_at: new Date().toISOString(),
-    }).eq('id', orderId);
+    // Vague 13 RLS : UPDATE direct bloque, on passe par RPC client_rate_order
+    await supabase.rpc('client_rate_order', {
+      p_id_or_token: orderId,
+      p_rating: rating,
+      p_comment: comment.trim() || null,
+    });
     setSaving(false);
     onClose();
   };

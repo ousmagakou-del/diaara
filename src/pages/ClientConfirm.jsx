@@ -46,7 +46,8 @@ export default function ClientConfirm() {
 
   const confirmYes = async () => {
     setSubmitting(true);
-    await clientConfirmDelivery(order.id);
+    // Vague 13 : la RPC attend le token (pas l'id), il vient de l'URL/order
+    await clientConfirmDelivery(order.confirmation_token);
     
     // Notif WhatsApp à la cliente
     if (order.address?.phone) {
@@ -62,7 +63,7 @@ export default function ClientConfirm() {
 
   const submitDispute = async (reason) => {
     setSubmitting(true);
-    await clientReportDispute(order.id, reason);
+    await clientReportDispute(order.confirmation_token, reason);
     setSubmitting(false);
     setShowDispute(false);
     toast.success('Ton problème a été signalé à YARAM. Notre équipe va te contacter rapidement.', { duration: 6000 });
@@ -295,11 +296,12 @@ function RatingModal({ order, driverName, onClose }) {
   const submit = async () => {
     if (rating === 0) { toast.error('Sélectionne au moins 1 étoile'); return; }
     setSaving(true);
-    await supabase.from('orders').update({
-      delivery_rating: rating,
-      delivery_comment: comment.trim() || null,
-      rated_at: new Date().toISOString(),
-    }).eq('id', order.id);
+    // Vague 13 RLS : UPDATE direct bloque, on passe par RPC client_rate_order
+    await supabase.rpc('client_rate_order', {
+      p_id_or_token: order.id,
+      p_rating: rating,
+      p_comment: comment.trim() || null,
+    });
     setSaving(false);
     onClose();
   };
