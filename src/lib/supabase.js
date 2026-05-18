@@ -547,26 +547,55 @@ export async function getProductsForSkinDiagnosis(diagnosis) {
 // UPLOAD IMAGES
 // ═══════════════════════════════════════════════
 
-export async function uploadProductImage(file) {
-  const fileName = `product_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.jpg`;
-  const compressed = await compressImage(file, 800, 0.85);
-  const { error } = await supabase.storage.from('product-images').upload(fileName, compressed, {
-    contentType: 'image/jpeg', upsert: true,
+// Helper interne : uploade un fichier dans le bucket donne et retourne l'URL publique.
+// Throw une Error avec le vrai message en cas d'echec (au lieu de retourner null silencieusement).
+async function uploadToBucket(bucket, file, { maxDim = 800, quality = 0.85, prefix = 'file' } = {}) {
+  if (!file) throw new Error('Aucun fichier fourni');
+  let compressed;
+  try {
+    compressed = await compressImage(file, maxDim, quality);
+  } catch (e) {
+    throw new Error('Compression image impossible : ' + (e?.message || 'format non supporte'));
+  }
+  if (!compressed) throw new Error('Image vide après compression');
+  const fileName = `${prefix}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.jpg`;
+  const { error: upErr } = await supabase.storage.from(bucket).upload(fileName, compressed, {
+    contentType: 'image/jpeg',
+    upsert: true,
   });
-  if (error) return null;
-  const { data } = supabase.storage.from('product-images').getPublicUrl(fileName);
+  if (upErr) {
+    console.error(`[uploadToBucket:${bucket}] storage error:`, upErr.message);
+    // Messages frequents pour aider le user a comprendre :
+    if (/bucket.*not.*found/i.test(upErr.message)) {
+      throw new Error(`Bucket "${bucket}" introuvable dans Supabase Storage. Cree-le dans Studio.`);
+    }
+    if (/row.level.security|new.row.violates|permission|denied/i.test(upErr.message)) {
+      throw new Error(`Permission refusee sur "${bucket}". Verifie la policy Storage dans Supabase Studio (INSERT pour anon).`);
+    }
+    throw new Error(upErr.message);
+  }
+  const { data } = supabase.storage.from(bucket).getPublicUrl(fileName);
+  if (!data?.publicUrl) throw new Error('URL publique non recuperee (bucket en private ?)');
   return data.publicUrl;
 }
 
+export async function uploadProductImage(file) {
+  try {
+    return await uploadToBucket('product-images', file, { maxDim: 800, prefix: 'product' });
+  } catch (e) {
+    console.error('[uploadProductImage]', e.message);
+    return null; // back-compat : on retourne null si erreur, le caller affiche un toast generique
+  }
+}
+
+// Variante qui throw au lieu de null : pour les callers qui veulent afficher l'erreur exacte.
+export async function uploadProductImageOrThrow(file) {
+  return uploadToBucket('product-images', file, { maxDim: 800, prefix: 'product' });
+}
+
 export async function uploadBannerImage(file) {
-  const fileName = `banner_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.jpg`;
-  const compressed = await compressImage(file, 1200, 0.85);
-  const { error } = await supabase.storage.from('banner-images').upload(fileName, compressed, {
-    contentType: 'image/jpeg', upsert: true,
-  });
-  if (error) return null;
-  const { data } = supabase.storage.from('banner-images').getPublicUrl(fileName);
-  return data.publicUrl;
+  // Throw directement : le caller (BannersSection) gere le toast d'erreur avec le vrai message.
+  return uploadToBucket('banner-images', file, { maxDim: 1200, prefix: 'banner' });
 }
 
 export async function compressImage(file, maxDim = 800, quality = 0.85) {

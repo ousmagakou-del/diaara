@@ -180,13 +180,21 @@ function BannerForm({ banner, onSave, onCancel }) {
     const file = e.target.files[0];
     if (!file) return;
     setUploading(true);
-    const url = await uploadBannerImage(file);
-    if (url) {
-      setForm(f => ({ ...f, image_url: url }));
-    } else {
-      toast.error('Erreur upload');
+    try {
+      const url = await uploadBannerImage(file);
+      if (url) {
+        setForm(f => ({ ...f, image_url: url }));
+        toast.success('Image uploadée');
+      } else {
+        toast.error('Upload échoué (raison inconnue)');
+      }
+    } catch (err) {
+      // Maintenant uploadBannerImage throw avec le vrai message du Storage
+      // (bucket introuvable, permission denied, etc.)
+      toast.error('Upload échoué : ' + (err?.message || 'erreur inconnue'), { duration: 7000 });
+    } finally {
+      setUploading(false);
     }
-    setUploading(false);
   };
 
   const handleSubmit = async () => {
