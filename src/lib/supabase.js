@@ -901,13 +901,19 @@ export async function getOrCreateReferralCode(userId) {
 }
 
 export async function applyReferralCode(referredUserId, referralCode) {
-  const { data: referrer } = await supabase.from('users_profile')
-    .select('id, first_name').eq('referral_code', referralCode.toUpperCase()).maybeSingle();
+  // Phase 2 RLS : on passe par la RPC resolve_referral_code (SECURITY DEFINER)
+  // au lieu de lire users_profile par code (anon n'aura plus ce droit).
+  const { data: referrer } = await supabase.rpc('resolve_referral_code', {
+    p_code: referralCode.toUpperCase(),
+  });
   if (!referrer) return { success: false, error: 'Code parrainage invalide' };
   if (referrer.id === referredUserId) return { success: false, error: 'Tu ne peux pas te parrainer toi-même' };
+
+  // Lecture du propre profil OK car policy "users see own profile" via auth.uid()
   const { data: me } = await supabase.from('users_profile')
     .select('referred_by').eq('id', referredUserId).single();
   if (me?.referred_by) return { success: false, error: 'Tu as déjà été parrainée' };
+
   await supabase.from('users_profile').update({ referred_by: referrer.id }).eq('id', referredUserId);
   await supabase.rpc('add_loyalty_points', {
     p_user_id: referredUserId, p_points: 500, p_type: 'bonus',
@@ -920,12 +926,14 @@ export async function applyReferralCode(referredUserId, referralCode) {
 }
 
 export async function getReferralStats(userId) {
-  const { data: referrals } = await supabase.from('users_profile')
-    .select('id, first_name, created_at').eq('referred_by', userId);
+  // Phase 2 RLS : passe par la RPC my_referrals (SECURITY DEFINER)
+  const { data } = await supabase.rpc('my_referrals', { p_user_id: userId });
+  const count = data?.count || 0;
+  const list  = Array.isArray(data?.list) ? data.list : [];
   return {
-    count: referrals?.length || 0,
-    list: referrals || [],
-    bonusEarned: (referrals?.length || 0) * 500,
+    count,
+    list,
+    bonusEarned: count * 500,
   };
 }
 

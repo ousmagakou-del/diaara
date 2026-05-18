@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase, getCachedSetting } from '../lib/supabase';
+import { adminListOrders, adminDashboardCounts } from '../lib/adminApi';
 
 export default function DashboardSection({ setSection }) {
   const [stats, setStats] = useState({
@@ -12,14 +13,16 @@ export default function DashboardSection({ setSection }) {
 
   useEffect(() => {
     const fetchAll = async () => {
-      const [ordersRes, usersRes, pharmaciesRes, productsRes, inventoryRes] = await Promise.all([
-        supabase.from('orders').select('*').order('created_at', { ascending: false }),
-        supabase.from('users_profile').select('id', { count: 'exact', head: true }),
-        supabase.from('pharmacies').select('id', { count: 'exact', head: true }),
-        supabase.from('products').select('id', { count: 'exact', head: true }),
+      const [ordersRes, countsRes, inventoryRes] = await Promise.all([
+        adminListOrders({ limit: 10000, offset: 0 }),
+        adminDashboardCounts(),
         supabase.from('inventory').select('stock'),
       ]);
       const orders = ordersRes.data || [];
+      const counts = countsRes.data || { users: 0, pharmacies: 0, products: 0 };
+      const usersRes      = { count: counts.users };
+      const pharmaciesRes = { count: counts.pharmacies };
+      const productsRes   = { count: counts.products };
       const delivered = orders.filter(o => o.status === 'delivered');
       const revenue = delivered.reduce((s, o) => s + (o.total || 0), 0);
       const pending = orders.filter(o => o.status === 'pending_payment').length;

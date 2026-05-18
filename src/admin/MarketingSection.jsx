@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { adminListUsersFull } from '../lib/adminApi';
 import { toast, confirmDialog } from '../lib/toast';
 
 const TEMPLATES = [
@@ -20,7 +20,7 @@ export default function MarketingSection() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from('users_profile').select('*');
+      const { data } = await adminListUsersFull();
       setUsers(data || []);
     })();
   }, []);

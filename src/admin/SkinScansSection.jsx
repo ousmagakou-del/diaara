@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
+import { adminUsersStats } from '../lib/adminApi';
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -14,19 +15,15 @@ export default function SkinScansSection() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const [scansRes, usersRes] = await Promise.all([
+      const [scansRes, statsRes] = await Promise.all([
         supabase
           .from('skin_scans')
           .select('id, user_id, skin_type, skin_score, diagnosis, created_at')
           .order('created_at', { ascending: false }),
-        supabase
-          .from('users_profile')
-          .select('id', { count: 'exact', head: true })
-          .then(r => r)
-          .catch(() => ({ count: null })),
+        adminUsersStats(),
       ]);
       setScans(scansRes.data || []);
-      setUsersCount(usersRes.count ?? null);
+      setUsersCount(statsRes.data?.total ?? null);
       setLoading(false);
     })();
   }, []);

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { adminListUsers, adminListUserOrders, adminUsersStats } from '../lib/adminApi';
 
 const PAGE_SIZE = 50;
 
@@ -20,31 +20,21 @@ export default function UsersSection() {
     return () => clearTimeout(t);
   }, [search]);
 
-  // Re-fetch quand on change de page ou de recherche
+  // Re-fetch quand on change de page ou de recherche — via RPC admin_list_users
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setLoading(true);
       try {
-        // Recherche server-side via .or(ilike) sur les champs principaux
-        let q = supabase
-          .from('users_profile')
-          .select('*', { count: 'exact' })
-          .order('created_at', { ascending: false })
-          .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
-
-        if (debouncedSearch.trim()) {
-          const s = debouncedSearch.trim().replace(/[%,]/g, ''); // sanitize pour ilike
-          q = q.or(`first_name.ilike.%${s}%,last_name.ilike.%${s}%,email.ilike.%${s}%,phone.ilike.%${s}%`);
-        }
-
-        const { data, count, error } = await q;
+        const { data, count, error } = await adminListUsers({
+          limit:  PAGE_SIZE,
+          offset: page * PAGE_SIZE,
+          search: debouncedSearch.trim() || null,
+        });
         if (cancelled) return;
         if (error) console.error('Users fetch error:', error);
         setUsers(data || []);
         setTotalCount(count || 0);
-      } catch (e) {
-        console.error('Users error:', e);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -55,25 +45,18 @@ export default function UsersSection() {
   // Reset page a 0 quand on change le terme de recherche
   useEffect(() => { setPage(0); }, [debouncedSearch]);
 
-  // Stats globales : nb total user + nb avec skin_type (independant de la page)
+  // Stats globales : nb diagnostiques (independant de la page) — via RPC
   useEffect(() => {
     (async () => {
-      const { count } = await supabase
-        .from('users_profile')
-        .select('id', { count: 'exact', head: true })
-        .not('skin_type', 'is', null);
-      setDiagnostiquedCount(count || 0);
+      const { data } = await adminUsersStats();
+      if (data) setDiagnostiquedCount(data.diagnosed || 0);
     })();
   }, []);
 
   const selectUser = async (u) => {
     setSelected(u);
-    try {
-      const { data } = await supabase.from('orders').select('*').eq('user_id', u.id).order('created_at', { ascending: false });
-      setUserOrders(data || []);
-    } catch {
-      setUserOrders([]);
-    }
+    const { data } = await adminListUserOrders(u.id);
+    setUserOrders(data || []);
   };
 
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));

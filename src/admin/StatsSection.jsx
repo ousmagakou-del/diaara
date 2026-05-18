@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { adminListOrders, adminUsersStats } from '../lib/adminApi';
 
 export default function StatsSection() {
   const [period, setPeriod] = useState('30');
@@ -12,12 +12,19 @@ export default function StatsSection() {
       const since = new Date();
       since.setDate(since.getDate() - parseInt(period));
 
-      const [ordersRes, usersRes] = await Promise.all([
-        supabase.from('orders').select('*').gte('created_at', since.toISOString()),
-        supabase.from('users_profile').select('id, created_at').gte('created_at', since.toISOString()),
+      // Note : on charge jusqu'a 10k commandes pour la periode courante.
+      // Si la boutique depasse 10k commandes/mois, il faudra une RPC dediee
+      // qui aggrege cote serveur (admin_stats_period).
+      const [ordersRes, statsRes] = await Promise.all([
+        adminListOrders({ limit: 10000, offset: 0 }),
+        adminUsersStats({ since: since.toISOString() }),
       ]);
-      const orders = ordersRes.data || [];
-      const newUsers = usersRes.data || [];
+      const sinceMs = since.getTime();
+      const orders = (ordersRes.data || []).filter(o =>
+        new Date(o.created_at).getTime() >= sinceMs
+      );
+      const newUsersCount = statsRes.data?.new_this_period || 0;
+      const newUsers = { length: newUsersCount };
 
       // Top produits
       const productSales = {};

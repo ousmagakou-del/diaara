@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { adminListLoyaltyUsers } from '../lib/adminApi';
 
 export default function LoyaltySection() {
   const [users, setUsers] = useState([]);
@@ -18,12 +19,7 @@ export default function LoyaltySection() {
 
   const refresh = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from('users_profile')
-      .select('id, first_name, last_name, email, phone, loyalty_points, loyalty_tier, loyalty_total_earned, created_at')
-      .order('loyalty_points', { ascending: false })
-      .limit(200);
-
+    const { data } = await adminListLoyaltyUsers({ limit: 200 });
     setUsers(data || []);
 
     // Stats globales

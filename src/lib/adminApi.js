@@ -129,3 +129,55 @@ export async function adminListPushSubscriptions() {
 
   return { data: data || [], error };
 }
+
+// ─────────────────────────────────────────────────────────────────────
+// STATS / DASHBOARD
+// ─────────────────────────────────────────────────────────────────────
+
+export async function adminUsersStats({ since = null } = {}) {
+  const { token, err } = requireToken();
+  if (err) return { data: null, error: err };
+  const { data, error } = await supabase.rpc('admin_users_stats', {
+    p_token: token,
+    p_since: since,
+  });
+  return { data, error };
+}
+
+export async function adminDashboardCounts() {
+  const { token, err } = requireToken();
+  if (err) return { data: null, error: err };
+  const { data, error } = await supabase.rpc('admin_dashboard_counts', { p_token: token });
+  return { data, error };
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// USERS (variantes)
+// ─────────────────────────────────────────────────────────────────────
+
+export async function adminListUserOrders(userId) {
+  const { token, err } = requireToken();
+  if (err) return { data: null, error: err };
+  const { data, error } = await supabase.rpc('admin_list_user_orders', {
+    p_token:   token,
+    p_user_id: userId,
+  });
+  return { data: data || [], error };
+}
+
+export async function adminListLoyaltyUsers({ limit = 200 } = {}) {
+  const { token, err } = requireToken();
+  if (err) return { data: null, error: err };
+  const { data, error } = await supabase.rpc('admin_list_loyalty_users', {
+    p_token: token,
+    p_limit: limit,
+  });
+  return { data: data || [], error };
+}
+
+export async function adminListUsersFull() {
+  const { token, err } = requireToken();
+  if (err) return { data: null, error: err };
+  const { data, error } = await supabase.rpc('admin_list_users_full', { p_token: token });
+  return { data: data || [], error };
+}
