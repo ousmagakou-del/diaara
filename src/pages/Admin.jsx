@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { supabase, subscribeToNewOrders } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 import { adminLogin, adminLogout, getAdminSession, changeAdminPin } from '../lib/adminAuth';
+import { adminListOrders } from '../lib/adminApi';
 import DashboardSection from '../admin/DashboardSection';
 import OrdersSection from '../admin/OrdersSection';
 import FinancesSection from '../admin/FinancesSection';
@@ -75,8 +76,25 @@ export default function Admin() {
 
   useEffect(() => {
     if (!session) return;
-    const sub = subscribeToNewOrders(() => setNewOrdersCount(c => c + 1));
-    return () => sub?.unsubscribe?.();
+    // Vague 12 RLS : realtime sur orders ne marche plus (policy SELECT restreinte).
+    // Polling 20s du dernier created_at via RPC admin_list_orders.
+    let lastSeen = null;
+    let cancelled = false;
+    const tick = async () => {
+      try {
+        const { data } = await adminListOrders({ limit: 1, offset: 0 });
+        if (cancelled) return;
+        const row = (data || [])[0];
+        if (!row) return;
+        if (lastSeen && row.created_at !== lastSeen && row.created_at > lastSeen) {
+          setNewOrdersCount(c => c + 1);
+        }
+        lastSeen = row.created_at;
+      } catch { /* silencieux */ }
+    };
+    tick();
+    const id = setInterval(tick, 20000);
+    return () => { cancelled = true; clearInterval(id); };
   }, [session]);
 
   useEffect(() => {

@@ -22,16 +22,18 @@ export default function OrderTracking({ orderId }) {
 
   useEffect(() => {
     refresh();
+    // Vague 12 : le realtime channel sur `orders` ne marche plus depuis le lockdown
+    // RLS (anon ne peut plus voir les changements en stream). Polling 8s pour rester
+    // a jour sur les changements de statut (preparation, en route, livree).
+    // delivery_tracking reste en realtime (sa policy SELECT est encore permissive).
     const sub = supabase
-      .channel('order-tracking-' + orderId)
+      .channel('order-tracking-tr-' + orderId)
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'delivery_tracking', filter: `order_id=eq.${orderId}` },
         (payload) => { if (payload.new) setTracking(payload.new); })
-      .on('postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${orderId}` },
-        (payload) => { if (payload.new) setOrder(payload.new); })
       .subscribe();
-    return () => sub.unsubscribe();
+    const interval = setInterval(refresh, 8000);
+    return () => { sub.unsubscribe(); clearInterval(interval); };
   }, [orderId]);
 
   const refresh = async () => {

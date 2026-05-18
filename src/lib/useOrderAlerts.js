@@ -4,21 +4,9 @@
 // navigateur tant qu'il y a des commandes en attente non traitees.
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { supabase, getPharmacyOrders } from './supabase';
+import { getPharmacyOrders } from './supabase';
 
 const PENDING_STATUSES = ['paid', 'awaiting_confirm', 'awaiting_cash', 'pending'];
-
-// Une commande "appartient" a une pharmacie si elle lui est assignee
-// OU si l'un de ses items provient de cette pharmacie (commande split).
-// Cette logique reproduit celle de getPharmacyOrders dans supabase.js.
-function orderBelongsTo(order, pharmacyId) {
-  if (!order || !pharmacyId) return false;
-  if (order.assigned_pharmacy_id === pharmacyId) return true;
-  if (Array.isArray(order.items)) {
-    return order.items.some(it => it.pharmacyId === pharmacyId);
-  }
-  return false;
-}
 
 // URL d'un son court "ding" en base64 (Web Audio) — on génère un beep doux 880Hz
 // Pour éviter une dépendance externe, on synthétise via AudioContext
@@ -105,66 +93,32 @@ export function useOrderAlerts(pharmacyId) {
     }
   }, [pharmacyId]);
 
-  // Subscribe Realtime + polling backup
+  // Polling 10s (vague 12 RLS : le realtime sur orders ne fonctionne plus
+  // car la policy SELECT a ete restreinte. On detecte les nouvelles commandes
+  // via diff entre le snapshot precedent et le nouveau snapshot).
   useEffect(() => {
     if (!pharmacyId) return;
 
     refresh();
 
-    // Realtime : on s'abonne SANS filtre serveur (la colonne `pharmacy_id`
-    // n'existe pas, et items[].pharmacyId est dans un JSON non-filtrable).
-    // Le tri se fait cote client via orderBelongsTo.
-    const channel = supabase
-      .channel(`pharmacy-orders-${pharmacyId}`)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'orders' },
-        (payload) => {
-          const row = payload.new;
-          if (!orderBelongsTo(row, pharmacyId)) return;
-          if (!PENDING_STATUSES.includes(row.status)) return;
-          if (knownIdsRef.current.has(row.id)) return;
-          knownIdsRef.current.add(row.id);
-          setPendingCount(c => c + 1);
-          // Première sonnerie immediate (lit le mute le plus recent via ref)
-          if (!mutedRef.current) {
-            playDing();
-            showSystemNotification(knownIdsRef.current.size);
-          }
+    const tick = async () => {
+      try {
+        const orders = await getPharmacyOrders(pharmacyId, PENDING_STATUSES);
+        const newIds = new Set((orders || []).map(o => o.id));
+        // Detecter nouveaux ids non vus avant
+        let appeared = 0;
+        newIds.forEach(id => { if (!knownIdsRef.current.has(id)) appeared++; });
+        knownIdsRef.current = newIds;
+        setPendingCount(newIds.size);
+        if (appeared > 0 && !mutedRef.current) {
+          playDing();
+          showSystemNotification(newIds.size);
         }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'orders' },
-        (payload) => {
-          const row = payload.new;
-          if (!orderBelongsTo(row, pharmacyId)) return;
-          const was = knownIdsRef.current.has(row.id);
-          const isPending = PENDING_STATUSES.includes(row.status);
-          if (was && !isPending) {
-            knownIdsRef.current.delete(row.id);
-            setPendingCount(c => Math.max(0, c - 1));
-          } else if (!was && isPending) {
-            knownIdsRef.current.add(row.id);
-            setPendingCount(c => c + 1);
-            if (!mutedRef.current) {
-              playDing();
-              showSystemNotification(knownIdsRef.current.size);
-            }
-          }
-        }
-      )
-      .subscribe();
-
-    // Polling backup toutes les 30 sec si Realtime laggue
-    const poll = setInterval(refresh, 30000);
-
-    return () => {
-      supabase.removeChannel(channel);
-      clearInterval(poll);
+      } catch { /* silencieux */ }
     };
-    // muted n'est PAS dans les deps : on lit via mutedRef pour eviter de
-    // resubscribe au Realtime a chaque toggle mute/unmute.
+
+    const poll = setInterval(tick, 10000);
+    return () => clearInterval(poll);
   }, [pharmacyId, refresh]);
 
   // Ding decroissant tant qu'il y a des commandes en attente et non mute.
