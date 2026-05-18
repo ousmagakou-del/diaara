@@ -48,8 +48,102 @@
     <meta name="twitter:title" content="YARAM" />
     <meta name="twitter:description" content="Marketplace beauté avec IA pour la peau africaine" />
     <meta name="twitter:image" content="/icon-512.png" />
+
+    <!-- ════════════ SPLASH INLINE ════════════
+         Visible des le 1er byte HTML (avant que React charge / parse / monte).
+         Sur 4G a Dakar : splash visible en ~50ms vs ~1500ms avant.
+         Retire automatiquement quand React monte le contenu dans #root (cf main.jsx). -->
+    <style>
+      #yaram-boot {
+        position: fixed; inset: 0; z-index: 10000;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        background: linear-gradient(135deg, #1F8B4C 0%, #166635 50%, #0D4D27 100%);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        overflow: hidden;
+        animation: yaramBootFadeIn 200ms ease-out;
+      }
+      #yaram-boot.gone {
+        opacity: 0;
+        transition: opacity 380ms ease-out;
+        pointer-events: none;
+      }
+      #yaram-boot::before {
+        content: ''; position: absolute;
+        top: -100px; right: -100px;
+        width: 320px; height: 320px;
+        background: rgba(255,255,255,0.05);
+        border-radius: 50%;
+        filter: blur(40px);
+      }
+      #yaram-boot::after {
+        content: ''; position: absolute;
+        bottom: -150px; left: -50px;
+        width: 260px; height: 260px;
+        background: rgba(232,119,34,0.15);
+        border-radius: 50%;
+        filter: blur(50px);
+      }
+      #yaram-boot .yb-logo {
+        position: relative; z-index: 2;
+        display: flex; align-items: baseline;
+        font-size: 64px; font-weight: 900;
+        letter-spacing: -0.04em; line-height: 1;
+        color: white;
+        text-shadow: 0 4px 24px rgba(0,0,0,0.2);
+        animation: yaramBootFadeUp 600ms cubic-bezier(.2,.9,.3,1.2) both;
+      }
+      #yaram-boot .yb-dot {
+        width: 14px; height: 14px;
+        background: #E87722;
+        border-radius: 50%;
+        margin-left: 4px; margin-bottom: 6px;
+        box-shadow: 0 0 24px rgba(232,119,34,0.6);
+        animation: yaramBootDot 700ms cubic-bezier(.2,.9,.3,1.2) 200ms both;
+      }
+      #yaram-boot .yb-tag {
+        color: rgba(255,255,255,0.85);
+        font-size: 11px; font-weight: 600;
+        letter-spacing: 0.35em; text-transform: uppercase;
+        margin-top: 18px;
+        animation: yaramBootFadeUp 600ms ease-out 400ms both;
+      }
+      #yaram-boot .yb-progress {
+        position: absolute; bottom: 80px;
+        width: 100px; height: 3px;
+        background: rgba(255,255,255,0.18);
+        border-radius: 3px; overflow: hidden;
+        animation: yaramBootFadeUp 400ms ease-out 700ms both;
+      }
+      #yaram-boot .yb-progress::after {
+        content: ''; display: block;
+        width: 40%; height: 100%;
+        background: white; border-radius: 3px;
+        animation: yaramBootBar 1200ms ease-in-out infinite;
+      }
+      @keyframes yaramBootFadeIn { from { opacity: 0 } to { opacity: 1 } }
+      @keyframes yaramBootFadeUp {
+        from { opacity: 0; transform: translateY(12px) }
+        to   { opacity: 1; transform: translateY(0) }
+      }
+      @keyframes yaramBootDot {
+        0%   { transform: scale(0); opacity: 0 }
+        60%  { transform: scale(1.4); opacity: 1 }
+        100% { transform: scale(1); opacity: 1 }
+      }
+      @keyframes yaramBootBar {
+        0%   { transform: translateX(-100%) }
+        100% { transform: translateX(350%) }
+      }
+    </style>
   </head>
   <body>
+    <!-- Splash : retire des que React monte (cf main.jsx — window.__yaramHideBoot) -->
+    <div id="yaram-boot" aria-hidden="true">
+      <div class="yb-logo">YARAM<span class="yb-dot"></span></div>
+      <div class="yb-tag">Beauté Sénégal</div>
+      <div class="yb-progress"></div>
+    </div>
+
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
 

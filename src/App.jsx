@@ -23,6 +23,7 @@ import Promos from './pages/Promos';
 import InstallPrompt from './components/InstallPrompt';
 import WhatsAppButton from './components/WhatsAppButton';
 import Toaster from './components/Toaster';
+import NetworkStatus from './components/NetworkStatus';
 
 // ─── Lazy-load : pages lourdes / rarement visitees par le client lambda ───
 // Ces chunks ne sont telecharges qu'au moment ou la page est demandee.
@@ -352,6 +353,7 @@ function ClientApp() {
           <InstallPrompt />
           <WhatsAppButton />
         </div>
+        <NetworkStatus />
         <Toaster />
       </UserContext.Provider>
     </NavContext.Provider>

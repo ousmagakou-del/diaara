@@ -8,6 +8,44 @@ import { toast } from '../lib/toast';
 import ReviewsSection from '../components/ReviewsSection';
 import './Product.css';
 
+// Skeleton qui matche la structure de la fiche produit pour eviter le flash
+// "Chargement…" generique. Donne l'impression que la page se construit.
+function ProductSkeleton() {
+  const sk = { background: 'linear-gradient(90deg, #F4F4F2 0%, #EAEAE7 50%, #F4F4F2 100%)', backgroundSize: '200% 100%', animation: 'yaramShimmer 1.4s ease-in-out infinite', borderRadius: 8 };
+  return (
+    <div className="prod-screen page-anim">
+      <style>{`@keyframes yaramShimmer { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }`}</style>
+      <div className="prod-header">
+        <div style={{ ...sk, width: 40, height: 40, borderRadius: '50%' }} />
+        <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ ...sk, width: 40, height: 40, borderRadius: '50%' }} />
+          <div style={{ ...sk, width: 40, height: 40, borderRadius: '50%' }} />
+          <div style={{ ...sk, width: 40, height: 40, borderRadius: '50%' }} />
+        </div>
+      </div>
+      <div className="prod-scroll">
+        <div style={{ ...sk, width: '100%', aspectRatio: '1/1', borderRadius: 0 }} />
+        <div className="prod-info">
+          <div style={{ ...sk, width: 90, height: 12, marginBottom: 8 }} />
+          <div style={{ ...sk, width: '85%', height: 22, marginBottom: 8 }} />
+          <div style={{ ...sk, width: '70%', height: 14, marginBottom: 16 }} />
+          <div style={{ ...sk, width: 140, height: 16, marginBottom: 14 }} />
+          <div style={{ ...sk, width: 180, height: 28, marginBottom: 24 }} />
+          <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
+            <div style={{ ...sk, width: 80, height: 24, borderRadius: 999 }} />
+            <div style={{ ...sk, width: 90, height: 24, borderRadius: 999 }} />
+            <div style={{ ...sk, width: 70, height: 24, borderRadius: 999 }} />
+          </div>
+          <div style={{ ...sk, width: '100%', height: 80, marginBottom: 16 }} />
+          <div style={{ ...sk, width: '60%', height: 18, marginBottom: 10 }} />
+          <div style={{ ...sk, width: '100%', height: 70, marginBottom: 8 }} />
+          <div style={{ ...sk, width: '100%', height: 70 }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Product({ id }) {
   const { navigate } = useNav();
   const [product, setProduct] = useState(null);
@@ -108,7 +146,7 @@ export default function Product({ id }) {
     navigate('/cart');
   };
 
-  if (loading) return <div style={{padding: 40, textAlign: 'center'}}>Chargement…</div>;
+  if (loading) return <ProductSkeleton />;
 
   if (!product) {
     return (

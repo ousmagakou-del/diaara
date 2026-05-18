@@ -218,7 +218,7 @@ export default function Search({ initialCategory, initialBrand }) {
       <div className="search-scroll">
         {category || q.trim() !== '' || activeFiltersCount > 0 ? (
           loading ? (
-            <div style={{padding: 40, textAlign: 'center'}}>Chargement...</div>
+            <SearchSkeleton />
           ) : filtered.length === 0 ? (
             <div className="search-empty">
               <div style={{fontSize: 48}}>🔍</div>
@@ -277,6 +277,40 @@ export default function Search({ initialCategory, initialBrand }) {
       )}
 
       <TabBar active="search" />
+    </div>
+  );
+}
+
+// Skeleton qui mime une grille 2-col de ProductTile pendant le chargement.
+// Reduit la sensation de "page vide" pendant le fetch des 800 produits.
+function SearchSkeleton() {
+  const sk = {
+    background: 'linear-gradient(90deg, #F4F4F2 0%, #EAEAE7 50%, #F4F4F2 100%)',
+    backgroundSize: '200% 100%',
+    animation: 'yaramShimmer 1.4s ease-in-out infinite',
+    borderRadius: 8,
+  };
+  return (
+    <div className="search-results">
+      <style>{`@keyframes yaramShimmer { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }`}</style>
+      <div style={{ ...sk, width: 120, height: 14, marginBottom: 14 }} />
+      <div className="search-product-grid-2">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="product-tile" style={{ pointerEvents: 'none' }}>
+            <div className="pt-img-wrap">
+              <div style={{ ...sk, width: '100%', aspectRatio: '1/1', borderRadius: 8 }} />
+            </div>
+            <div className="pt-info">
+              <div style={{ ...sk, width: '50%', height: 10, marginBottom: 6 }} />
+              <div style={{ ...sk, width: '90%', height: 12, marginBottom: 8 }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div style={{ ...sk, width: 60, height: 14 }} />
+                <div style={{ ...sk, width: 32, height: 14 }} />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
