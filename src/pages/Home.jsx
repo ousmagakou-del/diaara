@@ -20,9 +20,26 @@ const DEFAULT_CATEGORY_PRESET = {
   text_color: '#1A1A1A',
 };
 
-// ─── Cache module-level : conserve les data entre mounts ───
-// Ca evite le "ecran vide" quand on revient au Home depuis une autre page
-const homeDataCache = {
+// ─── Cache module-level + persisté en sessionStorage ───
+// Avant : perdu au refresh → écran vide + 8 fetch au boot
+// Apres : restaure depuis sessionStorage si < 5 min, refresh en arriere-plan
+const HOME_CACHE_KEY = 'yaram-home-cache-v1';
+const HOME_CACHE_TTL = 5 * 60 * 1000;
+
+function loadHomeCacheFromStorage() {
+  try {
+    const raw = sessionStorage.getItem(HOME_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed?.loadedAt) return null;
+    if (Date.now() - parsed.loadedAt > HOME_CACHE_TTL) return null;
+    return parsed;
+  } catch { return null; }
+}
+
+const restored = typeof window !== 'undefined' ? loadHomeCacheFromStorage() : null;
+
+const homeDataCache = restored || {
   products: null,
   pharmacies: null,
   categories: null,
@@ -31,6 +48,12 @@ const homeDataCache = {
   bestSellers: null,
   loadedAt: 0,
 };
+
+function persistHomeCache() {
+  try {
+    sessionStorage.setItem(HOME_CACHE_KEY, JSON.stringify(homeDataCache));
+  } catch { /* ignore quota errors */ }
+}
 
 export default function Home() {
   const { navigate, route } = useNav();
@@ -182,6 +205,7 @@ export default function Home() {
       } catch (e) { console.error('best sellers error:', e); }
 
       homeDataCache.loadedAt = Date.now();
+      persistHomeCache();
     } catch (err) {
       console.error('Home load error:', err);
     } finally {

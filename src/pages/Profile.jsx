@@ -60,7 +60,12 @@ export default function Profile() {
   const handleLogout = async () => {
     if (await confirmDialog('Te déconnecter ?', { confirmLabel: 'Déconnexion', danger: true })) {
       await signOut();
-      await refreshUser();
+      // Force user a null immediatement (refreshUser() refait un getCurrentUser
+      // qui peut renvoyer un cache residuel et reaffiche l'utilisateur 1s avant
+      // que la session locale soit purgee).
+      await refreshUser(null);
+      // Redirige vers Home pour que la TabBar et le routing reflètent l'état déconnecté
+      navigate({ name: 'home', params: {} });
     }
   };
 

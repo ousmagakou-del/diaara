@@ -135,9 +135,14 @@ export async function signOut() {
   return supabase.auth.signOut();
 }
 
-export async function getCurrentUser() {
+export async function getCurrentUser(prefetchedSession = null) {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    // Si on a deja la session (passee depuis App.jsx au boot), evite un 2e getSession()
+    let session = prefetchedSession;
+    if (!session) {
+      const r = await supabase.auth.getSession();
+      session = r.data?.session;
+    }
     if (!session?.user) return null;
     const user = session.user;
     const { data: profile } = await supabase

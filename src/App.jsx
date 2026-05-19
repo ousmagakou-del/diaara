@@ -159,7 +159,9 @@ function ClientApp() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (cancelled) return;
       if (session?.user) {
-        getCurrentUser().then(u => {
+        // Optim : passe la session deja recuperee a getCurrentUser pour eviter
+        // un 2eme appel reseau (gain ~150ms au boot)
+        getCurrentUser(session).then(u => {
           if (!cancelled) {
             const userObj = u || { id: session.user.id, email: session.user.email };
             setUser(userObj);
@@ -188,7 +190,10 @@ function ClientApp() {
     const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (cancelled) return;
       // Ignore le premier event (INITIAL_SESSION) car deja gere ci-dessus
-      if (isFirstLoad) { isFirstLoad = false; return; }
+      // SAUF si c'est SIGNED_OUT : on doit toujours forcer la deconnexion (cas rare ou
+      // signOut() arrive AVANT que getSession() initial ne termine).
+      if (isFirstLoad && event !== 'SIGNED_OUT') { isFirstLoad = false; return; }
+      isFirstLoad = false;
       // Ignore les refresh de token qui ne changent pas l'user
       if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') return;
       
@@ -277,7 +282,8 @@ function ClientApp() {
   };
 
   const refreshUser = async (directUser) => {
-    if (directUser) { setUser(directUser); return; }
+    // Permet refreshUser(null) explicite pour deconnecter immediatement
+    if (directUser !== undefined) { setUser(directUser); return; }
     try {
       const u = await getCurrentUser();
       setUser(u);
