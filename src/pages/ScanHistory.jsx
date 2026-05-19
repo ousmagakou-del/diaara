@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNav } from '../App';
 import { getMySkinScans } from '../lib/supabase';
+import SignedImage from '../components/SignedImage';
 import './ScanHistory.css';
 
 export default function ScanHistory() {
@@ -77,7 +78,7 @@ export default function ScanHistory() {
                   onClick={() => navigate({ name: 'scan_result', params: { scanId: s.id } })}
                 >
                   <div className="sh-item-photos">
-                    {s.photo_front_url && <img src={s.photo_front_url} alt="" />}
+                    {s.photo_front_url && <SignedImage src={s.photo_front_url} alt="" />}
                   </div>
                   <div className="sh-item-info">
                     <div className="sh-item-head">

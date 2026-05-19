@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase, sendWhatsApp, WhatsAppTemplates, generateConfirmToken } from '../lib/supabase';
 import { adminListOrdersFull, adminUpdateOrder } from '../lib/adminApi';
 import { toast, confirmDialog } from '../lib/toast';
+import SignedImage from '../components/SignedImage';
 
 export default function DeliveriesSection() {
   const [orders, setOrders] = useState([]);
@@ -326,21 +327,21 @@ function ProofModal({ order, tracking, onClose }) {
           {tracking.pickup_photo_url && (
             <div>
               <h4 style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>🏥 Photo pharmacie</h4>
-              <img src={tracking.pickup_photo_url} alt="" style={{ width: '100%', borderRadius: 10, maxHeight: 300, objectFit: 'cover' }} />
+              <SignedImage src={tracking.pickup_photo_url} alt="" style={{ width: '100%', borderRadius: 10, maxHeight: 300, objectFit: 'cover' }} />
               {tracking.pickup_at && <p style={{ fontSize: 11, color: '#6B6B6B', marginTop: 4 }}>{new Date(tracking.pickup_at).toLocaleString('fr-FR')}</p>}
             </div>
           )}
           {tracking.product_photo_url && (
             <div>
               <h4 style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>📦 Photo produit</h4>
-              <img src={tracking.product_photo_url} alt="" style={{ width: '100%', borderRadius: 10, maxHeight: 300, objectFit: 'cover' }} />
+              <SignedImage src={tracking.product_photo_url} alt="" style={{ width: '100%', borderRadius: 10, maxHeight: 300, objectFit: 'cover' }} />
               {tracking.picked_at && <p style={{ fontSize: 11, color: '#6B6B6B', marginTop: 4 }}>{new Date(tracking.picked_at).toLocaleString('fr-FR')}</p>}
             </div>
           )}
           {tracking.delivery_photo_url && (
             <div>
               <h4 style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>🎉 Photo colis remis</h4>
-              <img src={tracking.delivery_photo_url} alt="" style={{ width: '100%', borderRadius: 10, maxHeight: 300, objectFit: 'cover' }} />
+              <SignedImage src={tracking.delivery_photo_url} alt="" style={{ width: '100%', borderRadius: 10, maxHeight: 300, objectFit: 'cover' }} />
             </div>
           )}
           {tracking.delivery_signature && (

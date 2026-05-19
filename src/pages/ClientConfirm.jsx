@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase, getOrderByConfirmToken, clientConfirmDelivery, clientReportDispute, sendWhatsApp, WhatsAppTemplates } from '../lib/supabase';
 import { sendOrderEmail } from '../lib/emails';
+import SignedImage from '../components/SignedImage';
 import { toast } from '../lib/toast';
 import './ClientConfirm.css';
 
@@ -177,7 +178,7 @@ export default function ClientConfirm() {
             {tracking?.delivery_photo_url && (
               <div className="cc-proof-item">
                 <p>📷 Photo du colis remis :</p>
-                <img src={tracking.delivery_photo_url} alt="Preuve" />
+                <SignedImage src={tracking.delivery_photo_url} alt="Preuve" />
               </div>
             )}
             {tracking?.delivery_signature && (

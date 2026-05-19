@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useNav } from '../App';
 import { supabase, sendWhatsApp } from '../lib/supabase';
 import { toast } from '../lib/toast';
+import SignedImage from '../components/SignedImage';
 import './OrderTracking.css';
 
 const STEPS = [
@@ -151,7 +152,7 @@ export default function OrderTracking({ orderId }) {
             {tracking.delivery_photo_url && (
               <div style={{ marginBottom: 10 }}>
                 <p style={{ fontSize: 11, color: 'var(--ink-soft)', marginBottom: 6 }}>📷 Photo du colis remis</p>
-                <img src={tracking.delivery_photo_url} alt="Preuve livraison" style={{ width: '100%', borderRadius: 10, maxHeight: 300, objectFit: 'cover' }} />
+                <SignedImage src={tracking.delivery_photo_url} alt="Preuve livraison" style={{ width: '100%', borderRadius: 10, maxHeight: 300, objectFit: 'cover' }} />
               </div>
             )}
             {tracking.delivery_signature && (

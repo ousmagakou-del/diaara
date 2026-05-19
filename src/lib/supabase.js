@@ -531,8 +531,61 @@ export async function uploadScanPhoto(file, scanId, type) {
     contentType: 'image/jpeg', upsert: true
   });
   if (error) return null;
+  // Vague D : bucket prive, on garde le format URL "publique" pour back-compat DB
+  // mais l'affichage passera par getSignedStorageUrl() pour generer une URL signee.
   const { data } = supabase.storage.from('skin-scans').getPublicUrl(fileName);
   return data.publicUrl;
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// SIGNED URLS pour buckets prives (skin-scans, delivery-proofs)
+// ─────────────────────────────────────────────────────────────────────
+const PRIVATE_BUCKETS = new Set(['skin-scans', 'delivery-proofs']);
+const signedUrlCache = new Map(); // path → { url, expiresAt }
+const SIGNED_TTL = 60 * 60 * 24 * 7; // 7 jours
+
+/**
+ * Transforme une URL publique Supabase (ou un path direct) en URL signee
+ * valide 7 jours pour les buckets prives. Idempotent pour les buckets publics
+ * (renvoie l'URL telle quelle).
+ *
+ * Usage : <img src={await getSignedStorageUrl(scan.image_url)} />
+ */
+export async function getSignedStorageUrl(urlOrPath) {
+  if (!urlOrPath) return null;
+  // Si pas une URL Supabase Storage, renvoie tel quel (URL externe Unsplash, etc.)
+  const match = /\/storage\/v1\/object\/(?:public\/)?([^/]+)\/(.+?)(?:\?|$)/.exec(urlOrPath);
+  let bucket, path;
+  if (match) {
+    bucket = match[1];
+    path = match[2];
+  } else if (urlOrPath.includes('/')) {
+    // Path direct genre "skin-scans/abc.jpg"
+    const [b, ...rest] = urlOrPath.split('/');
+    bucket = b;
+    path = rest.join('/');
+  } else {
+    return urlOrPath;
+  }
+
+  // Bucket public : pas besoin de signer
+  if (!PRIVATE_BUCKETS.has(bucket)) return urlOrPath;
+
+  // Cache (evite de re-signer chaque render)
+  const cacheKey = `${bucket}/${path}`;
+  const cached = signedUrlCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) return cached.url;
+
+  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, SIGNED_TTL);
+  if (error || !data?.signedUrl) {
+    console.warn('[signedUrl] failed for', cacheKey, error?.message);
+    return urlOrPath; // fallback : l'URL ne marchera pas mais on evite null
+  }
+  signedUrlCache.set(cacheKey, {
+    url: data.signedUrl,
+    expiresAt: Date.now() + (SIGNED_TTL - 60) * 1000, // refresh 1 min avant expiry
+  });
+  return data.signedUrl;
 }
 
 export async function saveSkinScan({ userId, photoFrontUrl, photoLeftUrl, photoRightUrl, analysis }) {

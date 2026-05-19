@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNav } from '../App';
 import { supabase, getProductsForSkinDiagnosis } from '../lib/supabase';
+import SignedImage from '../components/SignedImage';
 import './ScanResult.css';
 
 const SEVERITY_COLORS = {
@@ -64,9 +65,9 @@ export default function ScanResult({ scanId }) {
         {/* Hero — Skin Score */}
         <div className="sr-hero">
           <div className="sr-photos">
-            {scan.photo_front_url && <img src={scan.photo_front_url} alt="front" />}
-            {scan.photo_left_url && <img src={scan.photo_left_url} alt="left" />}
-            {scan.photo_right_url && <img src={scan.photo_right_url} alt="right" />}
+            {scan.photo_front_url && <SignedImage src={scan.photo_front_url} alt="front" />}
+            {scan.photo_left_url && <SignedImage src={scan.photo_left_url} alt="left" />}
+            {scan.photo_right_url && <SignedImage src={scan.photo_right_url} alt="right" />}
           </div>
           
           <div className="sr-score-row">
