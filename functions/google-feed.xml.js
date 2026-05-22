@@ -96,10 +96,20 @@ function buildItem(p) {
   const productUrl = `https://yaram.app/product/${p.id}`;
   const imageUrl = p.img || FALLBACK_IMAGE;
 
-  // Description : préfère long_desc, fallback short_desc, fallback generic
-  const description = (p.long_desc || p.short_desc ||
-    `${p.name} — Validé par YARAM pour ta peau africaine. Score : ${p.score || '?'}/100. Livraison Dakar.`
-  ).slice(0, 5000); // Google max 5000 chars
+  // Description : préfère long_desc, fallback short_desc, fallback enrichi
+  // Le fallback enrichi est plus descriptif que "Catégorie · Marque" pour aider
+  // au CTR Google Shopping. Idéal : remplir long_desc dans l'admin produit.
+  const fallbackDesc = [
+    `${p.brand || 'YARAM'} ${p.name}`,
+    p.category ? `Catégorie : ${p.category}` : '',
+    p.score ? `Note YARAM : ${p.score}/100` : '',
+    p.rating ? `Avis clients : ${p.rating}/5` : '',
+    'Produit sélectionné par des dermatologues pour la peau africaine.',
+    'Livraison rapide à Dakar et au Sénégal.',
+    'Paiement Wave, Orange Money ou à la livraison.',
+  ].filter(Boolean).join(' · ');
+
+  const description = (p.long_desc || p.short_desc || fallbackDesc).slice(0, 5000);
 
   // Title : max 150 chars (Google tronque au-delà)
   const fullTitle = (p.brand ? `${p.brand} — ${p.name}` : p.name).slice(0, 150);
