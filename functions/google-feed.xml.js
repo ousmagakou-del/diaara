@@ -53,9 +53,10 @@ const DEFAULT_SHIPPING_XOF = 1500;
 export async function onRequest({ env }) {
   try {
     // Sélectionne les colonnes nécessaires + filtre actif + approved
+    // ⚠️ products n'a pas updated_at (seulement created_at)
     const products = await sbFetch(
       env,
-      'products?select=id,name,brand,category,price,short_desc,long_desc,img,score,review_count,rating,active,status,updated_at&status=eq.approved&active=eq.true&order=updated_at.desc&limit=5000'
+      'products?select=id,name,brand,category,price,short_desc,long_desc,img,score,review_count,rating,active,status,created_at&status=eq.approved&active=eq.true&order=created_at.desc&limit=5000'
     );
 
     if (!products || products.length === 0) {
