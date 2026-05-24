@@ -39,6 +39,17 @@
     <!-- Google Merchant Center / Search Console site verification -->
     <meta name="google-site-verification" content="1Vib98ypPCLl-fUfIXgzFWXw2soYfQwiRqs5yhGltPY" />
 
+    <!-- ════════════ Google Tag Manager ════════════
+         Conteneur unique qui gère tous les pixels (GA4, Meta, TikTok, etc.)
+         depuis l'interface GTM, sans toucher au code.
+         ID conteneur YARAM : GTM-T2SQVS7T -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-T2SQVS7T');</script>
+    <!-- End Google Tag Manager -->
+
     <!-- Canonical -->
     <link rel="canonical" href="https://yaram.app/" />
 
@@ -168,6 +179,13 @@
     </style>
   </head>
   <body>
+    <!-- ════════════ Google Tag Manager (noscript) ════════════
+         Fallback pour les visiteurs qui ont désactivé JavaScript (rare mais Google le veut).
+         DOIT être le tout 1er élément du <body>. -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-T2SQVS7T"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
     <!-- Splash : retire des que React monte (cf main.jsx — window.__yaramHideBoot).
          Le SVG est inline pour s'afficher en 50ms sans aucun fetch supplementaire. -->
     <div id="yaram-boot" aria-hidden="true">
