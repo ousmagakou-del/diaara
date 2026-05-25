@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useUser } from '../App';
-import { YARAM_WHATSAPP, YARAM_WHATSAPP_DISPLAY } from '../lib/utils';
+import { getWhatsAppNumber, getWhatsAppDisplay } from '../lib/utils';
 import './WhatsAppButton.css';
 
-// Numero YARAM support (centralise dans lib/utils.js)
-const YARAM_PHONE = YARAM_WHATSAPP;
+// Numero YARAM support — lecture dynamique depuis site_settings via getWhatsAppXxx()
+// → si l'admin change le numéro dans Paramètres, le bouton flottant est à jour
 const YARAM_NAME = 'YARAM Support';
 
 export default function WhatsAppButton() {
@@ -47,7 +47,7 @@ export default function WhatsAppButton() {
   ];
   
   const handleSend = (msg) => {
-    const url = `https://wa.me/${YARAM_PHONE}?text=${encodeURIComponent(msg)}`;
+    const url = `https://wa.me/${getWhatsAppNumber()}?text=${encodeURIComponent(msg)}`;
     window.open(url, '_blank');
     setOpen(false);
   };
@@ -89,7 +89,7 @@ export default function WhatsAppButton() {
             </div>
             
             <div className="wa-modal-footer">
-              <p>📞 Tu peux aussi appeler au <strong>{YARAM_WHATSAPP_DISPLAY}</strong></p>
+              <p>📞 Tu peux aussi appeler au <strong>{getWhatsAppDisplay()}</strong></p>
             </div>
           </div>
         </div>

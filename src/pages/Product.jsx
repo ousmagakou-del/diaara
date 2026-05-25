@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNav } from '../App';
 import { supabase, getProductAvailability, isFavorite, toggleFavorite } from '../lib/supabase';
-import { scoreClass, formatPrice, YARAM_WHATSAPP } from '../lib/utils';
+import { scoreClass, formatPrice, getWhatsAppNumber } from '../lib/utils';
 import { haptic } from '../lib/haptic';
 import { addToCart as cartAddToCart } from '../lib/cart';
 import { toast } from '../lib/toast';
@@ -262,7 +262,7 @@ export default function Product({ id }) {
 
   const sc = scoreClass(product.score);
   const hasStock = pharmacies.length > 0;
-  const waUrl = `https://wa.me/${YARAM_WHATSAPP}?text=` + encodeURIComponent("Bonjour, j'ai une question sur " + product.name);
+  const waUrl = `https://wa.me/${getWhatsAppNumber()}?text=` + encodeURIComponent("Bonjour, j'ai une question sur " + product.name);
   
   // Badge si nouveau / top vente
   const isTopSeller = (product.review_count || 0) >= 500;

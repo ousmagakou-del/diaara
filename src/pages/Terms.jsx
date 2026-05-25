@@ -1,6 +1,6 @@
 import { useNav } from '../App';
 import { useDocumentTitle, useMetaDescription, useCanonical } from '../lib/seo';
-import { YARAM_WHATSAPP_DISPLAY } from '../lib/utils';
+import { getWhatsAppNumber, getWhatsAppDisplay } from '../lib/utils';
 import './Legal.css';
 
 export default function Terms() {
@@ -29,7 +29,7 @@ export default function Terms() {
           YARAM est une marketplace beauté basée à Dakar, Sénégal. On met en relation des
           clientes avec des pharmacies + parapharmacies partenaires pour acheter des produits
           adaptés à la peau africaine. Contact : <a href="mailto:contact@yaram.app">contact@yaram.app</a>{' '}
-          ou WhatsApp <a href="https://wa.me/221774388766">{YARAM_WHATSAPP_DISPLAY}</a>.
+          ou WhatsApp <a href={`https://wa.me/${getWhatsAppNumber()}`}>{getWhatsAppDisplay()}</a>.
         </p>
 
         <h2>2. Création de compte</h2>

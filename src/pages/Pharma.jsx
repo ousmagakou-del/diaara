@@ -9,8 +9,7 @@ import PharmaSettings from '../pharma/PharmaSettings';
 import { useOrderAlerts } from '../lib/useOrderAlerts';
 import './Pharma.css';
 
-import { YARAM_WHATSAPP } from '../lib/utils';
-const ADMIN_WHATSAPP = YARAM_WHATSAPP;
+import { getWhatsAppNumber } from '../lib/utils';
 
 // ⚠️ Securite : on ne persiste JAMAIS le PIN ni pin_set_at dans le localStorage
 // (n'importe quelle extension ou script tiers peut lire localStorage).
@@ -140,7 +139,7 @@ export default function Pharma() {
   const openForgotWhatsApp = () => {
     const ph = selectedPharmacy;
     const msg = `Bonjour Ousmane 👋\n\nJe suis ${ph?.name || 'une pharmacie partenaire YARAM'}${ph?.city ? ` à ${ph.city}` : ''}.\n\nJ'ai oublié mon PIN d'accès au dashboard pharmacie. Peux-tu me le réinitialiser SVP ?\n\nMerci 💚`;
-    window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`, '_blank');
+    window.open(`https://wa.me/${getWhatsAppNumber()}?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
   const logout = () => {

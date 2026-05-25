@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getPharmacyOrders, acceptOrder, refuseOrder, markOrderReady, sendWhatsApp, getCachedSetting } from '../lib/supabase';
-import { YARAM_WHATSAPP_INTL } from '../lib/utils';
+import { getWhatsAppIntl } from '../lib/utils';
 import { toast, confirmDialog } from '../lib/toast';
 
 const REFUSAL_REASONS = [
@@ -61,7 +61,7 @@ export default function PharmaOrders({ pharmacyId, pharmacyName, onPendingChange
     }
     
     // WhatsApp à YARAM admin
-    sendWhatsApp(YARAM_WHATSAPP_INTL, `⚠️ REFUS YARAM\n\n${pharmacyName} a refusé la commande ${order.id}\nMotif : ${reason}\n\nClient : ${order.address?.name} · ${order.address?.phone}\nMontant : ${order.total?.toLocaleString('fr-FR')} FCFA`);
+    sendWhatsApp(getWhatsAppIntl(), `⚠️ REFUS YARAM\n\n${pharmacyName} a refusé la commande ${order.id}\nMotif : ${reason}\n\nClient : ${order.address?.name} · ${order.address?.phone}\nMontant : ${order.total?.toLocaleString('fr-FR')} FCFA`);
     
     setRefusing(null);
     setSelectedOrder(null);
@@ -73,7 +73,7 @@ export default function PharmaOrders({ pharmacyId, pharmacyName, onPendingChange
     await markOrderReady(order.id);
     
     // WhatsApp à YARAM admin pour assigner livreur
-    sendWhatsApp(YARAM_WHATSAPP_INTL, `✅ Commande ${order.id} prête chez ${pharmacyName}\n\nClient : ${order.address?.name}\n📍 ${order.address?.line}, ${order.address?.city}\n💰 ${order.total?.toLocaleString('fr-FR')} FCFA${order.payment_method === 'cod' ? ' (Cash)' : ''}\n\n👉 Assigne un livreur !`);
+    sendWhatsApp(getWhatsAppIntl(), `✅ Commande ${order.id} prête chez ${pharmacyName}\n\nClient : ${order.address?.name}\n📍 ${order.address?.line}, ${order.address?.city}\n💰 ${order.total?.toLocaleString('fr-FR')} FCFA${order.payment_method === 'cod' ? ' (Cash)' : ''}\n\n👉 Assigne un livreur !`);
     
     refresh();
   };

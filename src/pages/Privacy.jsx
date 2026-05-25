@@ -1,6 +1,6 @@
 import { useNav } from '../App';
 import { useDocumentTitle, useMetaDescription, useCanonical } from '../lib/seo';
-import { YARAM_WHATSAPP_DISPLAY } from '../lib/utils';
+import { getWhatsAppNumber, getWhatsAppDisplay } from '../lib/utils';
 import './Legal.css';
 
 export default function Privacy() {
@@ -31,7 +31,7 @@ export default function Privacy() {
           à Dakar, Sénégal. Le site est accessible sur <a href="https://yaram.app">yaram.app</a>.
         </p>
         <p>
-          Pour toute question : <a href={`https://wa.me/221774388766`}>WhatsApp {YARAM_WHATSAPP_DISPLAY}</a>{' '}
+          Pour toute question : <a href={`https://wa.me/${getWhatsAppNumber()}`}>WhatsApp {getWhatsAppDisplay()}</a>{' '}
           ou <a href="mailto:contact@yaram.app">contact@yaram.app</a>.
         </p>
 

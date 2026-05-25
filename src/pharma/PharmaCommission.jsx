@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getPharmacyCommissions, getCachedSetting } from '../lib/supabase';
-import { YARAM_WHATSAPP, YARAM_WHATSAPP_DISPLAY } from '../lib/utils';
+import { getWhatsAppNumber, getWhatsAppDisplay } from '../lib/utils';
 
 export default function PharmaCommission({ pharmacyId, pharmacyName }) {
   const [data, setData] = useState(null);
@@ -160,7 +160,7 @@ export default function PharmaCommission({ pharmacyId, pharmacyName }) {
           <li>Paiement <strong>mensuel</strong>, le dernier jour de chaque mois</li>
           <li>Commission YARAM : <strong>{getCachedSetting('commission', 8)}%</strong> sur chaque commande livrée</li>
           <li>Méthodes de paiement : Wave, Orange Money, virement bancaire</li>
-          <li>Contact pour question : <a href={`https://wa.me/${YARAM_WHATSAPP}`}>{YARAM_WHATSAPP_DISPLAY}</a></li>
+          <li>Contact pour question : <a href={`https://wa.me/${getWhatsAppNumber()}`}>{getWhatsAppDisplay()}</a></li>
         </ul>
       </div>
     </div>

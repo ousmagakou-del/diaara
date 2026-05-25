@@ -1,10 +1,66 @@
-// ─── Numero WhatsApp YARAM (centralise) ───
-// Pour la suite : ces constantes doivent etre la SEULE source de verite du numero.
-// Format wa.me : 221XXXXXXXXX (sans + ni espaces)
-// Format display : '+221 77 XXX XX XX'
-// Format sendWhatsApp(): '+221XXXXXXXXX'
-export const YARAM_WHATSAPP = '221774388766';
-export const YARAM_WHATSAPP_INTL = '+221774388766';
+// ─── Numero WhatsApp YARAM (DYNAMIQUE depuis site_settings) ───
+// La valeur "source de vérité" est dans la table site_settings (clé 'whatsapp').
+// Les composants doivent appeler getWhatsAppNumber() / getWhatsAppIntl() /
+// getWhatsAppDisplay() pour récupérer la valeur courante depuis l'admin,
+// au lieu d'utiliser des constantes hardcodées.
+//
+// Les anciennes constantes sont conservées EN FALLBACK uniquement (au cas où
+// le cache n'est pas encore chargé au tout premier render).
+//
+// Pour CHANGER le numéro : admin → Paramètres → champ "WhatsApp" → Save.
+// Aucun deploy nécessaire (les composants relisent à chaque render).
+
+const WHATSAPP_FALLBACK_INTL = '+221774388766';
+
+/**
+ * Helper : nettoie le numéro WhatsApp en gardant uniquement les chiffres
+ * (sans + ni espaces). Format compatible https://wa.me/
+ */
+function cleanForWaMe(raw) {
+  return (raw || '').replace(/[^\d]/g, '');
+}
+
+/**
+ * Numéro WhatsApp au format wa.me : '221774388766'
+ * (chiffres uniquement, indicatif compris, sans +)
+ */
+export function getWhatsAppNumber() {
+  const stored = getCachedSetting('whatsapp', WHATSAPP_FALLBACK_INTL);
+  return cleanForWaMe(stored);
+}
+
+/**
+ * Numéro WhatsApp au format international : '+221774388766'
+ */
+export function getWhatsAppIntl() {
+  const stored = getCachedSetting('whatsapp', WHATSAPP_FALLBACK_INTL);
+  const cleaned = cleanForWaMe(stored);
+  return cleaned ? '+' + cleaned : '';
+}
+
+/**
+ * Numéro WhatsApp formaté pour affichage humain : '+221 77 438 87 66'
+ * Si le numéro stocké contient déjà des espaces (format admin), on le retourne tel quel.
+ * Sinon on essaye de le formater intelligemment.
+ */
+export function getWhatsAppDisplay() {
+  const stored = getCachedSetting('whatsapp', WHATSAPP_FALLBACK_INTL);
+  if (!stored) return WHATSAPP_FALLBACK_INTL;
+  // Si l'admin a stocké un format affichable (+221 77 438 87 66) → on garde
+  if (stored.includes(' ')) return stored.startsWith('+') ? stored : '+' + stored;
+  // Sinon on formate à la sénégalaise : "+221 77 XXX XX XX"
+  const digits = cleanForWaMe(stored);
+  if (digits.length >= 12 && digits.startsWith('221')) {
+    return `+${digits.slice(0, 3)} ${digits.slice(3, 5)} ${digits.slice(5, 8)} ${digits.slice(8, 10)} ${digits.slice(10, 12)}`.trim();
+  }
+  return stored;
+}
+
+// ─── Constantes legacy (DEPRECATED — utiliser les helpers ci-dessus) ───
+// Conservées pour ne pas casser les vieux imports qui pourraient encore traîner.
+// Toutes les utilisations dans le code ont été migrées vers les helpers.
+export const YARAM_WHATSAPP = cleanForWaMe(WHATSAPP_FALLBACK_INTL);
+export const YARAM_WHATSAPP_INTL = WHATSAPP_FALLBACK_INTL;
 export const YARAM_WHATSAPP_DISPLAY = '+221 77 438 87 66';
 
 export function scoreClass(score) {
