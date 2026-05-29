@@ -23,7 +23,19 @@ export default function Cart() {
     window.addEventListener('yaram-cart-updated', onUpdate);
     // Aussi : si le user revient sur cette page apres edit ailleurs
     setItems(getCart());
-    return () => window.removeEventListener('yaram-cart-updated', onUpdate);
+
+    // Auto-refresh sur retour navigation (popstate iOS)
+    const handleRouteBack = (e) => {
+      const target = e?.detail?.to?.name;
+      if (target && target !== 'cart') return;
+      setItems(getCart());
+    };
+    window.addEventListener('yaram-route-back', handleRouteBack);
+
+    return () => {
+      window.removeEventListener('yaram-cart-updated', onUpdate);
+      window.removeEventListener('yaram-route-back', handleRouteBack);
+    };
   }, []);
 
   // Charge l'adresse par defaut pour la zone de livraison correcte

@@ -15,7 +15,7 @@ export default function Categories() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    (async () => {
+    const load = async () => {
       try {
         // PERF : on ne charge plus le catalogue entier — juste les slugs categorie
         // (1 colonne au lieu de 15). Sur 4G Senegal, gain de 2-4 sec.
@@ -59,7 +59,17 @@ export default function Categories() {
         console.error('Categories load error:', e);
       }
       setLoading(false);
-    })();
+    };
+    load();
+
+    // Auto-refresh sur retour navigation (popstate iOS)
+    const handleRouteBack = (e) => {
+      const target = e?.detail?.to?.name;
+      if (target && target !== 'categories') return;
+      load();
+    };
+    window.addEventListener('yaram-route-back', handleRouteBack);
+    return () => window.removeEventListener('yaram-route-back', handleRouteBack);
   }, []);
 
   return (

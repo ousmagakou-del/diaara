@@ -173,6 +173,21 @@ function ClientApp() {
     const handlePopState = () => {
       const newRoute = pathToRoute(window.location.pathname, window.location.search);
       setRoute(newRoute);
+
+      // ─── Auto-refresh sur retour iOS ───
+      // Sur iOS app native (Capacitor), les composants restent mounted en mémoire
+      // et leur cache local n'est PAS invalidé au popstate. Résultat : on revoit
+      // les vieilles données pendant 5-10s tant que le SW ne refresh pas.
+      // Solution : à chaque retour, on invalide les caches critiques + on dispatch
+      // un évènement custom que les pages écoutent pour relancer leur loadData.
+      try {
+        // Petit délai pour laisser React rendu finir avant le refetch
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('yaram-route-back', {
+            detail: { to: newRoute },
+          }));
+        }, 50);
+      } catch { /* ignore */ }
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);

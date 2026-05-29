@@ -11,7 +11,7 @@ export default function Orders() {
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+    const load = async () => {
       try {
         const data = await getMyOrders();
         if (!cancelled) setOrders(data || []);
@@ -21,8 +21,21 @@ export default function Orders() {
       } finally {
         if (!cancelled) setLoading(false);
       }
-    })();
-    return () => { cancelled = true; };
+    };
+    load();
+
+    // Auto-refresh sur retour navigation (popstate iOS)
+    const handleRouteBack = (e) => {
+      const target = e?.detail?.to?.name;
+      if (target && target !== 'orders') return;
+      load();
+    };
+    window.addEventListener('yaram-route-back', handleRouteBack);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener('yaram-route-back', handleRouteBack);
+    };
   }, []);
 
   return (

@@ -3,6 +3,7 @@ import { useNav, useUser } from '../App';
 import { supabase, signOut, updateProfile } from '../lib/supabase';
 import { toggleTheme, getTheme } from '../lib/theme';
 import { getWhatsAppNumber, getWhatsAppDisplay } from '../lib/utils';
+import { isIOSApp } from '../lib/platform';
 import { toast, confirmDialog, promptDialog } from '../lib/toast';
 import TabBar from '../components/TabBar';
 import './Profile.css';
@@ -341,16 +342,22 @@ export default function Profile() {
             <span className="prof-menu-arrow">→</span>
           </button>
 
-          <div className="prof-menu-sep" />
-          
-          <button className="prof-menu-row" onClick={() => navigate({ name: 'notifications', params: {} })}>
-            <div className="prof-menu-icon">🔔</div>
-            <div className="prof-menu-text">
-              <strong>Notifications</strong>
-              <span>Rappels routine peau · Commandes</span>
-            </div>
-            <span className="prof-menu-arrow">→</span>
-          </button>
+          {/* "Notifications" : page de gestion des web push (API navigateur).
+              Sur iOS app native (Capacitor), c'est géré par iOS Settings → YARAM → Notifications.
+              On cache donc l'option pour éviter la confusion. */}
+          {!isIOSApp() && (
+            <>
+              <div className="prof-menu-sep" />
+              <button className="prof-menu-row" onClick={() => navigate({ name: 'notifications', params: {} })}>
+                <div className="prof-menu-icon">🔔</div>
+                <div className="prof-menu-text">
+                  <strong>Notifications</strong>
+                  <span>Rappels routine peau · Commandes</span>
+                </div>
+                <span className="prof-menu-arrow">→</span>
+              </button>
+            </>
+          )}
 
           <div className="prof-menu-sep" />
 

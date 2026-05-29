@@ -275,7 +275,25 @@ export default function Home() {
       }
     };
     document.addEventListener('visibilitychange', handleVisibility);
-    return () => document.removeEventListener('visibilitychange', handleVisibility);
+
+    // ─── Auto-refresh sur retour navigation (popstate iOS) ───
+    // Quand l'user fait "Retour" depuis une autre page (Product, Cart, etc.)
+    // vers Home, force un refresh des données si le cache a > 30 sec.
+    // Évite le bug "données obsolètes au retour qui force un manual refresh".
+    const handleRouteBack = (e) => {
+      const target = e?.detail?.to;
+      if (target?.name !== 'home' && target?.name) return;
+      const cacheAge = Date.now() - homeDataCache.loadedAt;
+      if (cacheAge > 30 * 1000) {
+        loadData(true);
+      }
+    };
+    window.addEventListener('yaram-route-back', handleRouteBack);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('yaram-route-back', handleRouteBack);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route?.name]);
 

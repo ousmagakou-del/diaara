@@ -84,7 +84,7 @@ export default function Search({ initialCategory, initialBrand }) {
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+    const load = async () => {
       try {
         const [p, b] = await Promise.all([getAllProducts(), getAllBrands()]);
         if (cancelled) return;
@@ -94,8 +94,21 @@ export default function Search({ initialCategory, initialBrand }) {
         console.error('Search load error:', e);
       }
       if (!cancelled) setLoading(false);
-    })();
-    return () => { cancelled = true; };
+    };
+    load();
+
+    // Auto-refresh sur retour navigation (popstate iOS)
+    const handleRouteBack = (e) => {
+      const target = e?.detail?.to?.name;
+      if (target && target !== 'search') return;
+      load();
+    };
+    window.addEventListener('yaram-route-back', handleRouteBack);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener('yaram-route-back', handleRouteBack);
+    };
   }, []);
 
   // Si initialBrand change (navigation depuis Home), on met à jour
