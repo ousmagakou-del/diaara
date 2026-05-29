@@ -14,6 +14,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { toast } from '../lib/toast';
 import { PREORDER_STATUS_LABELS, PREORDER_STATUS_ICONS, formatArrivalDate } from '../lib/preorder';
+import { notifyPreorderStatusChange } from '../lib/preorderNotify';
 
 export default function ImportsSection() {
   const [orders, setOrders] = useState([]);
@@ -60,7 +61,7 @@ export default function ImportsSection() {
     return acc;
   }, { total: 0, depositsReceived: 0, balancesAwaiting: 0, toOrderCount: 0, inTransitCount: 0, arrivedCount: 0 });
 
-  const advance = async (orderId, newStatus, extraFields = {}) => {
+  const advance = async (orderId, newStatus, extraFields = {}, opts = {}) => {
     try {
       const update = { status: newStatus, ...extraFields };
       const { error } = await supabase
@@ -69,6 +70,22 @@ export default function ImportsSection() {
         .eq('id', orderId);
       if (error) throw error;
       toast.success(`Commande ${orderId} → ${PREORDER_STATUS_LABELS[newStatus] || newStatus}`);
+
+      // ─── Notifs auto au client (push + WhatsApp) ───
+      // Skippé sur "cancelled" et si l'admin a coché "Pas de notif"
+      if (newStatus !== 'cancelled' && !opts.skipNotify) {
+        const order = orders.find(o => o.id === orderId);
+        if (order) {
+          // Mise à jour locale pour avoir les bons champs (deposit_paid_at etc.)
+          const updated = { ...order, ...update };
+          const res = await notifyPreorderStatusChange(updated, newStatus);
+          if (res.push?.ok) toast.success('🔔 Push envoyé au client');
+          else if (res.push?.error) console.warn('push failed:', res.push.error);
+          if (res.whatsapp?.ok) toast.success('💬 WhatsApp envoyé au client');
+          else if (res.whatsapp?.error) console.warn('whatsapp failed:', res.whatsapp.error);
+        }
+      }
+
       await load();
     } catch (e) {
       toast.error('Erreur : ' + e.message);
