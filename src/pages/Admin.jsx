@@ -16,6 +16,7 @@ import StatsSection from '../admin/StatsSection';
 import PromosSection from '../admin/PromosSection';
 import MarketingSection from '../admin/MarketingSection';
 import ImportsSection from '../admin/ImportsSection';
+import PromosSplashSection from '../admin/PromosSplashSection';
 import ReviewsSection from '../admin/ReviewsSection';
 import UsersSection from '../admin/UsersSection';
 import DeliveriesSection from '../admin/DeliveriesSection';
@@ -51,6 +52,7 @@ const NAV = [
   { id: 'promos',      icon: '🎁', label: 'Codes promo' },
   { id: 'marketing',   icon: '📣', label: 'Marketing' },
   { id: 'imports',     icon: '✈️', label: 'Imports' },
+  { id: 'splash',      icon: '✨', label: 'Splash Promos' },
   { id: 'reviews',     icon: '⭐', label: 'Modération avis' },
   { id: 'users',       icon: '👥', label: 'Utilisatrices' },
   { id: 'deliveries',  icon: '🛵', label: 'Livraisons' },
@@ -277,6 +279,7 @@ export default function Admin() {
         {section === 'promos'        && <PromosSection />}
         {section === 'marketing'     && <MarketingSection />}
         {section === 'imports'       && <ImportsSection />}
+        {section === 'splash'        && <PromosSplashSection />}
         {section === 'reviews'       && <ReviewsSection />}
         {section === 'users'         && <UsersSection />}
         {section === 'deliveries'    && <DeliveriesSection />}
