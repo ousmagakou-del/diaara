@@ -216,7 +216,7 @@ export default function Profile() {
             <img src={avatar} alt={firstName} className="prof-avatar" />
             <h1 className="prof-name">{firstName}</h1>
             {city ? (
-              <p className="prof-loc">{neighborhood ? `${neighborhood}, ` : ''}{city} 🇸🇳</p>
+              <p className="prof-loc">{neighborhood ? `${neighborhood}, ` : ''}{city}</p>
             ) : (
               <p className="prof-loc" style={{ opacity: 0.7 }}>📍 Ajoute ton adresse →</p>
             )}

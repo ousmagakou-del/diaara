@@ -5,6 +5,7 @@ import {
   getAllPharmacies,
   getAllBrands,
   getAllBanners,
+  getMyAddresses,
   supabase,
 } from '../lib/supabase';
 import { getUserPosition, sortByDistance, formatDistance, getPermissionState } from '../lib/geo';
@@ -71,6 +72,42 @@ export default function Home() {
   const [nearbyPharmacies, setNearbyPharmacies] = useState([]);
   const [userPos, setUserPos] = useState(null);
   const [gpsStatus, setGpsStatus] = useState('unknown');
+
+  // ─── Adresses utilisateur (pour switcher la ville affichée) ───
+  const [addresses, setAddresses] = useState([]);
+  const [selectedAddrId, setSelectedAddrId] = useState(() => {
+    try { return localStorage.getItem('yaram_selected_addr_id') || null; } catch { return null; }
+  });
+  const [showAddrPicker, setShowAddrPicker] = useState(false);
+
+  useEffect(() => {
+    if (!user?.id) { setAddresses([]); return; }
+    (async () => {
+      try {
+        const list = await getMyAddresses();
+        setAddresses(list || []);
+        // Si pas de sélection en cours OU sélection invalide (adresse supprimée),
+        // tombe sur l'adresse par défaut DB ou la première dispo.
+        const stillValid = (list || []).find(a => a.id === selectedAddrId);
+        if (!stillValid) {
+          const def = (list || []).find(a => a.is_default) || list?.[0];
+          if (def) {
+            setSelectedAddrId(def.id);
+            try { localStorage.setItem('yaram_selected_addr_id', def.id); } catch {}
+          }
+        }
+      } catch { /* silent */ }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  const selectedAddr = addresses.find(a => a.id === selectedAddrId) || addresses.find(a => a.is_default) || addresses[0] || null;
+
+  const switchAddress = (id) => {
+    setSelectedAddrId(id);
+    try { localStorage.setItem('yaram_selected_addr_id', id); } catch {}
+    setShowAddrPicker(false);
+  };
   const [categories, setCategories] = useState(homeDataCache.categories || []);
   const [topBrands, setTopBrands] = useState(homeDataCache.topBrands || []);
   const [banners, setBanners] = useState(homeDataCache.banners || []);
@@ -441,20 +478,138 @@ export default function Home() {
         {/* ════════ HEADER VERT YARAM ════════ */}
         <header className="yhome-hero">
           <div className="yhome-hero-top">
-            <button className="yhome-avatar-btn" onClick={() => navigate('/profile')}>
-              {user?.avatar ? (
-                <img src={user.avatar} alt={user.first_name || 'Avatar'} loading="eager" decoding="async" className="yhome-avatar-img" />
-              ) : (
-                <div className="yhome-avatar-letter">{avatarLetter}</div>
-              )}
-              <div>
+            <div className="yhome-avatar-btn" style={{ background: 'transparent', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <button
+                onClick={() => navigate('/profile')}
+                style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}
+                aria-label="Mon profil"
+              >
+                {user?.avatar ? (
+                  <img src={user.avatar} alt={user.first_name || 'Avatar'} loading="eager" decoding="async" className="yhome-avatar-img" />
+                ) : (
+                  <div className="yhome-avatar-letter">{avatarLetter}</div>
+                )}
+              </button>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="yhome-hello">Salut {firstName} 👋</div>
-                <div className="yhome-loc">
+                <button
+                  onClick={() => {
+                    // Si une seule adresse OU aucune → emmène vers gestion adresses
+                    if (addresses.length <= 1) {
+                      navigate({ name: 'addresses', params: {} });
+                    } else {
+                      setShowAddrPicker(true);
+                    }
+                  }}
+                  className="yhome-loc"
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    padding: 0,
+                    cursor: 'pointer',
+                    color: 'inherit',
+                    textAlign: 'left',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                  }}
+                >
                   <span className="yhome-loc-dot" />
-                  {user?.neighborhood ? `${user.neighborhood}, ` : ''}{user?.city || 'Dakar'}
+                  {selectedAddr ? (
+                    <>
+                      {selectedAddr.label ? `${selectedAddr.label} · ` : ''}
+                      {selectedAddr.neighborhood ? `${selectedAddr.neighborhood}, ` : ''}
+                      {selectedAddr.city}
+                    </>
+                  ) : (
+                    user?.neighborhood ? `${user.neighborhood}, ${user?.city || 'Dakar'}` :
+                    user?.city || '📍 Ajouter mon adresse'
+                  )}
+                  {addresses.length > 1 && <span style={{ fontSize: 10, opacity: 0.7 }}> ▼</span>}
+                </button>
+              </div>
+            </div>
+
+            {/* Picker d'adresses (modal simple) */}
+            {showAddrPicker && (
+              <div
+                onClick={() => setShowAddrPicker(false)}
+                style={{
+                  position: 'fixed',
+                  inset: 0,
+                  background: 'rgba(0,0,0,0.5)',
+                  zIndex: 999,
+                  display: 'flex',
+                  alignItems: 'flex-end',
+                  justifyContent: 'center',
+                }}
+              >
+                <div
+                  onClick={e => e.stopPropagation()}
+                  style={{
+                    background: '#fff',
+                    width: '100%',
+                    maxWidth: 500,
+                    borderRadius: '16px 16px 0 0',
+                    padding: '20px 16px calc(var(--safe-bottom,0px) + 24px)',
+                    maxHeight: '70vh',
+                    overflowY: 'auto',
+                  }}
+                >
+                  <h3 style={{ margin: '0 0 14px', fontSize: 17, color: '#1A1A1A' }}>📍 Mes adresses</h3>
+                  {addresses.map(a => (
+                    <button
+                      key={a.id}
+                      onClick={() => switchAddress(a.id)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        width: '100%',
+                        padding: '12px 14px',
+                        background: a.id === selectedAddrId ? 'rgba(31,139,76,0.08)' : '#fff',
+                        border: `1px solid ${a.id === selectedAddrId ? '#1F8B4C' : '#E5E5E2'}`,
+                        borderRadius: 12,
+                        marginBottom: 8,
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                      }}
+                    >
+                      <div style={{
+                        width: 20, height: 20, borderRadius: '50%',
+                        border: `2px solid ${a.id === selectedAddrId ? '#1F8B4C' : '#CCC'}`,
+                        background: a.id === selectedAddrId ? '#1F8B4C' : 'transparent',
+                        flexShrink: 0,
+                      }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, fontSize: 14, color: '#1A1A1A' }}>
+                          {a.label || 'Adresse'} {a.is_default && <span style={{ fontSize: 10, color: '#1F8B4C' }}>· défaut</span>}
+                        </div>
+                        <div style={{ fontSize: 12, color: '#6B6B6B' }}>
+                          {a.neighborhood ? `${a.neighborhood}, ` : ''}{a.city}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => { setShowAddrPicker(false); navigate({ name: 'addresses', params: {} }); }}
+                    style={{
+                      width: '100%',
+                      padding: 12,
+                      background: 'transparent',
+                      border: '1px dashed #1F8B4C',
+                      color: '#1F8B4C',
+                      borderRadius: 12,
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                      fontSize: 13,
+                    }}
+                  >
+                    + Ajouter une nouvelle adresse
+                  </button>
                 </div>
               </div>
-            </button>
+            )}
             <button className="yhome-bell" onClick={() => navigate('/orders')} aria-label="Notifications">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
                 <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
