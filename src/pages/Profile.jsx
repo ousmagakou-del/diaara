@@ -25,7 +25,7 @@ export default function Profile() {
     if (!user?.id) return;
     let cancelled = false;
 
-    (async () => {
+    const loadStats = async () => {
       // 1. Dernier scan IA
       const { data: scans } = await supabase
         .from('skin_scans')
@@ -53,9 +53,21 @@ export default function Profile() {
         lastScan,
         loading: false,
       });
-    })();
+    };
+    loadStats();
 
-    return () => { cancelled = true; };
+    // Auto-refresh sur retour navigation (popstate iOS)
+    const handleRouteBack = (e) => {
+      const target = e?.detail?.to?.name;
+      if (target && target !== 'profile') return;
+      loadStats();
+    };
+    window.addEventListener('yaram-route-back', handleRouteBack);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener('yaram-route-back', handleRouteBack);
+    };
   }, [user?.id]);
 
   const handleLogout = async () => {
