@@ -14,6 +14,20 @@ import './Checkout.css';
 const WAVE_LOGO = 'https://qxhhnrnworwrnwmqekmb.supabase.co/storage/v1/object/public/banner-images/logo-wave.jpg';
 const OM_LOGO   = 'https://qxhhnrnworwrnwmqekmb.supabase.co/storage/v1/object/public/banner-images/logo-orange.png';
 
+// ─── Modes de paiement (module-level, JAMAIS dans le component) ───
+// AVANT : déclaré dans le component. Conséquence catastrophique : un useEffect
+// au-dessus de la déclaration référençait ALL_PAYMENT_METHODS dans son corps ET
+// `isPreorder` dans son dep array, déclenchant un TDZ "Cannot access K before
+// initialization" au render → CRASH écran blanc sur Checkout (#bug du panier).
+// En sortant la const ici, plus aucune référence avant initialization.
+const ALL_PAYMENT_METHODS = [
+  { id: 'wave',    name: 'Wave',                          logoUrl: WAVE_LOGO, fallbackIcon: '🌊', enabled: true,  preorderOk: true  },
+  { id: 'cod',     name: 'Cash à la livraison',           fallbackIcon: '💵',                     enabled: true,  preorderOk: false },
+  { id: 'om',      name: 'Orange Money',                  logoUrl: OM_LOGO,   fallbackIcon: '🟠', enabled: false, preorderOk: true  },
+  { id: 'paytech', name: 'PayTech (Wave + OM + Carte)',   fallbackIcon: '🔒',                     enabled: false, preorderOk: true  },
+  { id: 'card',    name: 'Carte bancaire',                fallbackIcon: '💳',                     enabled: false, preorderOk: true  },
+];
+
 export default function Checkout({ items: propsItems, paymentMethod }) {
   const { navigate } = useNav();
   const { user } = useUser();
@@ -36,19 +50,9 @@ export default function Checkout({ items: propsItems, paymentMethod }) {
   const [selectedAddrId, setSelectedAddrId] = useState(null);
   const [payment, setPayment] = useState(paymentMethod || 'wave');
 
-  // Force payment fallback à 'wave' si la sélection actuelle n'est plus disponible
-  // (ex: l'user avait choisi 'cod' puis a ajouté un produit import qui rend cod invalide)
-  useEffect(() => {
-    const stillValid = ALL_PAYMENT_METHODS.find(m => m.id === payment);
-    if (!stillValid || !stillValid.enabled) {
-      setPayment('wave');
-      return;
-    }
-    if (isPreorder && !stillValid.preorderOk) {
-      setPayment('wave');
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPreorder, payment]);
+  // (Le useEffect de fallback payment était ici — déplacé plus bas, après la
+  //  déclaration de isPreorder, pour éviter le TDZ "Cannot access K before
+  //  initialization" sur l'ancien dep array [isPreorder, payment].)
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -137,6 +141,22 @@ export default function Checkout({ items: propsItems, paymentMethod }) {
   // ─── Preorder (Import) : détection + breakdown 50/50 ───
   const preorderSummary = buildPreorderSummary(items, shipping);
   const isPreorder = preorderSummary.isPreorder;
+
+  // Force payment fallback à 'wave' si la sélection actuelle n'est plus disponible
+  // (ex: l'user avait choisi 'cod' puis a ajouté un produit import qui rend cod
+  // invalide). Doit être DÉCLARÉ APRÈS isPreorder pour éviter TDZ sur le dep array.
+  useEffect(() => {
+    const stillValid = ALL_PAYMENT_METHODS.find(m => m.id === payment);
+    if (!stillValid || !stillValid.enabled) {
+      setPayment('wave');
+      return;
+    }
+    if (isPreorder && !stillValid.preorderOk) {
+      setPayment('wave');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPreorder, payment]);
+
   // Si preorder : on facture l'acompte 50% maintenant, le solde sera demandé à l'arrivée
   const depositAmount = isPreorder
     ? Math.round((total * 50) / 100)
@@ -296,15 +316,8 @@ export default function Checkout({ items: propsItems, paymentMethod }) {
   //   - PayTech : DÉSACTIVÉ pour l'instant (sera réactivé en option auto-confirmation)
   //   - Carte : non activée (à venir via PayTech)
   //
-  // Pour réactiver une option : décommente la ligne dans ALL_PAYMENT_METHODS
-  // et adapte le filtre ci-dessous.
-  const ALL_PAYMENT_METHODS = [
-    { id: 'wave', name: 'Wave',                 logoUrl: WAVE_LOGO, fallbackIcon: '🌊', enabled: true,  preorderOk: true  },
-    { id: 'cod',  name: 'Cash à la livraison',  fallbackIcon: '💵',                     enabled: true,  preorderOk: false },
-    { id: 'om',   name: 'Orange Money',         logoUrl: OM_LOGO,   fallbackIcon: '🟠', enabled: false, preorderOk: true  },
-    { id: 'paytech', name: 'PayTech (Wave + OM + Carte)', fallbackIcon: '🔒',           enabled: false, preorderOk: true  },
-    { id: 'card', name: 'Carte bancaire',       fallbackIcon: '💳',                     enabled: false, preorderOk: true  },
-  ];
+  // Pour réactiver une option : édite ALL_PAYMENT_METHODS au top du fichier.
+  // (Plus dans le component : voir commentaire en haut sur le TDZ fix.)
   const PAYMENT_METHODS = ALL_PAYMENT_METHODS.filter(m => {
     if (!m.enabled) return false;
     if (isPreorder && !m.preorderOk) return false; // cash impossible sur preorder import
