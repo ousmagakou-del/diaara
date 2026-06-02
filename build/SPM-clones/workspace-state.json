@@ -46,6 +46,20 @@
       {
         "basedOn" : null,
         "packageRef" : {
+          "identity" : "app",
+          "kind" : "fileSystem",
+          "location" : "/Users/ousmanegakou/Documents/diaara/node_modules/@capacitor/app",
+          "name" : "app"
+        },
+        "state" : {
+          "name" : "fileSystem",
+          "path" : "/Users/ousmanegakou/Documents/diaara/node_modules/@capacitor/app"
+        },
+        "subpath" : "app"
+      },
+      {
+        "basedOn" : null,
+        "packageRef" : {
           "identity" : "browser",
           "kind" : "fileSystem",
           "location" : "/Users/ousmanegakou/Documents/diaara/node_modules/@capacitor/browser",

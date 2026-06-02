@@ -9,13 +9,12 @@
          tant que la clé APNs OneSignal couvre "Sandbox & Production" -->
     <key>aps-environment</key>
     <string>production</string>
-    <!-- Universal Links : permet aux URLs https://yaram.app/order/* d'ouvrir
-         l'app au lieu de Safari quand l'app est installée.
-         Nécessite que /.well-known/apple-app-site-association soit hébergé
-         sur yaram.app avec le bon Team ID + bundle ID. -->
-    <key>com.apple.developer.associated-domains</key>
-    <array>
-        <string>applinks:yaram.app</string>
-    </array>
+    <!-- ⚠️ Universal Links désactivés temporairement le temps de configurer
+         la capability dans Xcode UI (Signing & Capabilities > + Capability >
+         Associated Domains). À réactiver pour le prochain build :
+         <key>com.apple.developer.associated-domains</key>
+         <array><string>applinks:yaram.app</string></array>
+         L'AASA file public/.well-known/apple-app-site-association reste
+         déployé sur le web (zéro effet tant que iOS n'a pas l'entitlement). -->
 </dict>
 </plist>

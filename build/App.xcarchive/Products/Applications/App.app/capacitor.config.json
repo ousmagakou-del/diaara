@@ -5,6 +5,7 @@
 	"packageClassList": [
 		"BiometricAuthNative",
 		"SecureStorage",
+		"AppPlugin",
 		"PushNotificationsPlugin",
 		"CAPBrowserPlugin"
 	]
