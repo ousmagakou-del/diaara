@@ -85,27 +85,39 @@ export default function Payment({ orderId }) {
     setPaying(true);
     try {
       // 1. Marque la commande comme payée (SEULE opération bloquante).
-      //    Tout le reste (emails, broadcast) part en background pour que
-      //    l'UX soit instantanée : dès que le status est 'paid', on navigate.
-      await updateOrderStatus(orderId, 'paid');
+      //    Timeout 12s : si la RPC Supabase hang (réseau africain capricieux),
+      //    on plante proprement au lieu de bloquer "Confirmation..." à l'infini.
+      const UPDATE_TIMEOUT_MS = 12000;
+      const updatePromise = updateOrderStatus(orderId, 'paid');
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Réseau lent — réessaie dans un instant')), UPDATE_TIMEOUT_MS)
+      );
+      const result = await Promise.race([updatePromise, timeoutPromise]);
+
+      // updateOrderStatus retourne { error } ou { data } — pas un throw.
+      // Faut explicitement vérifier sinon on continue silencieusement sur erreur.
+      if (result?.error) {
+        throw new Error(result.error.message || 'Échec de la confirmation');
+      }
 
       // 2. Navigation immédiate vers le tracking — l'utilisateur voit
       //    son écran de suivi en < 1s au lieu d'attendre 5-10s les notifs.
       toast.success('Paiement confirmé');
+      // Reset paying AVANT navigate (sinon si nav échoue silencieuse, on reste bloqué)
+      setPaying(false);
       navigate({ name: 'order_tracking', params: { orderId } });
 
       // 3. ─── NOTIFS post-paiement FIRE-AND-FORGET ───
       //    On NE FAIT PAS d'await ici. Si une notif fail/hang ça reste invisible
       //    pour l'utilisateur. Les Promises continuent en background même après
       //    le démontage du composant.
-      //    Précédent bug : supabase.channel(...).send() peut hang infini si le
-      //    channel n'est pas joined. await bloquait tout. Maintenant on s'en fout.
       runPostPaidNotifications({ orderId, order, user }).catch(e => {
         console.warn('[Payment] post-paid notifs swallowed error:', e?.message);
       });
     } catch (e) {
+      console.error('[Payment] handlePay error:', e);
       setPaying(false);
-      toast.error('Erreur : ' + e.message);
+      toast.error('Erreur : ' + (e?.message || 'inconnue'));
     }
   };
 
