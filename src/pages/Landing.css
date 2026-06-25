@@ -23,7 +23,11 @@
   max-width: 1280px; margin: 0 auto;
   padding: 14px 24px;
   display: flex; align-items: center; gap: 32px;
+  flex-wrap: nowrap;
 }
+.lp-logo { flex-shrink: 0; }
+.lp-nav { flex-shrink: 1; min-width: 0; }
+.lp-header-cta { flex-shrink: 0; margin-left: auto; }
 .lp-logo {
   display: flex; align-items: center; gap: 10px;
   text-decoration: none; color: inherit;
@@ -72,13 +76,44 @@
 
 /* ───────────────────────── HERO ───────────────────────── */
 .lp-hero {
-  padding: 80px 24px 100px;
+  padding: 100px 24px 120px;
   background: linear-gradient(180deg, #FAFAF8 0%, #fff 100%);
+  position: relative;
+  overflow: hidden;
+  min-height: calc(100vh - 70px);
+  display: flex; align-items: center;
+}
+/* Orbes verts décoratifs en arrière-plan */
+.lp-hero-bg-orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+.lp-orb-1 {
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(31,139,76,0.18) 0%, transparent 70%);
+  top: -200px; right: -100px;
+  animation: lp-orb-float 14s ease-in-out infinite;
+}
+.lp-orb-2 {
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(45,170,94,0.12) 0%, transparent 70%);
+  bottom: -150px; left: -100px;
+  animation: lp-orb-float 18s ease-in-out infinite reverse;
+}
+@keyframes lp-orb-float {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(40px, -30px); }
 }
 .lp-hero-inner {
-  max-width: 1280px; margin: 0 auto;
-  display: grid; grid-template-columns: 1.1fr 1fr;
-  gap: 60px; align-items: center;
+  max-width: 880px; margin: 0 auto;
+  position: relative; z-index: 1;
+  text-align: center;
+}
+.lp-hero-content {
+  display: flex; flex-direction: column;
+  align-items: center;
 }
 .lp-hero-badge {
   display: inline-flex; align-items: center; gap: 8px;
@@ -98,9 +133,10 @@
   100% { box-shadow: 0 0 0 0 rgba(31,139,76,0); }
 }
 .lp-hero-title {
-  font-size: 64px; font-weight: 900; line-height: 1.05;
-  letter-spacing: -2px; margin: 0 0 24px;
+  font-size: 88px; font-weight: 900; line-height: 1;
+  letter-spacing: -3px; margin: 0 0 24px;
   color: #1A1A1A;
+  text-align: center;
 }
 .lp-hero-accent {
   background: linear-gradient(135deg, #1F8B4C 0%, #2DAA5E 100%);
@@ -109,28 +145,41 @@
   -webkit-text-fill-color: transparent;
 }
 .lp-hero-sub {
-  font-size: 17px; line-height: 1.6;
-  color: #4B5563; margin: 0 0 32px;
-  max-width: 540px;
+  font-size: 20px; line-height: 1.6;
+  color: #4B5563; margin: 0 auto 40px;
+  max-width: 620px;
+  text-align: center;
 }
 .lp-hero-cta {
-  display: flex; gap: 12px; flex-wrap: wrap;
-  margin-bottom: 36px;
+  display: flex; gap: 14px; flex-wrap: wrap;
+  margin-bottom: 60px;
+  justify-content: center;
 }
 .lp-hero-trust {
-  display: flex; gap: 32px;
-  border-top: 1px solid #E5E5E5;
-  padding-top: 20px;
+  display: flex; gap: 0; align-items: center;
+  background: #fff;
+  border: 1px solid #F0F0EE;
+  border-radius: 999px;
+  padding: 14px 28px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+}
+.lp-trust-divider {
+  width: 1px; height: 32px;
+  background: #E5E5E5;
+  margin: 0 24px;
 }
 .lp-trust-item {
   display: flex; flex-direction: column; gap: 2px;
+  align-items: center;
+  min-width: 80px;
 }
 .lp-trust-item strong {
-  font-size: 22px; font-weight: 900; color: #1A1A1A;
+  font-size: 24px; font-weight: 900; color: #1A1A1A;
   letter-spacing: -0.5px;
 }
 .lp-trust-item span {
   font-size: 12px; color: #6B7280; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.5px;
 }
 
 /* ─── Phone mockup ─── */
@@ -463,30 +512,47 @@
    RESPONSIVE
    ═══════════════════════════════════════════════════════════════════ */
 @media (max-width: 1024px) {
-  .lp-hero-title { font-size: 52px; }
+  .lp-hero { padding: 80px 24px 100px; min-height: auto; }
+  .lp-hero-title { font-size: 68px; letter-spacing: -2px; }
+  .lp-hero-sub { font-size: 18px; }
+  .lp-orb-1 { width: 400px; height: 400px; }
+  .lp-orb-2 { width: 350px; height: 350px; }
   .lp-section-title { font-size: 36px; }
   .lp-brands-grid { grid-template-columns: repeat(4, 1fr); }
   .lp-app-inner { padding: 40px; gap: 40px; }
   .lp-app h2 { font-size: 34px; }
 }
 
-@media (max-width: 768px) {
+/* Tablet : nav réduite avec moins de gap pour éviter overlap */
+@media (max-width: 1024px) {
+  .lp-header-inner { gap: 16px; padding: 12px 18px; }
+  .lp-nav { gap: 14px; }
+  .lp-nav button { font-size: 13px; }
+  .lp-logo-text { font-size: 16px; }
+  .lp-btn-primary, .lp-btn-ghost { padding: 9px 14px; font-size: 13px; }
+}
+
+@media (max-width: 900px) {
   .lp-nav { display: none; }
   .lp-header-cta .lp-btn-ghost { display: none; }
-  .lp-header-inner { padding: 12px 18px; }
+}
 
-  .lp-hero { padding: 48px 18px 60px; }
-  .lp-hero-inner {
-    grid-template-columns: 1fr;
-    gap: 40px;
-    text-align: center;
+@media (max-width: 768px) {
+  .lp-header-inner { padding: 12px 16px; }
+  .lp-btn-primary { padding: 8px 14px; font-size: 13px; }
+
+  .lp-hero { padding: 60px 18px 70px; }
+  .lp-hero-title { font-size: 44px; letter-spacing: -1.5px; }
+  .lp-hero-sub { font-size: 16px; margin-bottom: 32px; }
+  .lp-hero-cta { gap: 10px; margin-bottom: 40px; }
+  .lp-hero-trust {
+    padding: 12px 18px;
+    flex-wrap: wrap;
   }
-  .lp-hero-title { font-size: 40px; letter-spacing: -1px; }
-  .lp-hero-sub { margin-left: auto; margin-right: auto; font-size: 15px; }
-  .lp-hero-cta { justify-content: center; }
-  .lp-hero-trust { justify-content: center; gap: 24px; padding-top: 16px; }
-  .lp-phone-mockup { width: 220px; height: 460px; transform: rotate(0); }
+  .lp-trust-divider { margin: 0 14px; height: 24px; }
   .lp-trust-item strong { font-size: 18px; }
+  .lp-trust-item span { font-size: 10px; }
+  .lp-trust-item { min-width: 60px; }
 
   .lp-section { padding: 60px 18px; }
   .lp-section-title { font-size: 28px; letter-spacing: -1px; }
@@ -526,12 +592,15 @@
 }
 
 @media (max-width: 480px) {
-  .lp-hero-title { font-size: 34px; }
-  .lp-hero-cta { flex-direction: column; align-items: stretch; gap: 10px; }
+  .lp-hero { padding: 48px 16px 56px; }
+  .lp-hero-title { font-size: 36px; letter-spacing: -1px; }
+  .lp-hero-sub { font-size: 15px; }
+  .lp-hero-cta { flex-direction: column; align-items: stretch; gap: 10px; width: 100%; }
   .lp-hero-cta .lp-btn-lg { width: 100%; }
   .lp-btn-lg { padding: 14px 22px; font-size: 14px; }
   .lp-trust-item strong { font-size: 16px; }
-  .lp-trust-item span { font-size: 10px; }
+  .lp-trust-item span { font-size: 9px; }
+  .lp-trust-divider { margin: 0 10px; height: 20px; }
 
   .lp-section-title { font-size: 24px; }
   .lp-brands-grid { grid-template-columns: repeat(2, 1fr); }

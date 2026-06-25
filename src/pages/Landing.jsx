@@ -73,6 +73,8 @@ export default function Landing() {
 
       {/* ━━━ HERO ━━━ */}
       <section className="lp-hero">
+        <div className="lp-hero-bg-orb lp-orb-1"></div>
+        <div className="lp-hero-bg-orb lp-orb-2"></div>
         <div className="lp-hero-inner">
           <div className="lp-hero-content">
             <div className="lp-hero-badge">
@@ -102,37 +104,15 @@ export default function Landing() {
                 <strong>4.9★</strong>
                 <span>App Store</span>
               </div>
+              <div className="lp-trust-divider"></div>
               <div className="lp-trust-item">
                 <strong>5K+</strong>
                 <span>Produits</span>
               </div>
+              <div className="lp-trust-divider"></div>
               <div className="lp-trust-item">
                 <strong>30 min</strong>
                 <span>Livraison Dakar</span>
-              </div>
-            </div>
-          </div>
-          <div className="lp-hero-visual">
-            <div className="lp-phone-mockup">
-              <div className="lp-phone-screen">
-                <div className="lp-phone-header">
-                  <span className="lp-phone-time">9:41</span>
-                  <span className="lp-phone-bars">●●●●</span>
-                </div>
-                <div className="lp-phone-app">
-                  <div className="lp-phone-greeting">Bonjour Aïssatou 👋</div>
-                  <div className="lp-phone-search">🔍 Rechercher un produit…</div>
-                  <div className="lp-phone-banner">
-                    <div className="lp-phone-banner-title">Promo La Roche-Posay</div>
-                    <div className="lp-phone-banner-sub">-20% jusqu'à dimanche</div>
-                  </div>
-                  <div className="lp-phone-grid">
-                    <div className="lp-phone-card"><div className="lp-phone-card-img"></div><div className="lp-phone-card-name">Bioderma H2O</div><div className="lp-phone-card-price">8 500 FCFA</div></div>
-                    <div className="lp-phone-card"><div className="lp-phone-card-img"></div><div className="lp-phone-card-name">Avène Eau</div><div className="lp-phone-card-price">5 800 FCFA</div></div>
-                    <div className="lp-phone-card"><div className="lp-phone-card-img"></div><div className="lp-phone-card-name">Vichy Mineral</div><div className="lp-phone-card-price">12 000 FCFA</div></div>
-                    <div className="lp-phone-card"><div className="lp-phone-card-img"></div><div className="lp-phone-card-name">Caudalie Vinosource</div><div className="lp-phone-card-price">15 200 FCFA</div></div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
