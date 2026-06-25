@@ -637,3 +637,40 @@
   }
   .ysearch-live-thumb.brand img { background: white; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   RESPONSIVE — Site mode (pleine largeur desktop)
+   ═══════════════════════════════════════════════════════════════════ */
+
+@media (min-width: 640px) {
+  .ysearch-header { padding-left: 24px; padding-right: 24px; }
+  .ysearch-input-wrap { height: 46px; border-radius: 16px; }
+  .ysearch-input-wrap input { font-size: 16px; height: 46px; }
+  .ysearch-cancel { font-size: 16px; }
+  .ysearch-tabs-bar { padding-left: 24px; padding-right: 24px; }
+  .ysearch-scroll { padding: 20px 24px; }
+  .ysearch-section-title { font-size: 15px; }
+  .ysearch-chip { padding: 9px 16px; font-size: 14px; }
+  .ysearch-trending-grid { grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .ysearch-tab { padding: 9px 16px; font-size: 14px; }
+  .ysearch-brand-card { padding: 14px; min-height: 110px; }
+}
+
+@media (min-width: 1024px) {
+  .search-screen { max-width: 1280px; margin: 0 auto; }
+  .ysearch-header { padding-left: 48px; padding-right: 48px; }
+  .ysearch-tabs-bar { padding-left: 48px; padding-right: 48px; }
+  .ysearch-scroll {
+    padding: 28px 48px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+  .ysearch-empty { grid-column: 1 / -1; }
+  .ysearch-section-title { font-size: 16px; }
+  .ysearch-trending-grid { grid-template-columns: repeat(4, 1fr); }
+  .ysearch-live-row { padding: 12px 10px; }
+  .ysearch-brand-grid { grid-template-columns: repeat(3, 1fr); }
+  .ysearch-no-cat { grid-column: 1 / -1; }
+}

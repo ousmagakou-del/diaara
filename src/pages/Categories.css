@@ -400,6 +400,34 @@
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   RESPONSIVE — Site mode (pleine largeur desktop)
+   ═══════════════════════════════════════════════════════════════════ */
+
+@media (min-width: 640px) {
+  .ycat-screen { display: block; }
+  .ycat-scroll { overflow: visible; padding-bottom: 48px; }
+  .ycat-header { padding-left: 24px; padding-right: 24px; }
+  .ycat-back-btn { width: 44px; height: 44px; }
+  .ycat-grid2 { grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .ycat-hero-card { min-height: 140px; padding: 22px; border-radius: 20px; }
+  .ycat-row { padding: 14px 24px; }
+  .ycat-row-name { font-size: 15px; }
+  .ycat-brand-card { min-height: 110px; border-radius: 16px; }
+}
+
+@media (min-width: 1024px) {
+  .ycat-screen { max-width: 1280px; margin: 0 auto; }
+  .ycat-header { padding-left: 48px; padding-right: 48px; }
+  .ycat-scroll { padding-left: 0; padding-right: 0; }
+  .ycat-grid2 { grid-template-columns: repeat(5, 1fr); gap: 16px; }
+  .ycat-hero-card { min-height: 160px; padding: 28px; }
+  .ycat-hero-grid { gap: 16px; }
+  .ycat-brand-grid { gap: 16px; }
+  .ycat-brand-card { min-height: 130px; }
+  .ycat-row { padding: 16px 48px; }
+}
+
 /* ─── prefers-reduced-motion ─── */
 @media (prefers-reduced-motion: reduce) {
   .ycat-hero-card,

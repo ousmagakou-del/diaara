@@ -112,3 +112,44 @@
   font-weight: 700;
   text-decoration: none;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   RESPONSIVE — Site mode (pleine largeur desktop)
+   ═══════════════════════════════════════════════════════════════════ */
+
+@media (min-width: 640px) {
+  .ph-screen { display: block; }
+  .ph-header { padding-left: 24px; padding-right: 24px; }
+  .ph-header h1 { font-size: 24px; }
+  .ph-header p { font-size: 13px; }
+  .ph-filters { padding-left: 24px; padding-right: 24px; gap: 10px; }
+  .ph-filter { padding: 9px 18px; font-size: 13px; }
+  .ph-scroll {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    padding: 0 24px 48px;
+    padding-bottom: 48px;
+    overflow: visible;
+  }
+  .ph-card { margin-bottom: 0; }
+  .ph-cover { height: 120px; }
+  .ph-head h3 { font-size: 16px; }
+  .ph-wa { padding: 9px 18px; font-size: 13px; }
+}
+
+@media (min-width: 1024px) {
+  .ph-header { padding-left: 48px; padding-right: 48px; }
+  .ph-header h1 { font-size: 28px; }
+  .ph-filters { padding-left: 48px; padding-right: 48px; }
+  .ph-scroll {
+    padding-left: 48px;
+    padding-right: 48px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  .ph-cover { height: 140px; }
+  .ph-body { padding: 18px; }
+  .ph-head h3 { font-size: 17px; }
+  .ph-logo { width: 52px; height: 52px; margin-top: -36px; }
+}

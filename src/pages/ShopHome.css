@@ -844,3 +844,17 @@
   .sh-international-flags { grid-template-columns: 1fr 1fr; gap: 10px; }
   .sh-flag-tile { padding: 18px 10px; font-size: 32px; }
 }
+
+/* Très petits écrans : 360px */
+@media (max-width: 360px) {
+  .sh-hero-title { font-size: 24px; letter-spacing: -0.5px; }
+  .sh-hero-sub { font-size: 13px; }
+  .sh-h2 { font-size: 18px; }
+  .sh-hero-cta { flex-direction: column; align-items: stretch; gap: 10px; }
+  .sh-hero-cta > * { width: 100%; }
+  .sh-section { padding: 32px 12px; }
+  .sh-categories-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .sh-products-grid { gap: 10px; }
+  .sh-product-add { width: 30px; height: 30px; }
+  .sh-search-submit { padding: 10px 12px; font-size: 12px; }
+}

@@ -883,3 +883,23 @@
   .pp-thumbs { gap: 8px; }
   .pp-thumb { width: 56px; height: 56px; }
 }
+
+/* ─── Small mobile (480–640px) : improve touch targets & spacing ─── */
+@media (min-width: 381px) and (max-width: 640px) {
+  .pp-root { padding: 16px 18px 100px; }
+  .pp-title { font-size: 28px; }
+  .pp-price { font-size: 34px; }
+  .pp-btn-add,
+  .pp-btn-pharma { height: 52px; font-size: 15px; border-radius: 14px; }
+  .pp-thumb { width: 68px; height: 68px; }
+}
+
+/* ─── 640–768px ─── */
+@media (min-width: 641px) and (max-width: 768px) {
+  .pp-root { padding: 20px 24px 120px; }
+  .pp-title { font-size: 30px; }
+  .pp-price { font-size: 36px; }
+  .pp-carousel { grid-template-columns: repeat(3, 1fr); }
+  .pp-btn-add,
+  .pp-btn-pharma { height: 54px; font-size: 15px; }
+}

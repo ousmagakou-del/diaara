@@ -681,3 +681,79 @@
 /* ─── Note : l'ancien .yhome-promo-link (mini lien Bons plans) a été
    remplacé par le component <BonsPlansCarousel /> + BonsPlansCarousel.css
    pour le redesign premium juin 2026. Voir src/components/. ─── */
+
+/* ═══════════════════════════════════════════════════════════════════
+   RESPONSIVE — Site mode (page affichée pleine largeur desktop)
+   Mobile-first → on scale UP progressivement
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Tablette 640px+ ── */
+@media (min-width: 640px) {
+  .yhome-scroll {
+    padding-bottom: 40px;
+  }
+  .yhome-hero {
+    padding-top: 28px;
+    padding-bottom: 28px;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+  .yhome-hello { font-size: 17px; }
+  .yhome-avatar-img,
+  .yhome-avatar-letter { width: 48px; height: 48px; }
+  .yhome-section { padding-left: 24px; padding-right: 24px; }
+  .yhome-coupon { margin-left: 24px; margin-right: 24px; }
+  .yhome-brands-row { padding-left: 24px; padding-right: 24px; }
+  .yhome-brand-circle { width: 72px; height: 72px; }
+  .yhome-brand-name { font-size: 11px; max-width: 80px; }
+  .yhome-cat-grid { grid-template-columns: repeat(5, 1fr); gap: 14px; }
+  .yhome-cat-name { font-size: 11px; }
+  .yhome-section-title { font-size: 18px; }
+  .yhome-product-grid-2 { grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .yhome-pharma-card { width: 220px; }
+  .yhome-pharma-cover { height: 110px; }
+  .yhome-search-bar { font-size: 14px; padding: 12px 16px; }
+  .yhome-scan-btn { width: 48px; height: 48px; }
+  .yhome-action-btn { width: 46px; height: 46px; }
+  .yhome-banner-title { font-size: 20px; }
+}
+
+/* ── Desktop 1024px+ ── */
+@media (min-width: 1024px) {
+  .yhome-scroll {
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+  .yhome-hero {
+    padding-left: 48px;
+    padding-right: 48px;
+    border-radius: 0;
+  }
+  .yhome-hero-top { margin-bottom: 20px; }
+  .yhome-hello { font-size: 19px; }
+  .yhome-section { padding-left: 48px; padding-right: 48px; padding-top: 40px; }
+  .yhome-coupon { margin-left: 48px; margin-right: 48px; margin-top: 40px; }
+  .yhome-brands-row { padding-left: 48px; padding-right: 48px; }
+  .yhome-brand-circle { width: 80px; height: 80px; }
+  .yhome-brand-name { font-size: 12px; max-width: 88px; }
+  .yhome-cat-grid { grid-template-columns: repeat(8, 1fr); gap: 16px; }
+  .yhome-section-title { font-size: 20px; }
+  .yhome-section-link { font-size: 14px; }
+  .yhome-product-grid-2 { grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .yhome-pharma-card { width: 260px; }
+  .yhome-pharma-cover { height: 130px; }
+  .yhome-pharma-name { font-size: 14px; }
+  .yhome-gps-btn { font-size: 14px; padding: 14px; border-radius: 14px; }
+  .yhome-banner-title { font-size: 22px; }
+  .yhome-banner-subtitle { font-size: 14px; }
+  .yhome-search-bar { font-size: 15px; padding: 13px 18px; }
+  .yhome-scan-btn { width: 52px; height: 52px; border-radius: 14px; }
+  .yhome-coupon-badge { font-size: 14px; min-width: 64px; }
+  .yhome-coupon-text { font-size: 13px; }
+}
+
+/* ── Large desktop 1440px+ ── */
+@media (min-width: 1440px) {
+  .yhome-cat-grid { grid-template-columns: repeat(10, 1fr); }
+  .yhome-product-grid-2 { grid-template-columns: repeat(5, 1fr); }
+}
