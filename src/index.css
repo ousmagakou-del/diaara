@@ -142,16 +142,29 @@ body {
   overflow: hidden;
 }
 
+/* ─── Site mode : pleine largeur, scroll natif desktop, pas de frame iPhone ─── */
+.app-shell--site {
+  max-width: 100%;
+  height: auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: visible;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
 .desktop-only-tag { display: none; }
 
 @media (min-width: 768px) {
-  body {
+  /* App mode (mobile preview frame) — uniquement pour les routes app */
+  body:has(.app-shell:not(.app-shell--site)) {
     background: linear-gradient(135deg, #1F8B4C 0%, #166635 100%);
     display: flex;
     align-items: center;
     justify-content: center;
   }
-  .app-shell {
+  .app-shell:not(.app-shell--site) {
     height: 880px;
     max-height: 95vh;
     border-radius: 40px;
@@ -170,6 +183,11 @@ body {
     font-weight: 700;
     opacity: 0.7;
     z-index: 100;
+  }
+  /* Site mode : reset complet du body */
+  body:has(.app-shell--site) {
+    background: var(--bg);
+    display: block;
   }
 }
 

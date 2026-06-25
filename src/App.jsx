@@ -899,11 +899,20 @@ function ClientApp() {
   // ════════════════════════════════════════════════════════════════
   const pageKey = route.name + (route.params ? JSON.stringify(route.params) : '');
 
+  // ─── Site mode : routes qui doivent s'afficher en pleine largeur desktop
+  //     (au lieu du frame iPhone 480px imposé sur les autres pages app)
+  const SITE_MODE_ROUTES = new Set([
+    'landing', 'shop', 'home', 'product', 'pharmacies', 'pharmacy_detail',
+    'brands', 'categories', 'search', 'cart', 'checkout',
+    'international', 'help', 'privacy', 'terms', 'mentions',
+  ]);
+  const isSiteMode = SITE_MODE_ROUTES.has(route.name);
+
   return (
     <NavContext.Provider value={{ navigate, goBack, route }}>
       <UserContext.Provider value={{ user, refreshUser }}>
-        <div className="desktop-only-tag">YARAM · Aperçu mobile</div>
-        <div className="app-shell">
+        {!isSiteMode && <div className="desktop-only-tag">YARAM · Aperçu mobile</div>}
+        <div className={`app-shell ${isSiteMode ? 'app-shell--site' : ''}`}>
           {/* ErrorBoundary global : capture les exceptions de render et affiche
               un fallback visible au lieu d'écran blanc silencieux. */}
           <ErrorBoundary key={pageKey + '-eb'}>
