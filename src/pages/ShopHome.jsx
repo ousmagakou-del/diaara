@@ -376,18 +376,37 @@ export default function ShopHome() {
           {banner ? (
             <button
               className="sh-promo-banner sh-promo-banner--img"
-              onClick={() => banner.link_url && window.open(banner.link_url, '_self')}
-              style={{ backgroundImage: `url(${banner.image_url})` }}
+              onClick={() => {
+                if (!banner.link_target) return;
+                if (banner.link_type === 'url') window.open(banner.link_target, '_blank');
+                else if (banner.link_type === 'category') navigate({ name: 'search', params: { category: banner.link_target } });
+                else if (banner.link_type === 'brand') navigate({ name: 'brand', id: banner.link_target });
+                else if (banner.link_type === 'product') navigate({ name: 'product', id: banner.link_target });
+                else navigate('shop');
+              }}
+              style={{
+                backgroundImage: banner.image_url ? `url(${banner.image_url})` : undefined,
+                backgroundColor: banner.bg_color || '#1F8B4C',
+              }}
             >
-              <div className="sh-promo-overlay">
-                <div className="sh-promo-text">
-                  <span className="sh-promo-eyebrow">Offre du moment</span>
-                  <h3 className="sh-promo-title">{banner.title || 'Découvrez nos promos exclusives'}</h3>
-                  <span className="sh-promo-cta">
-                    Découvrir <Icon name="arrow" size={14} color="#fff" />
-                  </span>
+              {banner.sponsor_name && (
+                <div className="sh-banner-sponsor">
+                  <span>Sponsorisé</span>
+                  <strong>{banner.sponsor_name}</strong>
                 </div>
-              </div>
+              )}
+              {!banner.image_url && (
+                <div className="sh-promo-overlay">
+                  <div className="sh-promo-text">
+                    <span className="sh-promo-eyebrow">Offre du moment</span>
+                    <h3 className="sh-promo-title">{banner.title || 'Découvrez nos promos exclusives'}</h3>
+                    {banner.subtitle && <p className="sh-promo-subtitle">{banner.subtitle}</p>}
+                    <span className="sh-promo-cta">
+                      {banner.cta_text || 'Découvrir'} <Icon name="arrow" size={14} color="#fff" />
+                    </span>
+                  </div>
+                </div>
+              )}
             </button>
           ) : (
             <div className="sh-promo-banner sh-promo-banner--gradient">

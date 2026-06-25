@@ -389,6 +389,32 @@
   border-radius: 999px;
   font-size: 14px; font-weight: 800;
 }
+
+/* Sponsor chip — coin inférieur droit du banner image */
+.sh-banner-sponsor {
+  position: absolute;
+  bottom: 14px;
+  right: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.18);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: #fff;
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: 999px;
+}
+.sh-banner-sponsor span { opacity: 0.75; }
+.sh-banner-sponsor strong { font-weight: 800; }
+
+.sh-promo-subtitle {
+  font-size: 16px;
+  color: rgba(255,255,255,0.85);
+  margin: -10px 0 14px;
+}
+
 .sh-promo-art {
   font-size: 120px;
   line-height: 1;
