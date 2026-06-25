@@ -341,8 +341,18 @@ export default function ShopHome() {
                   ))
                 : featuredBrands.map((b) => (
                     <button key={b.id} className="sh-brand-card" onClick={() => goBrand(b)}>
-                      {b.logo_url ? (
-                        <img src={b.logo_url} alt={b.name} loading="lazy" />
+                      {b.img ? (
+                        <img
+                          src={b.img}
+                          alt={b.name}
+                          loading="lazy"
+                          decoding="async"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.parentElement.querySelector('.sh-brand-fallback') &&
+                              (e.currentTarget.parentElement.querySelector('.sh-brand-fallback').style.display = 'flex');
+                          }}
+                        />
                       ) : (
                         <div className="sh-brand-fallback">{(b.name || '?').slice(0, 2).toUpperCase()}</div>
                       )}
