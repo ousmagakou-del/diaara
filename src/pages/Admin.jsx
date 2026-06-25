@@ -47,6 +47,7 @@ const InventorySection           = lazy(() => import('../admin/InventorySection'
 const RestockAlertsSection       = lazy(() => import('../admin/RestockAlertsSection'));
 const PharmacistSessionsSection  = lazy(() => import('../admin/PharmacistSessionsSection'));
 const DistributorsSection        = lazy(() => import('../admin/DistributorsSection'));
+const RgpdExportsSection         = lazy(() => import('../admin/RgpdExportsSection'));
 
 import './Admin.css';
 
@@ -92,6 +93,7 @@ const NAV = [
   { id: 'users',       icon: '👥', label: 'Utilisatrices' },
   { id: 'support',     icon: '🆘', label: 'Tickets support', badge: true },
   { id: 'verify',      icon: '🔍', label: 'Vérifications Tier 3' },
+  { id: 'rgpd',        icon: '📥', label: 'Demandes RGPD', badge: true },
   { id: 'deliveries',  icon: '🛵', label: 'Livraisons' },
   { id: 'staff',       icon: '👷', label: 'Équipe' },
   { id: 'pharmacist_sessions', icon: '🔐', label: 'Sessions pharmaciens' },
@@ -416,6 +418,7 @@ export default function Admin() {
           {section === 'restock'              && <RestockAlertsSection />}
           {section === 'pharmacist_sessions'  && <PharmacistSessionsSection />}
           {section === 'distributors'         && <DistributorsSection />}
+          {section === 'rgpd'                 && <RgpdExportsSection />}
         </Suspense>
       </main>
 
