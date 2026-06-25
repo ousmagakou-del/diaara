@@ -1,5 +1,62 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
+
+// ═══ Notification sound + vibration quand nouvelle course ═══
+let audioCtx = null;
+function playNewOrderSound() {
+  try {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    // 3 beeps montants style Uber Driver
+    const playBeep = (freq, when, duration) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0, audioCtx.currentTime + when);
+      gain.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + when + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + when + duration);
+      osc.start(audioCtx.currentTime + when);
+      osc.stop(audioCtx.currentTime + when + duration);
+    };
+    playBeep(587.33, 0,    0.18); // D5
+    playBeep(739.99, 0.20, 0.18); // F#5
+    playBeep(987.77, 0.40, 0.35); // B5
+  } catch (e) {
+    console.warn('[driver] sound failed:', e?.message);
+  }
+}
+
+function vibrateNewOrder() {
+  try {
+    if ('vibrate' in navigator) {
+      navigator.vibrate([200, 100, 200, 100, 300]);
+    }
+  } catch {}
+}
+
+function notifyNewOrder(orderInfo) {
+  playNewOrderSound();
+  vibrateNewOrder();
+  // Browser notification (si permission accordée)
+  try {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification('🛵 Nouvelle livraison YARAM', {
+        body: orderInfo
+          ? `Commande ${orderInfo.id} · ${orderInfo.total?.toLocaleString('fr-FR')} FCFA`
+          : 'Une nouvelle livraison t\'a été assignée',
+        icon: '/icon-192.png',
+        badge: '/icon-192.png',
+        vibrate: [200, 100, 200],
+        tag: 'new-order',
+        requireInteraction: false,
+      });
+    }
+  } catch {}
+}
 import { toast } from '../../lib/toast';
 import DeliveryMap, { useDriverPosition } from './DeliveryMap';
 
@@ -199,7 +256,11 @@ export default function DriverDashboard({ session, onLogout, onOpenDelivery, onN
   // Activée uniquement si on a des livraisons actives ou si le driver est disponible.
   const { pos: driverPos } = useDriverPosition(available);
 
-  const load = useCallback(async () => {
+  // ─── Track le compteur de courses pour détecter les nouvelles ───
+  const previousOrderCountRef = useRef(null);
+  const firstLoadRef = useRef(true);
+
+  const load = useCallback(async (isPolling = false) => {
     if (!session?.token) return;
     try {
       const [ordersRes, earnRes] = await Promise.all([
@@ -215,10 +276,26 @@ export default function DriverDashboard({ session, onLogout, onOpenDelivery, onN
         }
         console.warn('[Driver] get_orders error:', ordersRes.error || ordersRes.data);
       } else {
+        const newInProgress = ordersRes.data.in_progress || [];
+        const newAvailable = ordersRes.data.available || [];
+        const totalNewOrders = newInProgress.length + newAvailable.length;
+        const newOrderInfo = newInProgress[0] || newAvailable[0] || null;
+
+        // ─── DETECT NOUVELLE COURSE ───
+        // Si on a plus de courses qu'avant ET c'est pas le 1er chargement → SON + VIBRATION
+        if (!firstLoadRef.current
+            && previousOrderCountRef.current !== null
+            && totalNewOrders > previousOrderCountRef.current) {
+          notifyNewOrder(newOrderInfo);
+          toast.success('🛵 Nouvelle livraison !');
+        }
+        previousOrderCountRef.current = totalNewOrders;
+        firstLoadRef.current = false;
+
         setData({
-          in_progress: ordersRes.data.in_progress || [],
-          available:   ordersRes.data.available   || [],
-          recent:      ordersRes.data.recent      || [],
+          in_progress: newInProgress,
+          available:   newAvailable,
+          recent:      ordersRes.data.recent || [],
         });
       }
 
@@ -235,11 +312,30 @@ export default function DriverDashboard({ session, onLogout, onOpenDelivery, onN
 
   useEffect(() => {
     load();
+    // ─── POLLING toutes les 15 secondes pour détecter les nouvelles courses ───
+    const pollInterval = setInterval(() => {
+      // Skip si l'onglet n'est pas visible (économie batterie)
+      if (!document.hidden) load(true);
+    }, 15000);
     // Refresh quand on revient sur l'onglet
     const onVis = () => { if (!document.hidden) load(); };
     document.addEventListener('visibilitychange', onVis);
-    return () => document.removeEventListener('visibilitychange', onVis);
+    return () => {
+      clearInterval(pollInterval);
+      document.removeEventListener('visibilitychange', onVis);
+    };
   }, [load]);
+
+  // ─── Demande la permission notifications au montage ───
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      // Attend un peu pour pas spammer l'user dès qu'il arrive
+      const t = setTimeout(() => {
+        Notification.requestPermission().catch(() => {});
+      }, 3000);
+      return () => clearTimeout(t);
+    }
+  }, []);
 
   // ─── beforeinstallprompt (Android / desktop Chrome) ───
   useEffect(() => {
