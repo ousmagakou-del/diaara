@@ -660,17 +660,9 @@
   .search-screen { max-width: 1280px; margin: 0 auto; }
   .ysearch-header { padding-left: 48px; padding-right: 48px; }
   .ysearch-tabs-bar { padding-left: 48px; padding-right: 48px; }
-  .ysearch-scroll {
-    padding: 28px 48px;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 32px;
-    align-items: start;
-  }
-  .ysearch-empty { grid-column: 1 / -1; }
+  .ysearch-scroll { padding: 28px 48px; }
   .ysearch-section-title { font-size: 16px; }
-  .ysearch-trending-grid { grid-template-columns: repeat(4, 1fr); }
+  .ysearch-trending-grid { grid-template-columns: repeat(6, 1fr); gap: 14px; }
   .ysearch-live-row { padding: 12px 10px; }
-  .ysearch-brand-grid { grid-template-columns: repeat(3, 1fr); }
-  .ysearch-no-cat { grid-column: 1 / -1; }
+  .ysearch-brand-grid { grid-template-columns: repeat(4, 1fr); }
 }
