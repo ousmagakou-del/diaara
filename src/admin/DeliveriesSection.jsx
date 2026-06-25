@@ -78,7 +78,7 @@ export default function DeliveriesSection() {
     }
   };
 
-  const assignDriver = async (order, name, phone) => {
+  const assignDriver = async (order, name, phone, driverId = null) => {
     // ─── RPC idempotente : récupère le token existant OU en crée un (7j) ───
     // Évite les doublons & garantit le BON token affiché côté admin.
     const { data: tokRes, error: tokErr } = await supabase.rpc('admin_get_or_create_livreur_token', { p_order_id: order.id });
@@ -95,7 +95,7 @@ export default function DeliveriesSection() {
       targetType: 'order',
       targetId:   order.id,
       before:     { status: order.status, driver: null },
-      after:      { status: order.status, driver: { name, phone: phone || null } },
+      after:      { status: order.status, driver: { id: driverId, name, phone: phone || null } },
     }).catch(() => { /* best-effort */ });
 
     // Met à jour le nom/phone du livreur sur le tracking créé par la RPC
@@ -104,26 +104,55 @@ export default function DeliveriesSection() {
       .update({ delivery_person_name: name, delivery_person_phone: phone })
       .eq('order_id', order.id);
 
+    // ─── NOUVEAU : si livreur PWA enregistré, assigne l'UUID dans orders ───
+    // Comme ça la commande apparaît dans son dashboard PWA driver
+    if (driverId) {
+      await supabase
+        .from('orders')
+        .update({
+          delivery_driver_id: driverId,
+          delivery_driver_name: name,
+          delivery_driver_phone: phone || null,
+        })
+        .eq('id', order.id);
+
+      // Incrémente le compteur charge du driver
+      await supabase.rpc('admin_increment_driver_load', { p_driver_id: driverId }).catch(() => {
+        // Fallback si RPC inexistante : update direct
+        return supabase.from('delivery_drivers')
+          .update({ current_orders_count: (order.current_orders_count || 0) + 1 })
+          .eq('id', driverId);
+      });
+    }
+
     // S'assurer qu'il y a un confirmation_token sur la commande
     if (!order.confirmation_token) {
       await adminUpdateOrder(order.id, { confirmation_token: generateConfirmToken() });
     }
 
     const url = `${window.location.origin}/?livreur=${token}`;
+    const pwaUrl = driverId ? `${window.location.origin}/driver/delivery/${order.id}` : null;
+
     if (phone) {
       // FIX juin 2026 : ouvrir wa.me direct au lieu de sendWhatsApp (WaSender
       // bloqué). L'admin clique → WhatsApp s'ouvre avec le message pré-rempli,
       // il appuie sur Envoyer dans WhatsApp. Plus de dépendance à un service tier.
-      const msg = WhatsAppTemplates.driverAssigned(name, order, url);
+      const msg = driverId
+        ? `Salut ${name} ! Nouvelle livraison YARAM #${order.id} pour ${order.address?.name}. Ouvre l'app driver : ${pwaUrl}\n\nOu lien direct : ${url}`
+        : WhatsAppTemplates.driverAssigned(name, order, url);
       const cleanPhone = String(phone).replace(/\D/g, '');
       const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`;
       window.open(waUrl, '_blank');
       // Backup automatique du lien dans le presse-papier au cas où
       try { navigator.clipboard.writeText(url); } catch {}
-      toast.success(`💬 WhatsApp ouvert avec ${name}`);
+      toast.success(driverId
+        ? `✅ ${name} assigné. WhatsApp ouvert + commande visible dans son app PWA.`
+        : `💬 WhatsApp ouvert avec ${name}`);
     } else {
       navigator.clipboard.writeText(url);
-      toast.success(`Lien copié :\n${url}`);
+      toast.success(driverId
+        ? `✅ Commande assignée à ${name} dans son app PWA.`
+        : `Lien copié :\n${url}`);
     }
 
     // PUSH CLIENT : un livreur a été assigné à sa commande. C'est un signal
@@ -394,14 +423,44 @@ export default function DeliveriesSection() {
 }
 
 function AssignDriverModal({ order, onAssign, onCancel }) {
+  const [mode, setMode] = useState('registered'); // 'registered' | 'manual'
+  const [drivers, setDrivers] = useState([]);
+  const [loadingDrivers, setLoadingDrivers] = useState(true);
+  const [selectedDriverId, setSelectedDriverId] = useState(null);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [assigning, setAssigning] = useState(false);
 
+  // Charge la liste des livreurs actifs avec leur charge actuelle
+  useEffect(() => {
+    (async () => {
+      setLoadingDrivers(true);
+      const { data, error } = await supabase
+        .from('delivery_drivers')
+        .select('id, full_name, phone, vehicle, zone, rating, current_orders_count, total_deliveries, active')
+        .eq('active', true)
+        .order('current_orders_count', { ascending: true })
+        .order('rating', { ascending: false, nullsFirst: false });
+      if (error) {
+        console.warn('[AssignDriverModal] load drivers failed:', error.message);
+        setDrivers([]);
+      } else {
+        setDrivers(data || []);
+      }
+      setLoadingDrivers(false);
+    })();
+  }, []);
+
+  const handleSelectDriver = (d) => {
+    setSelectedDriverId(d.id);
+    setName(d.full_name);
+    setPhone(d.phone);
+  };
+
   const handleSubmit = async () => {
     if (!name.trim()) { toast.error('Nom requis'); return; }
     setAssigning(true);
-    await onAssign(order, name.trim(), phone.trim());
+    await onAssign(order, name.trim(), phone.trim(), selectedDriverId || null);
     setAssigning(false);
   };
 
@@ -409,25 +468,160 @@ function AssignDriverModal({ order, onAssign, onCancel }) {
 
   return (
     <div className="adm-form-overlay" onClick={onCancel}>
-      <div className="adm-form-card" onClick={e => e.stopPropagation()}>
+      <div className="adm-form-card" onClick={e => e.stopPropagation()} style={{ maxWidth: 720 }}>
         <h3>🛵 Assigner un livreur</h3>
         <p style={{ fontSize: 13, color: '#6B6B6B', marginBottom: 8 }}>
           Commande <code>{order.id}</code> à <strong>{order.address?.name}</strong>
+          {' · '} {order.total?.toLocaleString('fr-FR')} FCFA
         </p>
         {isCash && (
           <div style={{ background: '#FEF6E5', padding: 10, borderRadius: 8, marginBottom: 12, fontSize: 12 }}>
             💵 <strong>Paiement Cash</strong> : le livreur devra encaisser <strong>{order.total?.toLocaleString('fr-FR')} FCFA</strong>
           </div>
         )}
-        <label>Nom *<input value={name} onChange={e => setName(e.target.value)} placeholder="Mamadou Diop" autoFocus /></label>
-        <label>WhatsApp<input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+221 78 XX XX XX" /></label>
-        <p style={{ fontSize: 11, color: '#6B6B6B', marginTop: 8 }}>
-          ℹ️ Le lien GPS sera automatiquement envoyé par WhatsApp.
+
+        {/* ─── Tabs : Registered / Manual ─── */}
+        <div style={{ display: 'flex', gap: 6, marginBottom: 14, borderBottom: '2px solid #F1F1F1' }}>
+          <button
+            type="button"
+            onClick={() => setMode('registered')}
+            style={{
+              padding: '8px 14px',
+              border: 'none',
+              background: 'transparent',
+              borderBottom: mode === 'registered' ? '3px solid #1F8B4C' : '3px solid transparent',
+              fontWeight: mode === 'registered' ? 800 : 500,
+              color: mode === 'registered' ? '#1F8B4C' : '#666',
+              cursor: 'pointer',
+              fontSize: 14,
+            }}
+          >
+            📱 Livreurs PWA ({drivers.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => { setMode('manual'); setSelectedDriverId(null); setName(''); setPhone(''); }}
+            style={{
+              padding: '8px 14px',
+              border: 'none',
+              background: 'transparent',
+              borderBottom: mode === 'manual' ? '3px solid #1F8B4C' : '3px solid transparent',
+              fontWeight: mode === 'manual' ? 800 : 500,
+              color: mode === 'manual' ? '#1F8B4C' : '#666',
+              cursor: 'pointer',
+              fontSize: 14,
+            }}
+          >
+            ✍️ Manuel (extérieur)
+          </button>
+        </div>
+
+        {mode === 'registered' && (
+          <div>
+            {loadingDrivers ? (
+              <div style={{ textAlign: 'center', padding: 30, color: '#999' }}>Chargement…</div>
+            ) : drivers.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: 30, color: '#999' }}>
+                Aucun livreur enregistré.<br/>
+                <span style={{ fontSize: 12 }}>Passe en mode "Manuel" pour assigner un livreur externe.</span>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10, maxHeight: 380, overflowY: 'auto' }}>
+                {drivers.map((d) => {
+                  const isSelected = selectedDriverId === d.id;
+                  const load = d.current_orders_count || 0;
+                  const loadColor = load === 0 ? '#1F8B4C' : load <= 2 ? '#F4B53A' : '#EF4444';
+                  const loadLabel = load === 0 ? 'Disponible' : `${load} en cours`;
+                  return (
+                    <button
+                      key={d.id}
+                      type="button"
+                      onClick={() => handleSelectDriver(d)}
+                      style={{
+                        padding: 14,
+                        background: isSelected ? 'rgba(31,139,76,0.08)' : '#fff',
+                        border: isSelected ? '2px solid #1F8B4C' : '2px solid #E5E5E5',
+                        borderRadius: 12,
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{
+                            width: 32, height: 32, borderRadius: '50%',
+                            background: '#1F8B4C', color: '#fff',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontWeight: 900, fontSize: 13,
+                          }}>
+                            {(d.full_name || '?').split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: 800, fontSize: 14, color: '#0F172A' }}>{d.full_name}</div>
+                            <div style={{ fontSize: 11, color: '#6B6B6B' }}>{d.phone}</div>
+                          </div>
+                        </div>
+                        {isSelected && <span style={{ color: '#1F8B4C', fontSize: 20 }}>✓</span>}
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+                        <span style={{
+                          fontSize: 10, padding: '3px 8px', borderRadius: 999,
+                          background: loadColor + '20', color: loadColor, fontWeight: 800,
+                        }}>● {loadLabel}</span>
+                        {d.vehicle && (
+                          <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 999, background: '#F1F5F9', color: '#475569', fontWeight: 700 }}>
+                            🛵 {d.vehicle}
+                          </span>
+                        )}
+                        {d.zone && (
+                          <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 999, background: '#F1F5F9', color: '#475569', fontWeight: 700 }}>
+                            📍 {d.zone}
+                          </span>
+                        )}
+                        {d.rating != null && (
+                          <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 999, background: '#FEF3C7', color: '#92400E', fontWeight: 700 }}>
+                            ⭐ {Number(d.rating).toFixed(1)}
+                          </span>
+                        )}
+                        {d.total_deliveries != null && (
+                          <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 999, background: '#F1F5F9', color: '#475569', fontWeight: 700 }}>
+                            📦 {d.total_deliveries}
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {mode === 'manual' && (
+          <div>
+            <p style={{ fontSize: 12, color: '#6B6B6B', marginBottom: 10 }}>
+              Pour un livreur externe (taxi, moto-taxi occasionnel). Il recevra le lien par WhatsApp.
+            </p>
+            <label>Nom *<input value={name} onChange={e => setName(e.target.value)} placeholder="Mamadou Diop" autoFocus /></label>
+            <label>WhatsApp<input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+221 78 XX XX XX" /></label>
+          </div>
+        )}
+
+        <p style={{ fontSize: 11, color: '#6B6B6B', marginTop: 12 }}>
+          ℹ️ {mode === 'registered'
+            ? 'La commande apparaîtra directement dans son app PWA + lien WhatsApp envoyé.'
+            : 'Le lien GPS sera envoyé par WhatsApp uniquement.'}
         </p>
         <div className="adm-form-actions">
           <button className="adm-btn-sec" onClick={onCancel}>Annuler</button>
-          <button className="adm-btn-pri" onClick={handleSubmit} disabled={assigning}>
-            {assigning ? '🚀 Envoi...' : '🚀 Assigner & envoyer WhatsApp'}
+          <button
+            className="adm-btn-pri"
+            onClick={handleSubmit}
+            disabled={assigning || !name.trim()}
+          >
+            {assigning ? '🚀 Envoi...' :
+              (mode === 'registered' && selectedDriverId ? '🚀 Assigner ce livreur' : '🚀 Assigner & WhatsApp')}
           </button>
         </div>
       </div>
