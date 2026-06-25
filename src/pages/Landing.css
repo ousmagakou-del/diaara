@@ -115,6 +115,46 @@
   display: flex; flex-direction: column;
   align-items: center;
 }
+
+/* ─── Strip marques sous le hero ─── */
+.lp-hero-brand-strip {
+  margin-top: 80px;
+  width: 100%;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 18px;
+}
+.lp-strip-label {
+  font-size: 11px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 1.5px;
+  color: #9CA3AF;
+}
+.lp-strip-row {
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: 14px;
+}
+.lp-strip-tile {
+  width: 76px; height: 76px;
+  background: #fff; border: 1px solid #F0F0EE;
+  border-radius: 18px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  padding: 12px;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+.lp-strip-tile:hover {
+  transform: translateY(-3px);
+  border-color: #1F8B4C;
+  box-shadow: 0 10px 24px rgba(31,139,76,0.15);
+}
+.lp-strip-tile img {
+  max-width: 100%; max-height: 100%;
+  object-fit: contain; filter: grayscale(0.2);
+  transition: filter 0.2s;
+}
+.lp-strip-tile:hover img { filter: grayscale(0); }
+.lp-strip-tile span {
+  font-size: 11px; font-weight: 900; color: #1A1A1A;
+  letter-spacing: -0.2px; text-align: center;
+}
 .lp-hero-badge {
   display: inline-flex; align-items: center; gap: 8px;
   background: #F0FDF4; color: #1F8B4C;
@@ -453,17 +493,59 @@
 }
 .lp-driver-visual {
   display: flex; align-items: center; justify-content: center;
-  height: 400px;
+  padding: 32px;
   background: linear-gradient(135deg, #F0FDF4 0%, #E0F2E5 100%);
   border-radius: 24px;
+  min-height: 400px;
 }
-.lp-driver-emoji {
-  font-size: 200px;
-  animation: lp-bike 3s ease-in-out infinite;
+.lp-driver-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.08);
+  width: 100%; max-width: 340px;
 }
-@keyframes lp-bike {
-  0%, 100% { transform: translateX(-30px) rotate(-5deg); }
-  50% { transform: translateX(30px) rotate(5deg); }
+.lp-driver-card-header {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 24px;
+}
+.lp-driver-avatar {
+  width: 44px; height: 44px; border-radius: 22px;
+  background: linear-gradient(135deg, #1F8B4C, #2DAA5E);
+  color: #fff; font-weight: 900; font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+}
+.lp-driver-card-name {
+  font-size: 15px; font-weight: 900; color: #1A1A1A;
+}
+.lp-driver-card-sub {
+  font-size: 11px; color: #6B7280; margin-top: 2px;
+}
+.lp-driver-card-rating {
+  margin-left: auto; background: #FEF3C7;
+  color: #92400E; padding: 4px 8px;
+  border-radius: 999px; font-size: 12px; font-weight: 800;
+}
+.lp-driver-card-stat {
+  display: flex; flex-direction: column; gap: 4px;
+  margin-bottom: 24px;
+}
+.lp-driver-card-num {
+  font-size: 32px; font-weight: 900; color: #1F8B4C;
+  letter-spacing: -1px;
+}
+.lp-driver-card-label {
+  font-size: 12px; color: #6B7280; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.lp-driver-card-bars {
+  display: flex; align-items: flex-end; gap: 8px;
+  height: 80px;
+}
+.lp-bar {
+  flex: 1; background: #E5F4EB;
+  border-radius: 6px;
+  transition: height 0.3s;
 }
 
 /* ───────────────────────── FOOTER ───────────────────────── */

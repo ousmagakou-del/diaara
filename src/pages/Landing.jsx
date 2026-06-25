@@ -54,26 +54,20 @@ export default function Landing() {
         <div className="lp-hero-bg-orb lp-orb-2"></div>
         <div className="lp-hero-inner">
           <div className="lp-hero-content">
-            <div className="lp-hero-badge">
-              <span className="lp-pulse"></span>
-              <span>Livraison en 30 min à Dakar</span>
-            </div>
             <h1 className="lp-hero-title">
-              Ta parapharmacie
+              La beauté du Sénégal,
               <br/>
-              <span className="lp-hero-accent">dans ta poche.</span>
+              <span className="lp-hero-accent">livrée chez toi.</span>
             </h1>
             <p className="lp-hero-sub">
-              Plus de 5 000 produits beauté & santé livrés à domicile.
-              Pharmacies vérifiées, marques 100% authentiques,
-              livreurs YARAM en moins de 30 min.
+              Plus de 5 000 produits cosmétiques et soins authentiques, sélectionnés par nos pharmaciens partenaires.
             </p>
             <div className="lp-hero-cta">
               <button className="lp-btn-primary lp-btn-lg" onClick={downloadApp}>
-                {platform === 'ios' ? '📱 Télécharger sur App Store' : platform === 'android' ? '📱 Voir le catalogue' : '📱 Télécharger l\'app'}
+                Télécharger l'app
               </button>
               <button className="lp-btn-ghost lp-btn-lg" onClick={goToShop}>
-                Voir le catalogue
+                Explorer le catalogue
               </button>
             </div>
             <div className="lp-hero-trust">
@@ -83,40 +77,59 @@ export default function Landing() {
               </div>
               <div className="lp-trust-divider"></div>
               <div className="lp-trust-item">
-                <strong>5K+</strong>
+                <strong>5 000+</strong>
                 <span>Produits</span>
               </div>
               <div className="lp-trust-divider"></div>
               <div className="lp-trust-item">
-                <strong>30 min</strong>
-                <span>Livraison Dakar</span>
+                <strong>20+</strong>
+                <span>Pharmacies</span>
               </div>
             </div>
           </div>
+          {/* Marques iconiques en strip visuelle sous le hero */}
+          {brands.length > 0 && (
+            <div className="lp-hero-brand-strip">
+              <span className="lp-strip-label">Nos marques partenaires</span>
+              <div className="lp-strip-row">
+                {brands.slice(0, 8).map((b) => (
+                  <button
+                    key={b.id}
+                    className="lp-strip-tile"
+                    onClick={() => navigate({ name: 'brand', id: b.id })}
+                    aria-label={b.name}
+                  >
+                    {b.logo_url ? <img src={b.logo_url} alt={b.name} /> : <span>{b.name}</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
       {/* ━━━ COMMENT ÇA MARCHE ━━━ */}
       <section className="lp-section lp-how">
-        <h2 className="lp-section-title">Comment ça marche</h2>
+        <h2 className="lp-section-title">Une expérience pensée pour toi</h2>
+        <p className="lp-section-sub">Du catalogue à ta porte, tout est conçu pour te simplifier la vie.</p>
         <div className="lp-steps">
           <div className="lp-step">
             <div className="lp-step-num">1</div>
-            <div className="lp-step-icon">📱</div>
-            <h3>Tu commandes en 2 minutes</h3>
-            <p>Cherche ton produit, scan le code-barre, ou demande à notre IA un conseil personnalisé.</p>
+            <div className="lp-step-icon">🛍️</div>
+            <h3>Tu choisis</h3>
+            <p>Plus de 5 000 produits beauté, soins et bien-être triés sur le volet par nos pharmaciens.</p>
           </div>
           <div className="lp-step">
             <div className="lp-step-num">2</div>
             <div className="lp-step-icon">💊</div>
-            <h3>On prépare en pharmacie</h3>
-            <p>Une pharmacie YARAM partenaire prépare ta commande avec des produits 100% authentiques.</p>
+            <h3>On prépare</h3>
+            <p>Une pharmacie partenaire prépare ta commande avec des produits authentiques garantis.</p>
           </div>
           <div className="lp-step">
             <div className="lp-step-num">3</div>
-            <div className="lp-step-icon">🛵</div>
-            <h3>On livre en 30 min</h3>
-            <p>Un livreur YARAM t'apporte ta commande à domicile, tracking en temps réel sur l'app.</p>
+            <div className="lp-step-icon">🏠</div>
+            <h3>Tu reçois</h3>
+            <p>Livraison à domicile partout à Dakar, avec un suivi en temps réel sur l'app.</p>
           </div>
         </div>
       </section>
@@ -143,15 +156,15 @@ export default function Landing() {
       <section className="lp-section lp-app">
         <div className="lp-app-inner">
           <div className="lp-app-content">
-            <div className="lp-app-badge">📲 L'expérience complète</div>
-            <h2>Télécharge l'app pour vivre YARAM à fond</h2>
+            <div className="lp-app-badge">L'expérience complète</div>
+            <h2>L'app YARAM, le meilleur de la beauté à portée de main</h2>
             <ul className="lp-app-features">
-              <li>🤖 Conseiller IA personnalisé selon ton type de peau</li>
-              <li>📸 Scanner peau + analyse beauté en 30 sec</li>
-              <li>🛵 Suivi livreur GPS en temps réel</li>
-              <li>🎁 Programme fidélité YARAM+</li>
-              <li>🔔 Notifications de tes commandes</li>
-              <li>🌍 Marques exclusives Internationales</li>
+              <li>📸 Scanner peau et reçois des conseils personnalisés</li>
+              <li>🎁 Programme fidélité YARAM+ et avantages exclusifs</li>
+              <li>🔔 Notifications du statut de tes commandes</li>
+              <li>🌍 Section International — marques exclusives importées</li>
+              <li>📦 Historique de tes commandes et ré-achat 1-click</li>
+              <li>💝 Routines beauté personnalisées</li>
             </ul>
             <div className="lp-app-stores">
               <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" className="lp-store-badge">
@@ -228,7 +241,29 @@ export default function Landing() {
             </button>
           </div>
           <div className="lp-driver-visual">
-            <div className="lp-driver-emoji">🛵</div>
+            <div className="lp-driver-card">
+              <div className="lp-driver-card-header">
+                <div className="lp-driver-avatar">M</div>
+                <div>
+                  <div className="lp-driver-card-name">Mamadou S.</div>
+                  <div className="lp-driver-card-sub">Livreur YARAM · Dakar</div>
+                </div>
+                <span className="lp-driver-card-rating">★ 4.9</span>
+              </div>
+              <div className="lp-driver-card-stat">
+                <span className="lp-driver-card-num">142 000 FCFA</span>
+                <span className="lp-driver-card-label">cette semaine</span>
+              </div>
+              <div className="lp-driver-card-bars">
+                <div className="lp-bar" style={{height: '40%'}}></div>
+                <div className="lp-bar" style={{height: '60%'}}></div>
+                <div className="lp-bar" style={{height: '80%'}}></div>
+                <div className="lp-bar" style={{height: '50%'}}></div>
+                <div className="lp-bar" style={{height: '90%'}}></div>
+                <div className="lp-bar" style={{height: '70%'}}></div>
+                <div className="lp-bar" style={{height: '100%', background: '#1F8B4C'}}></div>
+              </div>
+            </div>
           </div>
         </div>
       </section>

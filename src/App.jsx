@@ -8,6 +8,7 @@ import Onboarding from './pages/Onboarding';
 import Home from './pages/Home';
 import Landing from './pages/Landing';
 import ShopHome from './pages/ShopHome';
+import ProductPage from './pages/ProductPage';
 import Search from './pages/Search';
 import Product from './pages/Product';
 import Cart from './pages/Cart';
@@ -842,7 +843,9 @@ function ClientApp() {
   let page;
   switch (route.name) {
     case 'search': page = <Search initialCategory={route.params?.category} initialBrand={route.params?.brand} />; break;
-    case 'product': page = <Product id={route.params.id} />; break;
+    case 'product': page = <ProductPage />; break;
+    // Pour conserver l'ancienne version mobile-first si besoin : <Product id={route.params.id} />
+    case 'product_legacy': page = <Product id={route.params.id} />; break;
     case 'cart': page = <Cart />; break;
     case 'checkout': page = <Checkout items={route.params.items} paymentMethod={route.params.paymentMethod} />; break;
     case 'payment': page = <Payment orderId={route.params.orderId} />; break;
