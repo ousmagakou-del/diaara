@@ -7,6 +7,7 @@ import { toast, confirmDialog } from '../lib/toast';
 import SignedImage from '../components/SignedImage';
 import { pushOrderStatus, pushLivreurAssigned } from '../lib/pushAdmin';
 import { sendOrderStatusUpdate } from '../lib/emails';
+import { notifyDriverNewOrder } from './notifyDriver';
 
 // ─── Fire-and-forget helper (mirroring OrdersSection) ────────────────
 // Toutes les notifs admin doivent etre best-effort + timeout 4s. Si Resend
@@ -159,6 +160,22 @@ export default function DeliveriesSection() {
     // intermédiaire (pas un change de status), best-effort. Pas d'email pour
     // éviter le spam (l'email part au shipped quand le livreur picke).
     safeFire('push:livreur_assigned', () => pushLivreurAssigned(order, name));
+
+    // ─── PUSH DRIVER : si livreur enregistré, envoie une web push à sa PWA ───
+    // Le SW (public/sw.js) reçoit le push, joue son + vibration + affiche notif
+    // même app fermée (sur Android et sur iOS PWA installée).
+    if (driverId) {
+      try {
+        const raw = localStorage.getItem('yaram-admin-session') ||
+                    sessionStorage.getItem('yaram-admin-session');
+        const adminToken = raw ? JSON.parse(raw)?.token : null;
+        if (adminToken) {
+          safeFire('push:driver_web', () => notifyDriverNewOrder(adminToken, driverId, order));
+        }
+      } catch (e) {
+        console.warn('[admin] notifyDriverNewOrder skipped:', e?.message);
+      }
+    }
 
     setAssigningOrder(null);
     refresh();

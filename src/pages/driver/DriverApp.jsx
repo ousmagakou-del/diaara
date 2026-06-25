@@ -5,6 +5,7 @@ import DriverDelivery from './DriverDelivery';
 import DriverProfile from './DriverProfile';
 import DriverEarnings from './DriverEarnings';
 import DriverHelp from './DriverHelp';
+import { setupWebPushForDriver } from './driverPush';
 import './driver-app.css';
 
 const SESSION_KEY = 'yaram_driver_session';
@@ -138,7 +139,27 @@ export default function DriverApp() {
   const handleLogin = useCallback((s) => {
     setSession(s);
     navigate({ name: 'dashboard' });
+    // ─── WEB PUSH : demande permission + subscribe + save subscription ───
+    // Différé de 1.5s pour laisser le dashboard se monter d'abord (meilleur taux d'acceptation)
+    setTimeout(() => {
+      setupWebPushForDriver(s).then((res) => {
+        if (res.ok) {
+          console.log('[driver] web push enabled ✓');
+        } else {
+          console.warn('[driver] web push not enabled:', res.error);
+        }
+      });
+    }, 1500);
   }, [navigate]);
+
+  // ─── Si déjà loggué au reload, re-tente d'enregistrer la subscription ───
+  // (cas : user désinstalle puis réinstalle la PWA → l'ancienne sub n'existe plus)
+  useEffect(() => {
+    if (!session) return;
+    setupWebPushForDriver(session).then((res) => {
+      if (res.ok) console.log('[driver] web push re-validated');
+    });
+  }, [session?.token]); // une seule fois par session
 
   const handleLogout = useCallback(() => {
     try { localStorage.removeItem(SESSION_KEY); } catch {}
