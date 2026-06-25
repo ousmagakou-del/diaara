@@ -294,7 +294,23 @@ export default function ShopHome() {
                     onClick={() => goCategory(c)}
                     style={{ background: c.color || '#F4F4F2' }}
                   >
-                    <div className="sh-cat-emoji">{categoryEmoji(c.name)}</div>
+                    <div className="sh-cat-emoji">
+                      {c.icon_url ? (
+                        <img
+                          src={c.icon_url}
+                          alt={c.name}
+                          loading="lazy"
+                          decoding="async"
+                          style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.parentElement.textContent = categoryEmoji(c.name);
+                          }}
+                        />
+                      ) : (
+                        categoryEmoji(c.name)
+                      )}
+                    </div>
                     <div className="sh-cat-name">{c.name}</div>
                   </button>
                 ))

@@ -234,6 +234,18 @@
 .sh-cat-emoji {
   font-size: 40px;
   line-height: 1;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.sh-cat-emoji img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 .sh-cat-name {
   font-size: 15px; font-weight: 800;
