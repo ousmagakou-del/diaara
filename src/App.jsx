@@ -9,6 +9,9 @@ import Home from './pages/Home';
 import Landing from './pages/Landing';
 import ShopHome from './pages/ShopHome';
 import ProductPage from './pages/ProductPage';
+import CartPage from './pages/CartPage';
+import CheckoutPage from './pages/CheckoutPage';
+import BrandPage from './pages/BrandPage';
 import Search from './pages/Search';
 import Product from './pages/Product';
 import Cart from './pages/Cart';
@@ -112,6 +115,8 @@ function routeToPath(route) {
     case 'home': return '/shop';  // alias historique vers shop
     case 'shop': return '/shop';
     case 'product': return `/product/${params.id}`;
+    case 'brand': return `/brand/${params.id}`;
+    case 'brand_detail': return `/brand/${params.id}`;
     case 'pharmacy_detail': return `/pharmacy/${params.id}`;
     case 'order_tracking': return `/order/${params.orderId}`;
     case 'scan_result': return `/scan/result/${params.scanId}`;
@@ -133,6 +138,7 @@ function pathToRoute(pathname, search = '') {
   const parts = path.split('/');
 
   if (parts[0] === 'product' && parts[1]) return { name: 'product', params: { id: parts[1] } };
+  if (parts[0] === 'brand' && parts[1]) return { name: 'brand', params: { id: parts[1] } };
   if (parts[0] === 'pharmacy' && parts[1]) return { name: 'pharmacy_detail', params: { id: parts[1] } };
   if (parts[0] === 'order' && parts[1]) return { name: 'order_tracking', params: { orderId: parts[1] } };
   if (parts[0] === 'scan' && parts[1] === 'result' && parts[2]) return { name: 'scan_result', params: { scanId: parts[2] } };
@@ -846,8 +852,12 @@ function ClientApp() {
     case 'product': page = <ProductPage />; break;
     // Pour conserver l'ancienne version mobile-first si besoin : <Product id={route.params.id} />
     case 'product_legacy': page = <Product id={route.params.id} />; break;
-    case 'cart': page = <Cart />; break;
-    case 'checkout': page = <Checkout items={route.params.items} paymentMethod={route.params.paymentMethod} />; break;
+    case 'cart': page = <CartPage />; break;
+    case 'cart_legacy': page = <Cart />; break;
+    case 'checkout': page = <CheckoutPage />; break;
+    case 'checkout_legacy': page = <Checkout items={route.params.items} paymentMethod={route.params.paymentMethod} />; break;
+    case 'brand': page = <BrandPage />; break;
+    case 'brand_detail': page = <BrandPage />; break;
     case 'payment': page = <Payment orderId={route.params.orderId} />; break;
     case 'order_tracking': page = <OrderTracking orderId={route.params.orderId} />; break;
     case 'orders': page = <Orders />; break;
