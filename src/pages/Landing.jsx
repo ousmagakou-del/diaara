@@ -9,6 +9,7 @@
 import { useState, useEffect } from 'react';
 import { useNav } from '../App';
 import { getAllBrands, getAllPharmacies } from '../lib/supabase';
+import SiteLayout from '../components/SiteLayout';
 import './Landing.css';
 
 const APP_STORE_URL = 'https://apps.apple.com/app/yaram/id6771017009';
@@ -44,32 +45,8 @@ export default function Landing() {
   };
 
   return (
+    <SiteLayout transparentHeader={true}>
     <div className="lp-root">
-      {/* ━━━ HEADER ━━━ */}
-      <header className="lp-header">
-        <div className="lp-header-inner">
-          <a href="/" className="lp-logo" onClick={(e) => { e.preventDefault(); }}>
-            <span className="lp-logo-mark">Y</span>
-            <span className="lp-logo-text">YARAM</span>
-          </a>
-          <nav className="lp-nav">
-            <button onClick={() => navigate('shop')}>Catalogue</button>
-            <button onClick={() => navigate('brands')}>Marques</button>
-            <button onClick={() => document.getElementById('lp-partner')?.scrollIntoView({ behavior: 'smooth' })}>
-              Pharmacies
-            </button>
-            <button onClick={() => document.getElementById('lp-driver')?.scrollIntoView({ behavior: 'smooth' })}>
-              Devenir livreur
-            </button>
-          </nav>
-          <div className="lp-header-cta">
-            <button className="lp-btn-ghost" onClick={() => navigate('auth')}>Se connecter</button>
-            <button className="lp-btn-primary" onClick={downloadApp}>
-              📱 Télécharger l'app
-            </button>
-          </div>
-        </div>
-      </header>
 
       {/* ━━━ HERO ━━━ */}
       <section className="lp-hero">
@@ -256,45 +233,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ━━━ FOOTER ━━━ */}
-      <footer className="lp-footer">
-        <div className="lp-footer-inner">
-          <div className="lp-footer-col">
-            <div className="lp-logo lp-footer-logo">
-              <span className="lp-logo-mark">Y</span>
-              <span className="lp-logo-text">YARAM</span>
-            </div>
-            <p>La première parapharmacie 100% digitale du Sénégal.</p>
-            <div className="lp-footer-stores">
-              <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" className="lp-store-mini">App Store</a>
-            </div>
-          </div>
-          <div className="lp-footer-col">
-            <h4>Produit</h4>
-            <button onClick={() => navigate('shop')}>Catalogue</button>
-            <button onClick={() => navigate('brands')}>Marques</button>
-            <button onClick={() => navigate('international')}>Section International</button>
-            <button onClick={() => navigate('cart')}>Panier</button>
-          </div>
-          <div className="lp-footer-col">
-            <h4>Pour pros</h4>
-            <button onClick={() => navigate('partner-application')}>Pharmacies</button>
-            <button onClick={() => navigate('driver-application')}>Livreurs</button>
-            <button onClick={() => window.open('mailto:pro@yaram.app')}>Distributeurs</button>
-          </div>
-          <div className="lp-footer-col">
-            <h4>YARAM</h4>
-            <button onClick={() => navigate('help')}>Aide & FAQ</button>
-            <button onClick={() => navigate('legal')}>Mentions légales</button>
-            <button onClick={() => navigate('cgv')}>CGV</button>
-            <button onClick={() => navigate('privacy')}>Confidentialité</button>
-          </div>
-        </div>
-        <div className="lp-footer-bottom">
-          <span>© 2026 YARAM — Dakar, Sénégal</span>
-          <a href="https://wa.me/221777608983" target="_blank" rel="noopener noreferrer">WhatsApp YARAM</a>
-        </div>
-      </footer>
     </div>
+    </SiteLayout>
   );
 }

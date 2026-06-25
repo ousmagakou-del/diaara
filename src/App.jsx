@@ -7,6 +7,7 @@ import SplashScreen from './components/SplashScreen';
 import Onboarding from './pages/Onboarding';
 import Home from './pages/Home';
 import Landing from './pages/Landing';
+import ShopHome from './pages/ShopHome';
 import Search from './pages/Search';
 import Product from './pages/Product';
 import Cart from './pages/Cart';
@@ -873,10 +874,11 @@ function ClientApp() {
     case 'mentions': page = <Suspense fallback={<LazyFallback />}><MentionsLegales /></Suspense>; break;
     case 'delete_account': page = <Suspense fallback={<LazyFallback />}><DeleteAccount /></Suspense>; break;
     case 'newsletter': page = <Suspense fallback={<LazyFallback />}><Newsletter /></Suspense>; break;
-    // ─── Landing = nouvelle home pour visiteurs sans l'app (style Uber) ───
+    // ─── Landing = home marketing (style Uber/DoorDash) ───
     case 'landing': page = <Landing />; break;
-    // ─── Shop = ancienne home (catalogue e-commerce complet) ───
-    case 'shop': page = <Home />; break;
+    // ─── Shop = nouvelle home e-commerce premium (DoorDash-style) ───
+    case 'shop': page = <ShopHome />; break;
+    // ─── Home = ancienne home mobile-first (PWA app preview) ───
     case 'home': page = <Home />; break;
     default: page = <Landing />;
   }
