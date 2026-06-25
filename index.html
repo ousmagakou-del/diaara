@@ -7,21 +7,25 @@
 
     <!-- ═══ PWA META TAGS YARAM ═══ -->
 
-    <!-- Manifest (swappé en /driver-manifest.webmanifest si on est sur /driver) -->
-    <link id="manifest-link" rel="manifest" href="/manifest.json" />
+    <!-- ⚡ MANIFEST DYNAMIQUE : injecté AVANT que le parser HTML lise tout autre tag.
+         iOS Safari capture le manifest à l'install — si le link est statique avec
+         /manifest.json et qu'on swap après en JS, iOS peut quand même utiliser
+         l'ancien (bug récurrent). On force document.write() pour que le bon
+         manifest soit en place dès le début. -->
     <script>
-      // Swap conditionnel du manifest avant l'install PWA pour que l'icône
-      // "Ajouter à l'écran d'accueil" pointe vers /driver avec son nom + scope.
       (function(){
         try {
-          if (window.location.pathname === '/driver' || window.location.pathname.indexOf('/driver/') === 0) {
-            var link = document.getElementById('manifest-link');
-            if (link) link.href = '/driver-manifest.webmanifest';
-            // Theme-color spécifique driver (vert YARAM)
-            var meta = document.querySelector('meta[name="theme-color"]');
-            if (meta) meta.setAttribute('content', '#1F8B4C');
-          }
-        } catch (e) { /* no-op */ }
+          var path = window.location.pathname;
+          var isDriver = path === '/driver' || path.indexOf('/driver/') === 0;
+          var manifestHref = isDriver ? '/driver-manifest.webmanifest' : '/manifest.json';
+          var appTitle = isDriver ? 'YARAM Driver' : 'YARAM';
+          document.write(
+            '<link rel="manifest" href="' + manifestHref + '" />' +
+            '<meta name="apple-mobile-web-app-title" content="' + appTitle + '" />'
+          );
+        } catch (e) {
+          document.write('<link rel="manifest" href="/manifest.json" />');
+        }
       })();
     </script>
 
@@ -63,7 +67,7 @@
          compatibilité iOS Safari maintenue. -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="YARAM" />
+    <!-- apple-mobile-web-app-title injecté dynamiquement par le script en tête (YARAM ou YARAM Driver) -->
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152.png" />
     <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167.png" />
