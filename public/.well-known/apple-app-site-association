@@ -5,20 +5,48 @@
         "appIDs": ["6779DNV7Y5.app.yaram"],
         "components": [
           {
-            "/": "/order/*",
-            "comment": "Order tracking — ouvre l'app YARAM si installée"
+            "/": "/admin*",
+            "exclude": true,
+            "comment": "Admin web — toujours dans le navigateur"
           },
           {
-            "/": "/checkout",
-            "comment": "Reprise checkout"
+            "/": "/driver*",
+            "exclude": true,
+            "comment": "PWA Livreur — toujours dans le navigateur"
           },
           {
-            "/": "/cart",
-            "comment": "Reprise panier"
+            "/": "/livreur*",
+            "exclude": true,
+            "comment": "Ancienne PWA livreur — navigateur"
           },
           {
-            "/": "/promos/*",
-            "comment": "Liens promo email/SMS"
+            "/": "/distributor*",
+            "exclude": true,
+            "comment": "Dashboard distributeur Bonfoni — navigateur"
+          },
+          {
+            "/": "/pharmacist*",
+            "exclude": true,
+            "comment": "Dashboard pharmacien — navigateur"
+          },
+          {
+            "/": "/sw.js",
+            "exclude": true,
+            "comment": "Service worker — toujours navigateur"
+          },
+          {
+            "/": "/manifest*",
+            "exclude": true,
+            "comment": "PWA manifest — navigateur"
+          },
+          {
+            "/": "/.well-known/*",
+            "exclude": true,
+            "comment": "Well-known files — navigateur"
+          },
+          {
+            "/": "/*",
+            "comment": "Tous les autres chemins → ouvre l'app YARAM si installée"
           }
         ]
       }
