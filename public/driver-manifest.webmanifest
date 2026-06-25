@@ -1,0 +1,77 @@
+{
+  "name": "YARAM Driver",
+  "short_name": "YARAM Driver",
+  "description": "App livreur YARAM — gère tes livraisons en temps réel",
+  "start_url": "/driver",
+  "scope": "/driver",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1F8B4C",
+  "theme_color": "#1F8B4C",
+  "lang": "fr",
+  "dir": "ltr",
+  "categories": ["productivity", "business", "navigation"],
+  "icons": [
+    {
+      "src": "/icon-48.png",
+      "sizes": "48x48",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-72.png",
+      "sizes": "72x72",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-96.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-144.png",
+      "sizes": "144x144",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Mes livraisons",
+      "short_name": "Livraisons",
+      "description": "Voir mes livraisons en cours",
+      "url": "/driver/dashboard",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Mes gains",
+      "short_name": "Gains",
+      "description": "Voir mes gains de la semaine",
+      "url": "/driver/earnings",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Aide",
+      "short_name": "Aide",
+      "description": "FAQ et support",
+      "url": "/driver/help",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

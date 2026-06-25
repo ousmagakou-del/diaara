@@ -7,8 +7,23 @@
 
     <!-- ═══ PWA META TAGS YARAM ═══ -->
 
-    <!-- Manifest -->
-    <link rel="manifest" href="/manifest.json" />
+    <!-- Manifest (swappé en /driver-manifest.webmanifest si on est sur /driver) -->
+    <link id="manifest-link" rel="manifest" href="/manifest.json" />
+    <script>
+      // Swap conditionnel du manifest avant l'install PWA pour que l'icône
+      // "Ajouter à l'écran d'accueil" pointe vers /driver avec son nom + scope.
+      (function(){
+        try {
+          if (window.location.pathname === '/driver' || window.location.pathname.indexOf('/driver/') === 0) {
+            var link = document.getElementById('manifest-link');
+            if (link) link.href = '/driver-manifest.webmanifest';
+            // Theme-color spécifique driver (vert YARAM)
+            var meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute('content', '#1F8B4C');
+          }
+        } catch (e) { /* no-op */ }
+      })();
+    </script>
 
     <!-- ════════════ PRECONNECT / DNS-PREFETCH ════════════
          Sur LTE Sénégal, le handshake TLS coûte 300-600ms par origine.

@@ -16,7 +16,7 @@
 // Compat : iOS Safari + Chrome Android. Skip-waiting + clients.claim().
 // ════════════════════════════════════════════════
 
-const SW_BUILD = 'yaram-v21-2026-06-22-capacitor-resume-aggressive';
+const SW_BUILD = 'yaram-v22-2026-06-24-driver-pwa';
 const C_PRECACHE = `${SW_BUILD}-precache`;
 const C_ASSETS   = `${SW_BUILD}-assets`;
 const C_IMAGES   = `${SW_BUILD}-images`;
@@ -28,6 +28,8 @@ const PRECACHE_URLS = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/driver',                         // driver PWA entry point
+  '/driver-manifest.webmanifest',    // driver PWA manifest
   '/icon-192.png',
   '/icon-512.png',
   '/favicon.svg',

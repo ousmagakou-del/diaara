@@ -51,6 +51,7 @@ const Livreur       = lazy(() => import('./pages/Livreur'));
 const ClientConfirm = lazy(() => import('./pages/ClientConfirm'));
 const PiSpiTest     = lazy(() => import('./pages/PiSpiTest'));
 const DistributorView = lazy(() => import('./pages/DistributorView'));
+const DriverApp       = lazy(() => import('./pages/driver/DriverApp'));
 const Privacy         = lazy(() => import('./pages/Privacy'));
 const Terms           = lazy(() => import('./pages/Terms'));
 const MentionsLegales = lazy(() => import('./pages/MentionsLegales'));
@@ -228,6 +229,18 @@ export default function App() {
     window.location.pathname === '/admin/distributor-view';
   if (isDistributorView) {
     return wrapRoute(DistributorView);
+  }
+
+  // ─── App livreur PWA dédiée (route /driver/*) ───────────────────
+  // Bypass TOTAL des autres détections (sticky admin/pharma, ?livreur=,
+  // ?confirm=, etc.) : la PWA driver est une expérience standalone.
+  // Routes : /driver, /driver/login, /driver/dashboard, /driver/profile,
+  //          /driver/earnings, /driver/help, /driver/delivery/:id
+  const isDriverApp =
+    typeof window !== 'undefined' &&
+    (window.location.pathname === '/driver' || window.location.pathname.startsWith('/driver/'));
+  if (isDriverApp) {
+    return wrapRoute(DriverApp);
   }
 
   if (typeof window !== 'undefined' && !hasAnyExplicitRoute && isStickyAdminSession()) {
