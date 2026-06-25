@@ -73,7 +73,7 @@ type Body = {
 type DeviceRow = {
   id: string;
   user_id: string;
-  type: "apns" | "web_push";
+  type: "apns" | "expo" | "web_push";
   apns_token: string | null;
   web_endpoint: string | null;
   web_p256dh: string | null;
@@ -204,6 +204,7 @@ serve(async (req) => {
   // ─── Dispatch per device ──────────────────────────────
   const apnsUrl = `${SUPABASE_URL}/functions/v1/send-push-apns`;
   const webUrl = `${SUPABASE_URL}/functions/v1/send-push-web`;
+  const expoUrl = `${SUPABASE_URL}/functions/v1/send-push-expo`;
   const fnAuth = `Bearer ${SERVICE_KEY}`;
 
   const results: Array<{
@@ -232,6 +233,20 @@ serve(async (req) => {
         const out = await r.json().catch(() => ({}));
         const ok = !!out?.ok;
         results.push({ device_id: d.id, user_id: d.user_id, type: d.type, ok, status: out?.status, error: ok ? undefined : (out?.error || `apns_${out?.status}`) });
+      } else if (d.type === "expo") {
+        // RN/Expo : le token est stocké dans apns_token (même colonne réutilisée)
+        if (!d.apns_token) {
+          results.push({ device_id: d.id, user_id: d.user_id, type: d.type, ok: false, error: "missing_expo_token" });
+          return;
+        }
+        const r = await fetch(expoUrl, {
+          method: "POST",
+          headers: { "content-type": "application/json", "authorization": fnAuth },
+          body: JSON.stringify({ token: d.apns_token, ...payloadCommon }),
+        });
+        const out = await r.json().catch(() => ({}));
+        const ok = !!out?.ok;
+        results.push({ device_id: d.id, user_id: d.user_id, type: d.type, ok, status: out?.status, error: ok ? undefined : (out?.error || `expo_${out?.status}`) });
       } else if (d.type === "web_push") {
         if (!d.web_endpoint || !d.web_p256dh || !d.web_auth) {
           results.push({ device_id: d.id, user_id: d.user_id, type: d.type, ok: false, error: "missing_web_fields" });
