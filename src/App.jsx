@@ -6,6 +6,7 @@ import { initPush, setupPushForUser } from './lib/push';
 import SplashScreen from './components/SplashScreen';
 import Onboarding from './pages/Onboarding';
 import Home from './pages/Home';
+import Landing from './pages/Landing';
 import Search from './pages/Search';
 import Product from './pages/Product';
 import Cart from './pages/Cart';
@@ -103,15 +104,17 @@ export function useUser() { return useContext(UserContext); }
 const SPLASH_MIN_DURATION = 600;
 
 function routeToPath(route) {
-  if (!route || !route.name || route.name === 'home') return '/';
+  if (!route || !route.name || route.name === 'landing') return '/';
   const params = route.params || {};
   switch (route.name) {
+    case 'home': return '/shop';  // alias historique vers shop
+    case 'shop': return '/shop';
     case 'product': return `/product/${params.id}`;
     case 'pharmacy_detail': return `/pharmacy/${params.id}`;
     case 'order_tracking': return `/order/${params.orderId}`;
     case 'scan_result': return `/scan/result/${params.scanId}`;
     case 'payment': return `/payment/${params.orderId}`;
-    case 'search': 
+    case 'search':
       if (params.category) return `/search?category=${encodeURIComponent(params.category)}`;
       if (params.brand) return `/search?brand=${encodeURIComponent(params.brand)}`;
       return '/search';
@@ -123,17 +126,20 @@ function pathToRoute(pathname, search = '') {
   const path = pathname.replace(/^\//, '');
   const searchParams = new URLSearchParams(search);
   
-  if (path === '' || path === '/') return { name: 'home', params: {} };
-  
+  if (path === '' || path === '/') return { name: 'landing', params: {} };
+
   const parts = path.split('/');
-  
+
   if (parts[0] === 'product' && parts[1]) return { name: 'product', params: { id: parts[1] } };
   if (parts[0] === 'pharmacy' && parts[1]) return { name: 'pharmacy_detail', params: { id: parts[1] } };
   if (parts[0] === 'order' && parts[1]) return { name: 'order_tracking', params: { orderId: parts[1] } };
   if (parts[0] === 'scan' && parts[1] === 'result' && parts[2]) return { name: 'scan_result', params: { scanId: parts[2] } };
   if (parts[0] === 'payment' && parts[1]) return { name: 'payment', params: { orderId: parts[1] } };
-  
-  const simpleRoutes = ['search', 'cart', 'checkout', 'orders', 'profile', 'pharmacies', 'scan', 'scan_history', 'addresses', 'favorites', 'payments', 'evolution', 'categories', 'quiz', 'loyalty', 'referral', 'notifications', 'notif_settings', 'promos', 'privacy', 'terms', 'mentions', 'delete_account', 'international', 'help', 'newsletter'];
+
+  // ─── Shop (catalogue e-commerce complet) ───
+  if (parts[0] === 'shop' || parts[0] === 'home') return { name: 'shop', params: {} };
+
+  const simpleRoutes = ['search', 'cart', 'checkout', 'orders', 'profile', 'pharmacies', 'scan', 'scan_history', 'addresses', 'favorites', 'payments', 'evolution', 'categories', 'quiz', 'loyalty', 'referral', 'notifications', 'notif_settings', 'promos', 'privacy', 'terms', 'mentions', 'delete_account', 'international', 'help', 'newsletter', 'brands'];
   if (simpleRoutes.includes(parts[0])) {
     const params = {};
     if (parts[0] === 'search') {
@@ -144,8 +150,8 @@ function pathToRoute(pathname, search = '') {
     }
     return { name: parts[0], params };
   }
-  
-  return { name: 'home', params: {} };
+
+  return { name: 'landing', params: {} };
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -867,7 +873,12 @@ function ClientApp() {
     case 'mentions': page = <Suspense fallback={<LazyFallback />}><MentionsLegales /></Suspense>; break;
     case 'delete_account': page = <Suspense fallback={<LazyFallback />}><DeleteAccount /></Suspense>; break;
     case 'newsletter': page = <Suspense fallback={<LazyFallback />}><Newsletter /></Suspense>; break;
-    default: page = <Home />;
+    // ─── Landing = nouvelle home pour visiteurs sans l'app (style Uber) ───
+    case 'landing': page = <Landing />; break;
+    // ─── Shop = ancienne home (catalogue e-commerce complet) ───
+    case 'shop': page = <Home />; break;
+    case 'home': page = <Home />; break;
+    default: page = <Landing />;
   }
 
   // ════════════════════════════════════════════════════════════════
