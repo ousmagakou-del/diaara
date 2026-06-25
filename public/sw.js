@@ -16,7 +16,7 @@
 // Compat : iOS Safari + Chrome Android. Skip-waiting + clients.claim().
 // ════════════════════════════════════════════════
 
-const SW_BUILD = 'yaram-v22-2026-06-24-driver-pwa';
+const SW_BUILD = 'yaram-v23-2026-06-25-driver-map';
 const C_PRECACHE = `${SW_BUILD}-precache`;
 const C_ASSETS   = `${SW_BUILD}-assets`;
 const C_IMAGES   = `${SW_BUILD}-images`;
@@ -224,6 +224,16 @@ self.addEventListener('fetch', (event) => {
   //    Vite émet dans dist/assets/. Cache-first long-lived OK.
   if (url.origin === self.location.origin && url.pathname.startsWith('/assets/')) {
     event.respondWith(cacheFirst(request, C_ASSETS));
+    return;
+  }
+
+  // 6bis) Leaflet OpenStreetMap tiles (driver PWA carte Uber-style) →
+  //       stale-while-revalidate sur le cache images. Marche offline + économise
+  //       la bande passante 2G/LTE Dakar.
+  if (url.hostname.endsWith('.tile.openstreetmap.org') ||
+      url.hostname === 'tile.openstreetmap.org' ||
+      url.hostname === 'unpkg.com') {
+    event.respondWith(staleWhileRevalidate(request, C_IMAGES));
     return;
   }
 

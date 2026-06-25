@@ -964,3 +964,244 @@ button.dvr-btn,
   padding: 8px 14px; font-size: 12px; font-weight: 700;
   cursor: pointer;
 }
+
+/* ════════════════════════════════════════════════════════
+   LEAFLET MAP — Uber-style pins, overlays, controls
+   ════════════════════════════════════════════════════════ */
+
+/* Hero map sur DriverDelivery */
+.dvr-map-wrapper {
+  position: relative;
+  width: 100%;
+  margin: 0 0 14px;
+  border-radius: 0 0 24px 24px;
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  background: #e8eef2;
+  isolation: isolate;
+  z-index: 5;
+}
+.dvr-map-wrapper.collapsed {
+  border-radius: 0 0 18px 18px;
+}
+
+.dvr-map-container {
+  width: 100%;
+  display: block;
+  background: #e8eef2;
+}
+.dvr-map-container .leaflet-control-attribution {
+  font-size: 9px;
+  background: rgba(255, 255, 255, 0.65);
+  color: #555;
+  padding: 1px 6px;
+  border-radius: 6px 0 0 0;
+}
+.dvr-map-container .leaflet-tile-pane {
+  filter: saturate(1.05);
+}
+
+/* Reset Leaflet's default divIcon padding/background so our pins look clean */
+.dvr-map-icon {
+  background: transparent !important;
+  border: 0 !important;
+}
+
+/* Pin base */
+.dvr-map-pin {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 900;
+  position: relative;
+}
+.dvr-map-pin-pickup {
+  background: #22B564;
+}
+.dvr-map-pin-delivery {
+  background: #E5484D;
+  /* Pin teardrop : pointe vers le bas */
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+}
+.dvr-map-pin-delivery svg {
+  transform: rotate(45deg);
+}
+.dvr-map-pin-driver {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, #1F8B4C 0%, #156237 100%);
+  border: 3px solid #fff;
+  box-shadow: 0 4px 14px rgba(31, 139, 76, 0.4);
+}
+/* Pulse animation pour le driver */
+.dvr-map-pin-pulse {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: rgba(31, 139, 76, 0.35);
+  animation: dvr-map-pulse 1.8s ease-out infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+@keyframes dvr-map-pulse {
+  0%   { transform: scale(0.9); opacity: 0.7; }
+  70%  { transform: scale(1.7); opacity: 0;   }
+  100% { transform: scale(1.7); opacity: 0;   }
+}
+
+/* Overlay top-left : badges distance + ETA */
+.dvr-map-overlay-top {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 14px);
+  left: 64px; /* laisse de la place au bouton retour */
+  right: 64px;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  pointer-events: none;
+}
+.dvr-map-badge {
+  pointer-events: auto;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #111;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  letter-spacing: -0.01em;
+}
+.dvr-map-badge-accent {
+  background: var(--dvr-green);
+  color: #fff;
+}
+.dvr-map-badge svg { flex-shrink: 0; }
+
+/* Bouton recenter — floating bottom-right */
+.dvr-map-recenter-btn {
+  position: absolute;
+  bottom: 14px;
+  right: 14px;
+  z-index: 25;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--dvr-green);
+  border: 0;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+.dvr-map-recenter-btn:active {
+  transform: scale(0.92);
+}
+
+/* Bouton itinéraire externe — bottom-left */
+.dvr-map-route-btn {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  z-index: 25;
+  background: var(--dvr-green);
+  color: #fff;
+  border: 0;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 14px;
+  padding: 10px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 14px rgba(31, 139, 76, 0.35);
+  cursor: pointer;
+  letter-spacing: -0.01em;
+}
+.dvr-map-route-btn:active {
+  transform: scale(0.96);
+}
+
+/* Bouton collapse map (chevron en haut à droite) */
+.dvr-map-collapse-btn {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 14px);
+  right: 14px;
+  z-index: 22;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.96);
+  color: #111;
+  border: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* Mini-map dans les cards du dashboard */
+.dvr-order-mini-map {
+  position: relative;
+  margin: 8px 0 10px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #e8eef2;
+  box-shadow: inset 0 0 0 1px var(--dvr-border);
+}
+.dvr-order-mini-map .dvr-map-container { background: #e8eef2; }
+/* Désactive les pointer events sur la mini-map pour ne pas bloquer le tap sur la card */
+.dvr-order-mini-map .leaflet-container {
+  pointer-events: none;
+  cursor: pointer;
+}
+
+/* Bouton retour flottant (overrides l'inline style obsolète) */
+.dvr-back-fab {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
+  left: 12px;
+  z-index: 100;
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.dvr-back-fab:active { transform: scale(0.94); }
+
+/* Leaflet z-index sanity — éviter qu'il passe au-dessus de la tab bar */
+.leaflet-pane,
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-tile-container,
+.leaflet-pane > svg,
+.leaflet-pane > canvas {
+  z-index: 1 !important;
+}
+.leaflet-control { z-index: 2 !important; }
+.leaflet-top, .leaflet-bottom { z-index: 3 !important; }

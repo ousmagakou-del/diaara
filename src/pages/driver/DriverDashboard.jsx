@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import { toast } from '../../lib/toast';
+import DeliveryMap, { useDriverPosition } from './DeliveryMap';
 
 // Helpers
 const fmtFcfa = (n) => `${Number(n || 0).toLocaleString('fr-FR')} FCFA`;
@@ -84,9 +85,19 @@ const Icons = {
   ),
 };
 
-function DeliveryCard({ order, onClick, accent }) {
+function DeliveryCard({ order, onClick, accent, driverPos }) {
   const sb = statusBadge(order.status);
   const cash = isCash(order.payment_method);
+
+  // Mini-map data : on ne render la carte que si on a au moins la position client
+  const delivery = (Number.isFinite(order.delivery_lat) && Number.isFinite(order.delivery_lng))
+    ? { lat: order.delivery_lat, lng: order.delivery_lng, name: fmtClientName(order.address) }
+    : null;
+  const pickup = (Number.isFinite(order.pickup_lat) && Number.isFinite(order.pickup_lng))
+    ? { lat: order.pickup_lat, lng: order.pickup_lng, name: order.pickup_name || 'Pharmacie' }
+    : null;
+  const hasMap = !!delivery || !!pickup;
+
   return (
     <div
       className={`dvr-delivery-card ${accent === 'available' ? 'dvr-available' : ''}`}
@@ -103,6 +114,20 @@ function DeliveryCard({ order, onClick, accent }) {
         </div>
         <span className={`dvr-status-badge ${sb.cls}`}>{sb.txt}</span>
       </div>
+
+      {hasMap && (
+        <div className="dvr-order-mini-map" aria-hidden="true">
+          <DeliveryMap
+            pickup={pickup}
+            delivery={delivery}
+            driver={driverPos}
+            height={110}
+            showRoute={true}
+            followDriver={false}
+            interactive={false}
+          />
+        </div>
+      )}
 
       <div className="dvr-delivery-loc">
         <span className="dvr-loc-icon"><Icons.Pin /></span>
@@ -169,6 +194,10 @@ export default function DriverDashboard({ session, onLogout, onOpenDelivery, onN
       ? (window.matchMedia?.('(display-mode: standalone)').matches || window.navigator?.standalone === true)
       : false,
   );
+
+  // Position GPS du driver — utilisée pour les mini-maps des cards en cours
+  // Activée uniquement si on a des livraisons actives ou si le driver est disponible.
+  const { pos: driverPos } = useDriverPosition(available);
 
   const load = useCallback(async () => {
     if (!session?.token) return;
@@ -413,6 +442,7 @@ export default function DriverDashboard({ session, onLogout, onOpenDelivery, onN
                 key={o.id}
                 order={o}
                 onClick={() => onOpenDelivery?.(o.id)}
+                driverPos={driverPos}
               />
             ))
           )}

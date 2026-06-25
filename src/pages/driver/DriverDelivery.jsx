@@ -1,27 +1,37 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
-import { toast } from '../../lib/toast';
 import Livreur from '../Livreur';
+import DeliveryMap, { useDriverPosition, estimateRoute } from './DeliveryMap';
+import { formatDistance } from '../../lib/geo';
 
 /**
  * DriverDelivery
  * ---------------
  * Vue détail d'une livraison depuis l'app driver authentifiée.
  *
- * Stratégie : on récupère le delivery_token de l'order via la RPC
- * `driver_get_order` (gatée par le session token), puis on monte le
- * composant <Livreur /> existant (2700 LOC de UX premium DoorDash-style
- * avec pickup card, delivery card, sourcing Instacart, signature, PIN,
- * timeline, GPS, etc.) en y attachant le token comme query param.
- *
- * Avantage : 100% de réutilisation de la logique Livreur, aucun fork.
- * Toute amélioration future sur Livreur.jsx bénéficie automatiquement
- * au driver flow.
+ * Stratégie :
+ *  1) Récupère le delivery_token de l'order via la RPC `driver_get_order`
+ *     (gatée par le session token).
+ *  2) Au top de la page, affiche une carte Uber-style (pickup, delivery, driver
+ *     live, polyline pointillée, distance/ETA, bouton recenter).
+ *  3) En dessous, monte le composant <Livreur /> existant (UX premium DoorDash
+ *     avec sourcing, signature, PIN, timeline, GPS, etc.) en y attachant le
+ *     token comme query param.
+ *  4) Push la position GPS du driver vers Supabase (driver_push_position) toutes
+ *     les 10 s tant que le statut est entre "shipped" et "delivered".
  */
 export default function DriverDelivery({ session, orderId, onBack }) {
   const [resolvedToken, setResolvedToken] = useState(null);
+  const [orderData, setOrderData] = useState(null);   // { order, tracking, pharmacies }
   const [err, setErr] = useState('');
+  const [mapCollapsed, setMapCollapsed] = useState(false);
+  const lastPushAtRef = useRef(0);
+  const pollTimerRef = useRef(null);
 
+  // GPS du driver (watchPosition)
+  const { pos: driverPos } = useDriverPosition(true);
+
+  // ── Charge l'order + tracking via RPC ─────────────────
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -42,7 +52,7 @@ export default function DriverDelivery({ session, orderId, onBack }) {
         }
         if (!data?.success) {
           const code = data?.error || 'unknown';
-          if (code === 'not_assigned') setErr('Cette commande ne t\'est pas assignée.');
+          if (code === 'not_assigned') setErr("Cette commande ne t'est pas assignée.");
           else if (code === 'order_not_found') setErr('Commande introuvable.');
           else if (code === 'invalid_session') setErr('Session expirée.');
           else setErr('Impossible de charger cette livraison.');
@@ -50,13 +60,18 @@ export default function DriverDelivery({ session, orderId, onBack }) {
         }
         const tk = data.tracking?.delivery_token;
         if (!tk) {
-          setErr('Lien de livraison absent — contacte l\'admin.');
+          setErr("Lien de livraison absent — contacte l'admin.");
           return;
         }
         // Injecte ?livreur=TOKEN dans l'URL et monte Livreur en remount complet.
         const newUrl = `${window.location.pathname}?livreur=${tk}`;
         window.history.replaceState({}, '', newUrl);
         setResolvedToken(tk);
+        setOrderData({
+          order: data.order || null,
+          tracking: data.tracking || null,
+          pharmacies: data.pharmacies || [],
+        });
       } catch (e) {
         console.error('[DriverDelivery] fatal:', e);
         if (!cancelled) setErr('Erreur inattendue.');
@@ -65,6 +80,107 @@ export default function DriverDelivery({ session, orderId, onBack }) {
     return () => { cancelled = true; };
   }, [session?.token, orderId]);
 
+  // ── Re-poll tracking toutes les 20s pour rester en phase ──
+  useEffect(() => {
+    if (!session?.token || !orderId || !resolvedToken) return;
+    let stopped = false;
+    const tick = async () => {
+      try {
+        const { data } = await supabase.rpc('driver_get_order', {
+          p_token: session.token,
+          p_order_id: orderId,
+        });
+        if (stopped) return;
+        if (data?.success) {
+          setOrderData((prev) => ({
+            order: data.order || prev?.order || null,
+            tracking: data.tracking || prev?.tracking || null,
+            pharmacies: data.pharmacies || prev?.pharmacies || [],
+          }));
+        }
+      } catch {
+        /* silencieux — on retentera au prochain tick */
+      }
+    };
+    pollTimerRef.current = setInterval(tick, 20000);
+    return () => {
+      stopped = true;
+      if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+    };
+  }, [session?.token, orderId, resolvedToken]);
+
+  // ── Compute pickup / delivery coords ──────────────────
+  const { pickup, delivery, picked, pushEnabled } = useMemo(() => {
+    const o = orderData?.order || {};
+    const t = orderData?.tracking || {};
+    const phs = orderData?.pharmacies || [];
+    const ph = phs[0] || null;
+    const status = t.status || o.status || null;
+
+    let _pickup = null;
+    if (ph && Number.isFinite(ph.lat) && Number.isFinite(ph.lng)) {
+      _pickup = { lat: ph.lat, lng: ph.lng, name: ph.name || 'Pharmacie', address: ph.address };
+    }
+
+    let _delivery = null;
+    if (Number.isFinite(o.delivery_lat) && Number.isFinite(o.delivery_lng)) {
+      const addr = o.address || {};
+      const name = (typeof addr === 'object' ? addr.name : null) || 'Client';
+      _delivery = { lat: o.delivery_lat, lng: o.delivery_lng, name, address: addr };
+    }
+
+    const _picked = !!(t.picked_at || t.in_route_at || ['in_route', 'arrived', 'delivered'].includes(status));
+    // Push GPS si la livraison est active (shipped / in_route / arrived)
+    const _push = ['shipped', 'in_route', 'arrived', 'picked', 'assigned'].includes(status) &&
+                  status !== 'delivered' && status !== 'cancelled';
+
+    return { pickup: _pickup, delivery: _delivery, picked: _picked, pushEnabled: _push };
+  }, [orderData]);
+
+  // ── Push position GPS vers Supabase toutes les 10s (throttling RPC géré côté DB) ──
+  useEffect(() => {
+    if (!pushEnabled) return;
+    if (!driverPos || !session?.token || !orderId) return;
+    const now = Date.now();
+    if (now - lastPushAtRef.current < 9500) return;
+    lastPushAtRef.current = now;
+    (async () => {
+      try {
+        await supabase.rpc('driver_push_position', {
+          p_token: session.token,
+          p_order_id: orderId,
+          p_lat: driverPos.lat,
+          p_lng: driverPos.lng,
+          p_accuracy: driverPos.accuracy || null,
+        });
+      } catch {
+        /* silencieux — on retentera au prochain tick */
+      }
+    })();
+  }, [driverPos?.lat, driverPos?.lng, driverPos?.ts, pushEnabled, session?.token, orderId]);
+
+  // ── Distance + ETA ─────────────────────────────────────
+  const route = useMemo(
+    () => estimateRoute({ driver: driverPos, pickup, delivery, picked }),
+    [driverPos, pickup, delivery, picked]
+  );
+
+  // ── Recenter button ───────────────────────────────────
+  const [recenterTick, setRecenterTick] = useState(0);
+  const handleRecenter = () => setRecenterTick((n) => n + 1);
+
+  // ── Itinéraire externe (Google / Apple Maps deeplink) ─
+  const openExternalRoute = () => {
+    const target = picked ? delivery : pickup;
+    if (!target) return;
+    const isIos = /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent) && 'ontouchend' in document;
+    const url = isIos
+      ? `maps://?daddr=${target.lat},${target.lng}&dirflg=d`
+      : `https://www.google.com/maps/dir/?api=1&destination=${target.lat},${target.lng}&travelmode=driving`;
+    try { window.open(url, '_blank'); } catch { /* popup bloqué */ }
+  };
+
+  // ── States d'erreur / loading ──────────────────────────
   if (err) {
     return (
       <div className="dvr-page">
@@ -89,9 +205,91 @@ export default function DriverDelivery({ session, orderId, onBack }) {
     );
   }
 
+  const hasMapData = pickup || delivery || driverPos;
+
   return (
     <div className="dvr-detail-frame" key={resolvedToken}>
-      {/* Bouton retour flottant en haut à gauche, par-dessus Livreur */}
+      {/* MAP HERO — visible si on a au moins 1 point géographique */}
+      {hasMapData && (
+        <div className={`dvr-map-wrapper ${mapCollapsed ? 'collapsed' : ''}`}>
+          <DeliveryMap
+            key={`map-${recenterTick}`}
+            pickup={pickup}
+            delivery={delivery}
+            driver={driverPos}
+            height={mapCollapsed ? 100 : 320}
+            showRoute={true}
+            followDriver={false}
+          />
+
+          {/* Overlay infos */}
+          {!mapCollapsed && (
+            <>
+              <div className="dvr-map-overlay-top">
+                {route?.km != null && (
+                  <div className="dvr-map-badge">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 22s7-7 7-12a7 7 0 1 0-14 0c0 5 7 12 7 12Z"/>
+                      <circle cx="12" cy="10" r="2.5"/>
+                    </svg>
+                    {formatDistance(route.km)}
+                  </div>
+                )}
+                {route?.etaMin != null && (
+                  <div className="dvr-map-badge">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10"/>
+                      <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    ~{route.etaMin} min
+                  </div>
+                )}
+                {route?.label && (
+                  <div className="dvr-map-badge dvr-map-badge-accent">{route.label}</div>
+                )}
+              </div>
+
+              <button
+                className="dvr-map-recenter-btn"
+                onClick={handleRecenter}
+                aria-label="Recentrer la carte"
+                title="Recentrer"
+              >
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+                </svg>
+              </button>
+
+              <button
+                className="dvr-map-route-btn"
+                onClick={openExternalRoute}
+                aria-label="Ouvrir l'itinéraire"
+              >
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="3 11 22 2 13 21 11 13 3 11" />
+                </svg>
+                Itinéraire
+              </button>
+            </>
+          )}
+
+          <button
+            className="dvr-map-collapse-btn"
+            onClick={() => setMapCollapsed((v) => !v)}
+            aria-label={mapCollapsed ? 'Agrandir la carte' : 'Réduire la carte'}
+            title={mapCollapsed ? 'Agrandir' : 'Réduire'}
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              {mapCollapsed
+                ? <polyline points="6 9 12 15 18 9" />
+                : <polyline points="18 15 12 9 6 15" />}
+            </svg>
+          </button>
+        </div>
+      )}
+
+      {/* Bouton retour flottant en haut à gauche, par-dessus la map/Livreur */}
       <button
         onClick={() => {
           // Nettoie l'URL pour ne pas rester sur le token
@@ -99,27 +297,13 @@ export default function DriverDelivery({ session, orderId, onBack }) {
           onBack?.();
         }}
         aria-label="Retour"
-        style={{
-          position: 'fixed',
-          top: 'calc(env(safe-area-inset-top, 0px) + 12px)',
-          left: 12,
-          zIndex: 100,
-          width: 40,
-          height: 40,
-          borderRadius: 20,
-          background: 'rgba(255,255,255,0.96)',
-          border: 'none',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-        }}
+        className="dvr-back-fab"
       >
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#111" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="15 18 9 12 15 6" />
         </svg>
       </button>
+
       <Livreur />
     </div>
   );
