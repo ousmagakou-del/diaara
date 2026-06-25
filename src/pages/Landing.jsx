@@ -99,7 +99,7 @@ export default function Landing() {
                     onClick={() => navigate({ name: 'brand', id: b.id })}
                     aria-label={b.name}
                   >
-                    {b.logo_url ? <img src={b.logo_url} alt={b.name} /> : <span>{b.name}</span>}
+                    {b.img ? <img src={b.img} alt={b.name} loading="lazy" decoding="async" /> : <span>{b.name}</span>}
                   </button>
                 ))}
               </div>
@@ -142,7 +142,7 @@ export default function Landing() {
           <div className="lp-brands-grid">
             {brands.map((b) => (
               <button key={b.id} className="lp-brand-tile" onClick={() => navigate({ name: 'brand', id: b.id })}>
-                {b.logo_url ? <img src={b.logo_url} alt={b.name} /> : <div className="lp-brand-name">{b.name}</div>}
+                {b.img ? <img src={b.img} alt={b.name} loading="lazy" decoding="async" /> : <div className="lp-brand-name">{b.name}</div>}
               </button>
             ))}
           </div>

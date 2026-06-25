@@ -363,9 +363,9 @@ export default function Categories() {
                     onClick={() => goToSearch({ brand: b.name })}
                   >
                     <div className="ycat-brand-logo">
-                      {b.logo_url || b.logo ? (
+                      {b.img || b.logo_url || b.logo ? (
                         <img
-                          src={b.logo_url || b.logo}
+                          src={b.img || b.logo_url || b.logo}
                           alt={b.name}
                           loading="lazy"
                           decoding="async"

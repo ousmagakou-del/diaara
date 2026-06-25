@@ -336,8 +336,17 @@ export default function BrandPage() {
         <section className="bp-hero" style={heroStyle}>
           <div className="bp-hero-inner">
             <div className="bp-logo-card">
-              {brand.logo_url ? (
-                <img src={brand.logo_url} alt={brand.name} />
+              {brand.img ? (
+                <img
+                  src={brand.img}
+                  alt={brand.name}
+                  loading="lazy"
+                  decoding="async"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.parentElement.innerHTML = `<div class="bp-logo-fallback">${brandInitials(brand.name)}</div>`;
+                  }}
+                />
               ) : (
                 <div className="bp-logo-fallback">{brandInitials(brand.name)}</div>
               )}
@@ -345,8 +354,8 @@ export default function BrandPage() {
 
             <h1 className="bp-hero-title">{brand.name}</h1>
 
-            {brand.description && (
-              <p className="bp-hero-desc">{brand.description}</p>
+            {(brand.tagline || brand.description) && (
+              <p className="bp-hero-desc">{brand.tagline || brand.description}</p>
             )}
 
             <div className="bp-hero-badges">
@@ -576,9 +585,9 @@ export default function BrandPage() {
               </div>
             </div>
             <div className="bp-about-visual">
-              {brand.cover_url || brand.logo_url ? (
+              {brand.cover_url || brand.img ? (
                 <img
-                  src={brand.cover_url || brand.logo_url}
+                  src={brand.cover_url || brand.img}
                   alt={brand.name}
                   loading="lazy"
                 />
@@ -611,8 +620,9 @@ export default function BrandPage() {
                   onClick={() => goBrand(b)}
                 >
                   <div className="bp-similar-logo">
-                    {b.logo_url ? (
-                      <img src={b.logo_url} alt={b.name} loading="lazy" />
+                    {b.img ? (
+                      <img src={b.img} alt={b.name} loading="lazy" decoding="async"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                     ) : (
                       <div className="bp-similar-fallback">{brandInitials(b.name)}</div>
                     )}
