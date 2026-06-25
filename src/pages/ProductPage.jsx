@@ -9,12 +9,29 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNav } from '../App';
 import SiteLayout from '../components/SiteLayout';
 import {
-  getProductById,
   getAllProducts,
-  getProductPharmacies,
+  getAllPharmacies,
   getProductReviews,
 } from '../lib/supabase';
 import { addToCart } from '../lib/cart';
+
+// Fallbacks : ces helpers n'existent pas en lib, on les construit ici à partir
+// des fonctions disponibles (getAllProducts + getAllPharmacies).
+async function getProductById(id) {
+  if (!id) return null;
+  try {
+    const all = await getAllProducts();
+    return (all || []).find((p) => String(p.id) === String(id)) || null;
+  } catch { return null; }
+}
+async function getProductPharmacies(_productId) {
+  // Pas de mapping product↔pharmacie en DB côté lib pour l'instant
+  // → on retourne les pharmacies actives (toutes peuvent en théorie commander)
+  try {
+    const all = await getAllPharmacies();
+    return (all || []).slice(0, 6);
+  } catch { return []; }
+}
 import './ProductPage.css';
 
 // ─── Helpers ──────────────────────────────────────────────────────
