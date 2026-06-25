@@ -99,31 +99,45 @@ export default function DeliveriesSection() {
       after:      { status: order.status, driver: { id: driverId, name, phone: phone || null } },
     }).catch(() => { /* best-effort */ });
 
-    // Met à jour le nom/phone du livreur sur le tracking créé par la RPC
-    await supabase
-      .from('delivery_tracking')
-      .update({ delivery_person_name: name, delivery_person_phone: phone })
-      .eq('order_id', order.id);
+    // FIX juin 2026 : le nom/phone livreur est mis à jour par la RPC
+    // admin_assign_driver_to_order ci-dessous (évite 401 RLS direct PATCH).
+    // Pour les assignations manuelles sans driverId, on garde le best-effort.
+    if (!driverId) {
+      const { error: trackErr } = await supabase
+        .from('delivery_tracking')
+        .update({ delivery_person_name: name, delivery_person_phone: phone })
+        .eq('order_id', order.id);
+      if (trackErr) console.warn('[admin] delivery_tracking update failed:', trackErr.message);
+    }
 
     // ─── NOUVEAU : si livreur PWA enregistré, assigne l'UUID dans orders ───
     // Comme ça la commande apparaît dans son dashboard PWA driver
     if (driverId) {
-      await supabase
-        .from('orders')
-        .update({
-          delivery_driver_id: driverId,
-          delivery_driver_name: name,
-          delivery_driver_phone: phone || null,
-        })
-        .eq('id', order.id);
-
-      // Incrémente le compteur charge du driver
-      await supabase.rpc('admin_increment_driver_load', { p_driver_id: driverId }).catch(() => {
-        // Fallback si RPC inexistante : update direct
-        return supabase.from('delivery_drivers')
-          .update({ current_orders_count: (order.current_orders_count || 0) + 1 })
-          .eq('id', driverId);
+      // FIX juin 2026 : passe par RPC admin (PATCH direct sur orders bloqué par RLS → 401)
+      const { error: assignErr } = await supabase.rpc('admin_assign_driver_to_order', {
+        p_admin_token: (() => {
+          try {
+            const raw = localStorage.getItem('yaram-admin-session') || sessionStorage.getItem('yaram-admin-session');
+            return raw ? JSON.parse(raw)?.token : null;
+          } catch { return null; }
+        })(),
+        p_order_id: order.id,
+        p_driver_id: driverId,
+        p_driver_name: name,
+        p_driver_phone: phone || null,
       });
+      if (assignErr) {
+        console.warn('[admin] admin_assign_driver_to_order failed:', assignErr.message);
+        toast.error('Erreur assignation : ' + assignErr.message);
+      }
+
+      // Incrémente le compteur charge du driver (RPC SECURITY DEFINER)
+      try {
+        const { error: incErr } = await supabase.rpc('admin_increment_driver_load', { p_driver_id: driverId });
+        if (incErr) console.warn('[admin] increment driver load failed:', incErr.message);
+      } catch (e) {
+        console.warn('[admin] increment driver load crash:', e?.message);
+      }
     }
 
     // S'assurer qu'il y a un confirmation_token sur la commande
