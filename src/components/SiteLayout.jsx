@@ -29,7 +29,17 @@ export default function SiteLayout({ children, transparentHeader = false, hideFo
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    const update = () => getCartCount().then((n) => setCartCount(n || 0)).catch(() => {});
+    const update = () => {
+      try {
+        const n = getCartCount();
+        // getCartCount peut être sync (return) ou async (Promise) selon version
+        if (n && typeof n.then === 'function') {
+          n.then((v) => setCartCount(v || 0)).catch(() => {});
+        } else {
+          setCartCount(Number(n) || 0);
+        }
+      } catch {}
+    };
     update();
     const i = setInterval(update, 5000);
     window.addEventListener('focus', update);
