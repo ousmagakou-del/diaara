@@ -265,11 +265,11 @@ export default function ShopHome() {
               </button>
             </form>
             <div className="sh-hero-quick">
-              <button className="sh-quick-chip" onClick={() => navigate('search')}>🧴 Soins visage</button>
-              <button className="sh-quick-chip" onClick={() => navigate('search')}>💄 Maquillage</button>
-              <button className="sh-quick-chip" onClick={() => navigate('search')}>🌸 Parfums</button>
-              <button className="sh-quick-chip" onClick={() => navigate('international')}>🌍 International</button>
-              <button className="sh-quick-chip" onClick={() => navigate('search')}>👶 Bébé</button>
+              <button className="sh-quick-chip" onClick={() => navigate('search')}>Soins visage</button>
+              <button className="sh-quick-chip" onClick={() => navigate('search')}>Maquillage</button>
+              <button className="sh-quick-chip" onClick={() => navigate('search')}>Parfums</button>
+              <button className="sh-quick-chip" onClick={() => navigate('international')}>International</button>
+              <button className="sh-quick-chip" onClick={() => navigate('search')}>Bébé</button>
             </div>
           </div>
         </section>
