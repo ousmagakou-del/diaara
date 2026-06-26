@@ -331,7 +331,13 @@
   display: flex; align-items: center; justify-content: center;
   font-size: 13px; font-weight: 900;
 }
-.lp-step-icon { font-size: 40px; margin: 8px 0 16px; }
+.lp-step-icon {
+  margin: 8px 0 16px;
+  width: 64px; height: 64px;
+  background: #E8F5EC;
+  border-radius: 18px;
+  display: flex; align-items: center; justify-content: center;
+}
 .lp-step h3 {
   font-size: 19px; font-weight: 900; margin: 0 0 8px;
   color: #1A1A1A; letter-spacing: -0.3px;

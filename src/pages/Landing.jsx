@@ -115,19 +115,41 @@ export default function Landing() {
         <div className="lp-steps">
           <div className="lp-step">
             <div className="lp-step-num">1</div>
-            <div className="lp-step-icon">🛍️</div>
+            <div className="lp-step-icon">
+              {/* Shopping bag */}
+              <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#1F8B4C" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <path d="M16 10a4 4 0 0 1-8 0"/>
+              </svg>
+            </div>
             <h3>Tu choisis</h3>
             <p>Plus de 5 000 produits beauté, soins et bien-être triés sur le volet par nos pharmaciens.</p>
           </div>
           <div className="lp-step">
             <div className="lp-step-num">2</div>
-            <div className="lp-step-icon">💊</div>
+            <div className="lp-step-icon">
+              {/* Pharmacy / pill */}
+              <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#1F8B4C" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10.5 20H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H20a2 2 0 0 1 2 2v3"/>
+                <circle cx="18" cy="18" r="4"/>
+                <path d="m15.5 15.5 5 5"/>
+              </svg>
+            </div>
             <h3>On prépare</h3>
             <p>Une pharmacie partenaire prépare ta commande avec des produits authentiques garantis.</p>
           </div>
           <div className="lp-step">
             <div className="lp-step-num">3</div>
-            <div className="lp-step-icon">🏠</div>
+            <div className="lp-step-icon">
+              {/* Delivery / truck */}
+              <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#1F8B4C" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v3"/>
+                <rect x="9" y="11" width="14" height="10" rx="2"/>
+                <circle cx="12" cy="21" r="1"/>
+                <circle cx="20" cy="21" r="1"/>
+              </svg>
+            </div>
             <h3>Tu reçois</h3>
             <p>Livraison à domicile partout à Dakar, avec un suivi en temps réel sur l'app.</p>
           </div>
