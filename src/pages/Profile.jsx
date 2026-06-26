@@ -301,6 +301,10 @@ export default function Profile() {
     <div className="prof2-screen page-anim">
       <div className="prof2-scroll">
         <PullToRefresh onRefresh={handlePullRefresh}>
+          <div className="prof2-web-grid">
+
+          {/* ══ COLONNE GAUCHE ══ */}
+          <div className="prof2-col-left">
 
           {/* HERO — Apple Wallet style, blanc clean */}
           <section className="prof2-hero prof2-anim" style={{ animationDelay: '0ms' }}>
@@ -374,6 +378,11 @@ export default function Profile() {
             </button>
           </section>
 
+
+          </div>{/* /prof2-col-left */}
+
+          {/* ══ COLONNE DROITE ══ */}
+          <div className="prof2-col-right">
 
           {/* SECTION : COMPTE */}
           <section className="prof2-section prof2-anim" style={{ animationDelay: '150ms' }}>
@@ -601,6 +610,9 @@ export default function Profile() {
           </div>
 
           <div style={{ height: 30 }} />
+          </div>{/* /prof2-col-right */}
+
+          </div>{/* /prof2-web-grid */}
         </PullToRefresh>
       </div>
       <TabBar active="profile" />

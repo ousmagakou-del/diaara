@@ -429,51 +429,105 @@
 /* =========================================================
    RESPONSIVE — site mode (desktop / tablet)
    ========================================================= */
+
+/* Tablet (640px+) : colonne unique centrée */
 @media (min-width: 640px) {
   .prof2-screen {
     height: auto;
     min-height: 100vh;
   }
-  /* Cacher la TabBar mobile sur desktop */
-  .prof2-screen .tabbar {
-    display: none;
-  }
+  .prof2-screen .tabbar { display: none; }
+
   .prof2-scroll {
     overflow-y: visible;
     padding-bottom: 80px;
-    max-width: 600px;
+    max-width: 680px;
     margin: 0 auto;
     padding-left: 24px;
     padding-right: 24px;
+    padding-top: 32px;
   }
+
+  .prof2-web-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
   .prof2-hero {
     border-radius: 20px;
-    margin-top: 32px;
+    margin-top: 0;
     padding-top: 40px;
     padding-bottom: 32px;
   }
-  .prof2-stats-wrap {
-    padding: 0;
-    margin-top: 16px;
-  }
-  .prof2-section {
-    padding-left: 0;
-    padding-right: 0;
-  }
+  .prof2-stats-wrap { padding: 0; margin-top: 16px; }
+  .prof2-section { padding-left: 0; padding-right: 0; }
+
   .prof2-name { font-size: 28px; }
   .prof2-stat-num { font-size: 24px; }
   .prof2-stat-card { height: 100px; }
   .prof2-card { border-radius: 20px; }
 }
 
+/* Desktop (1024px+) : 2 colonnes */
 @media (min-width: 1024px) {
   .prof2-scroll {
-    max-width: 640px;
-    padding-top: 20px;
+    max-width: 1080px;
+    padding-top: 48px;
+    padding-left: 40px;
+    padding-right: 40px;
+    padding-bottom: 80px;
   }
-  .prof2-hero { padding-top: 48px; padding-bottom: 40px; }
-  .prof2-avatar-wrap { width: 100px; height: 100px; }
-  .prof2-name { font-size: 32px; }
+
+  .prof2-web-grid {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+
+  /* Sidebar gauche collante */
+  .prof2-col-left {
+    position: sticky;
+    top: 88px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .prof2-col-right {
+    min-width: 0;
+  }
+
+  .prof2-hero {
+    margin-top: 0;
+    padding-top: 40px;
+    padding-bottom: 32px;
+    border-radius: 24px;
+  }
+
+  .prof2-stats-wrap {
+    padding: 0;
+    margin-top: 0;
+  }
+
+  /* Dans la colonne gauche, le CTA scan prend toute la largeur */
+  .prof2-col-left .prof2-section {
+    padding: 0;
+  }
+  .prof2-col-right .prof2-section {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .prof2-avatar-wrap { width: 96px; height: 96px; }
+  .prof2-name { font-size: 26px; }
+  .prof2-stat-card { height: 96px; }
+
+  .prof2-footer {
+    text-align: left;
+    padding-top: 24px;
+  }
 }
 
 /* =========================================================
