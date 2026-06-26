@@ -427,6 +427,56 @@
 }
 
 /* =========================================================
+   RESPONSIVE — site mode (desktop / tablet)
+   ========================================================= */
+@media (min-width: 640px) {
+  .prof2-screen {
+    height: auto;
+    min-height: 100vh;
+  }
+  /* Cacher la TabBar mobile sur desktop */
+  .prof2-screen .tabbar {
+    display: none;
+  }
+  .prof2-scroll {
+    overflow-y: visible;
+    padding-bottom: 80px;
+    max-width: 600px;
+    margin: 0 auto;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+  .prof2-hero {
+    border-radius: 20px;
+    margin-top: 32px;
+    padding-top: 40px;
+    padding-bottom: 32px;
+  }
+  .prof2-stats-wrap {
+    padding: 0;
+    margin-top: 16px;
+  }
+  .prof2-section {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .prof2-name { font-size: 28px; }
+  .prof2-stat-num { font-size: 24px; }
+  .prof2-stat-card { height: 100px; }
+  .prof2-card { border-radius: 20px; }
+}
+
+@media (min-width: 1024px) {
+  .prof2-scroll {
+    max-width: 640px;
+    padding-top: 20px;
+  }
+  .prof2-hero { padding-top: 48px; padding-bottom: 40px; }
+  .prof2-avatar-wrap { width: 100px; height: 100px; }
+  .prof2-name { font-size: 32px; }
+}
+
+/* =========================================================
    Legacy classes — préservées au cas où d'autres écrans
    référencent encore .prof-* (compat ascendante).
    On les neutralise pour ne pas créer de double rendu.

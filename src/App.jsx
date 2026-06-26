@@ -927,6 +927,7 @@ function ClientApp() {
     'landing', 'shop', 'home', 'product', 'pharmacies', 'pharmacy_detail',
     'brands', 'categories', 'search', 'cart', 'checkout',
     'international', 'help', 'privacy', 'terms', 'mentions',
+    'profile', 'orders', 'favorites', 'addresses',
   ]);
   const isSiteMode = SITE_MODE_ROUTES.has(route.name);
 
