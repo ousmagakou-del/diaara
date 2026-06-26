@@ -176,19 +176,21 @@ export default function SiteLayout({ children, transparentHeader = false, hideFo
               </div>
               <p>La première parapharmacie 100% digitale du Sénégal. Livraison express, produits authentiques.</p>
               <div className="site-footer-app">
-                <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" className="site-store-badge">
-                  <span className="site-store-icon">🍎</span>
-                  <div>
-                    <span className="site-store-pre">Télécharger sur</span>
-                    <span className="site-store-name">App Store</span>
-                  </div>
+                <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" className="site-store-badge-img" aria-label="Télécharger sur l'App Store">
+                  <img
+                    src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/fr-fr?size=250x83"
+                    alt="Télécharger sur l'App Store"
+                    height="40"
+                    style={{ display: 'block' }}
+                  />
                 </a>
-                <span className="site-store-badge site-store-badge--disabled">
-                  <span className="site-store-icon">🤖</span>
-                  <div>
-                    <span className="site-store-pre">Bientôt sur</span>
-                    <span className="site-store-name">Google Play</span>
-                  </div>
+                <span className="site-store-badge-img site-store-badge-img--disabled" aria-label="Bientôt sur Google Play">
+                  <img
+                    src="https://play.google.com/intl/en_us/badges/static/images/badges/fr_badge_web_generic.png"
+                    alt="Bientôt sur Google Play"
+                    height="40"
+                    style={{ display: 'block' }}
+                  />
                 </span>
               </div>
             </div>

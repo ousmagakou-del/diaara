@@ -167,20 +167,20 @@ export default function Landing() {
               <li>💝 Routines beauté personnalisées</li>
             </ul>
             <div className="lp-app-stores">
-              <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" className="lp-store-badge">
-                <span className="lp-store-icon"></span>
-                <div>
-                  <span className="lp-store-pre">Télécharger sur</span>
-                  <span className="lp-store-name">App Store</span>
-                </div>
+              <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" className="lp-store-badge-img" aria-label="Télécharger sur l'App Store">
+                <img
+                  src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/fr-fr?size=250x83"
+                  alt="Télécharger sur l'App Store"
+                  height="48"
+                />
               </a>
-              <a href="#" onClick={(e) => e.preventDefault()} className="lp-store-badge lp-store-disabled">
-                <span className="lp-store-icon-android"></span>
-                <div>
-                  <span className="lp-store-pre">Bientôt sur</span>
-                  <span className="lp-store-name">Google Play</span>
-                </div>
-              </a>
+              <span className="lp-store-badge-img lp-store-badge-img--disabled" aria-label="Bientôt sur Google Play">
+                <img
+                  src="https://play.google.com/intl/en_us/badges/static/images/badges/fr_badge_web_generic.png"
+                  alt="Bientôt sur Google Play"
+                  height="48"
+                />
+              </span>
             </div>
           </div>
           <div className="lp-app-visual">

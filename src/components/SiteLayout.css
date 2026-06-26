@@ -194,30 +194,17 @@
 .site-footer-app {
   display: flex; gap: 10px; flex-wrap: wrap;
 }
-.site-store-badge {
-  display: flex; align-items: center; gap: 10px;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.15);
-  padding: 10px 16px; border-radius: 12px;
-  text-decoration: none; color: #fff;
-  transition: background 0.15s, transform 0.15s;
+.site-store-badge-img {
+  display: inline-block;
+  text-decoration: none;
+  border-radius: 8px;
+  overflow: hidden;
+  line-height: 0;
+  transition: transform 0.15s, box-shadow 0.15s;
 }
-.site-store-badge:hover {
-  background: rgba(255,255,255,0.12); transform: translateY(-1px);
-}
-.site-store-badge--disabled { opacity: 0.5; cursor: not-allowed; }
-.site-store-icon { font-size: 22px; line-height: 1; }
-.site-store-badge div { display: flex; flex-direction: column; line-height: 1.1; }
-.site-store-pre {
-  font-size: 9px; font-weight: 700;
-  opacity: 0.7; letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-.site-store-name {
-  font-size: 15px; font-weight: 900;
-  letter-spacing: -0.3px;
-  margin-top: 2px;
-}
+.site-store-badge-img:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,0.25); }
+.site-store-badge-img--disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+.site-store-badge-img img { display: block; height: 40px; width: auto; }
 
 .site-footer-bottom {
   max-width: 1440px; margin: 60px auto 0;

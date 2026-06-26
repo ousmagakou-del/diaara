@@ -404,30 +404,21 @@
 .lp-app-stores {
   display: flex; gap: 14px; flex-wrap: wrap;
 }
-.lp-store-badge {
-  display: flex; align-items: center; gap: 12px;
-  background: #fff; color: #1A1A1A;
-  padding: 12px 20px; border-radius: 14px;
+.lp-store-badge-img {
+  display: inline-block;
   text-decoration: none;
-  transition: transform 0.15s;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: transform 0.15s, box-shadow 0.15s;
+  line-height: 0;
 }
-.lp-store-badge:hover { transform: translateY(-2px); }
-.lp-store-badge.lp-store-disabled {
-  opacity: 0.5; cursor: not-allowed;
+.lp-store-badge-img:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.18); }
+.lp-store-badge-img--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
 }
-.lp-store-icon::before { content: ''; font-size: 32px; }
-.lp-store-icon, .lp-store-icon-android {
-  width: 28px; height: 28px;
-  background: #1A1A1A;
-  -webkit-mask-position: center; mask-position: center;
-  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
-  -webkit-mask-size: contain; mask-size: contain;
-}
-.lp-store-icon::before { content: '🍎'; font-size: 26px; line-height: 1; }
-.lp-store-icon-android::before { content: '🤖'; font-size: 26px; line-height: 1; }
-.lp-store-badge div { display: flex; flex-direction: column; }
-.lp-store-pre { font-size: 9px; font-weight: 700; opacity: 0.7; letter-spacing: 0.5px; }
-.lp-store-name { font-size: 16px; font-weight: 900; letter-spacing: -0.3px; }
+.lp-store-badge-img img { display: block; height: 48px; width: auto; }
 
 .lp-app-visual {
   position: relative; height: 380px;
