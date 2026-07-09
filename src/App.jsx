@@ -823,6 +823,24 @@ function ClientApp() {
     return <SplashScreen />;
   }
 
+  // ─── ROUTES PUBLIQUES (avant gates auth/skin_type) ───
+  // Ces routes doivent fonctionner SANS être connecté à YARAM.
+  // Ex : /sign/:token → pharmacien qui signe un contrat, il n'a pas de compte client.
+  if (route.name === 'sign') {
+    return (
+      <NavContext.Provider value={{ navigate, goBack, route }}>
+        <UserContext.Provider value={{ user, refreshUser }}>
+          <ErrorBoundary key="sign-eb">
+            <Suspense fallback={<LazyFallback />}>
+              <SignPage />
+            </Suspense>
+          </ErrorBoundary>
+          <Toaster />
+        </UserContext.Provider>
+      </NavContext.Provider>
+    );
+  }
+
   if (!user) {
     return (
       <NavContext.Provider value={{ navigate, goBack, route }}>
