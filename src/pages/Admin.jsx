@@ -48,6 +48,7 @@ const RestockAlertsSection       = lazy(() => import('../admin/RestockAlertsSect
 const PharmacistSessionsSection  = lazy(() => import('../admin/PharmacistSessionsSection'));
 const DistributorsSection        = lazy(() => import('../admin/DistributorsSection'));
 const RgpdExportsSection         = lazy(() => import('../admin/RgpdExportsSection'));
+const SignaturesSection          = lazy(() => import('../admin/SignaturesSection'));
 
 import './Admin.css';
 
@@ -100,6 +101,7 @@ const NAV = [
   { id: 'inventory',   icon: '📦', label: 'Inventaire global' },
   { id: 'restock',     icon: '⚠️', label: 'Alertes restock', badge: true },
   { id: 'history',     icon: '📜', label: 'Historique' },
+  { id: 'signatures',  icon: '✍️', label: 'Signatures contrats' },
   { id: 'settings',    icon: '⚙️', label: 'Paramètres' },
   { id: 'adminusers',  icon: '👥', label: 'Gestion admins' },
   { id: 'adminlogs',   icon: '📜', label: 'Logs activité' },
@@ -419,6 +421,7 @@ export default function Admin() {
           {section === 'pharmacist_sessions'  && <PharmacistSessionsSection />}
           {section === 'distributors'         && <DistributorsSection />}
           {section === 'rgpd'                 && <RgpdExportsSection />}
+          {section === 'signatures'           && <SignaturesSection />}
         </Suspense>
       </main>
 

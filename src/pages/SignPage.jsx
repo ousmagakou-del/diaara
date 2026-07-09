@@ -129,6 +129,12 @@ export default function SignPage() {
     }
 
     setState('success');
+
+    // ─── Auto-envoi des copies signées (destinataire + Ousmane) ───
+    // Non-bloquant : si l'edge function échoue, la signature reste valide,
+    // Ousmane peut renvoyer manuellement depuis l'admin.
+    supabase.functions.invoke('send-signed-copy', { body: { token } })
+      .catch((e) => console.warn('[sign] send-signed-copy failed:', e));
   };
 
   // ═══ RENDERS ═══
