@@ -7,8 +7,7 @@ import { getWhatsAppNumber, getWhatsAppDisplay, safeFormatDate, safeNumber } fro
 import { isIOSApp } from '../lib/platform';
 import { getMyAddresses } from '../lib/supabase';
 import { toast, confirmDialog, promptDialog } from '../lib/toast';
-import TabBar from '../components/TabBar';
-import PullToRefresh from '../components/PullToRefresh';
+import SiteLayout from '../components/SiteLayout';
 import './Profile.css';
 
 export default function Profile() {
@@ -298,324 +297,221 @@ export default function Profile() {
   };
 
   return (
-    <div className="prof2-screen page-anim">
-      <div className="prof2-scroll">
-        <PullToRefresh onRefresh={handlePullRefresh}>
-          <div className="prof2-web-grid">
+    <SiteLayout>
 
-          {/* ══ COLONNE GAUCHE ══ */}
-          <div className="prof2-col-left">
-
-          {/* HERO — Apple Wallet style, blanc clean */}
-          <section className="prof2-hero prof2-anim" style={{ animationDelay: '0ms' }}>
-            <div className="prof2-avatar-wrap">
-              {hasPhoto ? (
-                <img src={avatar} alt={firstName} className="prof2-avatar" loading="lazy" decoding="async" />
-              ) : (
-                <div className="prof2-avatar prof2-avatar-fallback">{initial}</div>
-              )}
+      {/* ══════════════════════════════════════════════
+          HERO BANNER — identité utilisateur full-width
+          ══════════════════════════════════════════════ */}
+      <div className="acct-hero">
+        <div className="acct-hero-inner">
+          {/* Avatar + nom */}
+          <div className="acct-hero-profile">
+            <div className="acct-avatar-wrap">
+              {hasPhoto
+                ? <img src={avatar} alt={firstName} className="acct-avatar" loading="lazy" decoding="async" />
+                : <div className="acct-avatar acct-avatar-fallback">{initial}</div>
+              }
             </div>
-            <h1 className="prof2-name">{firstName}</h1>
-            <p className="prof2-sub">
-              {user?.phone || user?.email || (city ? city : 'Bienvenue sur YARAM')}
-            </p>
-            {memberSince && (
-              <div className="prof2-badge">
-                <span className="prof2-badge-dot" />
-                Membre depuis {memberSince}
-              </div>
-            )}
-            {!memberSince && (
-              <div className="prof2-badge">
-                <span className="prof2-badge-dot" />
-                Membre YARAM
-              </div>
-            )}
-          </section>
-
-          {/* STATS — 3 cards scrollables */}
-          <section className="prof2-stats-wrap prof2-anim" style={{ animationDelay: '50ms' }}>
-            <div className="prof2-stats">
-              <div className="prof2-stat-card">
-                <div className="prof2-stat-icon prof2-stat-icon-green">📦</div>
-                <div className="prof2-stat-num">
-                  {stats.loading ? '—' : (stats.ordersCount ?? 0)}
-                </div>
-                <div className="prof2-stat-lbl">Commandes</div>
-              </div>
-              <div className="prof2-stat-card">
-                <div className="prof2-stat-icon prof2-stat-icon-amber">⭐</div>
-                <div className="prof2-stat-num">
-                  {loyaltyPoints.toLocaleString('fr-FR')}
-                </div>
-                <div className="prof2-stat-lbl">Points</div>
-              </div>
-              <div className="prof2-stat-card">
-                <div className="prof2-stat-icon prof2-stat-icon-pink">💰</div>
-                <div className="prof2-stat-num">
-                  {stats.loading
-                    ? '—'
-                    : `${((stats.savings ?? loyaltyPoints * 10)).toLocaleString('fr-FR')}`}
-                </div>
-                <div className="prof2-stat-lbl">FCFA éco.</div>
+            <div className="acct-hero-info">
+              <h1 className="acct-hero-name">{firstName}</h1>
+              <p className="acct-hero-sub">{user?.phone || user?.email || 'Bienvenue sur YARAM'}</p>
+              <div className="acct-hero-badge">
+                <span className="acct-hero-badge-dot" />
+                {memberSince ? `Membre depuis ${memberSince}` : 'Membre YARAM'}
               </div>
             </div>
-          </section>
-
-          {/* CTA Diagnostic — preservé */}
-          <section className="prof2-section prof2-anim" style={{ animationDelay: '100ms' }}>
-            <button
-              className="prof2-cta prof2-cta-primary"
-              onClick={() => navigate({ name: 'scan', params: {} })}
-              type="button"
-            >
-              <span className="prof2-cta-icon" aria-hidden>📷</span>
-              <div className="prof2-cta-text">
-                <strong>{hasScan ? 'Mettre à jour mon diagnostic' : 'Faire mon 1er scan peau'}</strong>
-                <span>Photo + quiz · 2 min</span>
-              </div>
-              <span className="prof2-cta-arrow" aria-hidden>›</span>
-            </button>
-          </section>
-
-
-          </div>{/* /prof2-col-left */}
-
-          {/* ══ COLONNE DROITE ══ */}
-          <div className="prof2-col-right">
-
-          {/* SECTION : COMPTE */}
-          <section className="prof2-section prof2-anim" style={{ animationDelay: '150ms' }}>
-            <h2 className="prof2-section-title">Compte</h2>
-            <div className="prof2-card">
-              <MenuItem
-                icon="📍"
-                tint="rgba(31,139,76,0.10)"
-                label="Mes adresses"
-                sub={city ? `${neighborhood ? neighborhood + ', ' : ''}${city}` : 'Ajouter une adresse'}
-                onClick={() => navigate({ name: 'addresses', params: {} })}
-              />
-              <div className="prof2-sep" />
-              <MenuItem
-                icon="📦"
-                tint="rgba(31,139,76,0.10)"
-                label="Mes commandes"
-                sub={stats.ordersCount > 0 ? `${stats.ordersCount} commande${stats.ordersCount > 1 ? 's' : ''}` : "Voir l'historique"}
-                onClick={() => navigate('/orders')}
-              />
-              <div className="prof2-sep" />
-              <MenuItem
-                icon="💳"
-                tint="rgba(31,139,76,0.10)"
-                label="Moyens de paiement"
-                sub="Wave · OM · Cash · Carte"
-                onClick={() => navigate({ name: 'payments', params: {} })}
-              />
-              <div className="prof2-sep" />
-              <MenuItem
-                icon="❤️"
-                tint="rgba(232,56,92,0.10)"
-                label="Favoris"
-                sub={stats.favoritesCount > 0 ? `${stats.favoritesCount} produit${stats.favoritesCount > 1 ? 's' : ''}` : 'Tes coups de cœur'}
-                onClick={() => navigate({ name: 'favorites', params: {} })}
-              />
-              <div className="prof2-sep" />
-              <MenuItem
-                icon="⭐"
-                tint="rgba(244,181,58,0.14)"
-                label="Programme fidélité"
-                sub={`${loyaltyPoints.toLocaleString('fr-FR')} points · Voir mes récompenses`}
-                onClick={() => navigate({ name: 'loyalty', params: {} })}
-              />
-              <div className="prof2-sep" />
-              <MenuItem
-                icon="🎁"
-                tint="rgba(244,181,58,0.14)"
-                label="Parrainage"
-                sub="+3 000 FCFA offerts"
-                onClick={() => navigate({ name: 'referral', params: {} })}
-              />
-              <div className="prof2-sep" />
-              <MenuItem
-                icon="🏷️"
-                tint="rgba(232,56,92,0.10)"
-                label="Bons plans"
-                sub="Promos & codes actifs"
-                onClick={() => navigate({ name: 'promos', params: {} })}
-              />
-              <div className="prof2-sep" />
-              <MenuItem
-                icon="📬"
-                tint="rgba(244,181,58,0.14)"
-                label="Newsletter"
-                sub="Promos exclusives & conseils beauté"
-                onClick={() => navigate({ name: 'newsletter', params: {} })}
-              />
-            </div>
-          </section>
-
-          {/* SECTION : DIAGNOSTIC & DONNÉES */}
-          <section className="prof2-section prof2-anim" style={{ animationDelay: '200ms' }}>
-            <h2 className="prof2-section-title">Mon profil peau</h2>
-            <div className="prof2-card">
-              <MenuItem
-                icon="✨"
-                tint="rgba(31,139,76,0.10)"
-                label="Mon diagnostic peau"
-                sub={hasScan ? `Dernier scan : ${safeFormatDate(stats.lastScan?.created_at)}` : 'Faire le scan'}
-                onClick={() => navigate({ name: 'scan', params: {} })}
-              />
-              <div className="prof2-sep" />
-              <MenuItem
-                icon="📈"
-                tint="rgba(31,139,76,0.10)"
-                label="Mon évolution"
-                sub="Avant/Après mensuel"
-                onClick={() => navigate({ name: 'evolution', params: {} })}
-              />
-              <div className="prof2-sep" />
-              <MenuItem
-                icon="👤"
-                tint="rgba(31,139,76,0.10)"
-                label="Mon prénom"
-                sub={user?.first_name || 'À renseigner'}
-                onClick={handleEditFirstName}
-              />
-              <div className="prof2-sep" />
-              <MenuItem
-                icon="📱"
-                tint="rgba(31,139,76,0.10)"
-                label="Mon WhatsApp"
-                sub={user?.phone || 'Requis pour les notifs commande'}
-                onClick={handleEditPhone}
-              />
-            </div>
-          </section>
-
-          {/* SECTION : PRÉFÉRENCES */}
-          <section className="prof2-section prof2-anim" style={{ animationDelay: '250ms' }}>
-            <h2 className="prof2-section-title">Préférences</h2>
-            <div className="prof2-card">
-              {!isIOSApp() && (
-                <>
-                  <MenuItem
-                    icon="🔔"
-                    tint="rgba(244,181,58,0.14)"
-                    label="Notifications"
-                    sub="Push · Rappels · Commandes"
-                    onClick={() => navigate({ name: 'notif_settings', params: {} })}
-                  />
-                  <div className="prof2-sep" />
-                </>
-              )}
-              <MenuItem
-                icon="🌍"
-                tint="rgba(31,139,76,0.10)"
-                label="Langue"
-                sub="Français"
-                onClick={() => toast.info('Bientôt : Wolof + Anglais')}
-              />
-              <div className="prof2-sep" />
-              <MenuItem
-                icon={getTheme() === 'dark' ? '🌙' : '☀️'}
-                tint="rgba(0,0,0,0.06)"
-                label="Apparence"
-                sub={`Mode ${getTheme() === 'dark' ? 'sombre' : 'clair'}`}
-                onClick={() => toggleTheme()}
-                trailing={
-                  <span className={`prof2-toggle ${getTheme() === 'dark' ? 'is-on' : ''}`} aria-hidden>
-                    <span className="prof2-toggle-knob" />
-                  </span>
-                }
-              />
-            </div>
-          </section>
-
-          {/* SECTION : SUPPORT */}
-          <section className="prof2-section prof2-anim" style={{ animationDelay: '300ms' }}>
-            <h2 className="prof2-section-title">Support</h2>
-            <div className="prof2-card">
-              <MenuItem
-                icon="💬"
-                tint="rgba(37,211,102,0.12)"
-                label="WhatsApp YARAM"
-                sub={getWhatsAppDisplay()}
-                href={`https://wa.me/${getWhatsAppNumber()}`}
-              />
-              <div className="prof2-sep" />
-              <MenuItem
-                icon="❓"
-                tint="rgba(31,139,76,0.10)"
-                label="Aide & FAQ"
-                sub="Réponses aux questions courantes"
-                onClick={() => navigate({ name: 'help', params: {} })}
-              />
-              <div className="prof2-sep" />
-              <MenuItem
-                icon="📥"
-                tint="rgba(0,0,0,0.06)"
-                label="Télécharger mes données"
-                sub="Export RGPD (JSON)"
-                onClick={handleExportData}
-              />
-              <div className="prof2-sep" />
-              <MenuItem
-                icon="🏛️"
-                tint="rgba(0,0,0,0.06)"
-                label="Mentions légales"
-                sub="Éditeur, hébergeur, contact"
-                onClick={() => navigate({ name: 'mentions', params: {} })}
-              />
-              <div className="prof2-sep" />
-              <MenuItem
-                icon="🔒"
-                tint="rgba(0,0,0,0.06)"
-                label="Politique de confidentialité"
-                sub="Comment on protège tes données"
-                onClick={() => navigate({ name: 'privacy', params: {} })}
-              />
-              <div className="prof2-sep" />
-              <MenuItem
-                icon="📄"
-                tint="rgba(0,0,0,0.06)"
-                label="Conditions générales"
-                sub="CGV / CGU YARAM"
-                onClick={() => navigate({ name: 'terms', params: {} })}
-              />
-              <div className="prof2-sep" />
-              <MenuItem
-                icon="🗑️"
-                tint="rgba(217,52,43,0.10)"
-                label="Supprimer mon compte"
-                sub="Action irréversible"
-                danger
-                onClick={() => navigate({ name: 'delete_account', params: {} })}
-              />
-              <div className="prof2-sep" />
-              <MenuItem
-                icon="↩️"
-                tint="rgba(217,52,43,0.10)"
-                label="Déconnexion"
-                sub="À bientôt"
-                danger
-                onClick={handleLogout}
-              />
-            </div>
-          </section>
-
-          {/* FOOTER */}
-          <div className="prof2-footer prof2-anim" style={{ animationDelay: '350ms' }}>
-            <div className="prof2-footer-logo">YARAM</div>
-            <div className="prof2-footer-meta">v0.1 · Beauté Sénégal</div>
           </div>
 
-          <div style={{ height: 30 }} />
-          </div>{/* /prof2-col-right */}
-
-          </div>{/* /prof2-web-grid */}
-        </PullToRefresh>
+          {/* Stats inline */}
+          <div className="acct-hero-stats">
+            <div className="acct-hero-stat">
+              <strong>{stats.loading ? '—' : (stats.ordersCount ?? 0)}</strong>
+              <span>Commandes</span>
+            </div>
+            <div className="acct-hero-stat-sep" />
+            <div className="acct-hero-stat">
+              <strong>{loyaltyPoints.toLocaleString('fr-FR')}</strong>
+              <span>Points fidélité</span>
+            </div>
+            <div className="acct-hero-stat-sep" />
+            <div className="acct-hero-stat">
+              <strong>{stats.loading ? '—' : (stats.savings ?? loyaltyPoints * 10).toLocaleString('fr-FR')}</strong>
+              <span>FCFA économisés</span>
+            </div>
+          </div>
+        </div>
       </div>
-      <TabBar active="profile" />
-    </div>
+
+      {/* ══════════════════════════════════════════════
+          SCAN CTA — bande verte sous le hero
+          ══════════════════════════════════════════════ */}
+      <div className="acct-scan-strip">
+        <div className="acct-scan-strip-inner">
+          <button
+            className="acct-scan-btn"
+            onClick={() => navigate({ name: 'scan', params: {} })}
+            type="button"
+          >
+            <span className="acct-scan-icon" aria-hidden>📷</span>
+            <div className="acct-scan-text">
+              <strong>{hasScan ? 'Mettre à jour mon diagnostic peau' : 'Faire mon 1er scan peau'}</strong>
+              <span>Photo + quiz · 2 min</span>
+            </div>
+            <span className="acct-scan-arrow" aria-hidden>›</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════════════════
+          BODY : sidebar nav + contenu principal
+          ══════════════════════════════════════════════ */}
+      <div className="acct-body">
+        <div className="acct-body-inner">
+
+          {/* ── Sidebar navigation ── */}
+          <aside className="acct-sidebar">
+            <nav className="acct-nav">
+              <a href="#compte"  className="acct-nav-link">Compte</a>
+              <a href="#peau"    className="acct-nav-link">Mon profil peau</a>
+              <a href="#prefs"   className="acct-nav-link">Préférences</a>
+              <a href="#support" className="acct-nav-link">Support</a>
+            </nav>
+            <div className="acct-sidebar-sep" />
+            <button className="acct-logout-btn" onClick={handleLogout} type="button">
+              Se déconnecter
+            </button>
+          </aside>
+
+          {/* ── Contenu principal ── */}
+          <main className="acct-main">
+
+            {/* COMPTE */}
+            <section id="compte" className="acct-section">
+              <h2 className="acct-section-title">Compte</h2>
+              <div className="prof2-card">
+                <MenuItem icon="📍" tint="rgba(31,139,76,0.10)" label="Mes adresses"
+                  sub={city ? `${neighborhood ? neighborhood + ', ' : ''}${city}` : 'Ajouter une adresse'}
+                  onClick={() => navigate({ name: 'addresses', params: {} })} />
+                <div className="prof2-sep" />
+                <MenuItem icon="📦" tint="rgba(31,139,76,0.10)" label="Mes commandes"
+                  sub={stats.ordersCount > 0 ? `${stats.ordersCount} commande${stats.ordersCount > 1 ? 's' : ''}` : "Voir l'historique"}
+                  onClick={() => navigate('/orders')} />
+                <div className="prof2-sep" />
+                <MenuItem icon="💳" tint="rgba(31,139,76,0.10)" label="Moyens de paiement"
+                  sub="Wave · OM · Cash · Carte"
+                  onClick={() => navigate({ name: 'payments', params: {} })} />
+                <div className="prof2-sep" />
+                <MenuItem icon="❤️" tint="rgba(232,56,92,0.10)" label="Favoris"
+                  sub={stats.favoritesCount > 0 ? `${stats.favoritesCount} produit${stats.favoritesCount > 1 ? 's' : ''}` : 'Tes coups de cœur'}
+                  onClick={() => navigate({ name: 'favorites', params: {} })} />
+                <div className="prof2-sep" />
+                <MenuItem icon="⭐" tint="rgba(244,181,58,0.14)" label="Programme fidélité"
+                  sub={`${loyaltyPoints.toLocaleString('fr-FR')} points · Voir mes récompenses`}
+                  onClick={() => navigate({ name: 'loyalty', params: {} })} />
+                <div className="prof2-sep" />
+                <MenuItem icon="🎁" tint="rgba(244,181,58,0.14)" label="Parrainage"
+                  sub="+3 000 FCFA offerts"
+                  onClick={() => navigate({ name: 'referral', params: {} })} />
+                <div className="prof2-sep" />
+                <MenuItem icon="🏷️" tint="rgba(232,56,92,0.10)" label="Bons plans"
+                  sub="Promos & codes actifs"
+                  onClick={() => navigate({ name: 'promos', params: {} })} />
+                <div className="prof2-sep" />
+                <MenuItem icon="📬" tint="rgba(244,181,58,0.14)" label="Newsletter"
+                  sub="Promos exclusives & conseils beauté"
+                  onClick={() => navigate({ name: 'newsletter', params: {} })} />
+              </div>
+            </section>
+
+            {/* PROFIL PEAU */}
+            <section id="peau" className="acct-section">
+              <h2 className="acct-section-title">Mon profil peau</h2>
+              <div className="prof2-card">
+                <MenuItem icon="✨" tint="rgba(31,139,76,0.10)" label="Mon diagnostic peau"
+                  sub={hasScan ? `Dernier scan : ${safeFormatDate(stats.lastScan?.created_at)}` : 'Faire le scan'}
+                  onClick={() => navigate({ name: 'scan', params: {} })} />
+                <div className="prof2-sep" />
+                <MenuItem icon="📈" tint="rgba(31,139,76,0.10)" label="Mon évolution"
+                  sub="Avant/Après mensuel"
+                  onClick={() => navigate({ name: 'evolution', params: {} })} />
+                <div className="prof2-sep" />
+                <MenuItem icon="👤" tint="rgba(31,139,76,0.10)" label="Mon prénom"
+                  sub={user?.first_name || 'À renseigner'}
+                  onClick={handleEditFirstName} />
+                <div className="prof2-sep" />
+                <MenuItem icon="📱" tint="rgba(31,139,76,0.10)" label="Mon WhatsApp"
+                  sub={user?.phone || 'Requis pour les notifs commande'}
+                  onClick={handleEditPhone} />
+              </div>
+            </section>
+
+            {/* PRÉFÉRENCES */}
+            <section id="prefs" className="acct-section">
+              <h2 className="acct-section-title">Préférences</h2>
+              <div className="prof2-card">
+                {!isIOSApp() && (
+                  <>
+                    <MenuItem icon="🔔" tint="rgba(244,181,58,0.14)" label="Notifications"
+                      sub="Push · Rappels · Commandes"
+                      onClick={() => navigate({ name: 'notif_settings', params: {} })} />
+                    <div className="prof2-sep" />
+                  </>
+                )}
+                <MenuItem icon="🌍" tint="rgba(31,139,76,0.10)" label="Langue"
+                  sub="Français"
+                  onClick={() => toast.info('Bientôt : Wolof + Anglais')} />
+                <div className="prof2-sep" />
+                <MenuItem
+                  icon={getTheme() === 'dark' ? '🌙' : '☀️'}
+                  tint="rgba(0,0,0,0.06)"
+                  label="Apparence"
+                  sub={`Mode ${getTheme() === 'dark' ? 'sombre' : 'clair'}`}
+                  onClick={() => toggleTheme()}
+                  trailing={
+                    <span className={`prof2-toggle ${getTheme() === 'dark' ? 'is-on' : ''}`} aria-hidden>
+                      <span className="prof2-toggle-knob" />
+                    </span>
+                  }
+                />
+              </div>
+            </section>
+
+            {/* SUPPORT */}
+            <section id="support" className="acct-section">
+              <h2 className="acct-section-title">Support</h2>
+              <div className="prof2-card">
+                <MenuItem icon="💬" tint="rgba(37,211,102,0.12)" label="WhatsApp YARAM"
+                  sub={getWhatsAppDisplay()} href={`https://wa.me/${getWhatsAppNumber()}`} />
+                <div className="prof2-sep" />
+                <MenuItem icon="❓" tint="rgba(31,139,76,0.10)" label="Aide & FAQ"
+                  sub="Réponses aux questions courantes"
+                  onClick={() => navigate({ name: 'help', params: {} })} />
+                <div className="prof2-sep" />
+                <MenuItem icon="📥" tint="rgba(0,0,0,0.06)" label="Télécharger mes données"
+                  sub="Export RGPD (JSON)" onClick={handleExportData} />
+                <div className="prof2-sep" />
+                <MenuItem icon="🏛️" tint="rgba(0,0,0,0.06)" label="Mentions légales"
+                  sub="Éditeur, hébergeur, contact"
+                  onClick={() => navigate({ name: 'mentions', params: {} })} />
+                <div className="prof2-sep" />
+                <MenuItem icon="🔒" tint="rgba(0,0,0,0.06)" label="Politique de confidentialité"
+                  sub="Comment on protège tes données"
+                  onClick={() => navigate({ name: 'privacy', params: {} })} />
+                <div className="prof2-sep" />
+                <MenuItem icon="📄" tint="rgba(0,0,0,0.06)" label="Conditions générales"
+                  sub="CGV / CGU YARAM"
+                  onClick={() => navigate({ name: 'terms', params: {} })} />
+                <div className="prof2-sep" />
+                <MenuItem icon="🗑️" tint="rgba(217,52,43,0.10)" label="Supprimer mon compte"
+                  sub="Action irréversible" danger
+                  onClick={() => navigate({ name: 'delete_account', params: {} })} />
+              </div>
+            </section>
+
+          </main>
+        </div>
+      </div>
+
+    </SiteLayout>
   );
 }

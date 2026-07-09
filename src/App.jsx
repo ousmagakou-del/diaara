@@ -12,6 +12,7 @@ import ProductPage from './pages/ProductPage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import BrandPage from './pages/BrandPage';
+import SignPage from './pages/SignPage';
 import Search from './pages/Search';
 import Product from './pages/Product';
 import Cart from './pages/Cart';
@@ -139,6 +140,7 @@ function pathToRoute(pathname, search = '') {
 
   if (parts[0] === 'product' && parts[1]) return { name: 'product', params: { id: parts[1] } };
   if (parts[0] === 'brand' && parts[1]) return { name: 'brand', params: { id: parts[1] } };
+  if (parts[0] === 'sign' && parts[1]) return { name: 'sign', params: { token: parts[1] } };
   if (parts[0] === 'pharmacy' && parts[1]) return { name: 'pharmacy_detail', params: { id: parts[1] } };
   if (parts[0] === 'order' && parts[1]) return { name: 'order_tracking', params: { orderId: parts[1] } };
   if (parts[0] === 'scan' && parts[1] === 'result' && parts[2]) return { name: 'scan_result', params: { scanId: parts[2] } };
@@ -865,6 +867,7 @@ function ClientApp() {
     case 'checkout_legacy': page = <Checkout items={route.params.items} paymentMethod={route.params.paymentMethod} />; break;
     case 'brand': page = <BrandPage />; break;
     case 'brand_detail': page = <BrandPage />; break;
+    case 'sign': page = <SignPage />; break;
     case 'payment': page = <Payment orderId={route.params.orderId} />; break;
     case 'order_tracking': page = <OrderTracking orderId={route.params.orderId} />; break;
     case 'orders': page = <Orders />; break;
