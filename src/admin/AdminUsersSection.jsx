@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { getAdminSession } from '../lib/adminAuth';
+import { getAdminSession, getAdminToken } from '../lib/adminAuth';
 import { fmtDateTime } from '../lib/exports';
 import { confirmDialog } from '../lib/toast';
 
 const ROLES = [
-  { id: 'super_admin', label: 'Super Admin',         desc: 'Acces total + gestion des admins' },
+  { id: 'super_admin', label: 'Super Admin',         desc: 'Accès total + gestion des admins' },
   { id: 'admin',       label: 'Administrateur',      desc: 'Tous les modules sauf gestion admins' },
-  { id: 'moderator',   label: 'Moderateur',          desc: 'Moderation avis + validation produits' },
-  { id: 'dermato',     label: 'Dermato partenaire',  desc: 'Validation des scans peau uniquement' },
+  { id: 'commercial',  label: '💼 Commercial',       desc: 'Signatures contrats, pharmacies, users, dashboard (lead qualification)' },
+  { id: 'moderator',   label: 'Modérateur',          desc: 'Modération avis + validation produits (à venir)' },
+  { id: 'dermato',     label: 'Dermato partenaire',  desc: 'Validation des scans peau uniquement (à venir)' },
 ];
 
 export default function AdminUsersSection() {
@@ -29,31 +30,33 @@ export default function AdminUsersSection() {
 
   const refresh = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('admin_users')
-      .select('id, email, name, role, active, last_login_at, login_count, failed_attempts, locked_until, created_at, notes')
-      .order('created_at', { ascending: false });
+    const token = getAdminToken();
+    if (!token) {
+      flash('Session admin expirée', 'err');
+      setLoading(false);
+      return;
+    }
 
+    // Passe par le RPC admin_list_all_admins (SECURITY DEFINER, token requis)
+    const { data, error } = await supabase.rpc('admin_list_all_admins', { p_admin_token: token });
     if (error) console.warn('[AdminUsersSection] fetch error:', error.message);
-    setAdmins(data || []);
 
-    // Trouver MON role dans la DB (ne fait PAS confiance a la session)
+    const list = data?.admins || [];
+    setAdmins(list);
+
+    // Trouver MON role dans la liste (ne fait pas confiance à la session seule)
     let foundRole = null;
-
-    // Try 1 : match par session.id
-    if (session?.id && data) {
-      const me = data.find(a => a.id === session.id);
+    if (session?.id) {
+      const me = list.find(a => a.id === session.id);
       if (me) foundRole = me.role;
     }
-
-    // Try 2 : match par session.email
-    if (!foundRole && session?.email && data) {
-      const me = data.find(a => a.email?.toLowerCase() === session.email.toLowerCase());
+    if (!foundRole && session?.email) {
+      const me = list.find(a => a.email?.toLowerCase() === session.email.toLowerCase());
       if (me) foundRole = me.role;
     }
+    // Fallback : si le RPC a refusé (non super_admin) on utilise la session
+    if (!foundRole && session?.role) foundRole = session.role;
 
-    // Pas de fallback hardcoded : si on n'a pas trouve le role, on laisse null.
-    // L'UI affichera "Verification de tes permissions..." puis "lecture seule".
     setMyRole(foundRole);
     setLoading(false);
   };
@@ -74,11 +77,11 @@ export default function AdminUsersSection() {
   };
 
   const handleCreate = async (form) => {
-    const callerId = await getCallerId();
-    if (!callerId) return flash('Session corrompue, reconnecte-toi', 'err');
+    const token = getAdminToken();
+    if (!token) return flash('Session admin expirée, reconnecte-toi', 'err');
 
-    const { data, error } = await supabase.rpc('create_admin', {
-      p_caller_id: callerId,
+    const { data, error } = await supabase.rpc('admin_create_user', {
+      p_admin_token: token,
       p_email: form.email,
       p_name: form.name,
       p_pin: form.pin,
@@ -87,7 +90,7 @@ export default function AdminUsersSection() {
     });
     if (error) return flash('Erreur : ' + error.message, 'err');
     if (data?.success) {
-      flash('Admin cree');
+      flash(`✅ Compte ${form.role} créé — PIN à communiquer manuellement : ${form.pin}`);
       setShowCreate(false);
       refresh();
     } else {
@@ -96,18 +99,18 @@ export default function AdminUsersSection() {
   };
 
   const handleToggleActive = async (target) => {
-    if (!await confirmDialog(`${target.active ? 'Desactiver' : 'Reactiver'} ${target.name} ?`)) return;
-    const callerId = await getCallerId();
-    if (!callerId) return flash('Session corrompue', 'err');
+    if (!await confirmDialog(`${target.active ? 'Désactiver' : 'Réactiver'} ${target.name} ?`)) return;
+    const token = getAdminToken();
+    if (!token) return flash('Session admin expirée', 'err');
 
-    const { data, error } = await supabase.rpc('toggle_admin_active', {
-      p_caller_id: callerId,
-      p_target_id: target.id,
+    const { data, error } = await supabase.rpc('admin_toggle_user_active', {
+      p_admin_token: token,
+      p_user_id: target.id,
       p_active: !target.active,
     });
     if (error) return flash('Erreur : ' + error.message, 'err');
     if (data?.success) {
-      flash(`${target.name} ${target.active ? 'desactive' : 'reactive'}`);
+      flash(`${target.name} ${target.active ? 'désactivé' : 'réactivé'}`);
       refresh();
     } else {
       flash((data?.error || 'Erreur'), 'err');

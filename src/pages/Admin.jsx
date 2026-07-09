@@ -60,52 +60,67 @@ function AdminSectionFallback() {
   );
 }
 
+// Rôles :
+// - super_admin : tout accès
+// - admin : tout sauf gestion des admins
+// - commercial : signatures, pharmacies (prospect), users (CRM), skinscans, dashboard
+// - moderator : reviews, counterfeit, support (à venir)
+// Si `roles` non défini sur un item, seul super_admin voit.
+const ROLES_ALL = ['super_admin', 'admin'];
+const ROLES_ALL_PLUS_COMMERCIAL = ['super_admin', 'admin', 'commercial'];
+
 const NAV = [
-  { id: 'dashboard',   icon: '📊', label: "Vue d'ensemble" },
-  { id: 'orders',      icon: '📦', label: 'Commandes', badge: true },
-  { id: 'stats',       icon: '📈', label: 'Statistiques' },
-  { id: 'pharmacies',  icon: '🏥', label: 'Pharmacies' },
-  { id: 'performance', icon: '📊', label: 'Performance' },
-  { id: 'skinscans',   icon: '🧠', label: 'Stats Scans IA' },
-  { id: 'commissions', icon: '💰', label: 'Commissions' },
-  { id: 'distributors', icon: '🏭', label: 'Distributeurs' },
-  { id: 'finances',    icon: '💸', label: 'Finances' },
-  { id: 'loyalty',     icon: '💚', label: 'Fidélité' },
-  { id: 'subscriptions', icon: '👑', label: 'Abonnements YARAM+', badge: true },
-  { id: 'notifications', icon: '📲', label: 'Notifications WhatsApp' },
-  { id: 'push',          icon: '🔔', label: 'Push iOS' },
-  { id: 'newsletter',    icon: '📬', label: 'Newsletter' },
-  { id: 'intl_requests', icon: '🌍', label: 'Demandes Intl' },
-  { id: 'products',    icon: '🛍️', label: 'Produits' },
-  { id: 'validation',  icon: '✨', label: 'Validation produits', badge: true },
-  { id: 'brands',      icon: '🏷️', label: 'Marques' },
-  { id: 'banners',     icon: '🎨', label: 'Bannières' },
-  { id: 'stories',     icon: '📸', label: 'Stories' },
-  { id: 'articles',    icon: '📝', label: 'Articles' },
-  { id: 'routines',    icon: '🧴', label: 'Routines beauté' },
-  { id: 'categories',  icon: '📂', label: 'Catégories' },
-  { id: 'promos',      icon: '🎁', label: 'Codes promo' },
-  { id: 'marketing',   icon: '📣', label: 'Marketing' },
-  { id: 'imports',     icon: '✈️', label: 'Imports' },
-  { id: 'splash',      icon: '✨', label: 'Splash Promos' },
-  { id: 'reviews',     icon: '⭐', label: 'Modération avis' },
-  { id: 'product_reviews', icon: '⭐', label: 'Modération avis produits' },
-  { id: 'counterfeit', icon: '🚨', label: 'Contrefaçons', badge: true },
-  { id: 'users',       icon: '👥', label: 'Utilisatrices' },
-  { id: 'support',     icon: '🆘', label: 'Tickets support', badge: true },
-  { id: 'verify',      icon: '🔍', label: 'Vérifications Tier 3' },
-  { id: 'rgpd',        icon: '📥', label: 'Demandes RGPD', badge: true },
-  { id: 'deliveries',  icon: '🛵', label: 'Livraisons' },
-  { id: 'staff',       icon: '👷', label: 'Équipe' },
-  { id: 'pharmacist_sessions', icon: '🔐', label: 'Sessions pharmaciens' },
-  { id: 'inventory',   icon: '📦', label: 'Inventaire global' },
-  { id: 'restock',     icon: '⚠️', label: 'Alertes restock', badge: true },
-  { id: 'history',     icon: '📜', label: 'Historique' },
-  { id: 'signatures',  icon: '✍️', label: 'Signatures contrats' },
-  { id: 'settings',    icon: '⚙️', label: 'Paramètres' },
-  { id: 'adminusers',  icon: '👥', label: 'Gestion admins' },
-  { id: 'adminlogs',   icon: '📜', label: 'Logs activité' },
+  { id: 'dashboard',   icon: '📊', label: "Vue d'ensemble", roles: ROLES_ALL_PLUS_COMMERCIAL },
+  { id: 'orders',      icon: '📦', label: 'Commandes', badge: true, roles: ROLES_ALL },
+  { id: 'stats',       icon: '📈', label: 'Statistiques', roles: ROLES_ALL },
+  { id: 'pharmacies',  icon: '🏥', label: 'Pharmacies', roles: ROLES_ALL_PLUS_COMMERCIAL },
+  { id: 'performance', icon: '📊', label: 'Performance', roles: ROLES_ALL },
+  { id: 'skinscans',   icon: '🧠', label: 'Stats Scans IA', roles: ROLES_ALL_PLUS_COMMERCIAL },
+  { id: 'commissions', icon: '💰', label: 'Commissions', roles: ROLES_ALL },
+  { id: 'distributors', icon: '🏭', label: 'Distributeurs', roles: ROLES_ALL },
+  { id: 'finances',    icon: '💸', label: 'Finances', roles: ROLES_ALL },
+  { id: 'loyalty',     icon: '💚', label: 'Fidélité', roles: ROLES_ALL },
+  { id: 'subscriptions', icon: '👑', label: 'Abonnements YARAM+', badge: true, roles: ROLES_ALL },
+  { id: 'notifications', icon: '📲', label: 'Notifications WhatsApp', roles: ROLES_ALL },
+  { id: 'push',          icon: '🔔', label: 'Push iOS', roles: ROLES_ALL },
+  { id: 'newsletter',    icon: '📬', label: 'Newsletter', roles: ROLES_ALL },
+  { id: 'intl_requests', icon: '🌍', label: 'Demandes Intl', roles: ROLES_ALL },
+  { id: 'products',    icon: '🛍️', label: 'Produits', roles: ROLES_ALL },
+  { id: 'validation',  icon: '✨', label: 'Validation produits', badge: true, roles: ROLES_ALL },
+  { id: 'brands',      icon: '🏷️', label: 'Marques', roles: ROLES_ALL },
+  { id: 'banners',     icon: '🎨', label: 'Bannières', roles: ROLES_ALL },
+  { id: 'stories',     icon: '📸', label: 'Stories', roles: ROLES_ALL },
+  { id: 'articles',    icon: '📝', label: 'Articles', roles: ROLES_ALL },
+  { id: 'routines',    icon: '🧴', label: 'Routines beauté', roles: ROLES_ALL },
+  { id: 'categories',  icon: '📂', label: 'Catégories', roles: ROLES_ALL },
+  { id: 'promos',      icon: '🎁', label: 'Codes promo', roles: ROLES_ALL },
+  { id: 'marketing',   icon: '📣', label: 'Marketing', roles: ROLES_ALL },
+  { id: 'imports',     icon: '✈️', label: 'Imports', roles: ROLES_ALL },
+  { id: 'splash',      icon: '✨', label: 'Splash Promos', roles: ROLES_ALL },
+  { id: 'reviews',     icon: '⭐', label: 'Modération avis', roles: ROLES_ALL },
+  { id: 'product_reviews', icon: '⭐', label: 'Modération avis produits', roles: ROLES_ALL },
+  { id: 'counterfeit', icon: '🚨', label: 'Contrefaçons', badge: true, roles: ROLES_ALL },
+  { id: 'users',       icon: '👥', label: 'Utilisatrices', roles: ROLES_ALL_PLUS_COMMERCIAL },
+  { id: 'support',     icon: '🆘', label: 'Tickets support', badge: true, roles: ROLES_ALL },
+  { id: 'verify',      icon: '🔍', label: 'Vérifications Tier 3', roles: ROLES_ALL },
+  { id: 'rgpd',        icon: '📥', label: 'Demandes RGPD', badge: true, roles: ROLES_ALL },
+  { id: 'deliveries',  icon: '🛵', label: 'Livraisons', roles: ROLES_ALL },
+  { id: 'staff',       icon: '👷', label: 'Équipe', roles: ROLES_ALL },
+  { id: 'pharmacist_sessions', icon: '🔐', label: 'Sessions pharmaciens', roles: ROLES_ALL },
+  { id: 'inventory',   icon: '📦', label: 'Inventaire global', roles: ROLES_ALL },
+  { id: 'restock',     icon: '⚠️', label: 'Alertes restock', badge: true, roles: ROLES_ALL },
+  { id: 'history',     icon: '📜', label: 'Historique', roles: ROLES_ALL },
+  { id: 'signatures',  icon: '✍️', label: 'Signatures contrats', roles: ROLES_ALL_PLUS_COMMERCIAL },
+  { id: 'settings',    icon: '⚙️', label: 'Paramètres', roles: ['super_admin'] },
+  { id: 'adminusers',  icon: '👥', label: 'Gestion admins', roles: ['super_admin'] },
+  { id: 'adminlogs',   icon: '📜', label: 'Logs activité', roles: ['super_admin'] },
 ];
+
+// Helper : filtrer NAV selon le rôle courant
+function filterNavByRole(role) {
+  const r = role || 'admin';
+  return NAV.filter(item => !item.roles || item.roles.includes(r));
+}
 
 export default function Admin() {
   const [session, setSession] = useState(() => getAdminSession());
@@ -328,8 +343,19 @@ export default function Admin() {
             <div className="adm-side-role">{session.name || 'Admin'}</div>
           </div>
         </div>
+        {session.role && session.role !== 'super_admin' && (
+          <div style={{
+            margin: '0 16px 12px', padding: '8px 12px',
+            background: session.role === 'commercial' ? '#EAF7F0' : '#F4F4F2',
+            color: session.role === 'commercial' ? '#0E5B33' : '#6B7280',
+            borderRadius: 999, fontSize: 11, fontWeight: 800, textAlign: 'center',
+            letterSpacing: 0.3,
+          }}>
+            {session.role === 'commercial' ? '💼 COMMERCIAL' : session.role.toUpperCase()}
+          </div>
+        )}
         <nav className="adm-nav">
-          {NAV.map(item => (
+          {filterNavByRole(session.role).map(item => (
             <button
               key={item.id}
               className={`adm-nav-item ${section === item.id ? 'active' : ''}`}
@@ -376,7 +402,35 @@ export default function Admin() {
       </aside>
 
       <main className="adm-main">
+        {/* Gate rôle : si la section n'est pas autorisée pour ce rôle, on affiche
+            un message et on force le retour au dashboard. */}
+        {(() => {
+          const allowedIds = new Set(filterNavByRole(session.role).map(i => i.id));
+          if (!allowedIds.has(section)) {
+            return (
+              <div style={{ padding: 60, textAlign: 'center' }}>
+                <div style={{ fontSize: 48, marginBottom: 12 }}>🔒</div>
+                <h2 style={{ margin: 0, fontSize: 22, fontWeight: 900 }}>Accès restreint</h2>
+                <p style={{ color: '#6B7280', margin: '6px 0 20px', fontSize: 14 }}>
+                  Ton rôle <strong>{session.role || 'admin'}</strong> ne permet pas d'accéder à cette section.
+                </p>
+                <button
+                  onClick={() => setSection('dashboard')}
+                  style={{ padding: '12px 20px', background: '#1F8B4C', color: '#fff', border: 'none', borderRadius: 999, fontWeight: 800, cursor: 'pointer' }}
+                >
+                  ← Retour Dashboard
+                </button>
+              </div>
+            );
+          }
+          return null;
+        })()}
         <Suspense fallback={<AdminSectionFallback />}>
+          {(() => {
+            const allowedIds = new Set(filterNavByRole(session.role).map(i => i.id));
+            if (!allowedIds.has(section)) return null;
+            return (
+              <>
           {section === 'dashboard'     && <DashboardSection setSection={setSection} />}
           {section === 'orders'        && <OrdersSection />}
           {section === 'stats'         && <StatsSection />}
@@ -422,6 +476,9 @@ export default function Admin() {
           {section === 'distributors'         && <DistributorsSection />}
           {section === 'rgpd'                 && <RgpdExportsSection />}
           {section === 'signatures'           && <SignaturesSection />}
+              </>
+            );
+          })()}
         </Suspense>
       </main>
 

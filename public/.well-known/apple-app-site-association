@@ -30,6 +30,16 @@
             "comment": "Dashboard pharmacien — navigateur"
           },
           {
+            "/": "/sign/*",
+            "exclude": true,
+            "comment": "Pages de signature électronique — toujours dans Safari (les destinataires ne sont pas des utilisateurs YARAM)"
+          },
+          {
+            "/": "/sign",
+            "exclude": true,
+            "comment": "Page /sign racine — Safari"
+          },
+          {
             "/": "/sw.js",
             "exclude": true,
             "comment": "Service worker — toujours navigateur"
