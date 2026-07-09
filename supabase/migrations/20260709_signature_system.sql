@@ -67,8 +67,8 @@ BEGIN
 
   SELECT COALESCE(jsonb_agg(jsonb_build_object(
     'id', id, 'name', name, 'category', category, 'fields_schema', fields_schema, 'active', active
-  )), '[]'::jsonb) INTO v_list
-  FROM signature_templates WHERE active = true ORDER BY name;
+  ) ORDER BY name), '[]'::jsonb) INTO v_list
+  FROM signature_templates WHERE active = true;
 
   RETURN jsonb_build_object('success', true, 'templates', v_list);
 END; $$;
