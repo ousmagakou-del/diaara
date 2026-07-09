@@ -830,11 +830,14 @@ function ClientApp() {
     return (
       <NavContext.Provider value={{ navigate, goBack, route }}>
         <UserContext.Provider value={{ user, refreshUser }}>
-          <ErrorBoundary key="sign-eb">
-            <Suspense fallback={<LazyFallback />}>
-              <SignPage />
-            </Suspense>
-          </ErrorBoundary>
+          {/* app-shell--site : libère le scroll natif via html:has() dans index.css */}
+          <div className="app-shell app-shell--site">
+            <ErrorBoundary key="sign-eb">
+              <Suspense fallback={<LazyFallback />}>
+                <SignPage />
+              </Suspense>
+            </ErrorBoundary>
+          </div>
           <Toaster />
         </UserContext.Provider>
       </NavContext.Provider>
