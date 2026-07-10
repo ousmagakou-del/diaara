@@ -14,12 +14,13 @@ const CANCELLABLE_STATUSES = new Set(['pending', 'pending_payment', 'confirmed',
 const REPORTABLE_FALLBACK_WA = 'contactez-nous';
 
 /* ───────────── Flows (étapes timeline) ───────────── */
-// Local : commande Dakar (J+1)
+// Local : commande Dakar (J+1) — aligné 1:1 sur l'app native (5 étapes)
 const STEPS_LOCAL = [
-  { id: 'paid',      icon: '', label: 'Commande confirmée',  sub: 'Paiement reçu' },
-  { id: 'preparing', icon: '', label: 'En préparation',       sub: 'La pharmacie prépare ton colis' },
-  { id: 'shipped',   icon: '', label: 'En route',             sub: 'Ton livreur arrive' },
-  { id: 'delivered', icon: '', label: 'Livrée',               sub: 'Merci pour ta confiance' },
+  { id: 'placed',    icon: '', label: 'Commande passée', sub: 'Reçue par YARAM' },
+  { id: 'paid',      icon: '', label: 'Confirmée',       sub: 'Paiement validé' },
+  { id: 'preparing', icon: '', label: 'En préparation',  sub: 'Pharmacie partenaire' },
+  { id: 'shipped',   icon: '', label: 'En livraison',    sub: 'Le livreur arrive' },
+  { id: 'delivered', icon: '', label: 'Livrée',          sub: 'Merci pour ta confiance' },
 ];
 
 // Preorder : import (15j)
@@ -35,21 +36,21 @@ const STEPS_PREORDER = [
 
 /* ───────────── Hero (gros bloc en haut) ───────────── */
 function statusHero(status, isPreorder) {
-  // returns { tone, icon, title, subtitle }
+  // returns { tone, icon, title, subtitle } — libellés alignés sur l'app native
   if (status === 'delivered') {
-    return { tone: 'success', icon: '', title: 'Livré !',                subtitle: 'Ton colis est bien arrivé' };
+    return { tone: 'success', icon: '', title: 'Livrée',                  subtitle: 'Merci pour ta confiance' };
   }
   if (status === 'shipped' || status === 'in_delivery') {
-    return { tone: 'route',   icon: '', title: 'En route',                subtitle: 'Ton livreur arrive bientôt' };
+    return { tone: 'route',   icon: '', title: 'En livraison',            subtitle: 'Le livreur arrive' };
   }
   if (status === 'preparing') {
-    return { tone: 'prep',    icon: '', title: 'En préparation',          subtitle: 'La pharmacie prépare ta commande' };
+    return { tone: 'prep',    icon: '', title: 'En préparation',          subtitle: 'Pharmacie partenaire' };
   }
   if (status === 'awaiting_balance') {
     return { tone: 'warn',    icon: '', title: 'Solde à régler',          subtitle: 'Ton import est arrivé — règle le solde' };
   }
   if (status === 'arrived_local') {
-    return { tone: 'route',   icon: '', title: 'Arrivé à Dakar',         subtitle: 'Bientôt prêt pour la livraison' };
+    return { tone: 'route',   icon: '', title: 'Arrivé à Dakar',          subtitle: 'Bientôt prêt pour la livraison' };
   }
   if (status === 'in_transit_intl') {
     return { tone: 'transit', icon: '', title: 'En route vers Dakar',     subtitle: 'Transport international en cours' };
@@ -57,14 +58,17 @@ function statusHero(status, isPreorder) {
   if (status === 'awaiting_supplier') {
     return { tone: 'prep',    icon: '', title: 'Commande fournisseur',    subtitle: 'YARAM commande chez le fournisseur' };
   }
+  if (status === 'awaiting_verification') {
+    return { tone: 'warn',    icon: '', title: 'Vérification',            subtitle: 'On vérifie ton paiement' };
+  }
   if (status === 'pending_payment' || status === 'pending') {
     return { tone: 'warn',    icon: '', title: 'En attente de paiement',  subtitle: 'On attend la confirmation' };
   }
   if (status === 'paid' || status === 'confirmed') {
-    return { tone: 'prep',    icon: '', title: isPreorder ? 'Acompte reçu' : 'Commande confirmée', subtitle: isPreorder ? 'YARAM va lancer la commande' : 'Préparation imminente' };
+    return { tone: 'prep',    icon: '', title: isPreorder ? 'Acompte reçu' : 'Confirmée', subtitle: isPreorder ? 'YARAM va lancer la commande' : 'Paiement validé' };
   }
   if (status === 'cancelled') {
-    return { tone: 'cancel',  icon: '', title: 'Annulée',                 subtitle: 'Cette commande a été annulée' };
+    return { tone: 'cancel',  icon: '', title: 'Commande annulée',        subtitle: 'Contacte le support si besoin' };
   }
   return { tone: 'prep', icon: '', title: 'En cours', subtitle: 'Mise à jour bientôt' };
 }
@@ -300,7 +304,24 @@ export default function OrderTracking({ orderId }) {
 
   const isPreorderOrder = order.is_preorder === true;
   const STEPS = isPreorderOrder ? STEPS_PREORDER : STEPS_LOCAL;
-  const currentStep = STEPS.findIndex(s => s.id === order.status);
+  // Aligné native : mapping status -> index dans STEPS_LOCAL (5 etapes)
+  const localIdx = (() => {
+    if (isPreorderOrder) return STEPS.findIndex(s => s.id === order.status);
+    if (order.status === 'delivered') return 4;
+    if (order.status === 'shipped' || order.status === 'in_delivery') return 3;
+    if (order.status === 'preparing') return 2;
+    if (order.status === 'paid' || order.status === 'confirmed' || order.status === 'awaiting_verification') return 1;
+    if (order.status === 'pending_payment' || order.status === 'pending') return 0;
+    if (order.status === 'cancelled') {
+      if (order.delivered_at) return 4;
+      if (order.shipped_at || order.out_for_delivery_at) return 3;
+      if (order.prepared_at) return 2;
+      if (order.paid_at || order.payment_confirmed_at) return 1;
+      return 0;
+    }
+    return 0;
+  })();
+  const currentStep = localIdx;
   const hasGPS = tracking?.current_lat && (order.status === 'shipped' || order.status === 'in_delivery');
   const lastUpdate = tracking?.last_update ? new Date(tracking.last_update) : null;
   const secondsAgo = lastUpdate ? Math.floor((Date.now() - lastUpdate.getTime()) / 1000) : null;
@@ -427,9 +448,9 @@ export default function OrderTracking({ orderId }) {
           <h3 className="track-card-title">Suivi de ta commande</h3>
           <ol className="track-tl">
             {STEPS.map((s, i) => {
-              const isDone = i < currentStep || (i === currentStep && order.status === 'delivered');
-              const isCurrent = i === currentStep && order.status !== 'delivered';
-              const isFuture = i > currentStep;
+              const isCancelledOrder = order.status === 'cancelled';
+              const isDone = !isCancelledOrder && (i < currentStep || (i === currentStep && order.status === 'delivered'));
+              const isCurrent = !isCancelledOrder && i === currentStep && order.status !== 'delivered';
               const cls = isDone ? 'done' : isCurrent ? 'current' : 'future';
               return (
                 <li key={s.id} className={`track-tl-step track-tl-${cls}`} style={{ animationDelay: `${i * 80}ms` }}>

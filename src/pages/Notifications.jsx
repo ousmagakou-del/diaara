@@ -98,7 +98,7 @@ const BUCKET_LABEL = {
 };
 const BUCKET_ORDER = ['today', 'yesterday', 'week', 'older'];
 
-// ─── Catégorie (Gmail-style sidebar filter) ────────────────────────────
+// ─── Catégorie (aligné natif : Commandes / Promotions / Rappels routine) ────
 function categoryOf(n) {
   const t = (n.type || '').toLowerCase();
   const title = (n.title || '').toLowerCase();
@@ -106,17 +106,22 @@ function categoryOf(n) {
       || title.includes('commande') || title.includes('livr') || title.includes('paiement')) {
     return 'orders';
   }
-  if (t === 'promo' || title.includes('promo') || title.includes('code') || title.includes('offre')) {
+  if (t === 'promo' || title.includes('promo') || title.includes('code') || title.includes('offre') || title.includes('solde')) {
     return 'promos';
+  }
+  if (t === 'reminder' || title.includes('rappel') || title.includes('routine') || title.includes('soin')) {
+    return 'reminders';
   }
   return 'system';
 }
 
+// Onglets alignés sur les préférences native (notif_orders / notif_promos / notif_reminders)
 const CATEGORY_TABS = [
-  { id: 'all',    label: 'Toutes',    icon: '' },
-  { id: 'orders', label: 'Commandes', icon: '' },
-  { id: 'promos', label: 'Promos',    icon: '' },
-  { id: 'system', label: 'Système',   icon: '' },
+  { id: 'all',       label: 'Toutes',      icon: '' },
+  { id: 'orders',    label: 'Commandes',   icon: '' },
+  { id: 'promos',    label: 'Promotions',  icon: '' },
+  { id: 'reminders', label: 'Rappels',     icon: '' },
+  { id: 'system',    label: 'Système',     icon: '' },
 ];
 
 export default function Notifications() {
@@ -226,7 +231,7 @@ export default function Notifications() {
 
   // ─── Counts par catégorie (Gmail-style sidebar badge) ─────────────────
   const categoryCounts = useMemo(() => {
-    const c = { all: 0, orders: 0, promos: 0, system: 0 };
+    const c = { all: 0, orders: 0, promos: 0, reminders: 0, system: 0 };
     for (const n of notifs) {
       if (!n.read) {
         c.all++;

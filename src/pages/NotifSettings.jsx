@@ -175,10 +175,10 @@ export default function NotifSettings() {
         {/* Emails marketing (visible que le user ait push activé ou non) */}
         {user?.id && (
           <div className="ns-card">
-            <h3> Emails marketing</h3>
+            <h3>Emails marketing</h3>
             <p className="ns-meta">Promos, conseils, nouveautés. Les emails de commande restent toujours envoyés.</p>
             <Toggle
-              label=" Recevoir les emails marketing"
+              label="Recevoir les emails marketing"
               desc="Bienvenue, top du moment, bons plans"
               checked={marketingEmailsEnabled}
               onChange={handleToggleMarketing}
@@ -189,18 +189,18 @@ export default function NotifSettings() {
 
         {permission === 'granted' && (
           <>
-            {/* Types de notifications */}
+            {/* Types de notifications — alignés natif (Commandes / Promotions / Rappels) */}
             <div className="ns-card">
               <h3>Types de notifications</h3>
               <Toggle
-                label=" Suivi de commandes"
-                desc="Préparation, livraison, livrée"
+                label="Commandes"
+                desc="Statuts, livreur, livraison"
                 checked={enableOrders}
                 onChange={setEnableOrders}
               />
               <Toggle
-                label=" Promos et offres"
-                desc="Codes promo, soldes, nouveaux produits"
+                label="Promotions"
+                desc="Codes promo, soldes"
                 checked={enablePromos}
                 onChange={setEnablePromos}
               />
@@ -208,8 +208,8 @@ export default function NotifSettings() {
 
             {/* Rappels routine */}
             <div className="ns-card">
-              <h3> Rappels routine peau</h3>
-              <p className="ns-meta">L'app te rappelle ta routine matin et soir</p>
+              <h3>Rappels routine</h3>
+              <p className="ns-meta">Matin et soir, soin peau</p>
               
               <div className="ns-time-row">
                 <label className="ns-toggle-line">
@@ -218,7 +218,7 @@ export default function NotifSettings() {
                     checked={enableMorning}
                     onChange={e => setEnableMorning(e.target.checked)}
                   />
-                  <span> Rappel matin</span>
+                  <span>Rappel matin</span>
                 </label>
                 {enableMorning && (
                   <input
@@ -237,7 +237,7 @@ export default function NotifSettings() {
                     checked={enableEvening}
                     onChange={e => setEnableEvening(e.target.checked)}
                   />
-                  <span> Rappel soir</span>
+                  <span>Rappel soir</span>
                 </label>
                 {enableEvening && (
                   <input
@@ -250,13 +250,13 @@ export default function NotifSettings() {
               </div>
               
               <button className="ns-btn-save" onClick={handleSaveReminders}>
-                 Sauvegarder les rappels
+                Sauvegarder les rappels
               </button>
             </div>
 
             {/* Test */}
             <div className="ns-card">
-              <h3> Tester</h3>
+              <h3>Tester</h3>
               <p className="ns-meta">Envoie-toi une notification test</p>
               <button className="ns-btn-test" onClick={handleTestNotif}>
                 Envoyer une notification test

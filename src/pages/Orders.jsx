@@ -6,6 +6,20 @@ import TabBar from '../components/TabBar';
 import PullToRefresh from '../components/PullToRefresh';
 import './Orders.css';
 
+// Libellés statut alignés 1:1 sur l'app native (couleurs + copy)
+const STATUS_LABEL = {
+  pending_payment:       { label: 'En attente paiement', color: '#F59E0B', bg: '#FEF3C7' },
+  pending:               { label: 'En attente paiement', color: '#F59E0B', bg: '#FEF3C7' },
+  awaiting_verification: { label: 'Vérification',        color: '#F59E0B', bg: '#FEF3C7' },
+  paid:                  { label: 'Payée',               color: '#1F8B4C', bg: '#DCFCE7' },
+  confirmed:             { label: 'Confirmée',           color: '#1F8B4C', bg: '#DCFCE7' },
+  preparing:             { label: 'En préparation',      color: '#1F8B4C', bg: '#DCFCE7' },
+  shipped:               { label: 'En livraison',        color: '#0064B0', bg: '#DBEAFE' },
+  in_delivery:           { label: 'En livraison',        color: '#0064B0', bg: '#DBEAFE' },
+  delivered:             { label: 'Livrée',              color: '#16A34A', bg: '#DCFCE7' },
+  cancelled:             { label: 'Annulée',             color: '#9CA3AF', bg: '#F3F4F6' },
+};
+
 export default function Orders() {
   const { navigate } = useNav();
   const { user } = useUser();
@@ -75,51 +89,73 @@ export default function Orders() {
             <p>Tes commandes apparaîtront ici</p>
           </div>
         ) : (
-          orders.map(o => (
-            <button
-              key={o.id}
-              className="order-card"
-              onClick={() => navigate({ name: 'order_tracking', params: { orderId: o.id } })}
-            >
-              <div className="order-card-head">
-                <code>{o.id}</code>
-                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                  {o.is_preorder && (
-                    <span style={{
-                      background: 'linear-gradient(135deg,#0066CC,#004999)',
-                      color: '#fff',
-                      fontSize: 10,
-                      fontWeight: 700,
-                      padding: '2px 7px',
-                      borderRadius: 6,
-                      letterSpacing: 0.3,
-                    }}> IMPORT</span>
-                  )}
-                  <span className={'order-status ' + o.status}>{o.status}</span>
-                </div>
-              </div>
-              <div className="order-card-body">
-                <span>{(o.items?.length || 0)} articles · {Number(o.total || 0).toLocaleString('fr-FR')} FCFA</span>
-                <span>{safeFormatDate(o.created_at, { type: 'datetime' })}</span>
-              </div>
-              {o.is_preorder && o.expected_arrival_date && (
-                <div style={{
-                  marginTop: 8,
-                  paddingTop: 8,
-                  borderTop: '1px dashed var(--line)',
-                  fontSize: 11,
-                  color: 'var(--muted)',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                }}>
-                  <span> Arrivée prévue : {safeFormatDate(o.expected_arrival_date)}</span>
-                  <span style={{ color: '#0066CC', fontWeight: 600 }}>
-                    {o.deposit_paid_at ? '✓ Acompte payé' : 'Acompte en attente'}
+          orders.map(o => {
+            const status = STATUS_LABEL[o.status] || STATUS_LABEL.pending_payment;
+            const dateStr = safeFormatDate(o.created_at, { type: 'datetime' });
+            return (
+              <button
+                key={o.id}
+                className="order-card"
+                onClick={() => navigate({ name: 'order_tracking', params: { orderId: o.id } })}
+              >
+                <div className="order-card-head">
+                  {/* Pastille statut colorée alignée native */}
+                  <span
+                    className="order-status-pill"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      background: status.bg,
+                      color: status.color,
+                      padding: '4px 10px',
+                      borderRadius: 999,
+                      fontSize: 11,
+                      fontWeight: 800,
+                      letterSpacing: 0.2,
+                    }}
+                  >
+                    <span style={{ width: 6, height: 6, borderRadius: 999, background: status.color }} />
+                    {status.label}
                   </span>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    {o.is_preorder && (
+                      <span style={{
+                        background: 'linear-gradient(135deg,#0066CC,#004999)',
+                        color: '#fff',
+                        fontSize: 10,
+                        fontWeight: 700,
+                        padding: '2px 7px',
+                        borderRadius: 6,
+                        letterSpacing: 0.3,
+                      }}>IMPORT</span>
+                    )}
+                    <span style={{ fontSize: 11, color: '#94A3B8', fontWeight: 600 }}>{dateStr}</span>
+                  </div>
                 </div>
-              )}
-            </button>
-          ))
+                <div className="order-card-body">
+                  <span>{(o.items?.length || 0)} article{(o.items?.length || 0) > 1 ? 's' : ''} · {Number(o.total || 0).toLocaleString('fr-FR')} FCFA</span>
+                  <code style={{ fontSize: 10, color: '#94A3B8' }}>#{String(o.id).slice(-6).toUpperCase()}</code>
+                </div>
+                {o.is_preorder && o.expected_arrival_date && (
+                  <div style={{
+                    marginTop: 8,
+                    paddingTop: 8,
+                    borderTop: '1px dashed var(--line)',
+                    fontSize: 11,
+                    color: 'var(--muted)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                  }}>
+                    <span>Arrivée prévue : {safeFormatDate(o.expected_arrival_date)}</span>
+                    <span style={{ color: '#0066CC', fontWeight: 600 }}>
+                      {o.deposit_paid_at ? 'Acompte payé' : 'Acompte en attente'}
+                    </span>
+                  </div>
+                )}
+              </button>
+            );
+          })
         )}
         </PullToRefresh>
       </div>

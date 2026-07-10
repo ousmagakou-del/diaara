@@ -7,7 +7,9 @@ import { useNav } from '../App';
 import './SkinQuiz.css';
 
 // ═══════════════════════════════════════════════
-// QUIZ STEPS — 8 questions YARAM
+// QUIZ STEPS — 8 questions YARAM (alignées 1:1 sur l'app native)
+// Ordre + libellés + options identiques au SkinQuiz natif.
+// Les VALEURS DB sont préservées (rétro-compat avec updateProfile).
 // ═══════════════════════════════════════════════
 const STEPS = [
   {
@@ -15,86 +17,86 @@ const STEPS = [
     question: 'Quel est ton type de peau ?',
     sub: 'Au quotidien, comment ta peau se comporte',
     options: [
-      { value: 'sèche', label: 'Sèche', icon: '', desc: 'Tire, parfois rugueuse' },
-      { value: 'normale', label: 'Normale', icon: '', desc: 'Équilibrée, peu de soucis' },
-      { value: 'mixte', label: 'Mixte', icon: '', desc: 'Brillante zone T, normale sur joues' },
-      { value: 'grasse', label: 'Grasse', icon: '', desc: 'Brillante, pores visibles' },
-      { value: 'inconnu', label: 'Je ne sais pas', icon: '', desc: 'Aide-moi à découvrir' },
+      { value: 'normale',  label: 'Normale',  icon: '', desc: 'Équilibrée, peu de soucis' },
+      { value: 'mixte',    label: 'Mixte',    icon: '', desc: 'T-zone grasse, joues normales' },
+      { value: 'grasse',   label: 'Grasse',   icon: '', desc: 'Brillances, pores dilatés' },
+      { value: 'sèche',    label: 'Sèche',    icon: '', desc: 'Tiraille, manque d\'hydratation' },
+      { value: 'sensible', label: 'Sensible', icon: '', desc: 'Réagit, rougeurs fréquentes' },
     ],
   },
   {
     id: 'skin_concerns',
-    question: 'Quelles sont tes préoccupations principales ?',
-    sub: 'Tu peux en choisir plusieurs',
+    question: 'Tes préoccupations principales ?',
+    sub: 'Sélectionne tout ce qui s\'applique',
     multi: true,
     options: [
-      { value: 'acne', label: 'Acné', icon: '', desc: 'Boutons, imperfections' },
-      { value: 'taches', label: 'Taches', icon: '', desc: 'Hyperpigmentation, post-acné' },
-      { value: 'rides', label: 'Rides', icon: '', desc: 'Premiers signes, fermeté' },
-      { value: 'sensibilite', label: 'Sensibilité', icon: '', desc: 'Rougeurs, réactions' },
-      { value: 'brillance', label: 'Brillance', icon: '', desc: 'Excès de sébum' },
-      { value: 'secheresse', label: 'Sécheresse', icon: '', desc: 'Peau tiraille' },
-      { value: 'hyperpigmentation', label: 'Hyperpigmentation', icon: '', desc: 'Zones plus foncées' },
+      { value: 'acne',              label: 'Acné / boutons',        icon: '', desc: '' },
+      { value: 'taches',            label: 'Taches pigmentaires',   icon: '', desc: '' },
+      { value: 'rides',             label: 'Rides / vieillissement', icon: '', desc: '' },
+      { value: 'cernes',            label: 'Cernes / fatigue',      icon: '', desc: '' },
+      { value: 'pores',             label: 'Pores dilatés',         icon: '', desc: '' },
+      { value: 'rougeurs',          label: 'Rougeurs',              icon: '', desc: '' },
+      { value: 'hydratation',       label: 'Déshydratation',        icon: '', desc: '' },
     ],
   },
   {
     id: 'current_routine',
-    question: 'À quoi ressemble ta routine actuelle ?',
+    question: 'Ta routine actuelle ?',
     sub: 'Sois honnête, pas de jugement',
     options: [
-      { value: 'rien', label: 'Rien du tout', icon: '', desc: 'Eau et c\'est tout' },
-      { value: 'basique', label: 'Basique', icon: '', desc: 'Nettoyant + hydratant' },
-      { value: 'experte', label: 'Experte', icon: '', desc: 'Routine complète, sérums, actifs' },
+      { value: 'minimaliste', label: 'Minimaliste', icon: '', desc: '1-2 produits max' },
+      { value: 'basique',     label: 'Classique',   icon: '', desc: 'Nettoyant + crème' },
+      { value: 'experte',     label: 'Expert',      icon: '', desc: '4+ étapes, sérums, masques' },
     ],
   },
   {
     id: 'time_per_day',
-    question: 'Combien de temps par jour pour tes soins ?',
+    question: 'Combien de temps tu y consacres par jour ?',
     sub: 'On adapte la complexité',
     options: [
-      { value: 'court', label: 'Moins de 5 min', icon: '', desc: 'L\'essentiel, vite fait' },
-      { value: 'moyen', label: '5 à 10 min', icon: '', desc: 'Le bon équilibre' },
-      { value: 'long', label: 'Plus de 10 min', icon: '', desc: 'J\'adore prendre mon temps' },
+      { value: 'court', label: 'Moins de 5 min', icon: '', desc: 'Express' },
+      { value: 'moyen', label: '5 à 15 min',     icon: '', desc: 'Confortable' },
+      { value: 'long',  label: 'Plus de 15 min', icon: '', desc: 'Rituel beauté' },
     ],
   },
   {
     id: 'budget',
-    question: 'Quel budget mensuel pour tes soins ?',
+    question: 'Ton budget mensuel ?',
     sub: 'Pour adapter les recommandations',
     options: [
-      { value: 'eco', label: 'Petit budget', icon: '', desc: 'Moins de 10 000 FCFA' },
-      { value: 'medium', label: 'Confortable', icon: '', desc: '10 000 - 25 000 FCFA' },
-      { value: 'premium', label: 'Premium', icon: '', desc: 'Plus de 25 000 FCFA' },
+      { value: 'eco',     label: 'Économique', icon: '', desc: 'Moins de 15 000 FCFA' },
+      { value: 'medium',  label: 'Standard',   icon: '', desc: '15 000 - 40 000 FCFA' },
+      { value: 'premium', label: 'Premium',    icon: '', desc: 'Plus de 40 000 FCFA' },
     ],
   },
   {
     id: 'age_range',
-    question: 'Quel est ton âge ?',
+    question: 'Ta tranche d\'âge ?',
     sub: 'Les besoins évoluent avec le temps',
     options: [
-      { value: 'teen', label: '13 - 19 ans', icon: '', desc: 'Adolescence' },
-      { value: 'twenties', label: '20 - 29 ans', icon: '', desc: 'Premier soin sérieux' },
-      { value: 'thirties', label: '30 - 39 ans', icon: '', desc: 'Prévention' },
-      { value: 'forties', label: '40 - 49 ans', icon: '', desc: 'Maturité' },
-      { value: 'fifties_plus', label: '50 ans et plus', icon: '', desc: 'Soins ciblés' },
+      { value: 'teen',         label: '15 - 25 ans', icon: '', desc: '' },
+      { value: 'twenties',     label: '25 - 35 ans', icon: '', desc: '' },
+      { value: 'thirties',     label: '35 - 45 ans', icon: '', desc: '' },
+      { value: 'forties',      label: '45 - 55 ans', icon: '', desc: '' },
+      { value: 'fifties_plus', label: '55 ans et plus', icon: '', desc: '' },
     ],
   },
   {
     id: 'pregnancy',
-    question: 'Es-tu enceinte ou allaitante ?',
-    sub: 'Certains actifs sont à éviter dans ces périodes',
+    question: 'Grossesse ou allaitement ?',
+    sub: 'Pour éviter certains actifs (rétinol, etc.)',
     options: [
-      { value: 'non', label: 'Non', icon: '', desc: 'Aucune restriction' },
-      { value: 'oui', label: 'Oui', icon: '', desc: 'On évite rétinol, salicylique fort, etc.' },
+      { value: 'non', label: 'Non', icon: '', desc: '' },
+      { value: 'oui', label: 'Oui', icon: '', desc: '' },
     ],
   },
   {
     id: 'allergies',
     question: 'Allergies connues ?',
-    sub: 'Optionnel — tu peux passer cette étape',
+    sub: 'Optionnel — écris les ingrédients à éviter',
     optional: true,
     freeText: true,
-    placeholder: 'Ex : parfum, niacinamide, huile d\'arbre à thé...',
+    placeholder: 'Ex : parfum, parabène, alcool… (ou laisse vide)',
   },
 ];
 
@@ -198,7 +200,7 @@ export default function SkinQuiz({ onComplete }) {
     }
   };
 
-  // ─── Sélection option ───
+  // ─── Sélection option (aligné natif : mono-choix = avance auto) ───
   const selectOption = (val) => {
     haptic('light');
     if (isMulti) {
@@ -206,7 +208,12 @@ export default function SkinQuiz({ onComplete }) {
       const next = prev.includes(val) ? prev.filter(v => v !== val) : [...prev, val];
       setAnswers({ ...answers, [currentStep.id]: next });
     } else {
-      setAnswers({ ...answers, [currentStep.id]: val });
+      const next = { ...answers, [currentStep.id]: val };
+      setAnswers(next);
+      // Avance automatique comme dans l'app native
+      if (step < STEPS.length - 1) {
+        setTimeout(() => { setDirection('forward'); setStep(s => s + 1); haptic('medium'); }, 220);
+      }
     }
   };
 
