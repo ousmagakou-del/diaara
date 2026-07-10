@@ -231,6 +231,17 @@
   text-align: center;
   text-shadow: 0 2px 20px rgba(0,0,0,0.25);
 }
+
+/* ─── Fallback SANS video : texte reprend son style clair ─── */
+.lp-hero--no-video .lp-hero-title { color: #1A1A1A; text-shadow: none; }
+.lp-hero--no-video .lp-hero-accent {
+  background: linear-gradient(135deg, #1F8B4C 0%, #2DAA5E 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.lp-hero--no-video .lp-hero-sub { color: #4B5563; text-shadow: none; }
+.lp-hero--no-video .lp-hero-trust { background: #fff; border-color: #F0F0EE; }
 .lp-hero-cta {
   display: flex; gap: 14px; flex-wrap: wrap;
   margin-bottom: 60px;

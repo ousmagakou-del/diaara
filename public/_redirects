@@ -15,6 +15,10 @@
 /favicon.svg         /favicon.svg         200
 /yaram-logo.svg      /yaram-logo.svg      200
 /manifest.webmanifest /manifest.webmanifest 200
+/hero-video.mp4      /hero-video.mp4      200
+/hero-video.webm     /hero-video.webm     200
+/hero-poster.jpg     /hero-poster.jpg     200
+/hero-poster.webp    /hero-poster.webp    200
 
 # SPA fallback : toute autre route → index.html
 /*  /index.html  200

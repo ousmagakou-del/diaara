@@ -28,10 +28,25 @@ export default function Landing() {
   const [platform] = useState(detectPlatform);
   const [brands, setBrands] = useState([]);
   const [pharmacies, setPharmacies] = useState([]);
+  const [videoOk, setVideoOk] = useState(true);
 
   useEffect(() => {
     getAllBrands().then((b) => setBrands((b || []).slice(0, 12))).catch(() => {});
     getAllPharmacies().then((p) => setPharmacies((p || []).slice(0, 6))).catch(() => {});
+  }, []);
+
+  // Detecte si la video charge (fichier absent -> passe en mode fallback gradient)
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/hero-video.mp4', { method: 'HEAD' })
+      .then((r) => {
+        if (cancelled) return;
+        if (!r.ok || r.headers.get('content-type')?.startsWith('text/html')) {
+          setVideoOk(false);
+        }
+      })
+      .catch(() => { if (!cancelled) setVideoOk(false); });
+    return () => { cancelled = true; };
   }, []);
 
   const goToShop = () => navigate('shop');
@@ -49,21 +64,24 @@ export default function Landing() {
     <div className="lp-root">
 
       {/* ━━━ HERO ━━━ */}
-      <section className="lp-hero">
+      <section className={`lp-hero ${videoOk ? '' : 'lp-hero--no-video'}`}>
         {/* Video background - loop responsive full-cover */}
-        <video
-          className="lp-hero-video"
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="metadata"
-          poster="/hero-poster.jpg"
-          aria-hidden="true"
-        >
-          <source src="/hero-video.mp4" type="video/mp4" />
-        </video>
-        <div className="lp-hero-overlay" aria-hidden="true"></div>
+        {videoOk && (
+          <video
+            className="lp-hero-video"
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="auto"
+            poster="/hero-poster.jpg"
+            aria-hidden="true"
+            onError={() => setVideoOk(false)}
+          >
+            <source src="/hero-video.mp4" type="video/mp4" />
+          </video>
+        )}
+        {videoOk && <div className="lp-hero-overlay" aria-hidden="true"></div>}
         <div className="lp-hero-bg-orb lp-orb-1"></div>
         <div className="lp-hero-bg-orb lp-orb-2"></div>
         <div className="lp-hero-inner">
