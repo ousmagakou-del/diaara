@@ -29,6 +29,55 @@
       })();
     </script>
 
+    <!-- ═══ EMERGENCY SW / CHUNK RECOVERY (juillet 2026) ═══
+         Si un chunk CSS ou JS mort est referenced (vieux SW cache sert un
+         vieux index.html apres deploy Cloudflare), on detecte l erreur et
+         on force :
+           1. Purge de TOUS les SW enregistres
+           2. Vidange de TOUS les caches
+           3. Reload avec cache-buster
+         Cle sessionStorage 'yaram-recovery-attempt' evite loop infinie
+         (max 2 tentatives par session). -->
+    <script>
+      (function(){
+        try {
+          window.addEventListener('error', function(e){
+            var msg = (e && e.message) || '';
+            var tgt = e && e.target;
+            var isChunkErr =
+              /Failed to fetch dynamically imported module/i.test(msg) ||
+              /Loading chunk .+ failed/i.test(msg) ||
+              /Loading CSS chunk .+ failed/i.test(msg) ||
+              /is not a valid JavaScript MIME type/i.test(msg) ||
+              (tgt && tgt.tagName === 'LINK' && /\.css/i.test(tgt.href || '')) ||
+              (tgt && tgt.tagName === 'SCRIPT' && /\/assets\//i.test(tgt.src || ''));
+            if (!isChunkErr) return;
+            var attempts = parseInt(sessionStorage.getItem('yaram-recovery-attempt') || '0', 10);
+            if (attempts >= 2) return;
+            sessionStorage.setItem('yaram-recovery-attempt', String(attempts + 1));
+            console.warn('[yaram-recovery] chunk load failed, purge SW + caches + reload');
+            var jobs = [];
+            if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+              jobs.push(navigator.serviceWorker.getRegistrations().then(function(regs){
+                return Promise.all(regs.map(function(r){ return r.unregister().catch(function(){}); }));
+              }).catch(function(){}));
+            }
+            if (window.caches && caches.keys) {
+              jobs.push(caches.keys().then(function(names){
+                return Promise.all(names.map(function(n){ return caches.delete(n).catch(function(){}); }));
+              }).catch(function(){}));
+            }
+            Promise.all(jobs).then(function(){
+              window.location.href = window.location.pathname + '?_yr=' + Date.now();
+            });
+          }, true);
+          setTimeout(function(){
+            try { sessionStorage.removeItem('yaram-recovery-attempt'); } catch(_){}
+          }, 30000);
+        } catch (_) { /* silent */ }
+      })();
+    </script>
+
     <!-- ════════════ PRECONNECT / DNS-PREFETCH ════════════
          Sur LTE Sénégal, le handshake TLS coûte 300-600ms par origine.
          On le déclenche pendant que l'HTML parse (avant que React lance

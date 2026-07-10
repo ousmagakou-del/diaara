@@ -86,13 +86,19 @@ export function registerServiceWorker() {
 
   // Register après load pour ne pas concurrencer le 1er rendu
   const doRegister = () => {
-    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+    // updateViaCache: 'none' -> le browser NE cache jamais sw.js, il verifie
+    // toujours la version sur reseau. Critique pour que les fixes deploient
+    // rapidement chez les users qui restent longtemps sans fermer l onglet.
+    navigator.serviceWorker.register('/sw.js', { scope: '/', updateViaCache: 'none' })
       .then((reg) => {
         console.log('[SW] registered, scope =', reg.scope);
         watchForUpdates(reg);
         pingVersion(reg);
-        // Vérifie périodiquement (1×/h) si un nouveau SW est dispo
-        setInterval(() => { reg.update().catch(() => {}); }, 60 * 60 * 1000);
+        // Check update IMMEDIATEMENT au load (au lieu d attendre 1h)
+        // pour attraper les nouveaux deploys au reload de la page.
+        reg.update().catch(() => {});
+        // Puis toutes les 15 minutes (au lieu de 1h) pour user actif
+        setInterval(() => { reg.update().catch(() => {}); }, 15 * 60 * 1000);
       })
       .catch((err) => {
         console.warn('[SW] register failed', err);
