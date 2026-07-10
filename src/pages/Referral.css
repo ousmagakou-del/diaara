@@ -48,7 +48,7 @@
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
   transition: transform 0.15s ease, background 0.15s ease;
 }
-.rf-back:active { transform: scale(0.93); background: #F4F4F2; }
+.rf-back:active { transform: scale(0.93); background: var(--y-n-100); }
 
 .rf-header h1 {
   font-size: 19px;
@@ -88,7 +88,7 @@
   padding: 28px 22px 24px;
   color: white;
   overflow: hidden;
-  background: linear-gradient(135deg, #1F8B4C 0%, #166635 40%, #0F4A26 100%);
+  background: linear-gradient(135deg, var(--y-brand) 0%, #166635 40%, #0F4A26 100%);
   box-shadow:
     0 22px 44px -12px rgba(15, 74, 38, 0.45),
     0 4px 12px rgba(0, 0, 0, 0.08),
@@ -248,8 +248,8 @@
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.05em;
-  color: #1F8B4C;
-  background: #E8F5EC;
+  color: var(--y-brand);
+  background: var(--y-brand-soft);
   padding: 3px 9px;
   border-radius: 999px;
 }
@@ -257,7 +257,7 @@
 .rf-code-box {
   background:
     repeating-linear-gradient(135deg, #FAFAF6 0 8px, #FFFFFF 8px 16px);
-  border: 2px dashed #1F8B4C;
+  border: 2px dashed var(--y-brand);
   border-radius: 16px;
   padding: 22px 16px;
   text-align: center;
@@ -275,8 +275,8 @@
   100% { transform: scale(1); }
 }
 .rf-code-box.copied {
-  border-color: #1F8B4C;
-  background: linear-gradient(180deg, #E8F5EC 0%, #F0FAF3 100%);
+  border-color: var(--y-brand);
+  background: linear-gradient(180deg, var(--y-brand-soft) 0%, #F0FAF3 100%);
   animation: rf-code-pop 0.45s ease;
 }
 
@@ -341,7 +341,7 @@
   color: #1A1A1A;
   border: 1.5px solid #E5E5E0;
 }
-.rf-share-copy:active { transform: scale(0.97); background: #F4F4F2; }
+.rf-share-copy:active { transform: scale(0.97); background: var(--y-n-100); }
 
 /* ─────────────────────────────────────
    COMMENT ÇA MARCHE (steps)
@@ -441,7 +441,7 @@
   font-weight: 800;
   letter-spacing: 0.06em;
   color: #1A1A1A;
-  background: #F4F4F2;
+  background: var(--y-n-100);
   padding: 4px 9px;
   border-radius: 999px;
   white-space: nowrap;
@@ -478,7 +478,7 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #1F8B4C 0%, #166635 100%);
+  background: linear-gradient(135deg, var(--y-brand) 0%, #166635 100%);
   color: white;
   font-size: 13px;
   font-weight: 800;
@@ -502,8 +502,8 @@
 .rf-board-count {
   font-size: 11.5px;
   font-weight: 800;
-  color: #1F8B4C;
-  background: #E8F5EC;
+  color: var(--y-brand);
+  background: var(--y-brand-soft);
   padding: 4px 10px;
   border-radius: 999px;
   white-space: nowrap;
@@ -634,7 +634,7 @@
   color: white;
 }
 .rf-cta-link {
-  background: #F4F4F2;
+  background: var(--y-n-100);
   color: #1A1A1A;
   border: 1px solid rgba(0, 0, 0, 0.06);
 }
@@ -671,7 +671,7 @@
 }
 .rf-locked-cta {
   padding: 14px 28px;
-  background: #1F8B4C;
+  background: var(--y-brand);
   color: white;
   border: none;
   border-radius: 999px;
@@ -714,7 +714,7 @@
   left: 50%;
   bottom: calc(var(--safe-bottom, 14px) + 84px);
   transform: translateX(-50%);
-  background: #1F8B4C;
+  background: var(--y-brand);
   color: white;
   padding: 11px 18px;
   border-radius: 999px;
@@ -790,4 +790,75 @@
   }
   /* Hide mobile tabbar on desktop */
   .tabbar { display: none; }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   DARK MODE — override surfaces uniquement (rebrand DARK-1)
+   ════════════════════════════════════════════════════════════════════ */
+@media (prefers-color-scheme: dark) {
+  .rf-screen {
+    background:
+      radial-gradient(900px 500px at -10% -10%, rgba(31, 139, 76, 0.14), transparent 60%),
+      radial-gradient(900px 500px at 120% 120%, rgba(244, 181, 58, 0.10), transparent 60%),
+      #0A0A0A;
+    color: #F2F2F2;
+  }
+  .rf-header.rf-header-glass {
+    background: rgba(15, 17, 21, 0.78);
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+  }
+  .rf-back {
+    background: #1A1D24;
+    border-color: #2D3139;
+    color: #F2F2F2;
+  }
+  .rf-header h1 { color: #F2F2F2; }
+  .rf-stat,
+  .rf-code-card,
+  .rf-how,
+  .rf-board,
+  .rf-invites,
+  .rf-share-copy {
+    background: #1A1D24;
+    border-color: #2D3139;
+    color: #F2F2F2;
+  }
+  .rf-share-copy { color: #F2F2F2; }
+  .rf-stat-highlight {
+    background: linear-gradient(180deg, #1A1D24 0%, #12241A 100%);
+    border-color: rgba(31, 139, 76, 0.35);
+  }
+  .rf-code-box {
+    background: repeating-linear-gradient(135deg, #12141A 0 8px, #1A1D24 8px 16px);
+  }
+  .rf-code-box.copied {
+    background: linear-gradient(180deg, #12241A 0%, #1A1D24 100%);
+  }
+  .rf-code-text,
+  .rf-section-title,
+  .rf-stat-num,
+  .rf-step-body strong,
+  .rf-invite-name,
+  .rf-board-name,
+  .rf-locked h2 {
+    color: #F2F2F2;
+  }
+  .rf-stat-label,
+  .rf-code-tap-hint,
+  .rf-invite-meta,
+  .rf-locked p,
+  .rf-step-body p {
+    color: #A8ADB4;
+  }
+  .rf-step { background: linear-gradient(135deg, #12141A 0%, #1A1D24 100%); border-color: #2D3139; }
+  .rf-board-period { background: #2D3139; color: #F2F2F2; }
+  .rf-invite { border-bottom-color: #2D3139; }
+  .rf-cta-bar {
+    background: rgba(15, 17, 21, 0.92);
+    border-top-color: rgba(255, 255, 255, 0.06);
+  }
+  .rf-cta-link { background: #2D3139; color: #F2F2F2; border-color: #3A3F48; }
+  .rf-skel {
+    background: #1A1D24 linear-gradient(90deg, #1A1D24 0%, #23262D 50%, #1A1D24 100%);
+  }
 }
