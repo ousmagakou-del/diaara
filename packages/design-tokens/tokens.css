@@ -1,0 +1,121 @@
+/* ═══════════════════════════════════════════════════════════════
+   YARAM — Design Tokens (CSS variables)
+   Generated depuis packages/design-tokens/tokens.js
+   Import dans src/main.jsx : import '../packages/design-tokens/tokens.css'
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ─── Couleurs Brand ─── */
+  --y-brand: #1F8B4C;
+  --y-brand-dark: #166635;
+  --y-brand-light: #2DAA5E;
+  --y-brand-soft: #EAF7F0;
+  --y-brand-softer: #F5FBF7;
+  --y-accent: #E94E1B;
+  --y-accent-dark: #C43E11;
+  --y-accent-light: #FF7A4C;
+  --y-accent-soft: #FFF3EE;
+
+  /* ─── Neutres ─── */
+  --y-n-0: #FFFFFF;
+  --y-n-50: #FAFAF7;
+  --y-n-100: #F4F4F2;
+  --y-n-200: #EEEDE8;
+  --y-n-300: #E5E4DC;
+  --y-n-400: #C0C0B8;
+  --y-n-500: #9CA3AF;
+  --y-n-600: #6B7280;
+  --y-n-700: #4B5563;
+  --y-n-800: #1F2937;
+  --y-n-900: #0A0A0A;
+
+  /* ─── Semantic ─── */
+  --y-success: #1F8B4C;
+  --y-success-soft: #EAF7F0;
+  --y-warning: #F4B53A;
+  --y-warning-soft: #FFF9E6;
+  --y-warning-text: #B78B00;
+  --y-danger: #D9342B;
+  --y-danger-soft: #FDECEA;
+  --y-info: #0066CC;
+  --y-info-soft: #EAF3FE;
+
+  /* ─── Typo ─── */
+  --y-font-sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+  --y-font-mono: 'SF Mono', 'Menlo', 'Monaco', monospace;
+
+  --y-fs-xs: 11px;
+  --y-fs-sm: 12px;
+  --y-fs-base: 14px;
+  --y-fs-md: 15px;
+  --y-fs-lg: 16px;
+  --y-fs-xl: 18px;
+  --y-fs-2xl: 20px;
+  --y-fs-3xl: 24px;
+  --y-fs-4xl: 28px;
+  --y-fs-5xl: 32px;
+  --y-fs-6xl: 40px;
+  --y-fs-7xl: 48px;
+  --y-fs-8xl: 56px;
+
+  --y-fw-normal: 400;
+  --y-fw-medium: 500;
+  --y-fw-semibold: 600;
+  --y-fw-bold: 700;
+  --y-fw-extrabold: 800;
+  --y-fw-black: 900;
+
+  /* ─── Espacement ─── */
+  --y-sp-1: 4px;
+  --y-sp-2: 8px;
+  --y-sp-3: 12px;
+  --y-sp-4: 16px;
+  --y-sp-5: 20px;
+  --y-sp-6: 24px;
+  --y-sp-7: 28px;
+  --y-sp-8: 32px;
+  --y-sp-10: 40px;
+  --y-sp-12: 48px;
+  --y-sp-16: 64px;
+  --y-sp-20: 80px;
+  --y-sp-24: 96px;
+
+  /* ─── Radius ─── */
+  --y-rad-sm: 6px;
+  --y-rad-md: 10px;
+  --y-rad-lg: 14px;
+  --y-rad-xl: 16px;
+  --y-rad-2xl: 20px;
+  --y-rad-3xl: 24px;
+  --y-rad-pill: 999px;
+
+  /* ─── Ombres ─── */
+  --y-shadow-xs: 0 1px 2px rgba(0,0,0,0.03);
+  --y-shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
+  --y-shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+  --y-shadow-lg: 0 10px 30px rgba(0,0,0,0.10);
+  --y-shadow-xl: 0 20px 50px rgba(0,0,0,0.10);
+  --y-shadow-2xl: 0 30px 80px rgba(0,0,0,0.12);
+  --y-shadow-brand: 0 10px 30px rgba(31,139,76,0.25);
+  --y-shadow-brand-lg: 0 14px 40px rgba(31,139,76,0.35);
+  --y-shadow-accent: 0 10px 30px rgba(233,78,27,0.30);
+  --y-shadow-accent-lg: 0 14px 40px rgba(233,78,27,0.45);
+  --y-focus-ring: 0 0 0 3px rgba(31,139,76,0.10);
+
+  /* ─── Motion ─── */
+  --y-dur-fast: 150ms;
+  --y-dur-medium: 200ms;
+  --y-dur-slow: 300ms;
+  --y-ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --y-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --y-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ─── Reset premium par defaut ─── */
+body {
+  font-family: var(--y-font-sans);
+  color: var(--y-n-900);
+  background: var(--y-n-0);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

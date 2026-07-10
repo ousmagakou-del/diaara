@@ -1,6 +1,7 @@
 import { StrictMode, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import './lib/theme'
+import '../packages/design-tokens/tokens.css'
 import './index.css'
 import App from './App.jsx'
 import { loadSiteSettings, subscribeSettings, supabase } from './lib/supabase'
