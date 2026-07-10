@@ -26,9 +26,9 @@ const STATUS_META = {
   pending:   { label: '📤 En attente',   color: '#F4B53A', bg: '#FFF9E6' },
   viewed:    { label: '👀 Vu',           color: '#0066CC', bg: '#EAF3FE' },
   signed:    { label: '✅ Signé',        color: '#1F8B4C', bg: '#EAF7F0' },
-  expired:   { label: '⏰ Expiré',       color: '#6B7280', bg: '#F3F4F6' },
+  expired:   { label: '⏰ Expiré',       color: 'var(--y-n-600)', bg: '#F3F4F6' },
   declined:  { label: '❌ Refusé',       color: '#D9342B', bg: '#FDECEA' },
-  cancelled: { label: '🚫 Annulé',       color: '#6B7280', bg: '#F3F4F6' },
+  cancelled: { label: '🚫 Annulé',       color: 'var(--y-n-600)', bg: '#F3F4F6' },
 };
 
 export default function SignaturesSection() {
@@ -197,19 +197,19 @@ export default function SignaturesSection() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <div>
             <h2 style={{ margin: 0, fontSize: 22 }}>{viewSigned.template_name}</h2>
-            <div style={{ fontSize: 13, color: '#6B7280', marginTop: 4 }}>
+            <div style={{ fontSize: 13, color: 'var(--y-n-600)', marginTop: 4 }}>
               Signé par <strong>{viewSigned.recipient_name}</strong> · {new Date(viewSigned.signed_at).toLocaleString('fr-FR')}
             </div>
           </div>
           <button
             onClick={() => setViewSigned(null)}
-            style={{ padding: '10px 18px', background: '#F4F4F2', border: 'none', borderRadius: 999, cursor: 'pointer', fontWeight: 700 }}
+            style={{ padding: '10px 18px', background: 'var(--y-n-100)', border: 'none', borderRadius: 999, cursor: 'pointer', fontWeight: 700 }}
           >
             ← Retour
           </button>
         </div>
         <div
-          style={{ background: '#fff', border: '1px solid #E5E4DC', borderRadius: 16, padding: 32, boxShadow: '0 4px 16px rgba(0,0,0,0.03)' }}
+          style={{ background: 'var(--y-n-0)', border: '1px solid var(--y-n-300)', borderRadius: 16, padding: 32, boxShadow: '0 4px 16px rgba(0,0,0,0.03)' }}
           dangerouslySetInnerHTML={{ __html: viewSigned.signed_html || '<p>Pas de contenu signé.</p>' }}
         />
       </div>
@@ -226,27 +226,27 @@ export default function SignaturesSection() {
         <h2 style={{ margin: 0, fontSize: 24, fontWeight: 900, letterSpacing: '-0.5px' }}>
           ✍️ Signatures électroniques
         </h2>
-        <p style={{ margin: '6px 0 0', color: '#6B7280', fontSize: 14 }}>
+        <p style={{ margin: '6px 0 0', color: 'var(--y-n-600)', fontSize: 14 }}>
           Envoie des contrats à signer en ligne (pharmacies, livreurs, distributeurs). Style DocuSign.
         </p>
       </div>
 
       {/* Stats cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 24 }}>
-        <StatCard label="Total envoyés" value={stats.total} color="#0A0A0A" />
-        <StatCard label="En attente" value={stats.pending} color="#F4B53A" />
-        <StatCard label="Vus" value={stats.viewed} color="#0066CC" />
-        <StatCard label="✅ Signés" value={stats.signed} color="#1F8B4C" />
+        <StatCard label="Total envoyés" value={stats.total} color="var(--y-n-900)" />
+        <StatCard label="En attente" value={stats.pending} color="var(--y-warning)" />
+        <StatCard label="Vus" value={stats.viewed} color="var(--y-info)" />
+        <StatCard label="✅ Signés" value={stats.signed} color="var(--y-brand)" />
       </div>
 
       {/* Templates disponibles */}
-      <div style={{ background: '#fff', border: '1px solid #E5E4DC', borderRadius: 16, padding: 20, marginBottom: 24 }}>
-        <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1, color: '#6B7280', marginBottom: 12 }}>
+      <div style={{ background: 'var(--y-n-0)', border: '1px solid var(--y-n-300)', borderRadius: 16, padding: 20, marginBottom: 24 }}>
+        <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1, color: 'var(--y-n-600)', marginBottom: 12 }}>
           📄 CONTRATS DISPONIBLES
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12 }}>
           {templates.length === 0 && !loading && (
-            <div style={{ padding: 20, color: '#9CA3AF', fontStyle: 'italic' }}>
+            <div style={{ padding: 20, color: 'var(--y-n-500)', fontStyle: 'italic' }}>
               Aucun template actif. Ajoute-en via SQL (table signature_templates).
             </div>
           )}
@@ -254,20 +254,20 @@ export default function SignaturesSection() {
             <div
               key={tpl.id}
               style={{
-                padding: 16, background: '#FAFAF7', border: '1px solid #E5E4DC',
+                padding: 16, background: 'var(--y-n-50)', border: '1px solid var(--y-n-300)',
                 borderRadius: 12, cursor: 'pointer', transition: 'all 0.15s',
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#1F8B4C'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#E5E4DC'; e.currentTarget.style.transform = 'translateY(0)'; }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--y-brand)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--y-n-300)'; e.currentTarget.style.transform = 'translateY(0)'; }}
               onClick={() => openCreate(tpl)}
             >
               <div style={{ fontSize: 15, fontWeight: 900, marginBottom: 4 }}>{tpl.name}</div>
-              <div style={{ fontSize: 11, color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>
+              <div style={{ fontSize: 11, color: 'var(--y-n-600)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>
                 {tpl.category}
               </div>
               <button
                 style={{
-                  width: '100%', padding: '10px 14px', background: '#1F8B4C', color: '#fff',
+                  width: '100%', padding: '10px 14px', background: 'var(--y-brand)', color: 'var(--y-n-0)',
                   border: 'none', borderRadius: 999, fontWeight: 800, fontSize: 13, cursor: 'pointer',
                 }}
               >
@@ -286,8 +286,8 @@ export default function SignaturesSection() {
             onClick={() => setFilter(s)}
             style={{
               padding: '8px 14px', borderRadius: 999, border: 'none', cursor: 'pointer',
-              background: filter === s ? '#0A0A0A' : '#F4F4F2',
-              color: filter === s ? '#fff' : '#0A0A0A',
+              background: filter === s ? 'var(--y-n-900)' : 'var(--y-n-100)',
+              color: filter === s ? 'var(--y-n-0)' : 'var(--y-n-900)',
               fontWeight: 800, fontSize: 12,
             }}
           >
@@ -300,24 +300,24 @@ export default function SignaturesSection() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           style={{
-            flex: 1, minWidth: 220, padding: '10px 14px', border: '1px solid #E5E4DC',
-            borderRadius: 10, fontSize: 13, background: '#fff',
+            flex: 1, minWidth: 220, padding: '10px 14px', border: '1px solid var(--y-n-300)',
+            borderRadius: 10, fontSize: 13, background: 'var(--y-n-0)',
           }}
         />
       </div>
 
       {/* Table demandes */}
-      <div style={{ background: '#fff', border: '1px solid #E5E4DC', borderRadius: 16, overflow: 'hidden' }}>
+      <div style={{ background: 'var(--y-n-0)', border: '1px solid var(--y-n-300)', borderRadius: 16, overflow: 'hidden' }}>
         {loading ? (
-          <div style={{ padding: 40, textAlign: 'center', color: '#9CA3AF' }}>Chargement…</div>
+          <div style={{ padding: 40, textAlign: 'center', color: 'var(--y-n-500)' }}>Chargement…</div>
         ) : filtered.length === 0 ? (
-          <div style={{ padding: 40, textAlign: 'center', color: '#9CA3AF' }}>
+          <div style={{ padding: 40, textAlign: 'center', color: 'var(--y-n-500)' }}>
             Aucune demande {filter !== 'all' && `(${STATUS_META[filter]?.label})`}
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead style={{ background: '#FAFAF7', position: 'sticky', top: 0, zIndex: 1 }}>
+              <thead style={{ background: 'var(--y-n-50)', position: 'sticky', top: 0, zIndex: 1 }}>
                 <tr>
                   <Th>Destinataire</Th>
                   <Th>Contrat</Th>
@@ -330,10 +330,10 @@ export default function SignaturesSection() {
                 {filtered.map((r) => {
                   const meta = STATUS_META[r.status] || STATUS_META.pending;
                   return (
-                    <tr key={r.id} style={{ borderTop: '1px solid #F0F0EE' }}>
+                    <tr key={r.id} style={{ borderTop: '1px solid var(--y-n-200)' }}>
                       <Td>
                         <div style={{ fontWeight: 800 }}>{r.recipient_name}</div>
-                        <div style={{ fontSize: 12, color: '#6B7280' }}>{r.recipient_email}</div>
+                        <div style={{ fontSize: 12, color: 'var(--y-n-600)' }}>{r.recipient_email}</div>
                       </Td>
                       <Td>{r.template_name}</Td>
                       <Td>
@@ -344,12 +344,12 @@ export default function SignaturesSection() {
                           {meta.label}
                         </span>
                         {r.signed_at && (
-                          <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>
+                          <div style={{ fontSize: 11, color: 'var(--y-n-500)', marginTop: 4 }}>
                             {new Date(r.signed_at).toLocaleString('fr-FR')}
                           </div>
                         )}
                       </Td>
-                      <Td style={{ color: '#6B7280', fontSize: 12 }}>
+                      <Td style={{ color: 'var(--y-n-600)', fontSize: 12 }}>
                         {new Date(r.created_at).toLocaleDateString('fr-FR')}
                       </Td>
                       <Td>
@@ -357,7 +357,7 @@ export default function SignaturesSection() {
                           {r.status === 'signed' ? (
                             <button
                               onClick={() => setViewSigned(r)}
-                              style={btnStyle('#1F8B4C', '#fff')}
+                              style={btnStyle('var(--y-brand)', 'var(--y-n-0)')}
                             >
                               👁 Voir signé
                             </button>
@@ -365,13 +365,13 @@ export default function SignaturesSection() {
                             <>
                               <button
                                 onClick={() => copyLink(`https://yaram.app/sign/${r.token}`)}
-                                style={btnStyle('#F4F4F2', '#0A0A0A')}
+                                style={btnStyle('var(--y-n-100)', 'var(--y-n-900)')}
                               >
                                 📋 Copier lien
                               </button>
                               <button
                                 onClick={() => resendEmail(r)}
-                                style={btnStyle('#1F8B4C', '#fff')}
+                                style={btnStyle('var(--y-brand)', 'var(--y-n-0)')}
                               >
                                 ✉️ Renvoyer
                               </button>
@@ -400,7 +400,7 @@ export default function SignaturesSection() {
         >
           <div
             style={{
-              background: '#fff', borderRadius: 20, maxWidth: 560, width: '100%',
+              background: 'var(--y-n-0)', borderRadius: 20, maxWidth: 560, width: '100%',
               maxHeight: '90vh', overflowY: 'auto', padding: 32, boxShadow: '0 30px 80px rgba(0,0,0,0.3)',
             }}
             onClick={(e) => e.stopPropagation()}
@@ -412,12 +412,12 @@ export default function SignaturesSection() {
                 <h2 style={{ margin: 0, fontSize: 24, fontWeight: 900, textAlign: 'center', marginBottom: 8 }}>
                   Demande envoyée !
                 </h2>
-                <p style={{ textAlign: 'center', color: '#6B7280', fontSize: 14, margin: '0 0 24px' }}>
+                <p style={{ textAlign: 'center', color: 'var(--y-n-600)', fontSize: 14, margin: '0 0 24px' }}>
                   L'email a été envoyé à <strong>{recipient.email}</strong>.
                   Voici aussi le lien direct :
                 </p>
                 <div style={{
-                  padding: 14, background: '#F5FBF7', border: '1px solid #DFF0E6',
+                  padding: 14, background: 'var(--y-brand-softer)', border: '1px solid #DFF0E6',
                   borderRadius: 12, fontSize: 12, wordBreak: 'break-all', fontFamily: 'monospace',
                   marginBottom: 16,
                 }}>
@@ -426,13 +426,13 @@ export default function SignaturesSection() {
                 <div style={{ display: 'flex', gap: 10 }}>
                   <button
                     onClick={() => copyLink(createdLink)}
-                    style={{ flex: 1, padding: '14px 20px', background: '#F4F4F2', border: 'none', borderRadius: 999, fontWeight: 800, cursor: 'pointer' }}
+                    style={{ flex: 1, padding: '14px 20px', background: 'var(--y-n-100)', border: 'none', borderRadius: 999, fontWeight: 800, cursor: 'pointer' }}
                   >
                     📋 Copier
                   </button>
                   <button
                     onClick={() => { setShowCreate(false); setCreatedLink(null); }}
-                    style={{ flex: 1, padding: '14px 20px', background: '#0A0A0A', color: '#fff', border: 'none', borderRadius: 999, fontWeight: 800, cursor: 'pointer' }}
+                    style={{ flex: 1, padding: '14px 20px', background: 'var(--y-n-900)', color: 'var(--y-n-0)', border: 'none', borderRadius: 999, fontWeight: 800, cursor: 'pointer' }}
                   >
                     Fermer
                   </button>
@@ -444,7 +444,7 @@ export default function SignaturesSection() {
                 <h2 style={{ margin: 0, fontSize: 22, fontWeight: 900, marginBottom: 4 }}>
                   Nouvelle demande
                 </h2>
-                <p style={{ margin: 0, color: '#6B7280', fontSize: 13, marginBottom: 20 }}>
+                <p style={{ margin: 0, color: 'var(--y-n-600)', fontSize: 13, marginBottom: 20 }}>
                   Contrat : <strong>{selectedTemplate.name}</strong>
                 </p>
 
@@ -482,10 +482,10 @@ export default function SignaturesSection() {
 
                 {(selectedTemplate.fields_schema || []).length > 0 && (
                   <div style={{
-                    padding: 16, background: '#FAFAF7', borderRadius: 12,
+                    padding: 16, background: 'var(--y-n-50)', borderRadius: 12,
                     marginBottom: 14, marginTop: 4,
                   }}>
-                    <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, color: '#6B7280', marginBottom: 10 }}>
+                    <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, color: 'var(--y-n-600)', marginBottom: 10 }}>
                       🖊️ CHAMPS PRÉ-REMPLIS
                     </div>
                     {selectedTemplate.fields_schema.map((f) => (
@@ -517,14 +517,14 @@ export default function SignaturesSection() {
                     type="button"
                     onClick={() => setShowCreate(false)}
                     disabled={creating}
-                    style={{ flex: 1, padding: '14px 20px', background: '#F4F4F2', border: 'none', borderRadius: 999, fontWeight: 800, cursor: 'pointer' }}
+                    style={{ flex: 1, padding: '14px 20px', background: 'var(--y-n-100)', border: 'none', borderRadius: 999, fontWeight: 800, cursor: 'pointer' }}
                   >
                     Annuler
                   </button>
                   <button
                     type="submit"
                     disabled={creating}
-                    style={{ flex: 2, padding: '14px 20px', background: '#1F8B4C', color: '#fff', border: 'none', borderRadius: 999, fontWeight: 800, cursor: creating ? 'wait' : 'pointer', opacity: creating ? 0.6 : 1 }}
+                    style={{ flex: 2, padding: '14px 20px', background: 'var(--y-brand)', color: 'var(--y-n-0)', border: 'none', borderRadius: 999, fontWeight: 800, cursor: creating ? 'wait' : 'pointer', opacity: creating ? 0.6 : 1 }}
                   >
                     {creating ? 'Envoi…' : '📤 Envoyer à signer'}
                   </button>
@@ -541,15 +541,15 @@ export default function SignaturesSection() {
 // ═══ Helpers ═══
 function StatCard({ label, value, color }) {
   return (
-    <div style={{ background: '#fff', border: '1px solid #E5E4DC', borderRadius: 14, padding: 16 }}>
-      <div style={{ fontSize: 11, fontWeight: 800, color: '#6B7280', letterSpacing: 0.5, textTransform: 'uppercase' }}>{label}</div>
+    <div style={{ background: 'var(--y-n-0)', border: '1px solid var(--y-n-300)', borderRadius: 14, padding: 16 }}>
+      <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--y-n-600)', letterSpacing: 0.5, textTransform: 'uppercase' }}>{label}</div>
       <div style={{ fontSize: 28, fontWeight: 900, color, marginTop: 4, letterSpacing: '-1px' }}>{value}</div>
     </div>
   );
 }
 function Th({ children }) {
   return (
-    <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: 11, fontWeight: 900, color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5, cursor: 'pointer', userSelect: 'none' }}>
+    <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: 11, fontWeight: 900, color: 'var(--y-n-600)', textTransform: 'uppercase', letterSpacing: 0.5, cursor: 'pointer', userSelect: 'none' }}>
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
         {children}
         <svg width="8" height="10" viewBox="0 0 8 10" aria-hidden="true">
@@ -566,7 +566,7 @@ function Td({ children, style }) {
 function FieldGroup({ label, children }) {
   return (
     <div style={{ marginBottom: 14 }}>
-      <label style={{ display: 'block', fontSize: 12, fontWeight: 800, color: '#0A0A0A', marginBottom: 6, letterSpacing: 0.2 }}>
+      <label style={{ display: 'block', fontSize: 12, fontWeight: 800, color: 'var(--y-n-900)', marginBottom: 6, letterSpacing: 0.2 }}>
         {label}
       </label>
       {children}
@@ -574,8 +574,8 @@ function FieldGroup({ label, children }) {
   );
 }
 const inputStyle = {
-  width: '100%', padding: '12px 14px', border: '1px solid #E5E4DC',
-  borderRadius: 10, fontSize: 14, background: '#fff', boxSizing: 'border-box',
+  width: '100%', padding: '12px 14px', border: '1px solid var(--y-n-300)',
+  borderRadius: 10, fontSize: 14, background: 'var(--y-n-0)', boxSizing: 'border-box',
   fontFamily: 'inherit',
 };
 function btnStyle(bg, color) {

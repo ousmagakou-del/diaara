@@ -367,13 +367,13 @@ export default function Admin() {
           </div>
         </div>
         {session.role && session.role !== 'super_admin' && (
-          <div style={{
-            margin: '0 16px 12px', padding: '8px 12px',
-            background: session.role === 'commercial' ? '#EAF7F0' : '#F4F4F2',
-            color: session.role === 'commercial' ? '#0E5B33' : '#6B7280',
-            borderRadius: 999, fontSize: 11, fontWeight: 800, textAlign: 'center',
-            letterSpacing: 0.3,
-          }}>
+          <div
+            className="adm-role-badge"
+            style={{
+              background: session.role === 'commercial' ? 'var(--y-brand-soft)' : 'var(--y-n-100)',
+              color: session.role === 'commercial' ? 'var(--y-brand-dark)' : 'var(--y-n-600)',
+            }}
+          >
             {session.role === 'commercial' ? '💼 COMMERCIAL' : session.role.toUpperCase()}
           </div>
         )}

@@ -15,7 +15,7 @@ const STATUS = [
   { id: 'trial',     label: 'À l\'essai',  color: '#DD6B20', bg: '#FEEDD3' },
   { id: 'hired',     label: 'Recruté',     color: '#1F8B4C', bg: '#EAF7F0' },
   { id: 'refused',   label: 'Refusé',      color: '#D9342B', bg: '#FDECEA' },
-  { id: 'archived',  label: 'Archivé',     color: '#6B7280', bg: '#F3F4F6' },
+  { id: 'archived',  label: 'Archivé',     color: 'var(--y-n-600)', bg: '#F3F4F6' },
 ];
 const VEHICLE_LABELS = { moto: 'Moto', scooter: 'Scooter', velo: 'Vélo', voiture: 'Voiture', other: 'Autre' };
 const statusMeta = (id) => STATUS.find(s => s.id === id) || STATUS[0];
@@ -195,16 +195,16 @@ export default function DriverApplicationsSection() {
         <h2 style={{ margin: 0, fontSize: 24, fontWeight: 900, letterSpacing: '-0.5px' }}>
           Candidatures livreurs
         </h2>
-        <p style={{ margin: '6px 0 0', color: '#6B7280', fontSize: 14 }}>
+        <p style={{ margin: '6px 0 0', color: 'var(--y-n-600)', fontSize: 14 }}>
           Postulants pour rejoindre la flotte YARAM.
         </p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 20 }}>
-        <StatCard label="Total" value={stats.total} color="#0A0A0A" />
-        <StatCard label="Nouveaux" value={stats.new} color="#0066CC" />
+        <StatCard label="Total" value={stats.total} color="var(--y-n-900)" />
+        <StatCard label="Nouveaux" value={stats.new} color="var(--y-info)" />
         <StatCard label="En entretien" value={stats.interview} color="#6D28D9" />
-        <StatCard label="Recrutés" value={stats.hired} color="#1F8B4C" />
+        <StatCard label="Recrutés" value={stats.hired} color="var(--y-brand)" />
       </div>
 
       <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -222,21 +222,21 @@ export default function DriverApplicationsSection() {
         <input
           type="text" placeholder="Recherche (nom, phone, email, ville)"
           value={search} onChange={e => setSearch(e.target.value)}
-          style={{ flex: 1, minWidth: 220, padding: '9px 14px', border: '1px solid #E5E4DC', borderRadius: 10, fontSize: 13 }}
+          style={{ flex: 1, minWidth: 220, padding: '9px 14px', border: '1px solid var(--y-n-300)', borderRadius: 10, fontSize: 13 }}
         />
         <button onClick={exportCsv} style={btnLight}>Exporter CSV</button>
         <button onClick={load} style={btnLight}>Rafraîchir</button>
       </div>
 
-      <div style={{ background: '#fff', border: '1px solid #E5E4DC', borderRadius: 14, overflow: 'hidden' }}>
+      <div style={{ background: 'var(--y-n-0)', border: '1px solid var(--y-n-300)', borderRadius: 14, overflow: 'hidden' }}>
         {loading ? (
-          <div style={{ padding: 40, textAlign: 'center', color: '#9CA3AF' }}>Chargement…</div>
+          <div style={{ padding: 40, textAlign: 'center', color: 'var(--y-n-500)' }}>Chargement…</div>
         ) : filtered.length === 0 ? (
-          <div style={{ padding: 40, textAlign: 'center', color: '#9CA3AF' }}>Aucune candidature</div>
+          <div style={{ padding: 40, textAlign: 'center', color: 'var(--y-n-500)' }}>Aucune candidature</div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead style={{ background: '#FAFAF7', position: 'sticky', top: 0, zIndex: 1 }}>
+              <thead style={{ background: 'var(--y-n-50)', position: 'sticky', top: 0, zIndex: 1 }}>
                 <tr>
                   <Th>Date</Th><Th>Nom</Th><Th>Téléphone</Th><Th>Véhicule</Th>
                   <Th>Ville</Th><Th>Heures/sem</Th><Th>Statut</Th><Th>Actions</Th>
@@ -246,18 +246,18 @@ export default function DriverApplicationsSection() {
                 {filtered.map(r => {
                   const meta = statusMeta(r.status);
                   return (
-                    <tr key={r.id} style={{ borderTop: '1px solid #F0F0EE', cursor: 'pointer' }}
+                    <tr key={r.id} style={{ borderTop: '1px solid var(--y-n-200)', cursor: 'pointer' }}
                         onClick={() => setSelected(r)}>
                       <Td>{new Date(r.created_at).toLocaleDateString('fr-FR')}</Td>
                       <Td>
                         <div style={{ fontWeight: 800 }}>{r.full_name}</div>
-                        {r.email && <div style={{ fontSize: 11, color: '#6B7280' }}>{r.email}</div>}
+                        {r.email && <div style={{ fontSize: 11, color: 'var(--y-n-600)' }}>{r.email}</div>}
                       </Td>
                       <Td>{r.phone}</Td>
                       <Td>{VEHICLE_LABELS[r.vehicle_type] || r.vehicle_type}</Td>
                       <Td>
                         <div>{r.city || '—'}</div>
-                        {r.neighborhood && <div style={{ fontSize: 11, color: '#6B7280' }}>{r.neighborhood}</div>}
+                        {r.neighborhood && <div style={{ fontSize: 11, color: 'var(--y-n-600)' }}>{r.neighborhood}</div>}
                       </Td>
                       <Td>{r.hours_per_week || '—'}</Td>
                       <Td>
@@ -266,9 +266,16 @@ export default function DriverApplicationsSection() {
                           onClick={e => e.stopPropagation()}
                           onChange={e => updateStatus(r, e.target.value)}
                           style={{
-                            padding: '4px 8px', border: 'none', borderRadius: 999,
+                            padding: '4px 20px 4px 8px', border: 'none', borderRadius: 999,
                             background: meta.bg, color: meta.color, fontSize: 11,
                             fontWeight: 800, cursor: 'pointer',
+                            appearance: 'none',
+                            WebkitAppearance: 'none',
+                            MozAppearance: 'none',
+                            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='currentColor' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E")`,
+                            backgroundRepeat: 'no-repeat',
+                            backgroundPosition: 'right 6px center',
+                            backgroundSize: '10px 6px',
                           }}
                         >
                           {STATUS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
@@ -313,20 +320,20 @@ function Drawer({ row, onClose, onSaveNotes, onOnboard, onStatusChange, onboardi
       display: 'flex', justifyContent: 'flex-end',
     }} onClick={onClose}>
       <div style={{
-        width: '100%', maxWidth: 560, background: '#fff', height: '100%',
+        width: '100%', maxWidth: 560, background: 'var(--y-n-0)', height: '100%',
         overflowY: 'auto', padding: 32,
         paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 32px)',
         boxShadow: '-10px 0 30px rgba(0,0,0,0.15)',
       }} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
           <div>
-            <div style={{ fontSize: 11, color: '#6B7280', fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase' }}>
+            <div style={{ fontSize: 11, color: 'var(--y-n-600)', fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase' }}>
               Candidature livreur
             </div>
             <h3 style={{ margin: '4px 0 6px', fontSize: 22, fontWeight: 900, letterSpacing: '-0.5px' }}>
               {row.full_name}
             </h3>
-            <div style={{ fontSize: 13, color: '#6B7280' }}>
+            <div style={{ fontSize: 13, color: 'var(--y-n-600)' }}>
               Reçue le {new Date(row.created_at).toLocaleString('fr-FR')}
             </div>
           </div>
@@ -334,7 +341,7 @@ function Drawer({ row, onClose, onSaveNotes, onOnboard, onStatusChange, onboardi
         </div>
 
         <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 12, fontWeight: 800, color: '#6B7280', marginBottom: 8, letterSpacing: 0.3, textTransform: 'uppercase' }}>Statut</div>
+          <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--y-n-600)', marginBottom: 8, letterSpacing: 0.3, textTransform: 'uppercase' }}>Statut</div>
           <select value={row.status} onChange={e => onStatusChange(e.target.value)} style={{ ...filterStyle, width: '100%' }}>
             {STATUS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
           </select>
@@ -359,19 +366,19 @@ function Drawer({ row, onClose, onSaveNotes, onOnboard, onStatusChange, onboardi
         <DetailBlock label="Motivation" value={row.motivation || '—'} multi />
 
         <div style={{ marginTop: 20 }}>
-          <div style={{ fontSize: 12, fontWeight: 800, color: '#6B7280', marginBottom: 8, letterSpacing: 0.3, textTransform: 'uppercase' }}>Notes internes</div>
+          <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--y-n-600)', marginBottom: 8, letterSpacing: 0.3, textTransform: 'uppercase' }}>Notes internes</div>
           <textarea
             value={notes} onChange={e => setNotes(e.target.value)}
             rows={4}
-            style={{ width: '100%', boxSizing: 'border-box', padding: 12, border: '1px solid #E5E4DC', borderRadius: 10, fontSize: 13, fontFamily: 'inherit', resize: 'vertical' }}
+            style={{ width: '100%', boxSizing: 'border-box', padding: 12, border: '1px solid var(--y-n-300)', borderRadius: 10, fontSize: 13, fontFamily: 'inherit', resize: 'vertical' }}
             placeholder="Notes visibles uniquement en interne"
           />
           <button onClick={() => onSaveNotes(notes)} style={{ ...btnLight, marginTop: 8 }}>Enregistrer les notes</button>
         </div>
 
-        <div style={{ marginTop: 28, padding: 20, background: '#FAFAF7', borderRadius: 14 }}>
+        <div style={{ marginTop: 28, padding: 20, background: 'var(--y-n-50)', borderRadius: 14 }}>
           <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 8 }}>Approuver et lancer l'onboarding</div>
-          <p style={{ margin: '0 0 12px', fontSize: 12, color: '#6B7280', lineHeight: 1.5 }}>
+          <p style={{ margin: '0 0 12px', fontSize: 12, color: 'var(--y-n-600)', lineHeight: 1.5 }}>
             Passe le statut à "Recruté" et envoie un email d'accueil avec les étapes suivantes
             (rendez-vous, documents, contrat, formation).
           </p>
@@ -379,8 +386,8 @@ function Drawer({ row, onClose, onSaveNotes, onOnboard, onStatusChange, onboardi
             onClick={onOnboard}
             disabled={onboarding}
             style={{
-              width: '100%', padding: '12px 20px', background: '#0A0A0A',
-              color: '#fff', border: 'none', borderRadius: 999, fontWeight: 800, fontSize: 13,
+              width: '100%', padding: '12px 20px', background: 'var(--y-n-900)',
+              color: 'var(--y-n-0)', border: 'none', borderRadius: 999, fontWeight: 800, fontSize: 13,
               cursor: onboarding ? 'not-allowed' : 'pointer', opacity: onboarding ? 0.6 : 1,
             }}
           >
@@ -394,24 +401,24 @@ function Drawer({ row, onClose, onSaveNotes, onOnboard, onStatusChange, onboardi
 
 function DetailBlock({ label, value, multi }) {
   return (
-    <div style={{ marginBottom: 14, paddingBottom: 14, borderBottom: '1px solid #F0F0EE' }}>
-      <div style={{ fontSize: 11, fontWeight: 800, color: '#6B7280', letterSpacing: 0.3, textTransform: 'uppercase', marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 14, color: '#0A0A0A', whiteSpace: multi ? 'pre-wrap' : 'normal', lineHeight: 1.5 }}>{value}</div>
+    <div style={{ marginBottom: 14, paddingBottom: 14, borderBottom: '1px solid var(--y-n-200)' }}>
+      <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--y-n-600)', letterSpacing: 0.3, textTransform: 'uppercase', marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 14, color: 'var(--y-n-900)', whiteSpace: multi ? 'pre-wrap' : 'normal', lineHeight: 1.5 }}>{value}</div>
     </div>
   );
 }
 
 function StatCard({ label, value, color }) {
   return (
-    <div style={{ background: '#fff', border: '1px solid #E5E4DC', borderRadius: 14, padding: 16 }}>
-      <div style={{ fontSize: 11, fontWeight: 800, color: '#6B7280', letterSpacing: 0.5, textTransform: 'uppercase' }}>{label}</div>
+    <div style={{ background: 'var(--y-n-0)', border: '1px solid var(--y-n-300)', borderRadius: 14, padding: 16 }}>
+      <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--y-n-600)', letterSpacing: 0.5, textTransform: 'uppercase' }}>{label}</div>
       <div style={{ fontSize: 28, fontWeight: 900, color, marginTop: 4, letterSpacing: '-1px' }}>{value}</div>
     </div>
   );
 }
 
 const Th = ({ children }) => (
-  <th style={{ padding: '12px 14px', textAlign: 'left', fontSize: 11, fontWeight: 900, color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.4, cursor: 'pointer', userSelect: 'none' }}>
+  <th style={{ padding: '12px 14px', textAlign: 'left', fontSize: 11, fontWeight: 900, color: 'var(--y-n-600)', textTransform: 'uppercase', letterSpacing: 0.4, cursor: 'pointer', userSelect: 'none' }}>
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
       {children}
       <svg width="8" height="10" viewBox="0 0 8 10" aria-hidden="true">
@@ -422,5 +429,5 @@ const Th = ({ children }) => (
   </th>
 );
 const Td = ({ children }) => <td style={{ padding: '12px 14px', verticalAlign: 'top' }}>{children}</td>;
-const filterStyle = { padding: '9px 12px', border: '1px solid #E5E4DC', borderRadius: 10, fontSize: 13, background: '#fff', fontFamily: 'inherit' };
-const btnLight = { padding: '8px 14px', background: '#F4F4F2', border: 'none', borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: 'pointer', color: '#0A0A0A', whiteSpace: 'nowrap', fontFamily: 'inherit' };
+const filterStyle = { padding: '9px 12px', border: '1px solid var(--y-n-300)', borderRadius: 10, fontSize: 13, background: 'var(--y-n-0)', fontFamily: 'inherit' };
+const btnLight = { padding: '8px 14px', background: 'var(--y-n-100)', border: 'none', borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: 'pointer', color: 'var(--y-n-900)', whiteSpace: 'nowrap', fontFamily: 'inherit' };

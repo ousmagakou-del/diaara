@@ -14,7 +14,7 @@ const STATUS = [
   { id: 'onboarding', label: 'Contrat envoyé',  color: '#6D28D9', bg: '#F0EBFA' },
   { id: 'signed',     label: 'Signée',          color: '#1F8B4C', bg: '#EAF7F0' },
   { id: 'refused',    label: 'Refusée',         color: '#D9342B', bg: '#FDECEA' },
-  { id: 'archived',   label: 'Archivée',        color: '#6B7280', bg: '#F3F4F6' },
+  { id: 'archived',   label: 'Archivée',        color: 'var(--y-n-600)', bg: '#F3F4F6' },
 ];
 const statusMeta = (id) => STATUS.find(s => s.id === id) || STATUS[0];
 
@@ -176,16 +176,16 @@ export default function PartnerApplicationsSection() {
         <h2 style={{ margin: 0, fontSize: 24, fontWeight: 900, letterSpacing: '-0.5px' }}>
           Candidatures partenaires
         </h2>
-        <p style={{ margin: '6px 0 0', color: '#6B7280', fontSize: 14 }}>
+        <p style={{ margin: '6px 0 0', color: 'var(--y-n-600)', fontSize: 14 }}>
           Pharmacies qui postulent pour rejoindre le réseau YARAM.
         </p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 20 }}>
-        <StatCard label="Total" value={stats.total} color="#0A0A0A" />
-        <StatCard label="Nouvelles" value={stats.new} color="#0066CC" />
-        <StatCard label="En discussion" value={stats.contacted} color="#B78B00" />
-        <StatCard label="Signées" value={stats.signed} color="#1F8B4C" />
+        <StatCard label="Total" value={stats.total} color="var(--y-n-900)" />
+        <StatCard label="Nouvelles" value={stats.new} color="var(--y-info)" />
+        <StatCard label="En discussion" value={stats.contacted} color="var(--y-warning-text)" />
+        <StatCard label="Signées" value={stats.signed} color="var(--y-brand)" />
       </div>
 
       <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -204,21 +204,21 @@ export default function PartnerApplicationsSection() {
         <input
           type="text" placeholder="Recherche (nom, gérant, phone, email)"
           value={search} onChange={e => setSearch(e.target.value)}
-          style={{ flex: 1, minWidth: 220, padding: '9px 14px', border: '1px solid #E5E4DC', borderRadius: 10, fontSize: 13 }}
+          style={{ flex: 1, minWidth: 220, padding: '9px 14px', border: '1px solid var(--y-n-300)', borderRadius: 10, fontSize: 13 }}
         />
         <button onClick={exportCsv} style={btnLight}>Exporter CSV</button>
         <button onClick={load} style={btnLight}>Rafraîchir</button>
       </div>
 
-      <div style={{ background: '#fff', border: '1px solid #E5E4DC', borderRadius: 14, overflow: 'hidden' }}>
+      <div style={{ background: 'var(--y-n-0)', border: '1px solid var(--y-n-300)', borderRadius: 14, overflow: 'hidden' }}>
         {loading ? (
-          <div style={{ padding: 40, textAlign: 'center', color: '#9CA3AF' }}>Chargement…</div>
+          <div style={{ padding: 40, textAlign: 'center', color: 'var(--y-n-500)' }}>Chargement…</div>
         ) : filtered.length === 0 ? (
-          <div style={{ padding: 40, textAlign: 'center', color: '#9CA3AF' }}>Aucune candidature</div>
+          <div style={{ padding: 40, textAlign: 'center', color: 'var(--y-n-500)' }}>Aucune candidature</div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead style={{ background: '#FAFAF7', position: 'sticky', top: 0, zIndex: 1 }}>
+              <thead style={{ background: 'var(--y-n-50)', position: 'sticky', top: 0, zIndex: 1 }}>
                 <tr>
                   <Th>Date</Th><Th>Pharmacie</Th><Th>Gérant</Th><Th>Ville</Th>
                   <Th>NINEA</Th><Th>Cmdes/mois</Th><Th>Statut</Th><Th>Actions</Th>
@@ -228,16 +228,16 @@ export default function PartnerApplicationsSection() {
                 {filtered.map(r => {
                   const meta = statusMeta(r.status);
                   return (
-                    <tr key={r.id} style={{ borderTop: '1px solid #F0F0EE', cursor: 'pointer' }}
+                    <tr key={r.id} style={{ borderTop: '1px solid var(--y-n-200)', cursor: 'pointer' }}
                         onClick={() => setSelected(r)}>
                       <Td>{new Date(r.created_at).toLocaleDateString('fr-FR')}</Td>
                       <Td>
                         <div style={{ fontWeight: 800 }}>{r.pharmacy_name}</div>
-                        {r.email && <div style={{ fontSize: 11, color: '#6B7280' }}>{r.email}</div>}
+                        {r.email && <div style={{ fontSize: 11, color: 'var(--y-n-600)' }}>{r.email}</div>}
                       </Td>
                       <Td>
                         <div>{r.owner_name}</div>
-                        <div style={{ fontSize: 11, color: '#6B7280' }}>{r.phone}</div>
+                        <div style={{ fontSize: 11, color: 'var(--y-n-600)' }}>{r.phone}</div>
                       </Td>
                       <Td>{r.city || '—'}</Td>
                       <Td>{r.ninea || '—'}</Td>
@@ -248,9 +248,16 @@ export default function PartnerApplicationsSection() {
                           onClick={e => e.stopPropagation()}
                           onChange={e => updateStatus(r, e.target.value)}
                           style={{
-                            padding: '4px 8px', border: 'none', borderRadius: 999,
+                            padding: '4px 20px 4px 8px', border: 'none', borderRadius: 999,
                             background: meta.bg, color: meta.color, fontSize: 11,
                             fontWeight: 800, cursor: 'pointer',
+                            appearance: 'none',
+                            WebkitAppearance: 'none',
+                            MozAppearance: 'none',
+                            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='currentColor' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E")`,
+                            backgroundRepeat: 'no-repeat',
+                            backgroundPosition: 'right 6px center',
+                            backgroundSize: '10px 6px',
                           }}
                         >
                           {STATUS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
@@ -293,20 +300,20 @@ function Drawer({ row, onClose, onSaveNotes, onSendContract, onStatusChange, sen
       display: 'flex', justifyContent: 'flex-end',
     }} onClick={onClose}>
       <div style={{
-        width: '100%', maxWidth: 560, background: '#fff', height: '100%',
+        width: '100%', maxWidth: 560, background: 'var(--y-n-0)', height: '100%',
         overflowY: 'auto', padding: 32,
         paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 32px)',
         boxShadow: '-10px 0 30px rgba(0,0,0,0.15)',
       }} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
           <div>
-            <div style={{ fontSize: 11, color: '#6B7280', fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase' }}>
+            <div style={{ fontSize: 11, color: 'var(--y-n-600)', fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase' }}>
               Candidature partenaire
             </div>
             <h3 style={{ margin: '4px 0 6px', fontSize: 22, fontWeight: 900, letterSpacing: '-0.5px' }}>
               {row.pharmacy_name}
             </h3>
-            <div style={{ fontSize: 13, color: '#6B7280' }}>
+            <div style={{ fontSize: 13, color: 'var(--y-n-600)' }}>
               Reçue le {new Date(row.created_at).toLocaleString('fr-FR')}
             </div>
           </div>
@@ -314,7 +321,7 @@ function Drawer({ row, onClose, onSaveNotes, onSendContract, onStatusChange, sen
         </div>
 
         <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 12, fontWeight: 800, color: '#6B7280', marginBottom: 8, letterSpacing: 0.3, textTransform: 'uppercase' }}>Statut</div>
+          <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--y-n-600)', marginBottom: 8, letterSpacing: 0.3, textTransform: 'uppercase' }}>Statut</div>
           <select value={row.status} onChange={e => onStatusChange(e.target.value)} style={{ ...filterStyle, width: '100%' }}>
             {STATUS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
           </select>
@@ -330,19 +337,19 @@ function Drawer({ row, onClose, onSaveNotes, onSendContract, onStatusChange, sen
         <DetailBlock label="Message du candidat" value={row.message || '—'} multi />
 
         <div style={{ marginTop: 20 }}>
-          <div style={{ fontSize: 12, fontWeight: 800, color: '#6B7280', marginBottom: 8, letterSpacing: 0.3, textTransform: 'uppercase' }}>Notes internes</div>
+          <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--y-n-600)', marginBottom: 8, letterSpacing: 0.3, textTransform: 'uppercase' }}>Notes internes</div>
           <textarea
             value={notes} onChange={e => setNotes(e.target.value)}
             rows={4}
-            style={{ width: '100%', boxSizing: 'border-box', padding: 12, border: '1px solid #E5E4DC', borderRadius: 10, fontSize: 13, fontFamily: 'inherit', resize: 'vertical' }}
+            style={{ width: '100%', boxSizing: 'border-box', padding: 12, border: '1px solid var(--y-n-300)', borderRadius: 10, fontSize: 13, fontFamily: 'inherit', resize: 'vertical' }}
             placeholder="Notes visibles uniquement en interne"
           />
           <button onClick={() => onSaveNotes(notes)} style={{ ...btnLight, marginTop: 8 }}>Enregistrer les notes</button>
         </div>
 
-        <div style={{ marginTop: 28, padding: 20, background: '#FAFAF7', borderRadius: 14 }}>
+        <div style={{ marginTop: 28, padding: 20, background: 'var(--y-n-50)', borderRadius: 14 }}>
           <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 8 }}>Envoyer le contrat de partenariat</div>
-          <p style={{ margin: '0 0 12px', fontSize: 12, color: '#6B7280', lineHeight: 1.5 }}>
+          <p style={{ margin: '0 0 12px', fontSize: 12, color: 'var(--y-n-600)', lineHeight: 1.5 }}>
             Génère un lien de signature électronique pré-rempli avec les informations de la candidature.
             Le statut passera automatiquement à "Contrat envoyé".
           </p>
@@ -350,8 +357,8 @@ function Drawer({ row, onClose, onSaveNotes, onSendContract, onStatusChange, sen
             onClick={onSendContract}
             disabled={sending || !row.email}
             style={{
-              width: '100%', padding: '12px 20px', background: row.email ? '#0A0A0A' : '#C0C0C0',
-              color: '#fff', border: 'none', borderRadius: 999, fontWeight: 800, fontSize: 13,
+              width: '100%', padding: '12px 20px', background: row.email ? 'var(--y-n-900)' : 'var(--y-n-400)',
+              color: 'var(--y-n-0)', border: 'none', borderRadius: 999, fontWeight: 800, fontSize: 13,
               cursor: row.email && !sending ? 'pointer' : 'not-allowed',
             }}
           >
@@ -365,24 +372,24 @@ function Drawer({ row, onClose, onSaveNotes, onSendContract, onStatusChange, sen
 
 function DetailBlock({ label, value, multi }) {
   return (
-    <div style={{ marginBottom: 14, paddingBottom: 14, borderBottom: '1px solid #F0F0EE' }}>
-      <div style={{ fontSize: 11, fontWeight: 800, color: '#6B7280', letterSpacing: 0.3, textTransform: 'uppercase', marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 14, color: '#0A0A0A', whiteSpace: multi ? 'pre-wrap' : 'normal', lineHeight: 1.5 }}>{value}</div>
+    <div style={{ marginBottom: 14, paddingBottom: 14, borderBottom: '1px solid var(--y-n-200)' }}>
+      <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--y-n-600)', letterSpacing: 0.3, textTransform: 'uppercase', marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 14, color: 'var(--y-n-900)', whiteSpace: multi ? 'pre-wrap' : 'normal', lineHeight: 1.5 }}>{value}</div>
     </div>
   );
 }
 
 function StatCard({ label, value, color }) {
   return (
-    <div style={{ background: '#fff', border: '1px solid #E5E4DC', borderRadius: 14, padding: 16 }}>
-      <div style={{ fontSize: 11, fontWeight: 800, color: '#6B7280', letterSpacing: 0.5, textTransform: 'uppercase' }}>{label}</div>
+    <div style={{ background: 'var(--y-n-0)', border: '1px solid var(--y-n-300)', borderRadius: 14, padding: 16 }}>
+      <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--y-n-600)', letterSpacing: 0.5, textTransform: 'uppercase' }}>{label}</div>
       <div style={{ fontSize: 28, fontWeight: 900, color, marginTop: 4, letterSpacing: '-1px' }}>{value}</div>
     </div>
   );
 }
 
 const Th = ({ children }) => (
-  <th style={{ padding: '12px 14px', textAlign: 'left', fontSize: 11, fontWeight: 900, color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.4, cursor: 'pointer', userSelect: 'none' }}>
+  <th style={{ padding: '12px 14px', textAlign: 'left', fontSize: 11, fontWeight: 900, color: 'var(--y-n-600)', textTransform: 'uppercase', letterSpacing: 0.4, cursor: 'pointer', userSelect: 'none' }}>
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
       {children}
       <svg width="8" height="10" viewBox="0 0 8 10" aria-hidden="true">
@@ -393,5 +400,5 @@ const Th = ({ children }) => (
   </th>
 );
 const Td = ({ children }) => <td style={{ padding: '12px 14px', verticalAlign: 'top' }}>{children}</td>;
-const filterStyle = { padding: '9px 12px', border: '1px solid #E5E4DC', borderRadius: 10, fontSize: 13, background: '#fff', fontFamily: 'inherit' };
-const btnLight = { padding: '8px 14px', background: '#F4F4F2', border: 'none', borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: 'pointer', color: '#0A0A0A', whiteSpace: 'nowrap', fontFamily: 'inherit' };
+const filterStyle = { padding: '9px 12px', border: '1px solid var(--y-n-300)', borderRadius: 10, fontSize: 13, background: 'var(--y-n-0)', fontFamily: 'inherit' };
+const btnLight = { padding: '8px 14px', background: 'var(--y-n-100)', border: 'none', borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: 'pointer', color: 'var(--y-n-900)', whiteSpace: 'nowrap', fontFamily: 'inherit' };
