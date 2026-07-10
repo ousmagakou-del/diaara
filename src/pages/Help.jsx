@@ -11,7 +11,14 @@ import './Help.css';
 const FAQ_CATEGORIES = [
   {
     id: 'orders',
-    icon: '',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M16.5 9.4L7.55 4.24" />
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+        <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+        <line x1="12" y1="22.08" x2="12" y2="12" />
+      </svg>
+    ),
     tint: 'rgba(31,139,76,0.10)',
     name: 'Commandes',
     desc: 'Passer, suivre, modifier',
@@ -36,7 +43,12 @@ const FAQ_CATEGORIES = [
   },
   {
     id: 'payment',
-    icon: '',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+        <line x1="1" y1="10" x2="23" y2="10" />
+      </svg>
+    ),
     tint: 'rgba(244,181,58,0.14)',
     name: 'Paiement',
     desc: 'Wave, OM, cash, carte',
@@ -61,7 +73,12 @@ const FAQ_CATEGORIES = [
   },
   {
     id: 'account',
-    icon: '',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
+      </svg>
+    ),
     tint: 'rgba(31,139,76,0.10)',
     name: 'Compte',
     desc: 'Profil, sécurité, données',
@@ -86,7 +103,14 @@ const FAQ_CATEGORIES = [
   },
   {
     id: 'delivery',
-    icon: '',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="1" y="3" width="15" height="13" />
+        <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+        <circle cx="5.5" cy="18.5" r="2.5" />
+        <circle cx="18.5" cy="18.5" r="2.5" />
+      </svg>
+    ),
     tint: 'rgba(31,139,76,0.10)',
     name: 'Livraison',
     desc: 'Zones, frais, suivi',
@@ -111,7 +135,11 @@ const FAQ_CATEGORIES = [
   },
   {
     id: 'scan',
-    icon: '',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+      </svg>
+    ),
     tint: 'rgba(232,56,92,0.10)',
     name: 'Scan IA peau',
     desc: 'Diagnostic, confidentialité',
@@ -132,7 +160,12 @@ const FAQ_CATEGORIES = [
   },
   {
     id: 'loyalty',
-    icon: '',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="8" r="7" />
+        <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" />
+      </svg>
+    ),
     tint: 'rgba(244,181,58,0.14)',
     name: 'Fidélité & promos',
     desc: 'Points, codes, parrainage',
@@ -153,7 +186,13 @@ const FAQ_CATEGORIES = [
   },
   {
     id: 'import',
-    icon: '',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="2" y1="12" x2="22" y2="12" />
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+      </svg>
+    ),
     tint: 'rgba(0,0,0,0.06)',
     name: 'Import / Preorder',
     desc: 'Produits internationaux',
@@ -177,28 +216,54 @@ const FAQ_CATEGORIES = [
 const ARTICLES = [
   {
     id: 'routine-peau-noire',
-    icon: '',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+      </svg>
+    ),
     title: 'Routine peau noire : le guide complet',
     excerpt: 'Les 5 étapes essentielles pour une peau éclatante adaptée aux peaux africaines.',
     body: `Une routine peau noire efficace s'articule autour de 5 étapes clés.\n\n**1. Nettoyage doux** — Utilise un gel sans sulfates matin et soir.\n\n**2. Hydratation** — La peau noire perd plus d'eau que les autres types. Privilégie les sérums à l'acide hyaluronique.\n\n**3. Protection solaire** — OUI, même avec une peau foncée. La mélanine ne protège qu'à hauteur d'un SPF 13.\n\n**4. Exfoliation hebdomadaire** — Une fois par semaine maximum, avec un acide doux (PHA, lactique).\n\n**5. Traitement ciblé** — Pour les taches, les boutons, la sécheresse. Sérums spécifiques le soir.`,
   },
   {
     id: 'creme-solaire',
-    icon: '',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="5" />
+        <line x1="12" y1="1" x2="12" y2="3" />
+        <line x1="12" y1="21" x2="12" y2="23" />
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+        <line x1="1" y1="12" x2="3" y2="12" />
+        <line x1="21" y1="12" x2="23" y2="12" />
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+      </svg>
+    ),
     title: 'Choisir sa crème solaire (peau noire)',
     excerpt: "Pourquoi le SPF est crucial, même au Sénégal, et comment éviter l'effet blanc.",
     body: `**Pourquoi la protection solaire est essentielle ?**\n\nLe soleil cause 80% du vieillissement cutané et déclenche l'hyperpigmentation chez les peaux foncées (taches, masque de grossesse, cicatrices qui foncent).\n\n**Quel SPF choisir ?**\n\nMinimum **SPF 30**, idéalement **SPF 50**. À renouveler toutes les 2h en extérieur.\n\n**Comment éviter l'effet blanc ?**\n\nÉvite les filtres minéraux purs (oxyde de zinc en concentration élevée). Privilégie les **chimiques modernes** ou les **hybrides** spécialement formulés pour peaux foncées.`,
   },
   {
     id: 'hyperpigmentation',
-    icon: '',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <circle cx="12" cy="12" r="6" />
+        <circle cx="12" cy="12" r="2" />
+      </svg>
+    ),
     title: 'Hyperpigmentation : que faire ?',
     excerpt: 'Taches brunes, cicatrices, masque de grossesse — les solutions qui marchent vraiment.',
     body: `**Les causes principales**\n\n- Exposition solaire sans protection\n- Inflammation post-acné\n- Grossesse / pilule (mélasma)\n- Frottements répétés\n\n**Les actifs qui fonctionnent**\n\n- **Vitamine C** (matin) — éclaircit en douceur\n- **Niacinamide 10%** — réduit la production de mélanine\n- **Acide azélaïque** — anti-inflammatoire + dépigmentant\n- **Rétinol** (soir, progressif) — accélère le renouvellement\n\n**Important :** la protection solaire est **non-négociable**. Sans SPF, aucun soin éclaircissant ne fonctionnera.`,
   },
   {
     id: 'acne-adulte',
-    icon: '',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      </svg>
+    ),
     title: 'Acné adulte : que faire ?',
     excerpt: 'Boutons hormonaux, kystes — comprendre et traiter sans agresser sa peau.',
     body: `**L'acné adulte n'est pas un échec personnel.** 30% des femmes de 25-40 ans en souffrent au Sénégal.\n\n**Les bons réflexes**\n\n- Ne pas surcharger en produits — l'acné s'aggrave avec l'agressivité\n- Nettoyer 2x par jour maximum\n- Acide salicylique 2% ciblé sur les zones à problème\n- Hydratation légère sans huile comédogène\n\n**Quand consulter ?**\n\nSi l'acné est kystique, douloureuse, ou laisse des cicatrices — direction le dermatologue. Notre IA peut t'orienter mais ne remplace pas un avis médical.`,
