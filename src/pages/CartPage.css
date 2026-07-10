@@ -7,17 +7,17 @@
    ════════════════════════════════════════════════════════════════════ */
 
 .cart-page {
-  --c-brand: #1F8B4C;
-  --c-brand-dark: #166D3B;
-  --c-brand-soft: #EAF5EE;
-  --c-bg: #FAFAF8;
-  --c-card: #FFFFFF;
-  --c-text: #1A1A1A;
-  --c-text-2: #5A5F66;
-  --c-text-3: #8B8F95;
-  --c-border: #ECEEEA;
-  --c-border-strong: #DDE0DA;
-  --c-danger: #D8443C;
+  --c-brand: var(--y-brand);
+  --c-brand-dark: var(--y-brand-dark);
+  --c-brand-soft: var(--y-brand-soft);
+  --c-bg: var(--y-n-50);
+  --c-card: var(--y-n-0);
+  --c-text: var(--y-n-900);
+  --c-text-2: var(--y-n-700);
+  --c-text-3: var(--y-n-500);
+  --c-border: var(--y-n-200);
+  --c-border-strong: var(--y-n-300);
+  --c-danger: var(--y-danger);
   --shadow-sm: 0 1px 2px rgba(20, 30, 25, 0.04);
   --shadow-md: 0 6px 24px rgba(20, 30, 25, 0.06), 0 1px 2px rgba(20, 30, 25, 0.04);
   --shadow-lg: 0 18px 50px rgba(20, 30, 25, 0.10), 0 2px 6px rgba(20, 30, 25, 0.05);
@@ -87,7 +87,7 @@
 
 .cart-summary-col {
   position: sticky;
-  top: 96px;
+  top: var(--y-topbar-h);
 }
 
 /* ─── Pharmacy card ────────────────────────────────────────────── */
@@ -1048,6 +1048,44 @@
     margin-left: 14px;
     margin-right: 14px;
     padding: 12px 16px;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   DARK MODE — override surfaces uniquement (rebrand DARK-1)
+   ════════════════════════════════════════════════════════════════════ */
+@media (prefers-color-scheme: dark) {
+  .cart-page {
+    --c-bg: #0A0A0A;
+    --c-card: #1A1D24;
+    --c-text: #F2F2F2;
+    --c-text-2: #A8ADB4;
+    --c-text-3: #6B7280;
+    --c-border: #2D3139;
+    --c-border-strong: #3A3F48;
+    background: #0A0A0A;
+    color: #F2F2F2;
+  }
+  .cart-page .cart-pharmacy,
+  .cart-page .cart-summary,
+  .cart-page .cart-empty,
+  .cart-page .cart-empty-chip,
+  .cart-page .cart-saved,
+  .cart-page .cart-saved-tile,
+  .cart-page .cart-mobile-bar {
+    background: #1A1D24;
+    border-color: #2D3139;
+  }
+  .cart-page .cart-line-img-btn { background: #12141A; border-color: #2D3139; }
+  .cart-page .cart-qty { background: #12141A; }
+  .cart-page .cart-qty-btn { background: #1A1D24; color: #F2F2F2; }
+  .cart-page .cart-promo-toggle { background: #12141A; }
+  .cart-page input,
+  .cart-page textarea,
+  .cart-page .cart-promo-input {
+    background: #1A1D24;
+    color: #F2F2F2;
+    border-color: #2D3139;
   }
 }
 

@@ -7,15 +7,15 @@
    ════════════════════════════════════════════════════════════════════ */
 
 .brand-page {
-  --bp-green: #1F8B4C;
-  --bp-green-dark: #166635;
-  --bp-green-light: #EAF5EE;
-  --bp-ink: #1A1A1A;
-  --bp-ink-soft: #4A4A48;
-  --bp-mute: #7A7A78;
-  --bp-bg: #FAFAF8;
-  --bp-card: #FFFFFF;
-  --bp-border: #ECECE8;
+  --bp-green: var(--y-brand);
+  --bp-green-dark: var(--y-brand-dark);
+  --bp-green-light: var(--y-brand-soft);
+  --bp-ink: var(--y-n-900);
+  --bp-ink-soft: var(--y-n-700);
+  --bp-mute: var(--y-n-600);
+  --bp-bg: var(--y-n-50);
+  --bp-card: var(--y-n-0);
+  --bp-border: var(--y-n-200);
   --bp-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
   --bp-shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.10);
   --bp-radius: 18px;
@@ -225,7 +225,7 @@
 
 .bp-filter-bar {
   position: sticky;
-  top: 0;
+  top: var(--y-topbar-h);
   z-index: 30;
   background: rgba(250, 250, 248, 0.92);
   backdrop-filter: blur(14px);
@@ -765,4 +765,47 @@
   background: linear-gradient(90deg, rgba(255,255,255,0.3), rgba(255,255,255,0.5), rgba(255,255,255,0.3));
   background-size: 800px 100%;
   animation: bp-shimmer 1.4s infinite linear;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   DARK MODE — override surfaces uniquement (rebrand DARK-1)
+   ════════════════════════════════════════════════════════════════════ */
+@media (prefers-color-scheme: dark) {
+  .brand-page {
+    --bp-bg: #0A0A0A;
+    --bp-card: #1A1D24;
+    --bp-ink: #F2F2F2;
+    --bp-ink-soft: #C0C4CB;
+    --bp-mute: #A8ADB4;
+    --bp-border: #2D3139;
+    background: #0A0A0A;
+    color: #F2F2F2;
+  }
+  .brand-page .bp-chip,
+  .brand-page .bp-similar-card,
+  .brand-page .bp-similar-logo,
+  .brand-page .bp-skel-card,
+  .brand-page .bp-empty--inline {
+    background: #1A1D24;
+    border-color: #2D3139;
+  }
+  .brand-page .bp-search,
+  .brand-page .bp-select {
+    background: #1A1D24;
+    border-color: #2D3139;
+    color: #F2F2F2;
+  }
+  .brand-page .bp-search input {
+    color: #F2F2F2;
+    background: transparent;
+  }
+  .brand-page .bp-filter-bar { background: rgba(10, 10, 10, 0.92); }
+  .brand-page .bp-about { background: #12141A; border-color: #2D3139; }
+  .brand-page input,
+  .brand-page textarea,
+  .brand-page select {
+    background: #1A1D24;
+    color: #F2F2F2;
+    border-color: #2D3139;
+  }
 }

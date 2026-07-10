@@ -317,7 +317,7 @@ export default function SignaturesSection() {
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead style={{ background: '#FAFAF7' }}>
+              <thead style={{ background: '#FAFAF7', position: 'sticky', top: 0, zIndex: 1 }}>
                 <tr>
                   <Th>Destinataire</Th>
                   <Th>Contrat</Th>
@@ -548,7 +548,17 @@ function StatCard({ label, value, color }) {
   );
 }
 function Th({ children }) {
-  return <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: 11, fontWeight: 900, color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5 }}>{children}</th>;
+  return (
+    <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: 11, fontWeight: 900, color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5, cursor: 'pointer', userSelect: 'none' }}>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+        {children}
+        <svg width="8" height="10" viewBox="0 0 8 10" aria-hidden="true">
+          <path d="M4 0l3 3H1z" fill="currentColor" opacity="0.35"/>
+          <path d="M4 10L1 7h6z" fill="currentColor" opacity="0.35"/>
+        </svg>
+      </span>
+    </th>
+  );
 }
 function Td({ children, style }) {
   return <td style={{ padding: '14px 16px', verticalAlign: 'top', ...style }}>{children}</td>;

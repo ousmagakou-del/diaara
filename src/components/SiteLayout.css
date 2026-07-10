@@ -22,6 +22,16 @@
   background: transparent;
   border-bottom-color: transparent;
 }
+/* En mode transparent (au dessus d une video sombre / hero), on force les
+   items de nav / boutons ghost / logo a etre visibles (blanc + text-shadow). */
+.site-header--transparent .site-nav-item,
+.site-header--transparent .site-btn-ghost {
+  color: #fff;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+}
+.site-header--transparent .site-logo-img {
+  filter: brightness(0) invert(1);
+}
 .site-header--scrolled {
   background: rgba(255,255,255,0.95);
   backdrop-filter: blur(16px);

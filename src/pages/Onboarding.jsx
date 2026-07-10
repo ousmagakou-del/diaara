@@ -1002,7 +1002,18 @@ export default function Onboarding({ onComplete }) {
         {askEnableBio && (
           <div className="ob-modal-overlay">
             <div className="ob-modal ob-modal-bio">
-              <div className="ob-modal-bio-icon" />
+              <div className="ob-modal-bio-icon" aria-hidden="true">
+                <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M7 3H4a1 1 0 0 0-1 1v3"/>
+                  <path d="M17 3h3a1 1 0 0 1 1 1v3"/>
+                  <path d="M7 21H4a1 1 0 0 1-1-1v-3"/>
+                  <path d="M17 21h3a1 1 0 0 0 1-1v-3"/>
+                  <path d="M9 9v1"/>
+                  <path d="M15 9v1"/>
+                  <path d="M12 10v4"/>
+                  <path d="M9 15c.5.5 1.5 1 3 1s2.5-.5 3-1"/>
+                </svg>
+              </div>
               <h2 className="ob-modal-title">
                 Activer {bioType === 'touchId' ? 'Touch ID' : 'Face ID'} ?
               </h2>
@@ -1025,7 +1036,6 @@ export default function Onboarding({ onComplete }) {
           <div className="ob-modal-overlay">
             <div className="ob-modal">
               <div className="ob-modal-head">
-                <span className="ob-modal-emoji"></span>
                 <h2 className="ob-modal-title-sm">Mot de passe oublié</h2>
               </div>
               <p className="ob-modal-desc">

@@ -95,6 +95,9 @@
   object-position: center;
   z-index: 0;
   pointer-events: none;
+  /* Fond sombre par defaut : evite le flash blanc/vert du parent
+     tant que la video/iframe n a pas encore peint son premier frame */
+  background: linear-gradient(180deg, var(--y-n-900), var(--y-n-800));
   filter: brightness(0.85) saturate(1.05);
   /* Fade-in douce si le fichier existe */
   animation: lp-video-fade 700ms ease-out both;
@@ -713,7 +716,6 @@
   .lp-stat-num { font-size: 22px; }
   .lp-stat-label { font-size: 11px; }
   .lp-driver-visual { height: 260px; }
-  .lp-driver-emoji { font-size: 120px; }
 
   .lp-footer-inner {
     grid-template-columns: 1fr 1fr;

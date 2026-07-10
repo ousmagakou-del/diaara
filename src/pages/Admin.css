@@ -81,6 +81,11 @@
   font-weight: 700;
   padding: 2px 7px;
   border-radius: 999px;
+  animation: adm-pulse 2s ease-in-out infinite;
+}
+@keyframes adm-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
 }
 .adm-side-foot {
   padding: 12px;
@@ -785,4 +790,15 @@
   .adm-section { padding: 20px 16px; }
   .adm-split { grid-template-columns: 1fr; }
   .adm-form-grid { grid-template-columns: 1fr; }
+}
+
+/* A11y - focus-visible propre */
+.adm-shell button:focus-visible,
+.adm-shell a:focus-visible,
+.adm-shell input:focus-visible,
+.adm-shell select:focus-visible,
+.adm-shell textarea:focus-visible {
+  outline: 2px solid var(--y-brand);
+  outline-offset: 2px;
+  border-radius: 4px;
 }

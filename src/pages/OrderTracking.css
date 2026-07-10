@@ -27,7 +27,7 @@
 .track-loading-spinner {
   width: 36px; height: 36px;
   border: 3px solid var(--line, #EEE);
-  border-top-color: var(--primary, #1F8B4C);
+  border-top-color: var(--y-brand);
   border-radius: 50%;
   animation: track-spin 0.9s linear infinite;
 }
@@ -145,7 +145,7 @@
     align-items: flex-start;
   }
   .track-col-main { grid-column: 1; order: 0; }
-  .track-col-aside { grid-column: 2; grid-row: 1; order: 0; position: sticky; top: 20px; align-self: flex-start; }
+  .track-col-aside { grid-column: 2; grid-row: 1; order: 0; position: sticky; top: var(--y-topbar-h); align-self: flex-start; }
   .track-hero { grid-column: 1; order: 0; }
   .track-hero-title { font-size: 32px; }
   .track-hero { padding: 32px 24px 26px; }
@@ -304,17 +304,17 @@
 
 /* done */
 .track-tl-done .track-tl-bullet {
-  background: var(--primary, #1F8B4C);
-  border-color: var(--primary, #1F8B4C);
+  background: var(--y-brand);
+  border-color: var(--y-brand);
 }
 .track-tl-done .track-tl-bullet svg { color: white; }
-.track-tl-done .track-tl-line { background: var(--primary, #1F8B4C); }
+.track-tl-done .track-tl-line { background: var(--y-brand); }
 .track-tl-done .track-tl-label { color: var(--ink, #15171A); }
 
 /* current */
 .track-tl-current .track-tl-bullet {
-  background: var(--primary, #1F8B4C);
-  border-color: var(--primary, #1F8B4C);
+  background: var(--y-brand);
+  border-color: var(--y-brand);
   animation: track-bullet-pulse 1.8s ease-in-out infinite;
 }
 .track-tl-current .track-tl-bullet::before {
@@ -322,7 +322,7 @@
   position: absolute;
   inset: -6px;
   border-radius: 50%;
-  border: 2px solid var(--primary, #1F8B4C);
+  border: 2px solid var(--y-brand);
   opacity: 0.4;
   animation: track-bullet-ring 1.8s ease-out infinite;
 }
@@ -342,7 +342,7 @@
   animation: track-spin 0.85s linear infinite;
 }
 .track-tl-current .track-tl-label {
-  color: var(--primary, #1F8B4C);
+  color: var(--y-brand);
 }
 
 /* future */
@@ -436,7 +436,7 @@
   color: var(--ink, #15171A);
 }
 .track-import-row strong { font-weight: 800; white-space: nowrap; }
-.track-import-row strong.ok { color: var(--primary, #1F8B4C); }
+.track-import-row strong.ok { color: var(--y-brand); }
 .track-import-row strong.pending { color: #0066CC; }
 .track-import-row strong.wait { color: var(--ink-mute, #9B9EA3); }
 
@@ -468,7 +468,7 @@
 .track-driver-avatar {
   width: 48px; height: 48px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary, #1F8B4C), #2BAE63);
+  background: linear-gradient(135deg, var(--y-brand), #2BAE63);
   color: white;
   display: flex; align-items: center; justify-content: center;
   font-size: 20px; font-weight: 800;
@@ -502,14 +502,14 @@
   align-items: center;
   gap: 4px;
   font-size: 11px;
-  color: var(--primary, #1F8B4C);
+  color: var(--y-brand);
   font-weight: 600;
   margin-top: 3px;
 }
 .live-dot {
   width: 7px; height: 7px;
   border-radius: 50%;
-  background: var(--primary, #1F8B4C);
+  background: var(--y-brand);
   animation: track-live-blink 1.4s ease-in-out infinite;
 }
 @keyframes track-live-blink {
@@ -532,7 +532,7 @@
   flex-shrink: 0;
 }
 .track-driver-call {
-  background: var(--primary, #1F8B4C);
+  background: var(--y-brand);
   box-shadow: 0 2px 6px rgba(31, 139, 76, 0.3);
 }
 .track-driver-wa {
@@ -637,7 +637,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 .track-rider-pin {
-  background: var(--primary, #1F8B4C);
+  background: var(--y-brand);
   color: white;
   width: 44px; height: 44px;
   border-radius: 50%;
@@ -672,7 +672,7 @@
 }
 .track-proof-pin {
   font-size: 13px;
-  color: var(--primary, #1F8B4C);
+  color: var(--y-brand);
   font-weight: 600;
   margin: 8px 0 4px;
 }
@@ -774,7 +774,7 @@
 }
 .track-item-info small {
   font-size: 10px;
-  color: var(--primary, #1F8B4C);
+  color: var(--y-brand);
   font-weight: 700;
 }
 
@@ -803,7 +803,7 @@
 .track-totals-grand strong {
   font-size: 16px;
   font-weight: 800;
-  color: var(--primary, #1F8B4C);
+  color: var(--y-brand);
 }
 
 /* ───────── Paiement ───────── */
@@ -871,7 +871,7 @@
 }
 .track-cta:active { transform: scale(0.98); }
 .track-cta-pri {
-  background: linear-gradient(135deg, var(--primary, #1F8B4C) 0%, #2BAE63 100%);
+  background: linear-gradient(135deg, var(--y-brand) 0%, #2BAE63 100%);
   box-shadow: 0 6px 18px rgba(31, 139, 76, 0.32);
 }
 .track-cta-star {
@@ -933,7 +933,7 @@
 .liv-btn-pri {
   width: 100%;
   padding: 14px;
-  background: var(--primary, #1F8B4C);
+  background: var(--y-brand);
   color: white;
   border: none;
   border-radius: 12px;
@@ -1080,4 +1080,54 @@
 .track-rating-snack-dismiss:hover {
   background: rgba(255,255,255,0.08);
   color: var(--y-n-0);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   DARK MODE — override surfaces (rebrand DARK-1)
+   Note: index.css deja override --bg/--ink/--line en dark. On surcharge
+   uniquement les surfaces cardees hard-codees.
+   ════════════════════════════════════════════════════════════════════ */
+@media (prefers-color-scheme: dark) {
+  .track-screen .track-card,
+  .track-screen .track-info-card {
+    background: #1A1D24;
+    color: #F2F2F2;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15), 0 4px 14px rgba(0, 0, 0, 0.20);
+  }
+  .track-screen .track-tl-bullet { background: #1A1D24; border-color: #2D3139; }
+  .track-screen .track-tl-future .track-tl-bullet { background: #1A1D24; }
+  .track-screen .track-top {
+    background: rgba(15, 17, 21, 0.78);
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+  }
+  .track-screen .track-top-btn {
+    background: rgba(26, 29, 36, 0.9);
+    color: #F2F2F2;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+  .track-screen .track-map-overlay {
+    background: rgba(26, 29, 36, 0.92);
+    color: #F2F2F2;
+  }
+  .track-screen .track-items:not(.open)::after {
+    background: linear-gradient(to bottom, rgba(26, 29, 36, 0), #1A1D24);
+  }
+  .track-screen .track-bottom {
+    background: linear-gradient(to top, rgba(15, 17, 21, 0.98) 60%, rgba(15, 17, 21, 0));
+  }
+  .track-screen .liv-modal {
+    background: #1A1D24;
+    color: #F2F2F2;
+  }
+  .track-screen .liv-btn-stop {
+    background: #2D3139;
+    color: #F2F2F2;
+  }
+  .track-screen .track-proof-sig img { background: #F2F2F2; border-color: #2D3139; }
+  .track-screen input,
+  .track-screen textarea {
+    background: #1A1D24;
+    color: #F2F2F2;
+    border-color: #2D3139;
+  }
 }

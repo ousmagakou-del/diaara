@@ -191,7 +191,7 @@
 
 .ysearch__filters {
   position: sticky;
-  top: 96px;
+  top: var(--y-topbar-h);
   align-self: start;
   max-height: calc(100vh - 120px);
   overflow-y: auto;

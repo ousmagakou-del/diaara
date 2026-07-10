@@ -213,7 +213,7 @@
 /* ─── Sidebar ─── */
 .acct-sidebar {
   position: sticky;
-  top: 88px;
+  top: var(--y-topbar-h);
   background: #FFFFFF;
   border-radius: 16px;
   padding: 8px 0;

@@ -5,20 +5,20 @@
    ════════════════════════════════════════════════════════════════════ */
 
 .pp-root {
-  --pp-brand: #1F8B4C;
-  --pp-brand-dark: #156d3a;
-  --pp-brand-soft: #E8F5EE;
-  --pp-ink: #0F1419;
-  --pp-ink-2: #2C3338;
-  --pp-muted: #6B7280;
-  --pp-muted-2: #9CA3AF;
-  --pp-line: #ECECEC;
-  --pp-line-soft: #F4F4F2;
-  --pp-bg: #FFFFFF;
-  --pp-bg-soft: #FAFAF8;
-  --pp-radius: 20px;
-  --pp-radius-sm: 14px;
-  --pp-radius-lg: 24px;
+  --pp-brand: var(--y-brand);
+  --pp-brand-dark: var(--y-brand-dark);
+  --pp-brand-soft: var(--y-brand-soft);
+  --pp-ink: var(--y-n-900);
+  --pp-ink-2: var(--y-n-800);
+  --pp-muted: var(--y-n-600);
+  --pp-muted-2: var(--y-n-500);
+  --pp-line: var(--y-n-200);
+  --pp-line-soft: var(--y-n-100);
+  --pp-bg: var(--y-n-0);
+  --pp-bg-soft: var(--y-n-50);
+  --pp-radius: var(--y-rad-2xl);
+  --pp-radius-sm: var(--y-rad-lg);
+  --pp-radius-lg: var(--y-rad-3xl);
   --pp-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.05);
   --pp-shadow-hover: 0 2px 4px rgba(0,0,0,0.06), 0 16px 32px rgba(0,0,0,0.08);
 
@@ -151,7 +151,7 @@
 /* ─── Buy box ─── */
 .pp-buybox {
   position: sticky;
-  top: 100px;
+  top: var(--y-topbar-h);
   display: flex;
   flex-direction: column;
   padding: 4px 0;
@@ -551,7 +551,7 @@
   border-radius: var(--pp-radius);
   padding: 28px;
   position: sticky;
-  top: 100px;
+  top: var(--y-topbar-h);
   height: fit-content;
 }
 .pp-reviews-avg {
@@ -1429,5 +1429,48 @@
   .pp-thumbs--horiz { display: flex; }
   .pp-buybox--v2 { position: static; }
   .pp-bundle { grid-template-columns: 1fr; }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   DARK MODE — override surfaces uniquement (rebrand DARK-1)
+   ════════════════════════════════════════════════════════════════════ */
+@media (prefers-color-scheme: dark) {
+  .pp-root {
+    --pp-bg: #0A0A0A;
+    --pp-bg-soft: #12141A;
+    --pp-card: #1A1D24;
+    --pp-ink: #F2F2F2;
+    --pp-ink-2: #E5E5E5;
+    --pp-muted: #A8ADB4;
+    --pp-muted-2: #6B7280;
+    --pp-line: #2D3139;
+    --pp-line-soft: #23262D;
+    background: #0A0A0A;
+    color: #F2F2F2;
+  }
+  .pp-root .pp-gallery-main,
+  .pp-root .pp-thumb,
+  .pp-root .pp-rel-card,
+  .pp-root .pp-pharm-card,
+  .pp-root .pp-review,
+  .pp-root .pp-reviews-summary,
+  .pp-root .pp-acc,
+  .pp-root .pp-buybox--v2,
+  .pp-root .pp-bundle-item,
+  .pp-root .pp-bundle-cta {
+    background: #1A1D24;
+    border-color: #2D3139;
+  }
+  .pp-root .pp-mobile-bar { background: #1A1D24; border-color: #2D3139; }
+  .pp-root .pp-qty { background: #1A1D24; }
+  .pp-root .pp-qty button { color: #F2F2F2; }
+  .pp-root .pp-btn-outline { background: #1A1D24; color: #F2F2F2; border-color: #2D3139; }
+  .pp-root input,
+  .pp-root textarea,
+  .pp-root select {
+    background: #1A1D24;
+    color: #F2F2F2;
+    border-color: #2D3139;
+  }
 }
 

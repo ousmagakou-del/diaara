@@ -253,7 +253,9 @@
 }
 
 .ob-progress-bar {
-  height: 3px;
+  height: 3px !important;
+  min-height: 3px !important;
+  min-width: 12px !important;
   width: 12px;
   border-radius: var(--y-rad-pill);
   background: rgba(255, 255, 255, 0.35);
@@ -267,7 +269,8 @@
 .ob-progress-bar.done   { background: rgba(255, 255, 255, 0.7); }
 .ob-progress-bar.active {
   background: var(--y-n-0);
-  width: 40px;
+  min-width: 40px !important;
+  width: 40px !important;
 }
 
 .ob-next-btn {
@@ -1210,9 +1213,17 @@
 .ob-modal-bio { text-align: center; padding: 30px 24px 24px; }
 
 .ob-modal-bio-icon {
-  font-size: 60px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ob-green);
   margin-bottom: 14px;
   animation: ob-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.ob-modal-bio-icon svg {
+  width: 52px;
+  height: 52px;
+  display: block;
 }
 
 .ob-modal-head {
@@ -1221,7 +1232,6 @@
   gap: 10px;
   margin-bottom: 6px;
 }
-.ob-modal-emoji { font-size: 24px; }
 
 .ob-modal-title {
   font-size: 21px;

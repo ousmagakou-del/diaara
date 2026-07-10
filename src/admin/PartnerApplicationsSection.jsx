@@ -218,7 +218,7 @@ export default function PartnerApplicationsSection() {
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead style={{ background: '#FAFAF7' }}>
+              <thead style={{ background: '#FAFAF7', position: 'sticky', top: 0, zIndex: 1 }}>
                 <tr>
                   <Th>Date</Th><Th>Pharmacie</Th><Th>Gérant</Th><Th>Ville</Th>
                   <Th>NINEA</Th><Th>Cmdes/mois</Th><Th>Statut</Th><Th>Actions</Th>
@@ -294,7 +294,9 @@ function Drawer({ row, onClose, onSaveNotes, onSendContract, onStatusChange, sen
     }} onClick={onClose}>
       <div style={{
         width: '100%', maxWidth: 560, background: '#fff', height: '100%',
-        overflowY: 'auto', padding: 32, boxShadow: '-10px 0 30px rgba(0,0,0,0.15)',
+        overflowY: 'auto', padding: 32,
+        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 32px)',
+        boxShadow: '-10px 0 30px rgba(0,0,0,0.15)',
       }} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
           <div>
@@ -379,7 +381,17 @@ function StatCard({ label, value, color }) {
   );
 }
 
-const Th = ({ children }) => <th style={{ padding: '12px 14px', textAlign: 'left', fontSize: 11, fontWeight: 900, color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.4 }}>{children}</th>;
+const Th = ({ children }) => (
+  <th style={{ padding: '12px 14px', textAlign: 'left', fontSize: 11, fontWeight: 900, color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.4, cursor: 'pointer', userSelect: 'none' }}>
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+      {children}
+      <svg width="8" height="10" viewBox="0 0 8 10" aria-hidden="true">
+        <path d="M4 0l3 3H1z" fill="currentColor" opacity="0.35"/>
+        <path d="M4 10L1 7h6z" fill="currentColor" opacity="0.35"/>
+      </svg>
+    </span>
+  </th>
+);
 const Td = ({ children }) => <td style={{ padding: '12px 14px', verticalAlign: 'top' }}>{children}</td>;
 const filterStyle = { padding: '9px 12px', border: '1px solid #E5E4DC', borderRadius: 10, fontSize: 13, background: '#fff', fontFamily: 'inherit' };
 const btnLight = { padding: '8px 14px', background: '#F4F4F2', border: 'none', borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: 'pointer', color: '#0A0A0A', whiteSpace: 'nowrap', fontFamily: 'inherit' };
