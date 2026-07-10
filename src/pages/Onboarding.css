@@ -180,7 +180,22 @@
   flex-shrink: 0;
 }
 
-.ob-icon-chip svg { width: 15px; height: 15px; stroke-width: 1.75; }
+.ob-icon-chip svg {
+  width: 15px;
+  height: 15px;
+  max-width: 15px;
+  max-height: 15px;
+  stroke-width: 1.75;
+}
+
+/* Safety net : aucune SVG dans .ob-content ou .ob-icon-chip ne doit exploser,
+   meme si un ancetre devient enorme (landscape iPhone, bug de layout, etc.) */
+.ob-content svg,
+.ob-icon-chip svg,
+.ob-badge-row svg {
+  max-width: 100%;
+  max-height: 48px;
+}
 
 .ob-title {
   font-size: 34px;
@@ -1445,9 +1460,11 @@
 }
 
 /* ═══════════════════════════════════════════════
-   8. DESKTOP RESPONSIVE (≥ 900px)
+   8. DESKTOP RESPONSIVE (≥ 900px ET viewport haut)
+   Ajout min-height: 600px pour eviter que iPhone landscape (932x430) ne
+   declenche le layout desktop 2 colonnes et fasse exploser la typo + les SVG.
    ═══════════════════════════════════════════════ */
-@media (min-width: 900px) {
+@media (min-width: 900px) and (min-height: 600px) {
   /* ─── INTRO CAROUSEL : split premium — texte gauche, photo pleine (side gradient plus long) ─── */
   .ob-screen {
     min-height: 100vh;
@@ -1630,6 +1647,101 @@
 @media (min-width: 1440px) {
   .ob-title { font-size: 72px; letter-spacing: -0.035em; }
   .ob-desc { font-size: 20px; }
+}
+
+/* ═══════════════════════════════════════════════
+   9b. LANDSCAPE MOBILE (iPhone en mode paysage : ~430px de hauteur)
+   Filet de securite : compresse la slide intro pour qu'elle tienne dans
+   un viewport tres court sans debordement ni SVG geant.
+   ═══════════════════════════════════════════════ */
+@media (orientation: landscape) and (max-height: 500px) {
+  .ob-screen {
+    min-height: 100vh;
+    min-height: 100dvh;
+    height: auto;
+  }
+  /* Repasse en single-column meme si width > 900px (edge case iPhone Pro Max) */
+  .ob-intro-inner {
+    display: contents;
+  }
+  .ob-skip-bar {
+    padding: calc(var(--safe-top, 6px) + 8px) var(--y-sp-5) 0;
+  }
+  .ob-skip {
+    padding: 6px 14px;
+    font-size: var(--y-fs-xs);
+  }
+  .ob-content {
+    padding: var(--y-sp-3) var(--y-sp-5) var(--y-sp-2);
+    justify-content: flex-end;
+  }
+  .ob-badge-row {
+    margin-bottom: var(--y-sp-2);
+    gap: var(--y-sp-2);
+  }
+  .ob-mini-badge {
+    padding: 4px 10px;
+    font-size: 10px;
+  }
+  .ob-icon-chip {
+    width: 26px;
+    height: 26px;
+  }
+  .ob-icon-chip svg {
+    width: 13px;
+    height: 13px;
+    max-width: 13px;
+    max-height: 13px;
+  }
+  .ob-title {
+    font-size: 22px;
+    max-width: none;
+    margin: 0 0 var(--y-sp-2);
+    line-height: 1.1;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
+  }
+  .ob-desc {
+    font-size: 13px;
+    margin: 0 0 var(--y-sp-3);
+    max-width: 640px;
+    line-height: 1.4;
+  }
+  .ob-next-btn {
+    padding: 10px 20px;
+    font-size: 14px;
+    min-width: 140px;
+    gap: var(--y-sp-2);
+  }
+  .ob-next-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+  .ob-bottom {
+    padding: 0 var(--y-sp-5) calc(var(--safe-bottom, 0px) + var(--y-sp-3));
+  }
+  .ob-progress-bars { margin-top: 0; }
+  .ob-progress-bar { width: 10px; }
+  .ob-progress-bar.active { width: 28px; }
+
+  /* Auth / profile compact en landscape court */
+  .ob-auth-top,
+  .ob-profile-top {
+    padding: calc(var(--safe-top, 6px) + 14px) 20px 22px;
+  }
+  .ob-logo-circle {
+    width: 48px;
+    height: 48px;
+    font-size: 26px;
+    margin: 0 auto 8px;
+    border-radius: 14px;
+  }
+  .ob-auth-title { font-size: 20px; margin-bottom: 4px; }
+  .ob-auth-desc { font-size: 12px; }
+  .ob-auth-bottom { padding: 20px 18px calc(var(--safe-bottom, 0px) + 16px); }
+
+  /* Banniere Install PWA / iOS smart banner : cachee en landscape court
+     pour ne pas manger l'ecran ni couvrir le CTA principal. */
+  .yaram-install-prompt { display: none !important; }
 }
 
 /* Respect prefers-reduced-motion */

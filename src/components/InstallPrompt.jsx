@@ -97,7 +97,7 @@ export default function InstallPrompt() {
   const buttonLabel = isIOS ? 'Télécharger' : 'Installer';
 
   return (
-    <div style={bannerStyle}>
+    <div className="yaram-install-prompt" style={bannerStyle}>
       <div style={iconStyle}>
         {isIOS ? (
           // Logo Apple stylisé pour iOS
