@@ -386,15 +386,15 @@ export default function Help() {
         </button>
         <div className="help-header-title">
           <span className="help-header-logo">YARAM</span>
-          <h1>Aide & Support</h1>
+          <h1>Aide et support</h1>
         </div>
       </header>
 
       <div className="help-scroll">
         {/* HERO — Recherche */}
         <section className="help-hero help-anim" style={{ animationDelay: '0ms' }}>
-          <h2 className="help-hero-title">Comment pouvons-nous t'aider ?</h2>
-          <p className="help-hero-sub">Cherche dans notre base ou contacte-nous directement</p>
+          <h2 className="help-hero-title">On est là pour t'aider</h2>
+          <p className="help-hero-sub">Réponse rapide via WhatsApp ou par e-mail.</p>
           <div className="help-search-wrap">
             <span className="help-search-icon" aria-hidden></span>
             <input
@@ -535,14 +535,57 @@ export default function Help() {
           </section>
         )}
 
+        {/* Politiques légales (calque native) */}
+        <section className="help-section help-anim" style={{ animationDelay: '210ms' }}>
+          <h3 className="help-section-title">Politiques légales</h3>
+          <div className="help-linklist">
+            <button className="help-linkrow" onClick={() => navigate('/legal/privacy-policy')} type="button">
+              <span>
+                <strong>Politique de confidentialité</strong>
+                <span>Données personnelles et RGPD</span>
+              </span>
+              <span className="help-linkrow-chev" aria-hidden>›</span>
+            </button>
+            <button className="help-linkrow" onClick={() => navigate('/legal/cgv')} type="button">
+              <span>
+                <strong>Conditions générales de vente</strong>
+                <span>Vente, livraison, rétractation</span>
+              </span>
+              <span className="help-linkrow-chev" aria-hidden>›</span>
+            </button>
+            <button className="help-linkrow" onClick={() => navigate('/legal/mentions-legales')} type="button">
+              <span>
+                <strong>Mentions légales</strong>
+                <span>Éditeur et hébergement</span>
+              </span>
+              <span className="help-linkrow-chev" aria-hidden>›</span>
+            </button>
+          </div>
+        </section>
+
+        {/* À propos (calque native) */}
+        <section className="help-section help-anim" style={{ animationDelay: '260ms' }}>
+          <h3 className="help-section-title">À propos</h3>
+          <div className="help-linklist">
+            <div className="help-linkrow static">
+              <span><strong>Version</strong></span>
+              <span className="help-linkrow-value">2.0.0</span>
+            </div>
+            <div className="help-linkrow static">
+              <span><strong>Édité par</strong></span>
+              <span className="help-linkrow-value">KOMUNITY SENEGAL</span>
+            </div>
+          </div>
+        </section>
+
         {/* Footer status */}
-        <footer className="help-footer help-anim" style={{ animationDelay: '240ms' }}>
+        <footer className="help-footer help-anim" style={{ animationDelay: '300ms' }}>
           <div className={`help-status ${isOnline ? 'is-online' : 'is-offline'}`}>
             <span className="help-status-dot" />
             <strong>{isOnline ? 'Support en ligne' : 'On répond demain'}</strong>
             <span>Lun-Sam · 8h-18h (heure de Dakar)</span>
           </div>
-          <p className="help-footer-meta">YARAM Support · v0.1</p>
+          <p className="help-footer-meta">© 2026 KOMUNITY SENEGAL. Tous droits réservés.</p>
         </footer>
 
         <div style={{ height: 40 }} />

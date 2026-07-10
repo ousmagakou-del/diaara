@@ -578,6 +578,57 @@
 }
 
 /* =========================================================
+   Linklist (Politiques légales + À propos — calque native)
+   ========================================================= */
+.help-linklist {
+  background: var(--bg-card, #fff);
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--line, #EEE);
+}
+.help-linkrow {
+  width: 100%;
+  padding: 14px 18px;
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  border-bottom: 1px solid var(--line-soft, #F4F4F2);
+}
+.help-linkrow:last-child { border-bottom: none; }
+.help-linkrow.static { cursor: default; }
+.help-linkrow:hover:not(.static) { background: var(--bg-soft); }
+.help-linkrow > span:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.help-linkrow strong {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.help-linkrow > span:first-child > span {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.help-linkrow-chev {
+  font-size: 18px;
+  color: var(--ink-mute);
+}
+.help-linkrow-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+/* =========================================================
    FOOTER — Statut support
    ========================================================= */
 .help-footer {

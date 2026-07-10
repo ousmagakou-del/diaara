@@ -150,10 +150,10 @@
   font-weight: 700;
 }
 .ph-tagline {
-  font-size: 12px;
-  color: var(--ink-soft);
-  font-style: italic;
-  margin: 8px 0;
+  font-size: 11.5px;
+  color: var(--primary);
+  font-weight: 700;
+  margin: 2px 0 0;
 }
 .ph-info-row {
   font-size: 12px;

@@ -193,10 +193,10 @@ export default function Newsletter() {
             <span className="nl-burst-ring nl-burst-ring-3" />
             <span className="nl-success-emoji"></span>
           </div>
-          <h1 className="nl-success-title">C'est confirmé !</h1>
+          <h1 className="nl-success-title">Bienvenue dans le club !</h1>
           <p className="nl-success-sub">
-            Bienvenue dans le club <strong>YARAM</strong>.<br />
-            Premier mail dans ta boîte sous 24h.
+            Tu recevras nos meilleurs contenus chaque mardi.<br />
+            On t'a envoyé un email de confirmation.
           </p>
           <div className="nl-success-tag">
             <span aria-hidden></span>
@@ -207,7 +207,7 @@ export default function Newsletter() {
             className="nl-btn nl-btn-primary nl-btn-shine"
             onClick={() => navigate('/')}
           >
-            Retour au shopping
+            Découvrir la boutique
           </button>
           <button
             type="button"

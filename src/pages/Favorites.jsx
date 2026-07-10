@@ -253,6 +253,17 @@ export default function Favorites() {
         )}
       </header>
 
+      {/* Lien Alertes prix (calque native) */}
+      {!selectMode && (
+        <button
+          className="yfav-alerts-link"
+          onClick={() => navigate('/price-alerts')}
+        >
+          <span>Voir mes alertes prix</span>
+          <span aria-hidden>→</span>
+        </button>
+      )}
+
       {/* TABS */}
       {!selectMode && (
         <div className="yfav-tabs">
@@ -286,10 +297,10 @@ export default function Favorites() {
                 <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
               </svg>
             </div>
-            <h3 className="yfav-empty-title">Tu n'as pas encore de favoris</h3>
-            <p className="yfav-empty-sub">Touche le cœur sur un produit pour le retrouver ici en un clin d'œil.</p>
+            <h3 className="yfav-empty-title">Aucun favori encore</h3>
+            <p className="yfav-empty-sub">Tape le cœur sur tes produits préférés pour les retrouver ici.</p>
             <button className="yfav-empty-cta" onClick={() => navigate('/')}>
-              Découvrir le catalogue →
+              Explorer la boutique
             </button>
           </div>
         ) : tab === 'products' ? (

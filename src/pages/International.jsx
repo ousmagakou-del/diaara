@@ -37,24 +37,25 @@ const BRANDS = [
   { name: 'Estée Lauder',    flag: '', country: 'USA',     status: 'soon',    accent: '#0F2A4A' },
 ];
 
+// Copy alignée sur native (yaram-native/app/international.jsx)
 const STEPS = [
   {
     n: 1,
     emoji: '',
-    title: 'Choisis ta marque',
-    desc: 'Sephora, La Roche-Posay, The Ordinary... Dis-nous ce que tu veux, on s\'occupe de la sourcer.',
+    title: 'Tu choisis ta marque',
+    desc: 'Sephora, CeraVe, The Ordinary, La Roche-Posay...',
   },
   {
     n: 2,
     emoji: '',
-    title: 'Acompte 50%',
-    desc: 'Tu paies la moitié via Wave ou Orange Money pour sécuriser ta commande chez le fournisseur.',
+    title: 'Tu paies 50% d\'acompte',
+    desc: 'Via Wave, Orange Money ou Free Money',
   },
   {
     n: 3,
     emoji: '',
-    title: 'Livraison 15 jours',
-    desc: 'On expédie depuis la France ou les USA. À la réception, tu règles le solde.',
+    title: 'On commande et livre en 15j',
+    desc: 'Suivi WhatsApp + photo réception + solde à payer',
   },
 ];
 
@@ -398,8 +399,8 @@ export default function International() {
         ref={setSectionRef(0)}
       >
         <div className="intlp-section-head">
-          <span className="intlp-eyebrow">Étape par étape</span>
-          <h2 className="intlp-section-title">Comment ça marche</h2>
+          <span className="intlp-eyebrow">Comment ça marche</span>
+          <h2 className="intlp-section-title">Aussi simple qu'1 commande locale</h2>
         </div>
 
         <div className="intlp-steps-scroll">
@@ -480,16 +481,8 @@ export default function International() {
             ))}
           </div>
         ) : intlProducts.length === 0 ? (
-          <div style={{
-            background: 'rgba(255,255,255,0.85)',
-            border: '1.5px dashed rgba(31,139,76,0.25)',
-            borderRadius: 18, padding: 32, textAlign: 'center',
-            color: '#4A6B5A', fontSize: 14, lineHeight: 1.6,
-          }}>
-            <div style={{ fontSize: 36, marginBottom: 8 }}></div>
-            <strong style={{ color: '#0E5B33', display: 'block', marginBottom: 6 }}>
-              Pas encore de stock immédiat
-            </strong>
+          <div className="intlp-products-empty">
+            <strong>Pas encore de stock immédiat</strong>
             Utilise le formulaire ci-dessous pour commander n'importe quelle marque sur-mesure.
           </div>
         ) : (
@@ -713,13 +706,12 @@ export default function International() {
         ref={setSectionRef(5)}
       >
         <div className="intlp-footercta-inner">
-          <div className="intlp-footercta-emoji" aria-hidden></div>
           <h3 className="intlp-footercta-title">Une question ?</h3>
           <p className="intlp-footercta-sub">
-            On répond en moins de 30 min sur WhatsApp.
+            On répond rapidement sur WhatsApp.
           </p>
           <a
-            href="https://wa.me/221777608983?text=Bonjour%20YARAM%2C%20j%27ai%20une%20question%20sur%20la%20boutique%20internationale"
+            href="https://wa.me/221777608983?text=Salut%20YARAM%2C%20j%27ai%20une%20question%20Boutique%20Internationale"
             className="intlp-wa-btn"
             target="_blank"
             rel="noopener noreferrer"
@@ -729,7 +721,7 @@ export default function International() {
                 <path d="M17.5 14.4c-.3-.1-1.7-.8-1.9-.9-.3-.1-.5-.1-.6.1-.2.3-.7.9-.9 1.1-.2.2-.3.2-.6.1-.3-.2-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6.1-.1.3-.3.4-.5.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5-.1-.1-.6-1.5-.9-2.1-.2-.5-.4-.5-.6-.5h-.5c-.2 0-.5.1-.7.3-.3.3-1 1-1 2.4 0 1.4 1 2.8 1.2 3 .1.2 2 3 4.8 4.2.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.6-.1 1.7-.7 1.9-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3zM12 2C6.5 2 2 6.5 2 12c0 1.9.5 3.7 1.5 5.3L2 22l4.8-1.5c1.5.8 3.3 1.3 5.2 1.3 5.5 0 10-4.5 10-10S17.5 2 12 2z" />
               </svg>
             </span>
-            <span>Écris-nous WhatsApp</span>
+            <span>Question rapide via WhatsApp</span>
           </a>
         </div>
       </section>

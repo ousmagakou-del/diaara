@@ -74,6 +74,25 @@
 }
 .yfav-sort-btn:active { transform: scale(0.95); background: #ECECEA; }
 
+/* Alerts price link (calque native) */
+.yfav-alerts-link {
+  margin: 12px 16px 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--primary-light);
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  width: calc(100% - 32px);
+}
+.yfav-alerts-link:active { transform: scale(0.98); }
+
 /* TABS */
 .yfav-tabs {
   display: flex;

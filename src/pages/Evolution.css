@@ -561,6 +561,56 @@
   gap: 10px;
 }
 
+/* ═══════════════════════════════════════════════
+   HISTORIQUE COMPLET (calque native)
+   ═══════════════════════════════════════════════ */
+.ev-history { padding: 8px 4px; margin-top: 12px; }
+.ev-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ev-history-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: var(--bg-card, #fff);
+  border-radius: 12px;
+  border: 1px solid var(--line, #EEE);
+}
+.ev-history-score {
+  width: 48px;
+  height: 48px;
+  border-radius: 24px;
+  background: var(--primary-light);
+  color: var(--primary);
+  font-size: 14px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ev-history-info { flex: 1; min-width: 0; }
+.ev-history-type {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  text-transform: capitalize;
+}
+.ev-history-date {
+  font-size: 11px;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+.ev-history-delta {
+  font-size: 13px;
+  font-weight: 800;
+}
+.ev-history-delta.up { color: var(--primary); }
+.ev-history-delta.down { color: var(--bad); }
+
 .ev-insight {
   display: flex;
   align-items: flex-start;

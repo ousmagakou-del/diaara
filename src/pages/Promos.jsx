@@ -5,9 +5,10 @@ import { usePersistedData } from '../lib/usePersistedData';
 import TabBar from '../components/TabBar';
 import './Promos.css';
 
+// Filtres calqués sur native (labels sans emoji, ton pro sobre)
 const FILTER_TABS = [
   { id: 'all',      label: 'Toutes' },
-  { id: 'product',  label: 'Sur produit' },
+  { id: 'product',  label: 'Produit' },
   { id: 'category', label: 'Catégorie' },
   { id: 'brand',    label: 'Marque' },
   { id: 'first',    label: '1ère commande' },
@@ -123,15 +124,17 @@ export default function Promos() {
     return 'all';
   };
 
+  // Icônes SVG sobres (calque native sans emoji)
   const promoIcon = (p) => {
     const s = promoScope(p);
-    if (s === 'product')  return '🛍️';
-    if (s === 'category') return '🗂️';
-    if (s === 'brand')    return '🏷️';
-    if (s === 'first')    return '✨';
-    if (p.type === 'shipping' || p.type === 'free_shipping') return '🛵';
-    if (p.type === 'percent' || p.type === 'percentage') return '💸';
-    return '🎁';
+    const stroke = 'currentColor';
+    const common = { width: 22, height: 22, viewBox: '0 0 24 24', fill: 'none', stroke, strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' };
+    if (s === 'product')  return <svg {...common}><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>;
+    if (s === 'category') return <svg {...common}><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>;
+    if (s === 'brand')    return <svg {...common}><path d="M12 2 15 8l7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></svg>;
+    if (s === 'first')    return <svg {...common}><polyline points="20 6 9 17 4 12"/></svg>;
+    if (p.type === 'shipping' || p.type === 'free_shipping') return <svg {...common}><path d="M10 17h4V5H2v12h3"/><path d="M20 17h2v-3.34a4 4 0 0 0-1.17-2.83L19 9h-5"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>;
+    return <svg {...common}><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7 8.5 3.5A2.5 2.5 0 0 1 12 7"/><path d="M12 7l3.5-3.5A2.5 2.5 0 0 0 12 7"/></svg>;
   };
 
   // ─── Filtre par tab ───
@@ -280,12 +283,14 @@ export default function Promos() {
             </div>
           ) : filteredPromos.length === 0 ? (
             <div className="ypromos-empty">
-              <div className="ypromos-empty-emoji">✨</div>
-              <h3>Pas de promo en ce moment</h3>
-              <p>Reviens plus tard, on prépare de belles surprises pour toi !</p>
-              <button className="ypromos-empty-cta" onClick={() => navigate('/')}>
-                Continuer à explorer
-              </button>
+              <div className="ypromos-empty-illu" aria-hidden>
+                <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" width="56" height="56">
+                  <path d="M20 6 6 20l22 22 14-14z"/>
+                  <circle cx="14" cy="14" r="2"/>
+                </svg>
+              </div>
+              <h3>Aucun bon plan</h3>
+              <p>Reviens plus tard, on en ajoute régulièrement.</p>
             </div>
           ) : (
             <div className="ypromos-grid">
@@ -365,15 +370,19 @@ export default function Promos() {
           )}
         </section>
 
-        {/* ════════ PROGRAMME FIDÉLITÉ ════════ */}
+        {/* ════════ PROGRAMME FIDÉLITÉ (calque native) ════════ */}
         {!loading && (
           <section className="ypromos-loyalty ypromos-stagger" style={{ '--i': 10 }}>
-            <div className="ypromos-loyalty-icon">💎</div>
-            <div className="ypromos-loyalty-body">
-              <h3>Programme fidélité YARAM</h3>
-              <p>Cumule <strong>1 000 points</strong> = <strong>1 000 FCFA</strong> de réduction sur ta prochaine commande</p>
+            <div className="ypromos-loyalty-icon" aria-hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" width="22" height="22">
+                <path d="M12 2 15 8l7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/>
+              </svg>
             </div>
-            <button className="ypromos-loyalty-cta" onClick={() => navigate('/profile')}>
+            <div className="ypromos-loyalty-body">
+              <h3>Programme Fidélité</h3>
+              <p>Gagne <strong>500 pts</strong> par commande</p>
+            </div>
+            <button className="ypromos-loyalty-cta" onClick={() => navigate('/loyalty')}>
               →
             </button>
           </section>

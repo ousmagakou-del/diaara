@@ -6,12 +6,13 @@ import { haptic } from '../lib/haptic';
 import { toast, confirmDialog } from '../lib/toast';
 import './Addresses.css';
 
-const PRESET_ICONS = [
-  { icon: '', label: 'Domicile' },
-  { icon: '', label: 'Bureau' },
-  { icon: '', label: 'Famille' },
-  { icon: '', label: 'Conjoint·e' },
-  { icon: '', label: 'Autre' },
+// Labels only (calque native — pas d'emoji, ton sobre)
+const PRESET_LABELS = [
+  { label: 'Domicile' },
+  { label: 'Bureau' },
+  { label: 'Famille' },
+  { label: 'Conjoint·e' },
+  { label: 'Autre' },
 ];
 
 export default function Addresses() {
@@ -39,7 +40,6 @@ export default function Addresses() {
     setEditing({
       id: null,
       label: 'Domicile',
-      icon: '',
       name: (user?.first_name || '') + ' ' + (user?.last_name || ''),
       phone: user?.phone || '',
       city: user?.city || 'Dakar',
@@ -104,7 +104,12 @@ export default function Addresses() {
           </div>
         ) : addresses.length === 0 ? (
           <div className="addr-empty">
-            <div style={{fontSize: 64, opacity: 0.2}}></div>
+            <div className="addr-empty-illu" aria-hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="56" height="56">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+            </div>
             <h3>Aucune adresse</h3>
             <p>Ajoute ta première adresse de livraison</p>
           </div>
@@ -112,7 +117,6 @@ export default function Addresses() {
           addresses.map(a => (
             <div key={a.id} className={`addr-card ${a.is_default ? 'default' : ''}`}>
               <div className="addr-card-head">
-                <span className="addr-icon">{a.icon}</span>
                 <div style={{flex: 1}}>
                   <strong>{a.label}</strong>
                   {a.is_default && <span className="addr-default-badge">Par défaut</span>}
@@ -122,19 +126,19 @@ export default function Addresses() {
               <p className="addr-meta">
                 {a.neighborhood ? `${a.neighborhood}, ` : ''}{a.city}
               </p>
-              {a.phone && <p className="addr-meta"> {a.phone}</p>}
+              {a.phone && <p className="addr-meta">{a.phone}</p>}
 
               <div className="addr-actions">
                 {!a.is_default && (
                   <button className="addr-btn" onClick={() => handleSetDefault(a.id)}>
-                     Définir par défaut
+                    Définir par défaut
                   </button>
                 )}
                 <button className="addr-btn" onClick={() => setEditing(a)}>
-                   Modifier
+                  Modifier
                 </button>
                 <button className="addr-btn danger" onClick={() => handleDelete(a.id)}>
-                  
+                  Supprimer
                 </button>
               </div>
             </div>
@@ -210,20 +214,19 @@ function AddressEditor({ address, onSave, onCancel }) {
 
       <div className="addr-scroll" style={{paddingBottom: 90}}>
         <div className="addr-icon-picker">
-          {PRESET_ICONS.map(p => (
+          {PRESET_LABELS.map(p => (
             <button
               key={p.label}
-              className={`addr-icon-choice ${a.icon === p.icon ? 'active' : ''}`}
-              onClick={() => { update('icon', p.icon); update('label', p.label); }}
+              className={`addr-icon-choice ${a.label === p.label ? 'active' : ''}`}
+              onClick={() => update('label', p.label)}
             >
-              <span style={{fontSize: 22}}>{p.icon}</span>
               <span>{p.label}</span>
             </button>
           ))}
         </div>
 
         <button className="addr-detect" onClick={detectLocation}>
-           Détecter ma position automatiquement
+          Détecter ma position automatiquement
         </button>
 
         <div className="phone-input-wrap">
@@ -257,7 +260,7 @@ function AddressEditor({ address, onSave, onCancel }) {
             checked={a.is_default}
             onChange={e => update('is_default', e.target.checked)}
           />
-          <span> Adresse par défaut pour la livraison</span>
+          <span>Adresse par défaut pour la livraison</span>
         </label>
       </div>
 

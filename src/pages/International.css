@@ -1048,6 +1048,24 @@
   padding: 0 4px;
 }
 
+/* Empty products (calque native pattern sobre) */
+.intlp-products-empty {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1.5px dashed var(--primary-light);
+  border-radius: 18px;
+  padding: 28px 24px;
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.intlp-products-empty strong {
+  color: var(--primary-dark);
+  display: block;
+  margin-bottom: 6px;
+  font-size: 15px;
+}
+
 .intlp-product-card {
   /* FIX juin 2026 : avant `background: #fff` rendait les cards invisibles sur le
      fond clair light YARAM. On passe sur un white pur + border verte contrastée

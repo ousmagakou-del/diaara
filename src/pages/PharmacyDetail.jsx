@@ -305,10 +305,10 @@ export default function PharmacyDetail({ pharmacyId }) {
               <span className="pd-badge closed"><span className="dot" />Fermé</span>
             )}
             {pharmacy.delivery_hours && (
-              <span className="pd-badge delivery"> Livraison 24h</span>
+              <span className="pd-badge delivery">Livraison 24h</span>
             )}
             {pharmacy.rating >= 4.5 && (
-              <span className="pd-badge top"> Top vendeur</span>
+              <span className="pd-badge top">Top vendeur</span>
             )}
           </div>
         </div>
@@ -382,11 +382,11 @@ export default function PharmacyDetail({ pharmacyId }) {
 
       {/* ─── FILTRES PRODUITS ─── */}
       <div className="pd-section">
-        <div className="pd-section-title">Produits ({filteredProducts.length})</div>
+        <div className="pd-section-title">Catalogue ({filteredProducts.length})</div>
       </div>
       <div className="pd-filters">
         {[
-          { k: 'all', l: 'Tous' },
+          { k: 'all', l: 'En vedette' },
           { k: 'promo', l: 'Promos' },
           { k: 'new', l: 'Nouveautés' },
           { k: 'top', l: 'Top vendus' },
@@ -404,7 +404,7 @@ export default function PharmacyDetail({ pharmacyId }) {
       {/* ─── GRID PRODUITS ─── */}
       <div className="pd-products-wrap">
         {filteredProducts.length === 0 ? (
-          <div className="pd-empty">Aucun produit pour ce filtre</div>
+          <div className="pd-empty">Aucun produit dans cette catégorie</div>
         ) : (
           <div className="pd-grid">
             {filteredProducts.map((p, idx) => (

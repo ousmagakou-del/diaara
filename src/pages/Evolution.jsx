@@ -292,12 +292,12 @@ export default function Evolution() {
             </svg>
           </div>
           <h2>Pas encore de scans</h2>
-          <p>Lance ton premier scan IA pour démarrer le suivi de ta peau. Tu verras tes progrès en un coup d'œil.</p>
+          <p>Fais ton premier scan pour suivre l'évolution de ta peau.</p>
           <button className="ev-cta-primary ripple" onClick={() => { haptic('light'); navigate({ name: 'scan', params: {} }); }}>
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="3"/><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/>
             </svg>
-            Faire mon 1er scan
+            Faire mon diagnostic
           </button>
         </div>
       </div>
@@ -580,6 +580,35 @@ export default function Evolution() {
                   </div>
                 </article>
               ))}
+            </div>
+          </section>
+        )}
+
+        {/* ═══ HISTORIQUE COMPLET (calque native) ═══ */}
+        {sorted.length > 0 && (
+          <section className="ev-history">
+            <h2 className="ev-section-title">Historique complet</h2>
+            <div className="ev-history-list">
+              {sorted.map((scan, i) => {
+                const prev = sorted[i + 1];
+                const delta = prev ? (scan.skin_score || 0) - (prev.skin_score || 0) : 0;
+                return (
+                  <div key={scan.id} className="ev-history-row">
+                    <div className="ev-history-score">{scan.skin_score || '?'}</div>
+                    <div className="ev-history-info">
+                      <div className="ev-history-type">{scan.skin_type || 'Scan'}</div>
+                      <div className="ev-history-date">
+                        {new Date(scan.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      </div>
+                    </div>
+                    {delta !== 0 && (
+                      <div className={`ev-history-delta ${delta > 0 ? 'up' : 'down'}`}>
+                        {delta > 0 ? '+' : ''}{delta}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </section>
         )}
