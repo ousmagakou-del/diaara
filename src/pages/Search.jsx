@@ -23,11 +23,20 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNav } from '../App';
 import { useProducts, useBrands, useCategories } from '../lib/queries';
+import { supabase } from '../lib/supabase';
 import SiteLayout from '../components/SiteLayout';
 import { ProductTile } from '../components/tiles';
 import { SkeletonProductCard } from '../components/Skeleton';
 import { usePageSEO, useJsonLd } from '../lib/seo';
 import './Search.css';
+
+// ─── Suggestions AI (calque native "Demander a Yara IA") ────────────
+const AI_SUGGESTIONS = [
+  'Un produit contre l acne pour peau sensible',
+  'Une routine hydratante pour peau seche',
+  'Que faire contre les taches brunes ?',
+  'Une creme solaire non grasse SPF 50',
+];
 
 // ─── Constantes ────────────────────────────────────────────────────
 const DEBOUNCE_MS = 200;
@@ -191,6 +200,17 @@ export default function Search({ initialCategory, initialBrand }) {
 
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
   const [brandFilterQ, setBrandFilterQ] = useState('');
+
+  // ─── AI Search state (calque native AskAIButton -> ai-assistant edge fn) ───
+  const [aiMode, setAiMode] = useState(false);
+  const [aiQuery, setAiQuery] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiReply, setAiReply] = useState('');
+  const [aiProducts, setAiProducts] = useState([]);
+  const [aiFollowUps, setAiFollowUps] = useState([]);
+  const [aiError, setAiError] = useState('');
+  const [aiConversationId, setAiConversationId] = useState(null);
+  const aiAbortRef = useRef(null);
 
   // Data
   const { data: products = [], isLoading: prodLoading } = useProducts();
@@ -383,6 +403,54 @@ export default function Search({ initialCategory, initialBrand }) {
     return list.filter((b) => b.name.toLowerCase().includes(term)).slice(0, 50);
   }, [allBrands, brandFilterQ]);
 
+  // ─── AI Search : appelle edge function ai-assistant (meme endpoint que native) ───
+  const runAISearch = useCallback(async (message) => {
+    const msg = String(message || '').trim();
+    if (!msg) return;
+    // Cancel prior in-flight
+    if (aiAbortRef.current) {
+      try { aiAbortRef.current.abort(); } catch {/* noop */}
+    }
+    const controller = new AbortController();
+    aiAbortRef.current = controller;
+    setAiLoading(true);
+    setAiError('');
+    setAiReply('');
+    setAiProducts([]);
+    setAiFollowUps([]);
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-assistant', {
+        body: { message: msg, conversation_id: aiConversationId },
+      });
+      if (controller.signal.aborted) return;
+      if (error) throw new Error(error.message || 'ai_invoke_failed');
+      if (data?.error) throw new Error(data.error);
+      const products = Array.isArray(data?.products) ? data.products : [];
+      const follows = Array.isArray(data?.follow_up_questions) ? data.follow_up_questions : [];
+      setAiReply(String(data?.reply || ''));
+      setAiProducts(products);
+      setAiFollowUps(follows);
+      if (data?.conversation_id) setAiConversationId(data.conversation_id);
+    } catch (e) {
+      if (controller.signal.aborted) return;
+      const em = e?.message || 'Impossible de joindre Yara IA. Reessaie dans un instant.';
+      setAiError(em);
+    } finally {
+      if (!controller.signal.aborted) setAiLoading(false);
+    }
+  }, [aiConversationId]);
+
+  const enterAIMode = useCallback(() => {
+    setAiMode(true);
+    // Prefill AI query with current text search if present
+    if (q.trim() && !aiQuery.trim()) setAiQuery(q.trim());
+  }, [q, aiQuery]);
+
+  const exitAIMode = useCallback(() => {
+    setAiMode(false);
+    setAiError('');
+  }, []);
+
   const priceRangeLabel = () => {
     if (priceMin > 0 && priceMax > 0) return `${priceMin.toLocaleString('fr-FR')} - ${priceMax.toLocaleString('fr-FR')} F`;
     if (priceMin > 0) return `A partir de ${priceMin.toLocaleString('fr-FR')} F`;
@@ -492,7 +560,98 @@ export default function Search({ initialCategory, initialBrand }) {
                   ))}
                 </select>
               </div>
+
+              {/* ─── Bouton AI mode (calque native "Demander") ─── */}
+              <button
+                type="button"
+                className={`ysearch__ai-toggle ${aiMode ? 'is-on' : ''}`}
+                onClick={() => (aiMode ? exitAIMode() : enterAIMode())}
+                aria-pressed={aiMode}
+                aria-label="Demander a Yara IA"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="16" height="16" aria-hidden>
+                  <path d="M12 2 L13.5 9 L21 12 L13.5 15 L12 22 L10.5 15 L3 12 L10.5 9 Z" />
+                </svg>
+                <span>Demander a Yara IA</span>
+              </button>
             </div>
+
+            {/* ─── Panneau AI Search (visible en mode AI) ─── */}
+            {aiMode && (
+              <div className="ysearch__ai-panel" role="region" aria-label="Recherche assistee par Yara IA">
+                <div className="ysearch__ai-head">
+                  <div className="ysearch__ai-head-title">
+                    <span className="ysearch__ai-badge">IA</span>
+                    <span>Pose ta question a Yara IA</span>
+                  </div>
+                  <button type="button" className="ysearch__ai-close" onClick={exitAIMode} aria-label="Fermer le mode IA">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" width="14" height="14" aria-hidden>
+                      <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+                </div>
+                <form
+                  className="ysearch__ai-form"
+                  onSubmit={(e) => { e.preventDefault(); runAISearch(aiQuery); }}
+                >
+                  <input
+                    type="text"
+                    className="ysearch__ai-input"
+                    value={aiQuery}
+                    onChange={(e) => setAiQuery(e.target.value)}
+                    placeholder='Ex : "produit contre l acne pour peau sensible"'
+                    aria-label="Question a l IA"
+                  />
+                  <button
+                    type="submit"
+                    className="ysearch__ai-submit"
+                    disabled={aiLoading || !aiQuery.trim()}
+                  >
+                    {aiLoading ? 'Recherche...' : 'Demander'}
+                  </button>
+                </form>
+
+                {/* Suggestions IA (chips) - visibles tant qu on n a pas de reponse */}
+                {!aiReply && !aiLoading && !aiError && (
+                  <div className="ysearch__ai-suggestions">
+                    {AI_SUGGESTIONS.map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        className="ysearch__ai-suggestion"
+                        onClick={() => { setAiQuery(s); runAISearch(s); }}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {aiError && (
+                  <div className="ysearch__ai-error" role="alert">{aiError}</div>
+                )}
+
+                {(aiReply || aiFollowUps.length > 0) && !aiError && (
+                  <div className="ysearch__ai-reply">
+                    {aiReply && <p className="ysearch__ai-reply-text">{aiReply}</p>}
+                    {aiFollowUps.length > 0 && (
+                      <div className="ysearch__ai-follows">
+                        {aiFollowUps.slice(0, 4).map((f) => (
+                          <button
+                            key={f}
+                            type="button"
+                            className="ysearch__ai-follow"
+                            onClick={() => { setAiQuery(f); runAISearch(f); }}
+                          >
+                            {f}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Chips filtres actifs */}
             {activeFilterCount > 0 && (
@@ -587,9 +746,35 @@ export default function Search({ initialCategory, initialBrand }) {
                 onPickCategory={(c) => setCategory(c)}
               />
             ) : (
-              <div className="ysearch__grid">
-                {sorted.map((p) => <ProductTile key={p.id} product={p} />)}
-              </div>
+              <>
+                {/* ─── Bloc IA : produits recommandes par Yara IA en tete de liste ─── */}
+                {aiMode && aiProducts.length > 0 && (
+                  <section className="ysearch__ai-results" aria-label="Recommandations IA">
+                    <header className="ysearch__ai-results-head">
+                      <span className="ysearch__ai-badge">IA</span>
+                      <h2 className="ysearch__ai-results-title">Recommande par Yara IA</h2>
+                      <span className="ysearch__ai-results-count">
+                        {aiProducts.length} suggestion{aiProducts.length > 1 ? 's' : ''}
+                      </span>
+                    </header>
+                    <div className="ysearch__grid">
+                      {aiProducts.map((p) => {
+                        // Map AI product shape ({image_url, ...}) to ProductTile shape ({img, ...})
+                        const mapped = { ...p, img: p.img || p.image_url };
+                        return (
+                          <div key={`ai-${p.id}`} className="ysearch__ai-tile-wrap">
+                            <ProductTile product={mapped} />
+                            <span className="ysearch__ai-tile-badge">Recommande IA</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </section>
+                )}
+                <div className="ysearch__grid">
+                  {sorted.map((p) => <ProductTile key={p.id} product={p} />)}
+                </div>
+              </>
             )}
           </main>
         </div>
