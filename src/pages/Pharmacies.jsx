@@ -1,13 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNav } from '../App';
 import { getAllPharmacies } from '../lib/supabase';
 import { usePersistedData } from '../lib/usePersistedData';
+import { getUserPosition, sortByDistance, formatDistance } from '../lib/geo';
 import TabBar from '../components/TabBar';
 import './Pharmacies.css';
 
 export default function Pharmacies() {
   const { navigate } = useNav();
   const [filter, setFilter] = useState('all');
+  const [userPos, setUserPos] = useState(null);
+  const [geoStatus, setGeoStatus] = useState('idle'); // idle | asking | granted | denied
 
   // FIX juin 2026 : usePersistedData → hydrate depuis cache module au remount,
   // évite le skeleton 1-3s au retour de navigation / foreground.
@@ -19,9 +22,43 @@ export default function Pharmacies() {
     },
     { ttl: 5 * 60 * 1000 }
   );
-  const pharmacies = pharmaciesData || [];
+  const rawPharmacies = pharmaciesData || [];
 
-  const cities = ['all', ...Array.from(new Set(pharmacies.map(p => p.city)))];
+  // ─── Géolocalisation silencieuse pour trier par distance (calque native) ───
+  useEffect(() => {
+    let cancelled = false;
+    setGeoStatus('asking');
+    getUserPosition(6000).then((pos) => {
+      if (cancelled) return;
+      if (pos) {
+        setUserPos(pos);
+        setGeoStatus('granted');
+      } else {
+        setGeoStatus('denied');
+      }
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Tri par distance + injection du label _distance sur chaque card (calque native)
+  const pharmacies = useMemo(() => {
+    if (!userPos || !rawPharmacies.length) return rawPharmacies;
+    const enriched = rawPharmacies.map((p) => {
+      if (!p.lat || !p.lng) return p;
+      const km = sortByDistance([p], userPos.lat, userPos.lng)[0]?.distance;
+      return { ...p, _distance: km != null && isFinite(km) ? formatDistance(km) : null };
+    });
+    return sortByDistance(enriched, userPos.lat, userPos.lng);
+  }, [rawPharmacies, userPos]);
+
+  // Status label (calque native : "Triées par distance · GPS actif" / "Localisation…" / etc.)
+  const statusLabel =
+    geoStatus === 'granted'  ? 'Triées par distance · GPS actif' :
+    geoStatus === 'asking'   ? 'Localisation…' :
+    geoStatus === 'denied'   ? 'Centre Dakar · localisation refusée' :
+    `${pharmacies.length} partenaire${pharmacies.length > 1 ? 's' : ''}`;
+
+  const cities = ['all', ...Array.from(new Set(pharmacies.map(p => p.city).filter(Boolean)))];
   const filtered = filter === 'all' ? pharmacies : pharmacies.filter(p => p.city === filter);
 
   const openDetail = (id) => {
@@ -38,8 +75,8 @@ export default function Pharmacies() {
           </svg>
         </button>
         <div>
-          <h1>Pharmacies partenaires</h1>
-          <p>{pharmacies.length} partenaires</p>
+          <h1>Pharmacies</h1>
+          <p className={geoStatus === 'granted' ? 'ph-status ok' : 'ph-status'}>{statusLabel}</p>
         </div>
       </div>
 
@@ -82,50 +119,50 @@ export default function Pharmacies() {
                 style={{ cursor: 'pointer' }}
               >
                 {p.cover && (
-                  <div className="ph-cover" style={{backgroundImage: 'url(' + p.cover + ')'}} />
+                  <div className="ph-cover" style={{backgroundImage: 'url(' + p.cover + ')'}}>
+                    {p._distance && (
+                      <span className="ph-distance-badge">{p._distance}</span>
+                    )}
+                    {Number(p.rating) > 0 && (
+                      <span className="ph-rating-badge">
+                        {Number(p.rating).toFixed(1)}
+                        {p.review_count > 0 && <span className="rc"> ({p.review_count})</span>}
+                      </span>
+                    )}
+                  </div>
                 )}
                 <div className="ph-body">
                   <div className="ph-head">
                     {p.logo && <img src={p.logo} alt={`Logo ${p.name}`} loading="lazy" decoding="async" className="ph-logo" />}
                     <div style={{flex: 1}}>
                       <h3>{p.name}</h3>
-                      <div className="ph-meta"> {p.neighborhood}, {p.city}</div>
+                      {p.tagline && <p className="ph-tagline">{p.tagline}</p>}
+                      <div className="ph-meta">
+                        {[p.neighborhood, p.city].filter(Boolean).join(' · ') || p.address || 'Sénégal'}
+                      </div>
+                      {p.hours && (
+                        <div className="ph-hours">Ouvert {p.hours}</div>
+                      )}
                     </div>
-                    {p.rating > 0 && <span className="ph-rating"> {p.rating}</span>}
                   </div>
-                  {p.tagline && <p className="ph-tagline">{p.tagline}</p>}
-                  <div className="ph-info-row"> {p.hours}</div>
-                  {p.phone && <div className="ph-info-row"> {p.phone}</div>}
-                  
-                  <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+
+                  <div className="ph-cta-row">
                     {waUrl && (
-                      <a 
-                        className="ph-wa" 
-                        href={waUrl} 
-                        target="_blank" 
+                      <a
+                        className="ph-wa"
+                        href={waUrl}
+                        target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        style={{ flex: 1, textAlign: 'center' }}
                       >
-                         WhatsApp
+                        WhatsApp
                       </a>
                     )}
                     <button
+                      className="ph-detail-cta"
                       onClick={(e) => { e.stopPropagation(); openDetail(p.id); }}
-                      style={{ 
-                        flex: 1, 
-                        padding: '10px 14px', 
-                        background: '#1F8B4C', 
-                        color: 'white', 
-                        border: 'none', 
-                        borderRadius: 8, 
-                        fontSize: 13, 
-                        fontWeight: 700, 
-                        cursor: 'pointer',
-                        fontFamily: 'inherit',
-                      }}
                     >
-                      Voir détails →
+                      Voir détails
                     </button>
                   </div>
                 </div>

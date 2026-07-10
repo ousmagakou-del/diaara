@@ -472,6 +472,7 @@ export default function ShopHome() {
             title="Marques"
             subtitle="Selection dermato reconnue par nos pharmaciens"
             onSeeAll={() => navigate('brands')}
+            seeAllLabel="Voir toutes les marques"
           />
           <BrandGrid brands={featuredBrands} loading={loading} count={8} />
         </section>

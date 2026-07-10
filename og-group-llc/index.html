@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OG Group LLC — Marketing & Digital Solutions</title>
+  <meta name="description" content="OG Group LLC — Strategic marketing and digital solution development. We build brands and digital products that move businesses forward." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --orange: #F47920;
+      --orange-dark: #C95F10;
+      --orange-light: #FEF0E4;
+      --black: #0D0D0D;
+      --gray-900: #1A1A1A;
+      --gray-700: #3D3D3D;
+      --gray-500: #6B6B6B;
+      --gray-200: #E8E8E8;
+      --gray-100: #F5F5F3;
+      --white: #FFFFFF;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--black);
+      background: var(--white);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 64px;
+      height: 68px;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--gray-200);
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+    .nav-logo-mark {
+      width: 38px;
+      height: 38px;
+      background: var(--orange);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: -0.5px;
+      flex-shrink: 0;
+    }
+    .nav-logo-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.15;
+    }
+    .nav-logo-name {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--black);
+      letter-spacing: -0.3px;
+    }
+    .nav-logo-sub {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--gray-500);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 36px;
+      list-style: none;
+    }
+    .nav-links a {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--gray-700);
+      text-decoration: none;
+      transition: color .15s;
+    }
+    .nav-links a:hover { color: var(--black); }
+    .nav-cta {
+      background: var(--orange) !important;
+      color: #fff !important;
+      padding: 10px 22px;
+      border-radius: 8px;
+      font-weight: 600 !important;
+      font-size: 14px !important;
+      transition: background .15s !important;
+    }
+    .nav-cta:hover { background: var(--orange-dark) !important; }
+
+    /* ── HERO ── */
+    .hero {
+      padding-top: 68px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    .hero-left {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 80px 64px 80px 64px;
+      background: var(--white);
+    }
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--orange);
+      margin-bottom: 24px;
+    }
+    .hero-eyebrow::before {
+      content: '';
+      display: block;
+      width: 28px;
+      height: 2px;
+      background: var(--orange);
+      border-radius: 2px;
+    }
+    .hero-h1 {
+      font-size: 60px;
+      font-weight: 900;
+      line-height: 1.04;
+      letter-spacing: -2.5px;
+      color: var(--black);
+      margin-bottom: 24px;
+    }
+    .hero-h1 span {
+      color: var(--orange);
+    }
+    .hero-sub {
+      font-size: 18px;
+      color: var(--gray-500);
+      line-height: 1.7;
+      max-width: 460px;
+      margin-bottom: 44px;
+    }
+    .hero-actions {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+    }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--orange);
+      color: #fff;
+      padding: 15px 28px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: background .15s, transform .12s;
+    }
+    .btn-primary:hover { background: var(--orange-dark); transform: translateY(-1px); }
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: transparent;
+      color: var(--black);
+      padding: 15px 28px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      border: 1.5px solid var(--gray-200);
+      transition: border-color .15s;
+    }
+    .btn-secondary:hover { border-color: #999; }
+    .hero-metrics {
+      display: flex;
+      gap: 40px;
+      margin-top: 56px;
+      padding-top: 40px;
+      border-top: 1px solid var(--gray-200);
+    }
+    .metric-num {
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--black);
+      letter-spacing: -1px;
+    }
+    .metric-num span { color: var(--orange); }
+    .metric-lbl {
+      font-size: 12px;
+      color: var(--gray-500);
+      font-weight: 500;
+      margin-top: 2px;
+    }
+    .hero-right {
+      position: relative;
+      background: #000;
+      overflow: hidden;
+    }
+    .hero-right img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.45;
+      filter: grayscale(30%);
+    }
+    .hero-right-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(244,121,32,0.22) 0%, rgba(0,0,0,0.55) 100%);
+    }
+    .hero-badge {
+      position: absolute;
+      bottom: 40px;
+      right: 40px;
+      background: var(--white);
+      border-radius: 16px;
+      padding: 20px 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    }
+    .hero-badge-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--gray-500);
+      margin-bottom: 8px;
+    }
+    .hero-badge-value {
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--black);
+      letter-spacing: -1px;
+    }
+    .hero-badge-value span { color: var(--orange); }
+    .hero-badge-sub {
+      font-size: 12px;
+      color: var(--gray-500);
+      margin-top: 2px;
+    }
+
+    /* ── SERVICES ── */
+    .section { padding: 100px 64px; }
+    .section-alt { background: var(--gray-100); }
+    .section-dark { background: var(--black); }
+    .section-inner { max-width: 1200px; margin: 0 auto; }
+    .section-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--orange);
+      margin-bottom: 16px;
+    }
+    .section-eyebrow::before {
+      content: '';
+      display: block;
+      width: 20px;
+      height: 2px;
+      background: var(--orange);
+      border-radius: 2px;
+    }
+    .section-h2 {
+      font-size: 48px;
+      font-weight: 900;
+      letter-spacing: -1.5px;
+      line-height: 1.07;
+      color: var(--black);
+      margin-bottom: 16px;
+    }
+    .section-dark .section-h2 { color: var(--white); }
+    .section-lead {
+      font-size: 18px;
+      color: var(--gray-500);
+      line-height: 1.7;
+      max-width: 560px;
+      margin-bottom: 64px;
+    }
+    .section-dark .section-lead { color: rgba(255,255,255,0.5); }
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+    .service-card {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: 20px;
+      padding: 36px 32px;
+      transition: box-shadow .2s, transform .2s;
+    }
+    .service-card:hover {
+      box-shadow: 0 16px 48px rgba(0,0,0,0.08);
+      transform: translateY(-4px);
+    }
+    .service-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      background: var(--orange-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+    .service-icon svg { width: 26px; height: 26px; }
+    .service-title {
+      font-size: 19px;
+      font-weight: 800;
+      color: var(--black);
+      margin-bottom: 12px;
+      letter-spacing: -0.3px;
+    }
+    .service-desc {
+      font-size: 15px;
+      color: var(--gray-500);
+      line-height: 1.7;
+    }
+
+    /* ── ABOUT ── */
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+    .about-img {
+      position: relative;
+      border-radius: 24px;
+      overflow: hidden;
+      height: 500px;
+      background: #000;
+    }
+    .about-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.60;
+      filter: grayscale(20%);
+    }
+    .about-img-badge {
+      position: absolute;
+      bottom: 32px;
+      left: 32px;
+      background: var(--orange);
+      color: #fff;
+      border-radius: 14px;
+      padding: 20px 24px;
+    }
+    .about-img-badge strong {
+      display: block;
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: -1px;
+    }
+    .about-img-badge span {
+      font-size: 12px;
+      font-weight: 600;
+      opacity: 0.85;
+    }
+    .about-content { display: flex; flex-direction: column; gap: 20px; }
+    .about-p { font-size: 16px; color: var(--gray-700); line-height: 1.75; }
+    .about-values {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 12px;
+    }
+    .value-item {
+      padding: 20px;
+      border-radius: 14px;
+      background: var(--gray-100);
+      border-left: 3px solid var(--orange);
+    }
+    .value-title { font-size: 14px; font-weight: 700; color: var(--black); margin-bottom: 4px; }
+    .value-desc { font-size: 13px; color: var(--gray-500); line-height: 1.6; }
+
+    /* ── PROCESS ── */
+    .process-steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      margin-top: 64px;
+      position: relative;
+    }
+    .process-steps::before {
+      content: '';
+      position: absolute;
+      top: 28px;
+      left: 10%;
+      right: 10%;
+      height: 1px;
+      background: var(--gray-200);
+      z-index: 0;
+    }
+    .process-step { text-align: center; position: relative; z-index: 1; padding: 0 16px; }
+    .step-circle {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--white);
+      border: 2px solid var(--orange);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--orange);
+    }
+    .step-title { font-size: 16px; font-weight: 800; color: var(--black); margin-bottom: 8px; }
+    .step-desc { font-size: 13.5px; color: var(--gray-500); line-height: 1.65; }
+
+    /* ── CONTACT ── */
+    .contact-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: start;
+    }
+    .contact-info { display: flex; flex-direction: column; gap: 32px; }
+    .contact-item { display: flex; align-items: flex-start; gap: 18px; }
+    .contact-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: var(--orange-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .contact-icon svg { width: 22px; height: 22px; color: var(--orange); }
+    .contact-label { font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--gray-500); margin-bottom: 4px; }
+    .contact-value { font-size: 18px; font-weight: 700; color: var(--black); }
+    .contact-value a { color: var(--black); text-decoration: none; }
+    .contact-value a:hover { color: var(--orange); }
+    .contact-form { display: flex; flex-direction: column; gap: 16px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    label { font-size: 13px; font-weight: 600; color: var(--gray-700); }
+    input, textarea, select {
+      width: 100%;
+      padding: 13px 16px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: 10px;
+      font-size: 15px;
+      font-family: inherit;
+      color: var(--black);
+      background: var(--white);
+      transition: border-color .15s;
+      outline: none;
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--orange); }
+    textarea { resize: vertical; min-height: 120px; }
+    .form-submit {
+      background: var(--orange);
+      color: #fff;
+      border: none;
+      padding: 15px 28px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background .15s;
+      width: 100%;
+    }
+    .form-submit:hover { background: var(--orange-dark); }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--black);
+      color: var(--white);
+      padding: 64px 64px 40px;
+    }
+    .footer-top {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 64px;
+      padding-bottom: 48px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .footer-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .footer-logo-mark {
+      width: 36px;
+      height: 36px;
+      background: var(--orange);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 900;
+      color: #fff;
+    }
+    .footer-logo-name { font-size: 16px; font-weight: 800; color: #fff; letter-spacing: -0.3px; }
+    .footer-logo-sub { font-size: 9px; font-weight: 600; color: rgba(255,255,255,0.4); letter-spacing: 1.5px; text-transform: uppercase; }
+    .footer-tagline { font-size: 14px; color: rgba(255,255,255,0.45); line-height: 1.7; max-width: 280px; }
+    .footer-col-title { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-bottom: 18px; }
+    .footer-links { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .footer-links a { font-size: 14px; color: rgba(255,255,255,0.6); text-decoration: none; transition: color .15s; }
+    .footer-links a:hover { color: #fff; }
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 32px;
+    }
+    .footer-copy { font-size: 13px; color: rgba(255,255,255,0.3); }
+    .footer-legal { display: flex; gap: 20px; }
+    .footer-legal a { font-size: 13px; color: rgba(255,255,255,0.3); text-decoration: none; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1024px) {
+      nav { padding: 0 32px; }
+      .hero { grid-template-columns: 1fr; min-height: auto; }
+      .hero-right { display: none; }
+      .hero-left { padding: 80px 32px; }
+      .hero-h1 { font-size: 44px; }
+      .section { padding: 72px 32px; }
+      .services-grid { grid-template-columns: 1fr 1fr; }
+      .process-steps { grid-template-columns: 1fr 1fr; gap: 32px; }
+      .process-steps::before { display: none; }
+      .about-grid, .contact-grid { grid-template-columns: 1fr; gap: 40px; }
+      .footer-top { grid-template-columns: 1fr 1fr; gap: 40px; }
+    }
+    @media (max-width: 640px) {
+      nav .nav-links { display: none; }
+      .hero-h1 { font-size: 36px; letter-spacing: -1.5px; }
+      .services-grid { grid-template-columns: 1fr; }
+      .process-steps { grid-template-columns: 1fr; }
+      .form-row { grid-template-columns: 1fr; }
+      footer { padding: 48px 24px 32px; }
+      .footer-top { grid-template-columns: 1fr; }
+      .section { padding: 60px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ══ NAV ══ -->
+  <nav>
+    <a href="#" class="nav-logo">
+      <div class="nav-logo-mark">OG</div>
+      <div class="nav-logo-text">
+        <span class="nav-logo-name">OG Group</span>
+        <span class="nav-logo-sub">LLC</span>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#services">Services</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="#process">Process</a></li>
+      <li><a href="#contact" class="nav-cta">Get in touch</a></li>
+    </ul>
+  </nav>
+
+  <!-- ══ HERO ══ -->
+  <section class="hero">
+    <div class="hero-left">
+      <div class="hero-eyebrow">Marketing & Digital Solutions</div>
+      <h1 class="hero-h1">We build brands<br>that <span>drive results.</span></h1>
+      <p class="hero-sub">OG Group LLC partners with businesses to craft powerful marketing strategies and digital solutions that create measurable growth.</p>
+      <div class="hero-actions">
+        <a href="#contact" class="btn-primary">Start a project →</a>
+        <a href="#services" class="btn-secondary">Our services</a>
+      </div>
+      <div class="hero-metrics">
+        <div>
+          <div class="metric-num">50<span>+</span></div>
+          <div class="metric-lbl">Projects delivered</div>
+        </div>
+        <div>
+          <div class="metric-num">3<span>x</span></div>
+          <div class="metric-lbl">Avg. ROI for clients</div>
+        </div>
+        <div>
+          <div class="metric-num">100<span>%</span></div>
+          <div class="metric-lbl">Client satisfaction</div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-right">
+      <img src="https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=900&auto=format&fit=crop&q=85" alt="Team at work" />
+      <div class="hero-right-overlay"></div>
+      <div class="hero-badge">
+        <div class="hero-badge-label">Est.</div>
+        <div class="hero-badge-value"><span>OG</span> Group</div>
+        <div class="hero-badge-sub">Maryland, USA</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ SERVICES ══ -->
+  <section class="section" id="services">
+    <div class="section-inner">
+      <div class="section-eyebrow">What we do</div>
+      <h2 class="section-h2">End-to-end solutions<br>for modern businesses</h2>
+      <p class="section-lead">From strategy to execution, we handle every dimension of your brand and digital presence.</p>
+      <div class="services-grid">
+
+        <div class="service-card">
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#F47920" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            </svg>
+          </div>
+          <div class="service-title">Strategic Marketing</div>
+          <p class="service-desc">Brand positioning, go-to-market strategies, and integrated campaigns that build awareness and drive qualified leads to your business.</p>
+        </div>
+
+        <div class="service-card">
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#F47920" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2"/>
+              <path d="M8 21h8M12 17v4"/>
+            </svg>
+          </div>
+          <div class="service-title">Digital Product Development</div>
+          <p class="service-desc">Web apps, mobile solutions, and custom digital platforms built to scale. We turn your ideas into fully functional products.</p>
+        </div>
+
+        <div class="service-card">
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#F47920" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+          </div>
+          <div class="service-title">Brand Identity</div>
+          <p class="service-desc">Logo design, visual systems, and brand guidelines that make your business instantly recognizable and memorable across every touchpoint.</p>
+        </div>
+
+        <div class="service-card">
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#F47920" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 20V10M12 20V4M6 20v-6"/>
+            </svg>
+          </div>
+          <div class="service-title">Digital Advertising</div>
+          <p class="service-desc">Performance-driven paid media across Google, Meta, and beyond. Data-backed campaigns optimized for maximum return on ad spend.</p>
+        </div>
+
+        <div class="service-card">
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#F47920" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </div>
+          <div class="service-title">Social Media Management</div>
+          <p class="service-desc">Content creation, community management, and social strategy that builds genuine audiences and turns followers into customers.</p>
+        </div>
+
+        <div class="service-card">
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#F47920" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+          </div>
+          <div class="service-title">Consulting & Strategy</div>
+          <p class="service-desc">Business consulting, digital transformation roadmaps, and growth frameworks tailored to your market, industry, and objectives.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ ABOUT ══ -->
+  <section class="section section-alt" id="about">
+    <div class="section-inner">
+      <div class="about-grid">
+        <div class="about-img">
+          <img src="https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=800&auto=format&fit=crop&q=85" alt="OG Group team" />
+          <div class="about-img-badge">
+            <strong>OG Group</strong>
+            <span>Maryland, USA · Est. 2024</span>
+          </div>
+        </div>
+        <div class="about-content">
+          <div class="section-eyebrow">Who we are</div>
+          <h2 class="section-h2">Built to deliver.<br>Driven by results.</h2>
+          <p class="about-p">OG Group LLC is a marketing and digital solutions company based in Maryland. We work with businesses across industries to design, build, and scale their digital presence.</p>
+          <p class="about-p">Whether you're launching a new brand, expanding into new markets, or modernizing your digital infrastructure — we bring the strategy, creativity, and technical expertise to make it happen.</p>
+          <div class="about-values">
+            <div class="value-item">
+              <div class="value-title">Results-first</div>
+              <div class="value-desc">Every decision is tied to measurable business outcomes.</div>
+            </div>
+            <div class="value-item">
+              <div class="value-title">Full ownership</div>
+              <div class="value-desc">We treat your project as if it were our own business.</div>
+            </div>
+            <div class="value-item">
+              <div class="value-title">Transparent</div>
+              <div class="value-desc">No black boxes. You see everything, every step of the way.</div>
+            </div>
+            <div class="value-item">
+              <div class="value-title">Built to scale</div>
+              <div class="value-desc">Solutions designed to grow alongside your business.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ PROCESS ══ -->
+  <section class="section" id="process">
+    <div class="section-inner">
+      <div class="section-eyebrow">How we work</div>
+      <h2 class="section-h2">A process built for clarity<br>and speed</h2>
+      <p class="section-lead">From first conversation to final delivery, we keep things focused, transparent, and efficient.</p>
+      <div class="process-steps">
+        <div class="process-step">
+          <div class="step-circle">01</div>
+          <div class="step-title">Discovery</div>
+          <p class="step-desc">We dive deep into your business, goals, audience, and competitive landscape to define exactly what needs to be built.</p>
+        </div>
+        <div class="process-step">
+          <div class="step-circle">02</div>
+          <div class="step-title">Strategy</div>
+          <p class="step-desc">We craft a clear roadmap — positioning, messaging, channels, and timelines — tailored to your specific objectives.</p>
+        </div>
+        <div class="process-step">
+          <div class="step-circle">03</div>
+          <div class="step-title">Execution</div>
+          <p class="step-desc">Our team gets to work. Design, development, content, campaigns — delivered on time and to the highest standard.</p>
+        </div>
+        <div class="process-step">
+          <div class="step-circle">04</div>
+          <div class="step-title">Growth</div>
+          <p class="step-desc">We measure, optimize, and iterate. Continuous improvement based on real data to maximize your results.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ CONTACT ══ -->
+  <section class="section section-alt" id="contact">
+    <div class="section-inner">
+      <div class="section-eyebrow">Get in touch</div>
+      <h2 class="section-h2">Let's build something<br>great together.</h2>
+      <div class="contact-grid">
+        <div class="contact-info">
+          <div class="contact-item">
+            <div class="contact-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#F47920" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.41 2 2 0 0 1 3.6 1.24h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.82a16 16 0 0 0 6.29 6.29l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7a2 2 0 0 1 1.72 2z"/>
+              </svg>
+            </div>
+            <div>
+              <div class="contact-label">Phone</div>
+              <div class="contact-value"><a href="tel:+14434258256">(443) 425-8256</a></div>
+            </div>
+          </div>
+          <div class="contact-item">
+            <div class="contact-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#F47920" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
+            </div>
+            <div>
+              <div class="contact-label">Email</div>
+              <div class="contact-value"><a href="mailto:hello@oggroupllc.com">hello@oggroupllc.com</a></div>
+            </div>
+          </div>
+          <div class="contact-item">
+            <div class="contact-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#F47920" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+            </div>
+            <div>
+              <div class="contact-label">Location</div>
+              <div class="contact-value">Maryland, USA</div>
+            </div>
+          </div>
+        </div>
+        <form class="contact-form" onsubmit="handleSubmit(event)">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="name">Full name</label>
+              <input type="text" id="name" placeholder="John Smith" required />
+            </div>
+            <div class="form-group">
+              <label for="email">Email</label>
+              <input type="email" id="email" placeholder="you@company.com" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="company">Company</label>
+            <input type="text" id="company" placeholder="Your company name" />
+          </div>
+          <div class="form-group">
+            <label for="service">Service you're interested in</label>
+            <select id="service">
+              <option value="">Select a service…</option>
+              <option>Strategic Marketing</option>
+              <option>Digital Product Development</option>
+              <option>Brand Identity</option>
+              <option>Digital Advertising</option>
+              <option>Social Media Management</option>
+              <option>Consulting & Strategy</option>
+              <option>Multiple services</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="message">Tell us about your project</label>
+            <textarea id="message" placeholder="What are you looking to achieve? What's your timeline and budget?" required></textarea>
+          </div>
+          <button type="submit" class="form-submit">Send message →</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ FOOTER ══ -->
+  <footer>
+    <div class="footer-top">
+      <div>
+        <div class="footer-logo">
+          <div class="footer-logo-mark">OG</div>
+          <div>
+            <div class="footer-logo-name">OG Group LLC</div>
+          </div>
+        </div>
+        <p class="footer-tagline">Marketing and digital solution development. We build brands and products that move businesses forward.</p>
+      </div>
+      <div>
+        <div class="footer-col-title">Services</div>
+        <ul class="footer-links">
+          <li><a href="#services">Strategic Marketing</a></li>
+          <li><a href="#services">Digital Development</a></li>
+          <li><a href="#services">Brand Identity</a></li>
+          <li><a href="#services">Digital Advertising</a></li>
+          <li><a href="#services">Consulting</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Company</div>
+        <ul class="footer-links">
+          <li><a href="#about">About us</a></li>
+          <li><a href="#process">Our process</a></li>
+          <li><a href="#contact">Contact</a></li>
+          <li><a href="tel:+14434258256">(443) 425-8256</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2024 OG Group LLC · Maryland, USA</div>
+      <div class="footer-legal">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function handleSubmit(e) {
+      e.preventDefault();
+      const btn = e.target.querySelector('.form-submit');
+      btn.textContent = 'Message sent ✓';
+      btn.style.background = '#2E7D32';
+      setTimeout(() => {
+        btn.textContent = 'Send message →';
+        btn.style.background = '';
+        e.target.reset();
+      }, 3000);
+    }
+
+    // Smooth active nav highlight on scroll
+    const sections = document.querySelectorAll('section[id]');
+    const navLinks = document.querySelectorAll('.nav-links a');
+    window.addEventListener('scroll', () => {
+      let current = '';
+      sections.forEach(s => {
+        if (window.scrollY >= s.offsetTop - 100) current = s.id;
+      });
+      navLinks.forEach(a => {
+        a.style.color = a.getAttribute('href') === '#' + current ? '#F47920' : '';
+      });
+    });
+  </script>
+
+</body>
+</html>

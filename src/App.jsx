@@ -66,6 +66,7 @@ const International = lazy(() => import('./pages/International'));
 const Newsletter      = lazy(() => import('./pages/Newsletter'));
 const PartnerApplication = lazy(() => import('./pages/PartnerApplication'));
 const DriverApplication  = lazy(() => import('./pages/DriverApplication'));
+const BrandsPage         = lazy(() => import('./pages/BrandsPage'));
 
 // ════════════════════════════════════════════════════════════════
 //  FIX juin 2026 #8 — LazyFallback FULL SCREEN (CAUSE RACINE BLANCHE)
@@ -927,6 +928,7 @@ function ClientApp() {
     case 'mentions': page = <Suspense fallback={<LazyFallback />}><MentionsLegales /></Suspense>; break;
     case 'delete_account': page = <Suspense fallback={<LazyFallback />}><DeleteAccount /></Suspense>; break;
     case 'newsletter': page = <Suspense fallback={<LazyFallback />}><Newsletter /></Suspense>; break;
+    case 'brands': page = <Suspense fallback={<LazyFallback />}><BrandsPage /></Suspense>; break;
     case 'partner-application': page = <Suspense fallback={<LazyFallback />}><PartnerApplication /></Suspense>; break;
     case 'driver-application':  page = <Suspense fallback={<LazyFallback />}><DriverApplication /></Suspense>; break;
     // ─── Landing = home marketing (style Uber/DoorDash) ───

@@ -15,75 +15,62 @@ import Skeleton, { SkeletonBrandCard } from '../components/Skeleton';
 import './Categories.css';
 
 // ─── FEATURED (categories "vitrines" avec icone) ───────────────────
+// Slugs alignes sur la colonne `categories.slug` en DB (nov 2026).
+// Les anciens slugs curatoriels ('pharmacie', 'beaute', 'bien-etre',
+// 'international') n existaient pas cote DB : les tuiles affichaient
+// systematiquement 0 produit.
 const FEATURED = [
   {
-    key: 'pharmacie',
-    label: 'Pharmacie',
-    slug: 'pharmacie',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="30" height="30">
-        <path d="M10.5 20.5a7 7 0 0 1-9.9-9.9l9.9-9.9a7 7 0 0 1 9.9 9.9l-9.9 9.9z" />
-        <line x1="8.5" y1="8.5" x2="15.5" y2="15.5" />
-      </svg>
-    ),
-  },
-  {
-    key: 'beaute',
-    label: 'Beaute',
-    slug: 'beaute',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="30" height="30">
-        <path d="M9 4l4-2 4 6-3 2z" />
-        <rect x="7" y="10" width="9" height="11" rx="1.5" />
-        <line x1="7" y1="14" x2="16" y2="14" />
-      </svg>
-    ),
-  },
-  {
-    key: 'bebe',
-    label: 'Bebe',
-    slug: 'bebe',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="30" height="30">
-        <path d="M9 2h6v3H9z" />
-        <path d="M8 5h8l-1 4H9z" />
-        <rect x="9" y="9" width="6" height="13" rx="2" />
-        <line x1="10.5" y1="13" x2="13.5" y2="13" />
-        <line x1="10.5" y1="16" x2="13.5" y2="16" />
-      </svg>
-    ),
-  },
-  {
-    key: 'bien-etre',
-    label: 'Bien-etre',
-    slug: 'bien-etre',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="30" height="30">
-        <path d="M20 4c-8 0-14 6-14 14 0 .5 0 1 .1 1.5C12 19 18 14 20 4z" />
-        <path d="M6 18s4-2 8-6" />
-      </svg>
-    ),
-  },
-  {
-    key: 'hygiene',
-    label: 'Hygiene',
-    slug: 'hygiene',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="30" height="30">
-        <path d="M12 2s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z" />
-        <path d="M9 14a3 3 0 0 0 3 3" />
-      </svg>
-    ),
-  },
-  {
-    key: 'international',
-    label: 'Import',
-    slug: 'international',
+    key: 'visage',
+    label: 'Visage',
+    slug: 'visage',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="30" height="30">
         <circle cx="12" cy="12" r="9" />
-        <path d="M3 12h18" />
-        <path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18z" />
+        <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+        <line x1="9" y1="9" x2="9.01" y2="9" />
+        <line x1="15" y1="9" x2="15.01" y2="9" />
+      </svg>
+    ),
+  },
+  {
+    key: 'solaire',
+    label: 'Solaire',
+    slug: 'solaire',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="30" height="30">
+        <circle cx="12" cy="12" r="4" />
+        <line x1="12" y1="2" x2="12" y2="4" />
+        <line x1="12" y1="20" x2="12" y2="22" />
+        <line x1="4.93" y1="4.93" x2="6.34" y2="6.34" />
+        <line x1="17.66" y1="17.66" x2="19.07" y2="19.07" />
+        <line x1="2" y1="12" x2="4" y2="12" />
+        <line x1="20" y1="12" x2="22" y2="12" />
+        <line x1="4.93" y1="19.07" x2="6.34" y2="17.66" />
+        <line x1="17.66" y1="6.34" x2="19.07" y2="4.93" />
+      </svg>
+    ),
+  },
+  {
+    key: 'cheveux',
+    label: 'Cheveux',
+    slug: 'cheveux',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="30" height="30">
+        <path d="M4 20c0-6 4-14 8-14s8 8 8 14" />
+        <path d="M7 20c0-4 2-9 5-9s5 5 5 9" />
+        <path d="M10 20c0-2 1-4 2-4s2 2 2 4" />
+      </svg>
+    ),
+  },
+  {
+    key: 'corps',
+    label: 'Corps',
+    slug: 'corps',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="30" height="30">
+        <circle cx="12" cy="4.5" r="2.5" />
+        <path d="M8 22v-7H6v-4a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v4h-2v7" />
       </svg>
     ),
   },
@@ -154,7 +141,7 @@ export default function Categories() {
           </header>
           {loading ? (
             <div className="ycatp__featured">
-              {Array.from({ length: 6 }).map((_, i) => (
+              {Array.from({ length: 4 }).map((_, i) => (
                 <Skeleton key={i} variant="card" height={160} />
               ))}
             </div>
