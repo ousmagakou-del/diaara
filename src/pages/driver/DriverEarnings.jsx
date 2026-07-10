@@ -53,8 +53,8 @@ export default function DriverEarnings({ session }) {
     <>
       <header className="dvr-header">
         <div className="dvr-header-card">
-          <div className="dvr-avatar" style={{ background: 'linear-gradient(135deg, #F4B53A, #C18C13)' }}>
-            💰
+          <div className="dvr-avatar" style={{ background: 'linear-gradient(135deg, var(--y-warning), #C18C13)' }} aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           </div>
           <div className="dvr-header-text">
             <div className="dvr-header-name">Mes gains</div>
@@ -126,7 +126,7 @@ export default function DriverEarnings({ session }) {
           <div className="dvr-section-label">Dernières livraisons</div>
           {recent.length === 0 ? (
             <div className="dvr-empty">
-              <div className="dvr-empty-icon">📦</div>
+              <div className="dvr-empty-icon" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
               <div className="dvr-empty-title">Pas encore de gains</div>
               <div className="dvr-empty-sub">
                 Tes gains apparaîtront ici dès tes premières livraisons complétées.
@@ -136,7 +136,7 @@ export default function DriverEarnings({ session }) {
             <div className="dvr-card" style={{ padding: '8px 16px' }}>
               {recent.map((o) => (
                 <div className="dvr-history-row" key={o.id}>
-                  <div className="dvr-history-icon">📦</div>
+                  <div className="dvr-history-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
                   <div className="dvr-history-mid">
                     <div className="dvr-history-name">
                       {o.address?.name || 'Cliente'}
@@ -155,7 +155,7 @@ export default function DriverEarnings({ session }) {
         </div>
 
         <div style={{ fontSize: 11, color: 'var(--dvr-text-mute)', textAlign: 'center', marginTop: 16, lineHeight: 1.6 }}>
-          ℹ️ Estimation indicative : 1000 FCFA de base + 200 FCFA par article<br />
+          Estimation indicative : 1000 FCFA de base + 200 FCFA par article<br />
           (plafonné à 3000 FCFA / course). Le montant final est confirmé par l'admin.
         </div>
       </div>

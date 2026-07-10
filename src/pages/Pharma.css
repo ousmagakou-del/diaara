@@ -2,7 +2,7 @@
   display: flex;
   width: 100vw;
   height: 100vh;
-  background: #F5F6F8;
+  background: var(--y-n-100);
   font-family: var(--font, system-ui);
   overflow: hidden;
 }
@@ -10,7 +10,7 @@
 /* SIDEBAR */
 .phar-side {
   width: 240px;
-  background: linear-gradient(180deg, #1F8B4C 0%, #166635 100%);
+  background: linear-gradient(180deg, var(--y-brand) 0%, var(--y-brand-dark) 100%);
   color: rgba(255,255,255,0.85);
   display: flex;
   flex-direction: column;
@@ -27,7 +27,7 @@
   width: 40px; height: 40px;
   border-radius: 50%;
   background: white;
-  color: #1F8B4C;
+  color: var(--y-brand);
   font-size: 20px;
   font-weight: 800;
   display: flex;
@@ -57,7 +57,7 @@
   align-items: center;
   gap: 10px;
   padding: 11px 14px;
-  border-radius: 10px;
+  border-radius: var(--y-rad-md);
   font-size: 13px;
   font-weight: 600;
   color: rgba(255,255,255,0.7);
@@ -73,17 +73,17 @@
 }
 .phar-nav-item.active {
   background: white;
-  color: #1F8B4C;
+  color: var(--y-brand);
 }
 .phar-nav-icon { font-size: 16px; }
 .phar-nav-badge {
   margin-left: auto;
-  background: #D9342B;
+  background: var(--y-danger);
   color: white;
   font-size: 10px;
   font-weight: 700;
   padding: 2px 7px;
-  border-radius: 999px;
+  border-radius: var(--y-rad-pill);
 }
 .phar-side-foot {
   padding: 12px;
@@ -94,7 +94,7 @@
 }
 .phar-app-link, .phar-logout-btn {
   padding: 9px 12px;
-  border-radius: 8px;
+  border-radius: var(--y-rad-md);
   font-size: 12px;
   font-weight: 600;
   color: rgba(255,255,255,0.7);
@@ -133,11 +133,11 @@
 .phar-header h1 {
   font-size: 26px;
   font-weight: 800;
-  color: #1A1A1A;
+  color: var(--y-n-900);
 }
 .phar-header p {
   font-size: 13px;
-  color: #6B6B6B;
+  color: var(--y-n-600);
   margin-top: 4px;
 }
 
@@ -154,17 +154,17 @@
   gap: 6px;
   padding: 8px 14px;
   background: white;
-  border: 1px solid #EEE;
-  border-radius: 999px;
+  border: 1px solid var(--y-n-200);
+  border-radius: var(--y-rad-pill);
   font-size: 12px;
   font-weight: 600;
-  color: #1A1A1A;
+  color: var(--y-n-900);
   cursor: pointer;
 }
 .phar-filter.active {
-  background: #1F8B4C;
+  background: var(--y-brand);
   color: white;
-  border-color: #1F8B4C;
+  border-color: var(--y-brand);
 }
 
 /* Alert */
@@ -174,22 +174,22 @@
   gap: 14px;
   padding: 16px 20px;
   background: white;
-  border-radius: 14px;
-  border: 1px solid #EEE;
-  border-left: 4px solid #F4B53A;
+  border-radius: var(--y-rad-xl);
+  border: 1px solid var(--y-n-200);
+  border-left: 4px solid var(--y-warning);
   text-align: left;
   cursor: pointer;
   margin-bottom: 20px;
   width: 100%;
 }
 .phar-alert-urgent {
-  border-left-color: #D9342B;
-  background: linear-gradient(135deg, #FCE9E7 0%, #FFF 100%);
+  border-left-color: var(--y-danger);
+  background: linear-gradient(135deg, var(--y-danger-soft) 0%, var(--y-n-0) 100%);
 }
 .phar-alert > div { flex: 1; }
-.phar-alert strong { display: block; font-size: 15px; color: #1A1A1A; }
-.phar-alert span { font-size: 12px; color: #6B6B6B; }
-.phar-alert-arrow { font-size: 22px; color: #1F8B4C; }
+.phar-alert strong { display: block; font-size: 15px; color: var(--y-n-900); }
+.phar-alert span { font-size: 12px; color: var(--y-n-600); }
+.phar-alert-arrow { font-size: 22px; color: var(--y-brand); }
 
 /* KPI */
 .phar-kpi-grid {
@@ -201,12 +201,12 @@
 .phar-kpi {
   background: white;
   padding: 18px;
-  border-radius: 14px;
-  border: 1px solid #EEE;
+  border-radius: var(--y-rad-xl);
+  border: 1px solid var(--y-n-200);
 }
 .phar-kpi-label {
   font-size: 11px;
-  color: #6B6B6B;
+  color: var(--y-n-600);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -215,19 +215,19 @@
 .phar-kpi-value {
   font-size: 28px;
   font-weight: 800;
-  color: #1A1A1A;
+  color: var(--y-n-900);
 }
 .phar-kpi-meta {
   font-size: 11px;
-  color: #9B9B9B;
+  color: var(--y-n-500);
   margin-top: 4px;
 }
 
 /* Revenue card */
 .phar-revenue-card {
-  background: linear-gradient(135deg, #1F8B4C 0%, #166635 100%);
+  background: linear-gradient(135deg, var(--y-brand) 0%, var(--y-brand-dark) 100%);
   color: white;
-  border-radius: 16px;
+  border-radius: var(--y-rad-xl);
   padding: 24px;
   margin-bottom: 20px;
 }
@@ -270,8 +270,8 @@
 }
 .phar-quick-action {
   background: white;
-  border: 1px solid #EEE;
-  border-radius: 14px;
+  border: 1px solid var(--y-n-200);
+  border-radius: var(--y-rad-xl);
   padding: 16px;
   text-align: left;
   cursor: pointer;
@@ -281,18 +281,18 @@
   gap: 4px;
 }
 .phar-quick-action:hover {
-  border-color: #1F8B4C;
+  border-color: var(--y-brand);
   box-shadow: 0 4px 12px rgba(31,139,76,0.1);
 }
 .phar-quick-action span:first-child { font-size: 28px; }
 .phar-quick-action strong { font-size: 14px; }
-.phar-quick-action p { font-size: 11px; color: #6B6B6B; }
+.phar-quick-action p { font-size: 11px; color: var(--y-n-600); }
 
 /* Info card */
 .phar-info-card {
   background: white;
-  border-radius: 14px;
-  border: 1px solid #EEE;
+  border-radius: var(--y-rad-xl);
+  border: 1px solid var(--y-n-200);
   padding: 20px;
 }
 .phar-info-card h3 {
@@ -301,7 +301,7 @@
   margin-bottom: 8px;
 }
 .phar-info-card p { font-size: 13px; padding: 2px 0; }
-.phar-info-card a { color: #1F8B4C; font-weight: 600; }
+.phar-info-card a { color: var(--y-brand); font-weight: 600; }
 
 /* Orders */
 .phar-orders-list {
@@ -311,8 +311,8 @@
 }
 .phar-order-card {
   background: white;
-  border: 1px solid #EEE;
-  border-radius: 14px;
+  border: 1px solid var(--y-n-200);
+  border-radius: var(--y-rad-xl);
   padding: 18px;
 }
 .phar-order-head {
@@ -320,48 +320,48 @@
   justify-content: space-between;
   align-items: flex-start;
   padding-bottom: 12px;
-  border-bottom: 1px solid #EEE;
+  border-bottom: 1px solid var(--y-n-200);
   margin-bottom: 12px;
   flex-wrap: wrap;
   gap: 8px;
 }
 .phar-order-head code {
-  background: #F4F4F2;
+  background: var(--y-n-100);
   padding: 4px 10px;
-  border-radius: 6px;
+  border-radius: var(--y-rad-sm);
   font-size: 13px;
   font-weight: 700;
 }
 .phar-order-date {
   font-size: 11px;
-  color: #6B6B6B;
+  color: var(--y-n-600);
   margin-left: 8px;
 }
 .phar-badge {
   font-size: 11px;
   font-weight: 700;
   padding: 4px 10px;
-  border-radius: 999px;
-  background: #F4F4F2;
+  border-radius: var(--y-rad-pill);
+  background: var(--y-n-100);
 }
-.phar-badge-paid { background: #FEF6E5; color: #A07700; }
-.phar-badge-preparing { background: #E0EFFF; color: #1976D2; }
-.phar-badge-ready { background: #E8F5EC; color: #1F8B4C; }
-.phar-badge-shipped { background: #E8F5EC; color: #1F8B4C; }
-.phar-badge-awaiting_cash { background: #FEF6E5; color: #A07700; }
-.phar-badge-awaiting_confirm { background: #FEF6E5; color: #A07700; }
-.phar-badge-delivered { background: #E8F5EC; color: #166635; }
-.phar-badge-refused, .phar-badge-cancelled { background: #FCE9E7; color: #D9342B; }
+.phar-badge-paid { background: var(--y-warning-soft); color: var(--y-warning-text); }
+.phar-badge-preparing { background: var(--y-info-soft); color: var(--y-info); }
+.phar-badge-ready { background: var(--y-brand-soft); color: var(--y-brand); }
+.phar-badge-shipped { background: var(--y-brand-soft); color: var(--y-brand); }
+.phar-badge-awaiting_cash { background: var(--y-warning-soft); color: var(--y-warning-text); }
+.phar-badge-awaiting_confirm { background: var(--y-warning-soft); color: var(--y-warning-text); }
+.phar-badge-delivered { background: var(--y-brand-soft); color: var(--y-brand-dark); }
+.phar-badge-refused, .phar-badge-cancelled { background: var(--y-danger-soft); color: var(--y-danger); }
 
 .phar-order-client {
-  background: #F9FAFB;
+  background: var(--y-n-50);
   padding: 12px;
-  border-radius: 10px;
+  border-radius: var(--y-rad-md);
   margin-bottom: 12px;
 }
 .phar-order-client strong { font-size: 14px; display: block; margin-bottom: 4px; }
-.phar-order-client p { font-size: 12px; color: #6B6B6B; padding: 2px 0; }
-.phar-order-client a { color: #1F8B4C; font-weight: 600; }
+.phar-order-client p { font-size: 12px; color: var(--y-n-600); padding: 2px 0; }
+.phar-order-client a { color: var(--y-brand); font-weight: 600; }
 
 .phar-order-items {
   display: flex;
@@ -374,22 +374,22 @@
   gap: 10px;
   align-items: center;
   padding: 8px;
-  background: #F9FAFB;
-  border-radius: 8px;
+  background: var(--y-n-50);
+  border-radius: var(--y-rad-md);
 }
 .phar-order-item img {
   width: 40px;
   height: 40px;
-  border-radius: 6px;
+  border-radius: var(--y-rad-sm);
   object-fit: cover;
-  background: #F4F4F2;
+  background: var(--y-n-100);
 }
 .phar-order-item strong { font-size: 13px; display: block; }
-.phar-order-item span { font-size: 11px; color: #6B6B6B; }
+.phar-order-item span { font-size: 11px; color: var(--y-n-600); }
 
 .phar-order-totals {
-  background: #F9FAFB;
-  border-radius: 10px;
+  background: var(--y-n-50);
+  border-radius: var(--y-rad-md);
   padding: 12px;
   margin-bottom: 12px;
 }
@@ -402,16 +402,16 @@
 .phar-order-commission {
   margin-top: 6px;
   padding-top: 8px;
-  border-top: 1px solid #EEE;
-  color: #1F8B4C;
+  border-top: 1px solid var(--y-n-200);
+  color: var(--y-brand);
   font-weight: 700;
 }
 
 .phar-cod-alert {
-  background: #FEF6E5;
-  color: #A07700;
+  background: var(--y-warning-soft);
+  color: var(--y-warning-text);
   padding: 10px;
-  border-radius: 8px;
+  border-radius: var(--y-rad-md);
   font-size: 12px;
   font-weight: 700;
   margin-bottom: 12px;
@@ -419,10 +419,10 @@
 }
 
 .phar-refused-box {
-  background: #FCE9E7;
-  color: #D9342B;
+  background: var(--y-danger-soft);
+  color: var(--y-danger);
   padding: 10px;
-  border-radius: 8px;
+  border-radius: var(--y-rad-md);
   font-size: 12px;
   font-weight: 600;
   margin-bottom: 12px;
@@ -439,7 +439,7 @@
   padding: 10px;
   background: #25D366;
   color: white !important;
-  border-radius: 10px;
+  border-radius: var(--y-rad-md);
   font-size: 12px;
   font-weight: 700;
   text-decoration: none;
@@ -449,10 +449,10 @@
   flex: 1;
   min-width: 130px;
   padding: 10px;
-  background: linear-gradient(135deg, #1F8B4C 0%, #166635 100%);
+  background: linear-gradient(135deg, var(--y-brand) 0%, var(--y-brand-dark) 100%);
   color: white;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--y-rad-md);
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
@@ -462,9 +462,9 @@
   min-width: 130px;
   padding: 10px;
   background: white;
-  color: #D9342B;
-  border: 1.5px solid #FCE9E7;
-  border-radius: 10px;
+  color: var(--y-danger);
+  border: 1.5px solid var(--y-danger-soft);
+  border-radius: var(--y-rad-md);
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
@@ -472,8 +472,8 @@
 .phar-btn-sec {
   padding: 9px 14px;
   background: white;
-  border: 1px solid #DDD;
-  border-radius: 8px;
+  border: 1px solid var(--y-n-300);
+  border-radius: var(--y-rad-md);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -488,21 +488,21 @@
 .phar-table th {
   text-align: left;
   padding: 10px 8px;
-  background: #F9FAFB;
+  background: var(--y-n-50);
   font-size: 10px;
   font-weight: 700;
-  color: #6B6B6B;
+  color: var(--y-n-600);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  border-bottom: 1px solid #EEE;
+  border-bottom: 1px solid var(--y-n-200);
 }
 .phar-table td {
   padding: 10px 8px;
   font-size: 13px;
-  border-bottom: 1px solid #F4F4F2;
+  border-bottom: 1px solid var(--y-n-100);
 }
 .phar-table code {
-  background: #F4F4F2;
+  background: var(--y-n-100);
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 11px;
@@ -512,14 +512,14 @@
 .phar-empty {
   text-align: center;
   padding: 60px;
-  color: #6B6B6B;
+  color: var(--y-n-600);
 }
 
 /* LOGIN */
 .phar-login {
   width: 100vw;
   height: 100vh;
-  background: linear-gradient(135deg, #1F8B4C 0%, #166635 100%);
+  background: linear-gradient(135deg, var(--y-brand) 0%, var(--y-brand-dark) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -530,7 +530,7 @@
 .phar-login-card {
   background: white;
   padding: 40px 32px;
-  border-radius: 20px;
+  border-radius: var(--y-rad-2xl);
   text-align: center;
   width: 100%;
   max-width: 380px;
@@ -543,7 +543,7 @@
   width: 72px;
   height: 72px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #1F8B4C 0%, #166635 100%);
+  background: linear-gradient(135deg, var(--y-brand) 0%, var(--y-brand-dark) 100%);
   color: white;
   font-size: 36px;
   font-weight: 800;
@@ -553,7 +553,7 @@
   margin: 0 auto 18px;
 }
 .phar-login-card h1 { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
-.phar-login-card > p { font-size: 13px; color: #6B6B6B; margin-bottom: 24px; }
+.phar-login-card > p { font-size: 13px; color: var(--y-n-600); margin-bottom: 24px; }
 
 .phar-pharmacy-list {
   display: flex;
@@ -568,22 +568,22 @@
   align-items: center;
   gap: 12px;
   padding: 14px;
-  background: #F9FAFB;
-  border: 1.5px solid #EEE;
-  border-radius: 12px;
+  background: var(--y-n-50);
+  border: 1.5px solid var(--y-n-200);
+  border-radius: var(--y-rad-lg);
   text-align: left;
   cursor: pointer;
   transition: all 0.15s;
   width: 100%;
 }
 .phar-pharmacy-item:hover {
-  border-color: #1F8B4C;
-  background: #E8F5EC;
+  border-color: var(--y-brand);
+  background: var(--y-brand-soft);
 }
 .phar-pharmacy-logo {
   width: 40px;
   height: 40px;
-  border-radius: 8px;
+  border-radius: var(--y-rad-md);
   background: white;
   display: flex;
   align-items: center;
@@ -599,30 +599,30 @@
 }
 .phar-pharmacy-info { flex: 1; }
 .phar-pharmacy-info strong { font-size: 14px; display: block; margin-bottom: 2px; }
-.phar-pharmacy-info span { font-size: 11px; color: #6B6B6B; }
-.phar-pharmacy-arrow { font-size: 18px; color: #1F8B4C; }
+.phar-pharmacy-info span { font-size: 11px; color: var(--y-n-600); }
+.phar-pharmacy-arrow { font-size: 18px; color: var(--y-brand); }
 
 .phar-pin-input {
   width: 100%;
   padding: 16px;
-  border: 1.5px solid #EEE;
-  border-radius: 12px;
+  border: 1.5px solid var(--y-n-200);
+  border-radius: var(--y-rad-lg);
   font-size: 24px;
   font-weight: 800;
   text-align: center;
   letter-spacing: 0.4em;
   margin-bottom: 6px;
 }
-.phar-pin-input:focus { outline: none; border-color: #1F8B4C; }
-.phar-pin-input.error { border-color: #D9342B; }
-.phar-pin-error { color: #D9342B; font-size: 11px; margin-bottom: 14px; }
+.phar-pin-input:focus { outline: none; border-color: var(--y-brand); }
+.phar-pin-input.error { border-color: var(--y-danger); }
+.phar-pin-error { color: var(--y-danger); font-size: 11px; margin-bottom: 14px; }
 .phar-pin-btn {
   width: 100%;
   padding: 14px;
-  background: #1F8B4C;
+  background: var(--y-brand);
   color: white;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--y-rad-lg);
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
@@ -632,7 +632,7 @@
   display: block;
   margin-top: 18px;
   font-size: 12px;
-  color: #6B6B6B;
+  color: var(--y-n-600);
   text-decoration: none;
   background: transparent;
   border: none;
@@ -653,7 +653,7 @@
 }
 .phar-modal {
   background: white;
-  border-radius: 16px;
+  border-radius: var(--y-rad-xl);
   padding: 24px;
   max-width: 500px;
   width: 100%;
@@ -674,23 +674,23 @@
 .phar-refuse-reason {
   padding: 12px 14px;
   background: white;
-  border: 1.5px solid #EEE;
-  border-radius: 10px;
+  border: 1.5px solid var(--y-n-200);
+  border-radius: var(--y-rad-md);
   text-align: left;
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
 }
 .phar-refuse-reason.active {
-  background: #FCE9E7;
-  border-color: #D9342B;
-  color: #D9342B;
+  background: var(--y-danger-soft);
+  border-color: var(--y-danger);
+  color: var(--y-danger);
 }
 
 /* PIN oublié — bloc de rappel pharmacie */
 .phar-forgot-target {
-  background: #E8F5EC;
-  border-radius: 10px;
+  background: var(--y-brand-soft);
+  border-radius: var(--y-rad-md);
   padding: 12px;
   margin-bottom: 16px;
   text-align: center;
@@ -698,17 +698,17 @@
 .phar-forgot-target strong {
   display: block;
   font-size: 14px;
-  color: #1A1A1A;
+  color: var(--y-n-900);
 }
 .phar-forgot-target span {
   font-size: 11px;
-  color: #6B6B6B;
+  color: var(--y-n-600);
 }
 .phar-pin-btn-wa {
   background: #25D366;
 }
 .phar-pin-btn-wa:hover {
-  background: #1FB855;
+  background: var(--y-brand-light);
 }
 
 /* ════════════════════════════════════════
@@ -722,15 +722,15 @@
 }
 .phar-card {
   background: white;
-  border-radius: 14px;
-  border: 1px solid #EEE;
+  border-radius: var(--y-rad-xl);
+  border: 1px solid var(--y-n-200);
   padding: 20px;
 }
 .phar-card-title {
   font-size: 14px;
   font-weight: 800;
   margin-bottom: 14px;
-  color: #1A1A1A;
+  color: var(--y-n-900);
 }
 .phar-field {
   margin-bottom: 12px;
@@ -742,7 +742,7 @@
   display: block;
   font-size: 11px;
   font-weight: 700;
-  color: #6B6B6B;
+  color: var(--y-n-600);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 6px;
@@ -751,18 +751,18 @@
 .phar-textarea {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #DDD;
-  border-radius: 8px;
+  border: 1px solid var(--y-n-300);
+  border-radius: var(--y-rad-md);
   font-size: 14px;
   box-sizing: border-box;
   outline: none;
   font-family: inherit;
   background: white;
-  color: #1A1A1A;
+  color: var(--y-n-900);
 }
 .phar-input:focus,
 .phar-textarea:focus {
-  border-color: #1F8B4C;
+  border-color: var(--y-brand);
 }
 .phar-textarea {
   min-height: 64px;
@@ -770,7 +770,7 @@
 }
 .phar-hint {
   font-size: 11px;
-  color: #6B6B6B;
+  color: var(--y-n-600);
   margin-top: 4px;
   font-style: italic;
 }
@@ -789,10 +789,10 @@
 .phar-btn-primary {
   width: 100%;
   padding: 13px;
-  background: linear-gradient(135deg, #1F8B4C 0%, #166635 100%);
+  background: linear-gradient(135deg, var(--y-brand) 0%, var(--y-brand-dark) 100%);
   color: white;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--y-rad-md);
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
@@ -806,35 +806,35 @@
   width: 100%;
   padding: 11px;
   background: white;
-  color: #1A1A1A;
-  border: 1px solid #DDD;
-  border-radius: 10px;
+  color: var(--y-n-900);
+  border: 1px solid var(--y-n-300);
+  border-radius: var(--y-rad-md);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
 }
 .phar-btn-outline:hover {
-  border-color: #1F8B4C;
-  color: #1F8B4C;
+  border-color: var(--y-brand);
+  color: var(--y-brand);
 }
 
 /* Feedback save / erreur */
 .phar-save-ok {
-  background: #E8F5EC;
-  color: #1F8B4C;
+  background: var(--y-brand-soft);
+  color: var(--y-brand);
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: var(--y-rad-md);
   font-size: 13px;
   font-weight: 600;
   text-align: center;
   margin-top: 10px;
 }
 .phar-save-error {
-  background: #FCE9E7;
-  color: #D9342B;
+  background: var(--y-danger-soft);
+  color: var(--y-danger);
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: var(--y-rad-md);
   font-size: 13px;
   font-weight: 600;
   margin-top: 10px;
@@ -845,7 +845,7 @@
    ════════════════════════════════════════ */
 .phar-mute-btn {
   padding: 9px 12px;
-  border-radius: 8px;
+  border-radius: var(--y-rad-md);
   font-size: 12px;
   font-weight: 600;
   color: rgba(255,255,255,0.8);
@@ -909,14 +909,14 @@
   .phar-nav-item {
     flex-shrink: 0;
     padding: 10px 14px;
-    border-radius: 999px;
+    border-radius: var(--y-rad-pill);
     background: rgba(255,255,255,0.08);
     transition: background 0.18s ease, transform 0.12s ease;
     min-height: 44px;
   }
   .phar-nav-item.active {
     background: rgba(255,255,255,0.95);
-    color: #0E5B33;
+    color: var(--y-brand-dark);
     font-weight: 800;
     box-shadow: 0 4px 14px rgba(0,0,0,0.18);
   }
@@ -932,7 +932,7 @@
   .phar-side-foot button {
     padding: 8px 12px;
     font-size: 12px;
-    border-radius: 999px;
+    border-radius: var(--y-rad-pill);
     background: rgba(255,255,255,0.14);
     color: white;
     border: none;
@@ -968,7 +968,7 @@
 .phar-nav-item:focus-visible,
 .phar-side button:focus-visible,
 .phar-section button:focus-visible {
-  outline: 2px solid #F4B53A;
+  outline: 2px solid var(--y-warning);
   outline-offset: 3px;
-  border-radius: 8px;
+  border-radius: var(--y-rad-md);
 }

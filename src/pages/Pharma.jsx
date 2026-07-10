@@ -12,7 +12,7 @@ import './Pharma.css';
 
 import { getWhatsAppNumber } from '../lib/utils';
 
-// ⚠️ Securite : on ne persiste JAMAIS le PIN ni pin_set_at dans le localStorage
+// Securite : on ne persiste JAMAIS le PIN ni pin_set_at dans le localStorage
 // (n'importe quelle extension ou script tiers peut lire localStorage).
 function sanitizeForStorage(pharmacy) {
   if (!pharmacy) return pharmacy;
@@ -21,14 +21,41 @@ function sanitizeForStorage(pharmacy) {
   return safe;
 }
 
+// SVG icons pour la nav pharma (aucun emoji)
+const NavIcon = ({ id }) => {
+  const props = {
+    width: 18, height: 18, viewBox: '0 0 24 24',
+    fill: 'none', stroke: 'currentColor', strokeWidth: 2,
+    strokeLinecap: 'round', strokeLinejoin: 'round',
+  };
+  switch (id) {
+    case 'dashboard':
+      return (<svg {...props}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>);
+    case 'orders':
+      return (<svg {...props}><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>);
+    case 'products':
+      return (<svg {...props}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>);
+    case 'inventory':
+      return (<svg {...props}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>);
+    case 'brands':
+      return (<svg {...props}><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>);
+    case 'commission':
+      return (<svg {...props}><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>);
+    case 'settings':
+      return (<svg {...props}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>);
+    default:
+      return null;
+  }
+};
+
 const NAV = [
-  { id: 'dashboard',  icon: '🏠', label: "Vue d'ensemble" },
-  { id: 'orders',     icon: '📦', label: 'Commandes', badge: true },
-  { id: 'products',   icon: '📷', label: 'Mes produits' },
-  { id: 'inventory',  icon: '📚', label: 'Inventaire' },
-  { id: 'brands',     icon: '🏷️', label: 'Marques' },
-  { id: 'commission', icon: '💰', label: 'Mes commissions' },
-  { id: 'settings',   icon: '⚙️', label: 'Paramètres' },
+  { id: 'dashboard',  label: "Vue d'ensemble" },
+  { id: 'orders',     label: 'Commandes', badge: true },
+  { id: 'products',   label: 'Mes produits' },
+  { id: 'inventory',  label: 'Inventaire' },
+  { id: 'brands',     label: 'Marques' },
+  { id: 'commission', label: 'Mes commissions' },
+  { id: 'settings',   label: 'Paramètres' },
 ];
 
 const BANNED_PINS = ['0000','1111','2222','3333','4444','5555','6666','7777','8888','9999','1234','4321','0123','9876'];
@@ -140,7 +167,7 @@ export default function Pharma() {
 
   const openForgotWhatsApp = () => {
     const ph = selectedPharmacy;
-    const msg = `Bonjour Ousmane 👋\n\nJe suis ${ph?.name || 'une pharmacie partenaire YARAM'}${ph?.city ? ` à ${ph.city}` : ''}.\n\nJ'ai oublié mon PIN d'accès au dashboard pharmacie. Peux-tu me le réinitialiser SVP ?\n\nMerci 💚`;
+    const msg = `Bonjour Ousmane,\n\nJe suis ${ph?.name || 'une pharmacie partenaire YARAM'}${ph?.city ? ` à ${ph.city}` : ''}.\n\nJ'ai oublié mon PIN d'accès au dashboard pharmacie. Peux-tu me le réinitialiser SVP ?\n\nMerci.`;
     window.open(`https://wa.me/${getWhatsAppNumber()}?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
@@ -179,19 +206,23 @@ export default function Pharma() {
                   {p.logo || p.logo_url ? (
                     <img src={p.logo || p.logo_url} alt="" loading="lazy" decoding="async" onError={(e) => e.target.style.display = 'none'} />
                   ) : (
-                    <span>🏥</span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 3h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="10" y1="10" x2="14" y2="10"/>
+                    </svg>
                   )}
                 </div>
                 <div className="phar-pharmacy-info">
                   <strong>{p.name}</strong>
                   <span>{p.city || p.neighborhood} · {p.phone}</span>
                 </div>
-                <span className="phar-pharmacy-arrow">→</span>
+                <span className="phar-pharmacy-arrow" aria-hidden="true">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </span>
               </button>
             ))}
           </div>
 
-          <a href="/" className="phar-back-link">← Retour à l'app cliente</a>
+          <a href="/" className="phar-back-link">Retour à l'app cliente</a>
         </div>
       </div>
     );
@@ -203,7 +234,7 @@ export default function Pharma() {
         <div className="phar-login-card">
           <div className="phar-login-logo">D</div>
           <h1>{selectedPharmacy.name}</h1>
-          <p>🔐 Première connexion — Crée ton code PIN à 4 chiffres</p>
+          <p>Première connexion — Crée ton code PIN à 4 chiffres</p>
           <form onSubmit={handleSetPin}>
             <input
               type="password"
@@ -216,8 +247,8 @@ export default function Pharma() {
               autoFocus
               maxLength={4}
             />
-            <p style={{ fontSize: 11, color: '#6B6B6B', marginTop: -2, marginBottom: 10 }}>
-              💡 Évite 1234, 0000, 1111 et autres PIN évidents
+            <p style={{ fontSize: 'var(--y-fs-xs)', color: 'var(--y-n-600)', marginTop: -2, marginBottom: 10 }}>
+              Astuce : évite 1234, 0000, 1111 et autres PIN évidents.
             </p>
             <input
               type="password"
@@ -230,12 +261,12 @@ export default function Pharma() {
               maxLength={4}
             />
             {pinError && <p className="phar-pin-error">{pinError}</p>}
-            <p style={{ fontSize: 11, color: '#6B6B6B', marginBottom: 12 }}>
-              Garde ce PIN en sécurité, tu en auras besoin à chaque connexion
+            <p style={{ fontSize: 'var(--y-fs-xs)', color: 'var(--y-n-600)', marginBottom: 12 }}>
+              Garde ce PIN en sécurité, tu en auras besoin à chaque connexion.
             </p>
-            <button type="submit" className="phar-pin-btn">Créer mon PIN →</button>
+            <button type="submit" className="phar-pin-btn">Créer mon PIN</button>
           </form>
-          <button className="phar-back-link" onClick={() => setPhase('selectPharmacy')}>← Choisir une autre pharmacie</button>
+          <button className="phar-back-link" onClick={() => setPhase('selectPharmacy')}>Choisir une autre pharmacie</button>
         </div>
       </div>
     );
@@ -257,9 +288,9 @@ export default function Pharma() {
           )}
 
           <button onClick={openForgotWhatsApp} className="phar-pin-btn phar-pin-btn-wa">
-            💬 Contacter Ousmane sur WhatsApp
+            Contacter Ousmane sur WhatsApp
           </button>
-          <button className="phar-back-link" onClick={() => { setPhase('login'); setPinError(''); }}>← Retour à la connexion</button>
+          <button className="phar-back-link" onClick={() => { setPhase('login'); setPinError(''); }}>Retour à la connexion</button>
         </div>
       </div>
     );
@@ -285,10 +316,10 @@ export default function Pharma() {
               maxLength={6}
             />
             {pinError && <p className="phar-pin-error">{pinError}</p>}
-            <button type="submit" className="phar-pin-btn">Se connecter →</button>
+            <button type="submit" className="phar-pin-btn">Se connecter</button>
           </form>
-          <button className="phar-back-link" onClick={() => setPhase('forgot')}>🔑 PIN oublié ?</button>
-          <button className="phar-back-link" onClick={() => setPhase('selectPharmacy')}>← Choisir une autre pharmacie</button>
+          <button className="phar-back-link" onClick={() => setPhase('forgot')}>PIN oublié ?</button>
+          <button className="phar-back-link" onClick={() => setPhase('selectPharmacy')}>Choisir une autre pharmacie</button>
         </div>
       </div>
     );
@@ -312,7 +343,7 @@ export default function Pharma() {
               className={`phar-nav-item ${section === item.id ? 'active' : ''}`}
               onClick={() => setSection(item.id)}
             >
-              <span className="phar-nav-icon">{item.icon}</span>
+              <span className="phar-nav-icon"><NavIcon id={item.id} /></span>
               <span>{item.label}</span>
               {item.badge && pendingCount > 0 && (
                 <span className="phar-nav-badge">{pendingCount}</span>
@@ -326,7 +357,7 @@ export default function Pharma() {
             onClick={() => setMuted(!muted)}
             title={muted ? 'Réactiver les sons' : 'Couper les sons'}
           >
-            {muted ? '🔕 Sons coupés' : '🔔 Sons activés'}
+            {muted ? 'Sons coupés' : 'Sons activés'}
           </button>
 
           {notifPermission !== 'granted' && notifPermission !== 'denied' && (
@@ -334,18 +365,18 @@ export default function Pharma() {
               className="phar-mute-btn"
               onClick={requestNotificationPermission}
               title="Active les notifications du navigateur"
-              style={{ color: '#F4B53A' }}
+              style={{ color: 'var(--y-warning)' }}
             >
-              ⚡ Activer les notifs
+              Activer les notifs
             </button>
           )}
 
           <button className="phar-mute-btn" onClick={testDing}>
-            🎵 Tester le son
+            Tester le son
           </button>
 
-          <a href="/" className="phar-app-link">👁️ Voir l'app cliente</a>
-          <button className="phar-logout-btn" onClick={logout}>🔒 Déconnecter</button>
+          <a href="/" className="phar-app-link">Voir l'app cliente</a>
+          <button className="phar-logout-btn" onClick={logout}>Déconnecter</button>
         </div>
       </aside>
 

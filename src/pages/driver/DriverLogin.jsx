@@ -146,7 +146,7 @@ export default function DriverLogin({ onLogin }) {
       </div>
 
       <form id="dvr-login-form" className="dvr-login-card" onSubmit={handleSubmit}>
-        <div className="dvr-login-welcome">Bienvenue 👋</div>
+        <div className="dvr-login-welcome">Bienvenue</div>
         <div className="dvr-login-sub">Connecte-toi avec ton numéro et ton PIN.</div>
 
         {err && <div className="dvr-login-err">{err}</div>}

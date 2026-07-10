@@ -5,22 +5,23 @@
    ════════════════════════════════════════════════════ */
 
 :root {
-  --dvr-green: #1F8B4C;
-  --dvr-green-dark: #156237;
-  --dvr-green-light: #22B564;
-  --dvr-amber: #F4B53A;
-  --dvr-red: #E5484D;
-  --dvr-blue: #0A84FF;
-  --dvr-text: #111111;
-  --dvr-text-mid: #4A4A4A;
-  --dvr-text-mute: #8C8C8C;
-  --dvr-bg: #F5F5F5;
-  --dvr-card: #FFFFFF;
-  --dvr-border: rgba(0,0,0,0.06);
-  --dvr-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.05);
-  --dvr-shadow-lg: 0 4px 14px rgba(0,0,0,0.07), 0 8px 32px rgba(0,0,0,0.05);
-  --dvr-radius: 20px;
-  --dvr-radius-sm: 14px;
+  /* Driver scoped tokens — mappent sur les design tokens YARAM (--y-*) */
+  --dvr-green: var(--y-brand);
+  --dvr-green-dark: var(--y-brand-dark);
+  --dvr-green-light: var(--y-brand-light);
+  --dvr-amber: var(--y-warning);
+  --dvr-red: var(--y-danger);
+  --dvr-blue: var(--y-info);
+  --dvr-text: var(--y-n-900);
+  --dvr-text-mid: var(--y-n-700);
+  --dvr-text-mute: var(--y-n-500);
+  --dvr-bg: var(--y-n-100);
+  --dvr-card: var(--y-n-0);
+  --dvr-border: var(--y-n-200);
+  --dvr-shadow: var(--y-shadow-sm);
+  --dvr-shadow-lg: var(--y-shadow-lg);
+  --dvr-radius: var(--y-rad-2xl);
+  --dvr-radius-sm: var(--y-rad-lg);
   --dvr-safe-top: env(safe-area-inset-top, 0px);
   --dvr-safe-bot: env(safe-area-inset-bottom, 0px);
 }
@@ -53,7 +54,7 @@ button.dvr-btn,
   top: 0;
   z-index: 30;
   padding: calc(var(--dvr-safe-top) + 12px) 16px 14px;
-  background: linear-gradient(180deg, #FFFFFF 0%, #FFFFFF 80%, rgba(255,255,255,0) 100%);
+  background: linear-gradient(180deg, var(--y-n-0) 0%, var(--y-n-0) 80%, rgba(255,255,255,0) 100%);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -71,8 +72,8 @@ button.dvr-btn,
 .dvr-avatar {
   width: 44px; height: 44px;
   border-radius: 14px;
-  background: linear-gradient(135deg, #22B564, #156237);
-  color: #fff;
+  background: linear-gradient(135deg, var(--y-brand-light), var(--y-brand-dark));
+  color: var(--y-n-0);
   display: flex; align-items: center; justify-content: center;
   font-weight: 800; font-size: 17px;
   flex-shrink: 0;
@@ -99,13 +100,13 @@ button.dvr-btn,
   width: 40px; height: 40px;
   border-radius: 12px;
   border: 1px solid var(--dvr-border);
-  background: #fff;
+  background: var(--y-n-0);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
   color: var(--dvr-text);
   transition: transform 120ms, background 120ms;
 }
-.dvr-header-action:active { transform: scale(0.95); background: #F5F5F5; }
+.dvr-header-action:active { transform: scale(0.95); background: var(--y-n-100); }
 
 /* ─── PAGE SHELL ──────────────────────────────── */
 .dvr-page {
@@ -160,7 +161,7 @@ button.dvr-btn,
   appearance: none;
   border: 0;
   background: var(--dvr-green);
-  color: #fff;
+  color: var(--y-n-0);
   font-weight: 700;
   font-size: 15px;
   padding: 14px 18px;
@@ -180,16 +181,16 @@ button.dvr-btn,
   border: 1.5px solid var(--dvr-green);
 }
 .dvr-btn-soft {
-  background: #EBF6EE;
+  background: var(--y-brand-soft);
   color: var(--dvr-green);
 }
 .dvr-btn-mid {
-  background: #fff;
+  background: var(--y-n-0);
   color: var(--dvr-text);
   border: 1px solid var(--dvr-border);
 }
 .dvr-btn-danger {
-  background: #FEEBEC;
+  background: var(--y-danger-soft);
   color: var(--dvr-red);
 }
 .dvr-btn-lg {
@@ -205,13 +206,13 @@ button.dvr-btn,
 /* ─── LOGIN ────────────────────────────────── */
 .dvr-login {
   min-height: 100dvh;
-  background: linear-gradient(155deg, #1F8B4C 0%, #156237 55%, #0D4D27 100%);
+  background: linear-gradient(155deg, var(--y-brand) 0%, var(--y-brand-dark) 55%, #0D4D27 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 20px;
-  color: #fff;
+  color: var(--y-n-0);
   position: relative;
   overflow: hidden;
 }
@@ -246,7 +247,7 @@ button.dvr-btn,
   margin-top: 3px;
 }
 .dvr-login-card {
-  background: #fff;
+  background: var(--y-n-0);
   color: var(--dvr-text);
   border-radius: 24px;
   padding: 26px 22px;
@@ -285,14 +286,14 @@ button.dvr-btn,
   padding: 14px 14px;
   font-size: 16px;
   font-family: inherit;
-  background: #FBFBFB;
+  background: var(--y-n-50);
   outline: none;
   transition: border-color 120ms, background 120ms;
   -webkit-appearance: none;
 }
 .dvr-input:focus {
   border-color: var(--dvr-green);
-  background: #fff;
+  background: var(--y-n-0);
 }
 .dvr-pin-input {
   letter-spacing: 0.5em;
@@ -302,7 +303,7 @@ button.dvr-btn,
   text-indent: 0.4em;
 }
 .dvr-login-err {
-  background: #FEEBEC;
+  background: var(--y-danger-soft);
   color: var(--dvr-red);
   border-radius: 10px;
   padding: 10px 12px;
@@ -335,7 +336,7 @@ button.dvr-btn,
 /* ─── STATUS PILL (online/offline) ─────────────── */
 .dvr-online {
   display: inline-flex; align-items: center; gap: 6px;
-  background: #E8F6EC;
+  background: var(--y-brand-soft);
   color: var(--dvr-green);
   border-radius: 999px;
   padding: 4px 10px;
@@ -344,7 +345,7 @@ button.dvr-btn,
 }
 .dvr-offline {
   display: inline-flex; align-items: center; gap: 6px;
-  background: #F1F1F1;
+  background: var(--y-n-100);
   color: var(--dvr-text-mute);
   border-radius: 999px;
   padding: 4px 10px;
@@ -393,7 +394,7 @@ button.dvr-btn,
   position: relative;
   width: 52px; height: 30px;
   border-radius: 999px;
-  background: #DCDCDC;
+  background: var(--y-n-300);
   cursor: pointer;
   transition: background 200ms;
   flex-shrink: 0;
@@ -403,7 +404,7 @@ button.dvr-btn,
   position: absolute;
   top: 3px; left: 3px;
   width: 24px; height: 24px;
-  background: #fff;
+  background: var(--y-n-0);
   border-radius: 50%;
   box-shadow: 0 2px 5px rgba(0,0,0,0.18);
   transition: transform 220ms cubic-bezier(.2,.85,.3,1.3);
@@ -469,7 +470,7 @@ button.dvr-btn,
 .dvr-delivery-icon {
   width: 40px; height: 40px;
   border-radius: 12px;
-  background: #F0F8F3;
+  background: var(--y-brand-soft);
   color: var(--dvr-green);
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
@@ -495,12 +496,12 @@ button.dvr-btn,
   border-radius: 6px;
   display: inline-flex; align-items: center;
 }
-.dvr-status-preparing { background: #FEF3CD; color: #856404; }
-.dvr-status-shipped { background: #CCE5FF; color: #004085; }
-.dvr-status-awaiting { background: #FFE5B4; color: #964B00; }
-.dvr-status-delivered { background: #D1F2DC; color: var(--dvr-green); }
-.dvr-status-paid { background: #E9ECEF; color: #495057; }
-.dvr-status-ready { background: #E8F5EC; color: var(--dvr-green); }
+.dvr-status-preparing { background: var(--y-warning-soft); color: var(--y-warning-text); }
+.dvr-status-shipped { background: var(--y-info-soft); color: var(--y-info); }
+.dvr-status-awaiting { background: var(--y-warning-soft); color: var(--y-warning-text); }
+.dvr-status-delivered { background: var(--y-brand-soft); color: var(--dvr-green); }
+.dvr-status-paid { background: var(--y-n-200); color: var(--y-n-700); }
+.dvr-status-ready { background: var(--y-brand-soft); color: var(--dvr-green); }
 
 .dvr-delivery-loc {
   display: flex; gap: 10px; align-items: flex-start;
@@ -525,21 +526,21 @@ button.dvr-btn,
   border-top: 1px dashed var(--dvr-border);
 }
 .dvr-pay-chip {
-  background: #FFF7E0;
-  color: #856404;
+  background: var(--y-warning-soft);
+  color: var(--y-warning-text);
   font-size: 11px;
   padding: 3px 8px;
   border-radius: 5px;
   font-weight: 700;
 }
-.dvr-pay-chip.paid { background: #E8F6EC; color: var(--dvr-green); }
+.dvr-pay-chip.paid { background: var(--y-brand-soft); color: var(--dvr-green); }
 
 .dvr-delivery-card.dvr-available {
   border: 1.5px dashed var(--dvr-amber);
 }
 .dvr-accept-btn {
   background: var(--dvr-amber);
-  color: #fff;
+  color: var(--y-n-0);
   font-weight: 800;
   font-size: 13px;
   padding: 10px;
@@ -563,7 +564,7 @@ button.dvr-btn,
 .dvr-empty-icon {
   width: 64px; height: 64px;
   border-radius: 50%;
-  background: #F0F8F3;
+  background: var(--y-brand-soft);
   color: var(--dvr-green);
   display: inline-flex; align-items: center; justify-content: center;
   margin-bottom: 12px;
@@ -585,7 +586,7 @@ button.dvr-btn,
   position: fixed;
   bottom: 0; left: 0; right: 0;
   z-index: 50;
-  background: #FFFFFFf2;
+  background: var(--y-n-0)f2;
   -webkit-backdrop-filter: saturate(180%) blur(20px);
   backdrop-filter: saturate(180%) blur(20px);
   border-top: 1px solid var(--dvr-border);
@@ -624,8 +625,8 @@ button.dvr-btn,
 .dvr-profile-avatar {
   width: 84px; height: 84px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #22B564, #156237);
-  color: #fff;
+  background: linear-gradient(135deg, var(--y-brand-light), var(--y-brand-dark));
+  color: var(--y-n-0);
   display: flex; align-items: center; justify-content: center;
   font-weight: 800;
   font-size: 30px;
@@ -692,7 +693,7 @@ button.dvr-btn,
 }
 .dvr-chip {
   border: 1.5px solid var(--dvr-border);
-  background: #FAFAFA;
+  background: var(--y-n-50);
   color: var(--dvr-text-mid);
   border-radius: 999px;
   padding: 8px 14px;
@@ -704,13 +705,13 @@ button.dvr-btn,
 .dvr-chip.active {
   background: var(--dvr-green);
   border-color: var(--dvr-green);
-  color: #fff;
+  color: var(--y-n-0);
 }
 
 /* ─── EARNINGS ──────────────────────────────── */
 .dvr-earn-hero {
-  background: linear-gradient(140deg, #1F8B4C 0%, #156237 100%);
-  color: #fff;
+  background: linear-gradient(140deg, var(--y-brand) 0%, var(--y-brand-dark) 100%);
+  color: var(--y-n-0);
   border-radius: var(--dvr-radius);
   padding: 22px 20px;
   margin-bottom: 14px;
@@ -768,7 +769,7 @@ button.dvr-btn,
 }
 .dvr-period-tab.active {
   background: var(--dvr-green);
-  color: #fff;
+  color: var(--y-n-0);
 }
 
 .dvr-bars {
@@ -783,7 +784,7 @@ button.dvr-btn,
 .dvr-bar-track {
   width: 100%;
   flex: 1;
-  background: #F0F0F0;
+  background: var(--y-n-200);
   border-radius: 6px;
   position: relative;
   overflow: hidden;
@@ -810,7 +811,7 @@ button.dvr-btn,
 .dvr-history-icon {
   width: 36px; height: 36px;
   border-radius: 10px;
-  background: #F0F8F3;
+  background: var(--y-brand-soft);
   color: var(--dvr-green);
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
@@ -852,7 +853,7 @@ button.dvr-btn,
 
 .dvr-help-cta {
   background: linear-gradient(140deg, #25D366, #128C7E);
-  color: #fff;
+  color: var(--y-n-0);
   border-radius: var(--dvr-radius);
   padding: 18px 20px;
   margin-top: 18px;
@@ -876,7 +877,7 @@ button.dvr-btn,
 
 /* ─── SKELETONS ─────────────────────────────── */
 .dvr-skel {
-  background: linear-gradient(90deg, #ECECEC 0%, #F5F5F5 50%, #ECECEC 100%);
+  background: linear-gradient(90deg, var(--y-n-200) 0%, var(--y-n-100) 50%, var(--y-n-200) 100%);
   background-size: 200% 100%;
   animation: dvrSkel 1.2s linear infinite;
   border-radius: var(--dvr-radius);
@@ -943,7 +944,7 @@ button.dvr-btn,
 
 /* ─── INSTALL PROMPT ───────────────────────── */
 .dvr-install {
-  background: #fff;
+  background: var(--y-n-0);
   border-radius: var(--dvr-radius);
   padding: 14px 16px;
   box-shadow: var(--dvr-shadow);
@@ -953,13 +954,13 @@ button.dvr-btn,
 }
 .dvr-install-icon {
   width: 40px; height: 40px; border-radius: 12px;
-  background: #E8F6EC; color: var(--dvr-green);
+  background: var(--y-brand-soft); color: var(--dvr-green);
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 .dvr-install-text { flex: 1; min-width: 0; font-size: 13px; }
 .dvr-install-text strong { font-size: 14px; }
 .dvr-install button {
-  background: var(--dvr-green); color: #fff;
+  background: var(--dvr-green); color: var(--y-n-0);
   border: 0; border-radius: 10px;
   padding: 8px 14px; font-size: 12px; font-weight: 700;
   cursor: pointer;
@@ -977,7 +978,7 @@ button.dvr-btn,
   border-radius: 0 0 24px 24px;
   overflow: hidden;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
-  background: #e8eef2;
+  background: var(--y-n-200);
   isolation: isolate;
   z-index: 5;
 }
@@ -988,12 +989,12 @@ button.dvr-btn,
 .dvr-map-container {
   width: 100%;
   display: block;
-  background: #e8eef2;
+  background: var(--y-n-200);
 }
 .dvr-map-container .leaflet-control-attribution {
   font-size: 9px;
   background: rgba(255, 255, 255, 0.65);
-  color: #555;
+  color: var(--y-n-700);
   padding: 1px 6px;
   border-radius: 6px 0 0 0;
 }
@@ -1012,20 +1013,20 @@ button.dvr-btn,
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  border: 3px solid #fff;
+  border: 3px solid var(--y-n-0);
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: var(--y-n-0);
   font-weight: 900;
   position: relative;
 }
 .dvr-map-pin-pickup {
-  background: #22B564;
+  background: var(--y-brand-light);
 }
 .dvr-map-pin-delivery {
-  background: #E5484D;
+  background: var(--y-danger);
   /* Pin teardrop : pointe vers le bas */
   border-radius: 50% 50% 50% 0;
   transform: rotate(-45deg);
@@ -1036,8 +1037,8 @@ button.dvr-btn,
 .dvr-map-pin-driver {
   width: 44px;
   height: 44px;
-  background: linear-gradient(135deg, #1F8B4C 0%, #156237 100%);
-  border: 3px solid #fff;
+  background: linear-gradient(135deg, var(--y-brand) 0%, var(--y-brand-dark) 100%);
+  border: 3px solid var(--y-n-0);
   box-shadow: 0 4px 14px rgba(31, 139, 76, 0.4);
 }
 /* Pulse animation pour le driver */
@@ -1073,7 +1074,7 @@ button.dvr-btn,
   background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  color: #111;
+  color: var(--y-n-900);
   font-size: 12px;
   font-weight: 700;
   padding: 6px 10px;
@@ -1086,7 +1087,7 @@ button.dvr-btn,
 }
 .dvr-map-badge-accent {
   background: var(--dvr-green);
-  color: #fff;
+  color: var(--y-n-0);
 }
 .dvr-map-badge svg { flex-shrink: 0; }
 
@@ -1099,7 +1100,7 @@ button.dvr-btn,
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--y-n-0);
   color: var(--dvr-green);
   border: 0;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
@@ -1120,7 +1121,7 @@ button.dvr-btn,
   left: 14px;
   z-index: 25;
   background: var(--dvr-green);
-  color: #fff;
+  color: var(--y-n-0);
   border: 0;
   font-size: 13px;
   font-weight: 700;
@@ -1147,7 +1148,7 @@ button.dvr-btn,
   height: 36px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.96);
-  color: #111;
+  color: var(--y-n-900);
   border: 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
   display: flex;
@@ -1162,10 +1163,10 @@ button.dvr-btn,
   margin: 8px 0 10px;
   border-radius: 12px;
   overflow: hidden;
-  background: #e8eef2;
+  background: var(--y-n-200);
   box-shadow: inset 0 0 0 1px var(--dvr-border);
 }
-.dvr-order-mini-map .dvr-map-container { background: #e8eef2; }
+.dvr-order-mini-map .dvr-map-container { background: var(--y-n-200); }
 /* Désactive les pointer events sur la mini-map pour ne pas bloquer le tap sur la card */
 .dvr-order-mini-map .leaflet-container {
   pointer-events: none;
@@ -1205,3 +1206,172 @@ button.dvr-btn,
 }
 .leaflet-control { z-index: 2 !important; }
 .leaflet-top, .leaflet-bottom { z-index: 3 !important; }
+
+/* ════════════════════════════════════════════════════════
+   COURSE SUMMARY — Timeline + Code de remise + Maps CTA
+   Utilisé dans DriverDelivery.jsx
+   ════════════════════════════════════════════════════════ */
+.dvr-course-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--y-sp-4);
+  border-radius: var(--y-rad-xl);
+  padding: var(--y-sp-4);
+  box-shadow: var(--y-shadow-sm);
+}
+
+.dvr-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
+.dvr-timeline::before {
+  content: '';
+  position: absolute;
+  left: 11px;
+  top: 12px;
+  bottom: 12px;
+  width: 2px;
+  background: var(--y-n-200);
+  border-radius: var(--y-rad-pill);
+}
+.dvr-timeline-step {
+  position: relative;
+  display: flex;
+  gap: var(--y-sp-3);
+  padding: var(--y-sp-2) 0;
+  align-items: flex-start;
+}
+.dvr-timeline-dot {
+  position: relative;
+  z-index: 1;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--y-n-0);
+  color: var(--y-n-500);
+  border: 2px solid var(--y-n-300);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 160ms, color 160ms, border-color 160ms;
+}
+.dvr-timeline-step.current .dvr-timeline-dot {
+  background: var(--y-brand);
+  color: var(--y-n-0);
+  border-color: var(--y-brand);
+  box-shadow: var(--y-focus-ring);
+}
+.dvr-timeline-step.done .dvr-timeline-dot {
+  background: var(--y-brand-soft);
+  color: var(--y-brand);
+  border-color: var(--y-brand-soft);
+}
+.dvr-timeline-body {
+  flex: 1;
+  min-width: 0;
+}
+.dvr-timeline-title {
+  font-size: var(--y-fs-md);
+  font-weight: var(--y-fw-semibold);
+  color: var(--y-n-900);
+  letter-spacing: -0.01em;
+}
+.dvr-timeline-step.done .dvr-timeline-title { color: var(--y-n-600); }
+.dvr-timeline-sub {
+  font-size: var(--y-fs-sm);
+  color: var(--y-n-600);
+  margin-top: 2px;
+}
+
+.dvr-course-maps {
+  align-self: stretch;
+  border-radius: var(--y-rad-pill);
+  min-height: 44px;
+  gap: 8px;
+}
+
+.dvr-remise-block {
+  background: var(--y-brand-soft);
+  border: 1px solid var(--y-brand-soft);
+  border-radius: var(--y-rad-xl);
+  padding: var(--y-sp-4);
+  text-align: center;
+}
+.dvr-remise-label {
+  font-size: var(--y-fs-xs);
+  font-weight: var(--y-fw-bold);
+  color: var(--y-brand-dark);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.dvr-remise-code {
+  margin-top: var(--y-sp-2);
+  display: inline-flex;
+  gap: var(--y-sp-3);
+  justify-content: center;
+}
+.dvr-remise-digit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  padding: 6px 10px;
+  background: var(--y-n-0);
+  border-radius: var(--y-rad-lg);
+  font-family: var(--y-font-mono);
+  font-size: var(--y-fs-6xl);
+  font-weight: var(--y-fw-extrabold);
+  color: var(--y-n-900);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  box-shadow: var(--y-shadow-xs);
+  font-variant-numeric: tabular-nums;
+}
+.dvr-remise-help {
+  margin-top: var(--y-sp-3);
+  font-size: var(--y-fs-sm);
+  color: var(--y-n-700);
+}
+
+/* Sticky bottom info bar */
+.dvr-course-sticky {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(88px + var(--dvr-safe-bot));
+  z-index: 45;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--y-sp-2);
+  background: var(--y-n-900);
+  color: var(--y-n-0);
+  padding: 10px 16px;
+  border-radius: var(--y-rad-pill);
+  box-shadow: var(--y-shadow-lg);
+  font-size: var(--y-fs-sm);
+  font-weight: var(--y-fw-semibold);
+  max-width: calc(100% - 24px);
+}
+.dvr-course-sticky-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--y-brand-light);
+  box-shadow: 0 0 0 4px rgba(45,170,94,0.25);
+  flex-shrink: 0;
+}
+.dvr-course-sticky-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 380px) {
+  .dvr-remise-digit {
+    min-width: 44px;
+    font-size: var(--y-fs-5xl);
+  }
+}

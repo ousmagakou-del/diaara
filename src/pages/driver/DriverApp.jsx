@@ -112,7 +112,7 @@ export default function DriverApp() {
   useEffect(() => {
     const meta = document.querySelector('meta[name="theme-color"]');
     const prev = meta?.getAttribute('content');
-    if (meta) meta.setAttribute('content', '#1F8B4C');
+    if (meta) meta.setAttribute('content', 'var(--y-brand)');
     document.body.style.background = 'var(--dvr-bg, #F5F5F5)';
     return () => {
       if (meta && prev) meta.setAttribute('content', prev);
@@ -144,7 +144,7 @@ export default function DriverApp() {
     setTimeout(() => {
       setupWebPushForDriver(s).then((res) => {
         if (res.ok) {
-          console.log('[driver] web push enabled ✓');
+          console.log('[driver] web push enabled');
         } else {
           console.warn('[driver] web push not enabled:', res.error);
         }

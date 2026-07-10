@@ -44,7 +44,7 @@ function notifyNewOrder(orderInfo) {
   // Browser notification (si permission accordée)
   try {
     if ('Notification' in window && Notification.permission === 'granted') {
-      new Notification('🛵 Nouvelle livraison YARAM', {
+      new Notification('Nouvelle livraison YARAM', {
         body: orderInfo
           ? `Commande ${orderInfo.id} · ${orderInfo.total?.toLocaleString('fr-FR')} FCFA`
           : 'Une nouvelle livraison t\'a été assignée',
@@ -211,7 +211,7 @@ function AvailableDeliveryCard({ order, onAccept, accepting }) {
   return (
     <div className="dvr-delivery-card dvr-available">
       <div className="dvr-delivery-head">
-        <div className="dvr-delivery-icon" style={{ background: '#FFF7E0', color: '#856404' }}>
+        <div className="dvr-delivery-icon" style={{ background: 'var(--y-warning-soft)', color: 'var(--y-warning-text)' }}>
           <Icons.Box />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -287,7 +287,7 @@ export default function DriverDashboard({ session, onLogout, onOpenDelivery, onN
             && previousOrderCountRef.current !== null
             && totalNewOrders > previousOrderCountRef.current) {
           notifyNewOrder(newOrderInfo);
-          toast.success('🛵 Nouvelle livraison !');
+          toast.success('Nouvelle livraison');
         }
         previousOrderCountRef.current = totalNewOrders;
         firstLoadRef.current = false;
@@ -434,7 +434,7 @@ export default function DriverDashboard({ session, onLogout, onOpenDelivery, onN
         <div className="dvr-header-card">
           <div className="dvr-avatar">{initials}</div>
           <div className="dvr-header-text">
-            <div className="dvr-header-name">Salut, {firstName} 👋</div>
+            <div className="dvr-header-name">Salut, {firstName}</div>
             <div className="dvr-header-sub">
               {available
                 ? <><span className="dvr-online"><span className="dvr-dot-pulse" />Disponible</span></>

@@ -47,8 +47,8 @@ export default function DriverHelp() {
     <>
       <header className="dvr-header">
         <div className="dvr-header-card">
-          <div className="dvr-avatar" style={{ background: 'linear-gradient(135deg, #0A84FF, #0064CC)' }}>
-            ❓
+          <div className="dvr-avatar" style={{ background: 'linear-gradient(135deg, var(--y-info), #0064CC)' }} aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           </div>
           <div className="dvr-header-text">
             <div className="dvr-header-name">Aide & support</div>
@@ -85,7 +85,7 @@ export default function DriverHelp() {
           </div>
         </a>
 
-        <a href={telUrl} className="dvr-help-cta" style={{ background: 'linear-gradient(140deg, #0A84FF, #0064CC)', marginTop: 10 }}>
+        <a href={telUrl} className="dvr-help-cta" style={{ background: 'linear-gradient(140deg, var(--y-info), #0064CC)', marginTop: 10 }}>
           <div className="dvr-help-cta-icon">
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92Z" />
@@ -100,7 +100,7 @@ export default function DriverHelp() {
         <div className="dvr-section">
           <div className="dvr-section-label">Astuces</div>
           <div className="dvr-card">
-            <div style={{ fontWeight: 700, marginBottom: 6 }}>💡 Maximise tes gains</div>
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>Astuce : maximise tes gains</div>
             <ul style={{ paddingLeft: 18, margin: 0, fontSize: 13, color: 'var(--dvr-text-mid)', lineHeight: 1.8 }}>
               <li>Active la disponibilité pendant les heures de pointe (12h-14h, 18h-21h)</li>
               <li>Réponds vite aux nouvelles courses : les premiers servis</li>

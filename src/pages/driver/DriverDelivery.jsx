@@ -170,25 +170,53 @@ export default function DriverDelivery({ session, orderId, onBack }) {
   const handleRecenter = () => setRecenterTick((n) => n + 1);
 
   // ── Itinéraire externe (Google / Apple Maps deeplink) ─
+  // Detection UA simple : iPhone / iPad / Mac -> Apple Maps ; sinon Google Maps.
   const openExternalRoute = () => {
     const target = picked ? delivery : pickup;
     if (!target) return;
-    const isIos = /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent) && 'ontouchend' in document;
-    const url = isIos
-      ? `maps://?daddr=${target.lat},${target.lng}&dirflg=d`
-      : `https://www.google.com/maps/dir/?api=1&destination=${target.lat},${target.lng}&travelmode=driving`;
-    try { window.open(url, '_blank'); } catch { /* popup bloqué */ }
+    const isApple = typeof navigator !== 'undefined' && /iPhone|iPad|Mac/.test(navigator.userAgent);
+    const url = isApple
+      ? `https://maps.apple.com/?daddr=${target.lat},${target.lng}`
+      : `https://www.google.com/maps/dir/?api=1&destination=${target.lat},${target.lng}`;
+    try { window.open(url, '_blank', 'noopener,noreferrer'); } catch { /* popup bloqué */ }
   };
+
+  // ── Etape courante déduite du statut / tracking ─────────
+  const status = orderData?.order?.status || orderData?.tracking?.status || null;
+  const trk = orderData?.tracking || {};
+  const currentStep = useMemo(() => {
+    if (trk.delivered_at || status === 'delivered') return 'delivered';
+    if (trk.arrived_at || status === 'arrived') return 'at_client';
+    if (trk.picked_at || trk.in_route_at || ['in_route', 'picked'].includes(status)) return 'to_client';
+    if (['at_pickup'].includes(status)) return 'at_pickup';
+    return 'to_pickup';
+  }, [status, trk.picked_at, trk.in_route_at, trk.arrived_at, trk.delivered_at]);
+
+  const primaryLabel = {
+    to_pickup: 'Arrivé chez la pharmacie',
+    at_pickup: 'Colis récupéré',
+    to_client: 'Arrivé chez le client',
+    at_client: 'Livraison confirmée',
+    delivered: 'Livraison terminée',
+  }[currentStep];
+
+  // Code de remise (4 chiffres) — supporte pickup_code / delivery_code / delivery_pin
+  const remiseCode = orderData?.order?.pickup_code
+    || orderData?.order?.delivery_code
+    || orderData?.tracking?.pickup_code
+    || orderData?.tracking?.delivery_code
+    || orderData?.tracking?.delivery_pin
+    || null;
 
   // ── States d'erreur / loading ──────────────────────────
   if (err) {
     return (
       <div className="dvr-page">
         <div className="dvr-card" style={{ textAlign: 'center', padding: 32 }}>
-          <div style={{ fontSize: 38, marginBottom: 10 }}>⚠️</div>
+          <div style={{ fontSize: 'var(--y-fs-4xl)', marginBottom: 10, color: 'var(--y-danger)' }} aria-hidden="true"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
           <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 6 }}>{err}</div>
           <button className="dvr-btn dvr-btn-ghost" onClick={onBack} style={{ marginTop: 20 }}>
-            ← Retour au dashboard
+            Retour au dashboard
           </button>
         </div>
       </div>
@@ -299,12 +327,80 @@ export default function DriverDelivery({ session, orderId, onBack }) {
         aria-label="Retour"
         className="dvr-back-fab"
       >
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#111" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--y-n-900)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="15 18 9 12 15 6" />
         </svg>
       </button>
 
+      {/* ─── Résumé course : timeline waypoints + code remise + Maps ─── */}
+      <div className="dvr-page" style={{ paddingTop: 12 }}>
+        <div className="dvr-card dvr-course-summary">
+          {/* Timeline pickup -> client */}
+          <ol className="dvr-timeline" aria-label="Étapes de la livraison">
+            <li className={`dvr-timeline-step ${['at_pickup','to_client','at_client','delivered'].includes(currentStep) ? 'done' : (currentStep === 'to_pickup' ? 'current' : '')}`}>
+              <span className="dvr-timeline-dot" aria-hidden="true">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 22s7-7 7-12a7 7 0 1 0-14 0c0 5 7 12 7 12Z"/><circle cx="12" cy="10" r="2.5"/>
+                </svg>
+              </span>
+              <div className="dvr-timeline-body">
+                <div className="dvr-timeline-title">Retrait pharmacie</div>
+                <div className="dvr-timeline-sub">{pickup?.name || 'Pharmacie partenaire'}</div>
+              </div>
+            </li>
+            <li className={`dvr-timeline-step ${currentStep === 'delivered' ? 'done' : (['to_client','at_client'].includes(currentStep) ? 'current' : '')}`}>
+              <span className="dvr-timeline-dot" aria-hidden="true">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 12l2-9 4 3 4-3 4 3 4-3 2 9"/><path d="M3 12v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                </svg>
+              </span>
+              <div className="dvr-timeline-body">
+                <div className="dvr-timeline-title">Livraison client</div>
+                <div className="dvr-timeline-sub">{delivery?.name || 'Client'}</div>
+              </div>
+            </li>
+          </ol>
+
+          {/* Ouvrir dans Maps */}
+          {(pickup || delivery) && (
+            <button
+              type="button"
+              className="dvr-btn dvr-btn-ghost dvr-course-maps"
+              onClick={openExternalRoute}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+              </svg>
+              Ouvrir dans Maps
+            </button>
+          )}
+
+          {/* Code de remise (4 chiffres) — géant */}
+          {remiseCode && (
+            <div className="dvr-remise-block" aria-label="Code de remise">
+              <div className="dvr-remise-label">Code de remise</div>
+              <div className="dvr-remise-code" aria-live="polite">
+                {String(remiseCode).padStart(4, '0').split('').map((d, i) => (
+                  <span key={i} className="dvr-remise-digit">{d}</span>
+                ))}
+              </div>
+              <div className="dvr-remise-help">
+                Demandez au client de vous dicter ce code pour confirmer la livraison.
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
       <Livreur />
+
+      {/* ─── Sticky bottom info bar : rappel de l'étape en cours ─── */}
+      {primaryLabel && currentStep !== 'delivered' && (
+        <div className="dvr-course-sticky" role="status" aria-live="polite">
+          <span className="dvr-course-sticky-dot" aria-hidden="true" />
+          <span className="dvr-course-sticky-label">Prochaine étape&nbsp;: {primaryLabel}</span>
+        </div>
+      )}
     </div>
   );
 }

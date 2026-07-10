@@ -110,17 +110,17 @@ export default function DriverProfile({ session, onLogout, onBack, onSessionUpda
 
         <div className="dvr-profile-kpis">
           <div className="dvr-profile-kpi">
-            <div className="dvr-profile-kpi-icon">⭐</div>
+            <div className="dvr-profile-kpi-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="var(--y-warning)" stroke="var(--y-warning)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
             <div className="dvr-profile-kpi-val">{me?.rating ? Number(me.rating).toFixed(1) : '—'}</div>
             <div className="dvr-profile-kpi-label">Note</div>
           </div>
           <div className="dvr-profile-kpi">
-            <div className="dvr-profile-kpi-icon">📦</div>
+            <div className="dvr-profile-kpi-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
             <div className="dvr-profile-kpi-val">{me?.total_deliveries ?? 0}</div>
             <div className="dvr-profile-kpi-label">Livraisons</div>
           </div>
           <div className="dvr-profile-kpi">
-            <div className="dvr-profile-kpi-icon">🛵</div>
+            <div className="dvr-profile-kpi-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18" cy="17.5" r="3.5"/><path d="M15 6h5l1 5v6.5"/><path d="M9 17.5V13a2 2 0 0 0-2-2H4"/></svg></div>
             <div className="dvr-profile-kpi-val" style={{ textTransform: 'capitalize', fontSize: 14, marginTop: 4 }}>
               {me?.vehicle || '—'}
             </div>
@@ -174,7 +174,7 @@ export default function DriverProfile({ session, onLogout, onBack, onSessionUpda
           onClick={handleLogout}
           style={{ marginTop: 24 }}
         >
-          🚪 Se déconnecter
+          Se déconnecter
         </button>
 
         <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--dvr-text-mute)', marginTop: 16 }}>
