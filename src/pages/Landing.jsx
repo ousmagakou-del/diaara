@@ -50,6 +50,20 @@ export default function Landing() {
 
       {/* ━━━ HERO ━━━ */}
       <section className="lp-hero">
+        {/* Video background - loop responsive full-cover */}
+        <video
+          className="lp-hero-video"
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="metadata"
+          poster="/hero-poster.jpg"
+          aria-hidden="true"
+        >
+          <source src="/hero-video.mp4" type="video/mp4" />
+        </video>
+        <div className="lp-hero-overlay" aria-hidden="true"></div>
         <div className="lp-hero-bg-orb lp-orb-1"></div>
         <div className="lp-hero-bg-orb lp-orb-2"></div>
         <div className="lp-hero-inner">

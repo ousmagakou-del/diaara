@@ -82,13 +82,52 @@
   overflow: hidden;
   min-height: calc(100vh - 70px);
   display: flex; align-items: center;
+  color: #fff;
 }
+
+/* ─── Video background (optionnel, poser /public/hero-video.mp4) ─── */
+.lp-hero-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  z-index: 0;
+  pointer-events: none;
+  filter: brightness(0.85) saturate(1.05);
+  /* Fade-in douce si le fichier existe */
+  animation: lp-video-fade 700ms ease-out both;
+}
+@keyframes lp-video-fade {
+  from { opacity: 0; transform: scale(1.05); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Overlay degrade sombre pour lisibilite du texte */
+.lp-hero-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 100%),
+    linear-gradient(90deg, rgba(0,0,0,0.35) 0%, transparent 60%);
+}
+
+/* Si la video n existe pas (404) : le poster/inline background reste visible.
+   Pour desactiver completement la video, ajoute .lp-hero--no-video sur .lp-hero. */
+.lp-hero--no-video .lp-hero-video,
+.lp-hero--no-video .lp-hero-overlay { display: none; }
+
 /* Orbes verts décoratifs en arrière-plan */
 .lp-hero-bg-orb {
   position: absolute;
   border-radius: 50%;
   pointer-events: none;
   z-index: 0;
+  mix-blend-mode: screen;
+  opacity: 0.6;
 }
 .lp-orb-1 {
   width: 600px; height: 600px;
@@ -175,20 +214,22 @@
 .lp-hero-title {
   font-size: 88px; font-weight: 900; line-height: 1;
   letter-spacing: -3px; margin: 0 0 24px;
-  color: #1A1A1A;
+  color: #fff;
   text-align: center;
+  text-shadow: 0 4px 30px rgba(0,0,0,0.35);
 }
 .lp-hero-accent {
-  background: linear-gradient(135deg, #1F8B4C 0%, #2DAA5E 100%);
+  background: linear-gradient(135deg, #6BE49A 0%, #2DAA5E 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 .lp-hero-sub {
   font-size: 20px; line-height: 1.6;
-  color: #4B5563; margin: 0 auto 40px;
+  color: rgba(255,255,255,0.9); margin: 0 auto 40px;
   max-width: 620px;
   text-align: center;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.25);
 }
 .lp-hero-cta {
   display: flex; gap: 14px; flex-wrap: wrap;
@@ -197,11 +238,13 @@
 }
 .lp-hero-trust {
   display: flex; gap: 0; align-items: center;
-  background: #fff;
-  border: 1px solid #F0F0EE;
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.4);
   border-radius: 999px;
   padding: 14px 28px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.15);
 }
 .lp-trust-divider {
   width: 1px; height: 32px;
