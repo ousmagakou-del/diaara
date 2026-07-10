@@ -1,0 +1,131 @@
+/* ==========================================================
+   YARAM Timeline — tokens uniquement
+   ========================================================== */
+.y-tl {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.y-tl-step {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: var(--y-sp-3);
+  padding-bottom: var(--y-sp-4);
+  opacity: 0;
+  transform: translateY(6px);
+  animation: yTlFadeIn 0.42s var(--y-ease-out) forwards;
+}
+.y-tl-compact .y-tl-step { padding-bottom: var(--y-sp-3); }
+@keyframes yTlFadeIn {
+  to { opacity: 1; transform: none; }
+}
+
+.y-tl-rail {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100%;
+}
+.y-tl-bullet {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--y-n-300);
+  background: var(--y-n-0);
+  color: var(--y-n-500);
+  flex-shrink: 0;
+  transition: background var(--y-dur-medium) var(--y-ease-out),
+              border-color var(--y-dur-medium) var(--y-ease-out),
+              color var(--y-dur-medium) var(--y-ease-out);
+  z-index: 1;
+}
+.y-tl-line {
+  flex: 1;
+  width: 2px;
+  background: var(--y-n-300);
+  margin-top: 2px;
+  min-height: var(--y-sp-4);
+  transition: background var(--y-dur-medium) var(--y-ease-out);
+}
+
+.y-tl-done .y-tl-bullet {
+  background: var(--y-brand);
+  border-color: var(--y-brand);
+  color: var(--y-n-0);
+}
+.y-tl-done .y-tl-line {
+  background: var(--y-brand);
+}
+.y-tl-current .y-tl-bullet {
+  background: var(--y-n-0);
+  border-color: var(--y-brand);
+  color: var(--y-brand);
+  box-shadow: 0 0 0 4px var(--y-brand-soft);
+}
+
+.y-tl-spin {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--y-brand);
+  border-top-color: transparent;
+  animation: yTlSpin 0.9s linear infinite;
+}
+@keyframes yTlSpin {
+  to { transform: rotate(360deg); }
+}
+
+.y-tl-body {
+  min-width: 0;
+  padding-top: 2px;
+  padding-bottom: var(--y-sp-1);
+}
+.y-tl-label {
+  display: flex;
+  align-items: baseline;
+  gap: var(--y-sp-2);
+  justify-content: space-between;
+  font-size: var(--y-fs-base);
+  font-weight: var(--y-fw-semibold);
+  color: var(--y-n-900);
+  letter-spacing: -0.1px;
+}
+.y-tl-future .y-tl-label { color: var(--y-n-500); font-weight: var(--y-fw-medium); }
+.y-tl-current .y-tl-label { color: var(--y-brand-dark); }
+
+.y-tl-time {
+  font-size: var(--y-fs-xs);
+  font-weight: var(--y-fw-medium);
+  color: var(--y-n-500);
+  font-variant-numeric: tabular-nums;
+}
+.y-tl-sub {
+  margin-top: 2px;
+  font-size: var(--y-fs-sm);
+  font-weight: var(--y-fw-normal);
+  color: var(--y-n-600);
+  line-height: 1.35;
+}
+.y-tl-future .y-tl-sub { color: var(--y-n-500); }
+
+/* Dark mode compat via data-theme */
+[data-theme="dark"] .y-tl-bullet {
+  background: var(--y-n-800, #1F2937);
+  border-color: var(--y-n-700, #4B5563);
+}
+[data-theme="dark"] .y-tl-current .y-tl-bullet {
+  background: var(--y-n-800);
+  box-shadow: 0 0 0 4px rgba(31,139,76,0.20);
+}
+[data-theme="dark"] .y-tl-line { background: var(--y-n-700); }
+[data-theme="dark"] .y-tl-done .y-tl-line { background: var(--y-brand); }
+[data-theme="dark"] .y-tl-label { color: var(--y-n-0); }
+[data-theme="dark"] .y-tl-future .y-tl-label { color: var(--y-n-500); }
+[data-theme="dark"] .y-tl-sub { color: var(--y-n-500); }

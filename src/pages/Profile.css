@@ -444,3 +444,57 @@
    ═══════════════════════════════════════════════════════════ */
 .prof-screen, .prof-scroll, .prof-cover, .prof-stats,
 .prof-update-cta, .prof-menu, .prof-logout, .prof-footer { all: revert; }
+
+/* ═══════════════════════════════════════════════════════════
+   Phase D — Section head + gift placeholder + empty row (tokens)
+   ═══════════════════════════════════════════════════════════ */
+.acct-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--y-sp-3);
+  margin: 0 4px var(--y-sp-2);
+}
+.acct-section-head .acct-section-title { margin: 0; }
+.acct-section-link {
+  background: transparent;
+  border: none;
+  color: var(--y-brand);
+  font-size: var(--y-fs-sm);
+  font-weight: var(--y-fw-semibold);
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: var(--y-rad-sm);
+  transition: background var(--y-dur-fast) var(--y-ease-out);
+}
+.acct-section-link:hover { background: var(--y-brand-soft); }
+.acct-empty-row {
+  display: flex; align-items: center; gap: var(--y-sp-3);
+  padding: var(--y-sp-4); color: var(--y-n-700);
+}
+.acct-empty-row-icon {
+  width: 40px; height: 40px; border-radius: var(--y-rad-md);
+  background: var(--y-n-100); color: var(--y-n-600);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.acct-empty-row strong {
+  display: block; font-size: var(--y-fs-base);
+  font-weight: var(--y-fw-semibold); color: var(--y-n-900);
+}
+.acct-empty-row span { font-size: var(--y-fs-sm); color: var(--y-n-600); }
+.acct-gift-placeholder {
+  display: flex; align-items: center; gap: var(--y-sp-3); padding: var(--y-sp-4);
+}
+.acct-gift-illu {
+  width: 44px; height: 44px; border-radius: var(--y-rad-md);
+  background: var(--y-warning-soft); color: var(--y-warning-text);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.acct-gift-placeholder strong {
+  display: block; font-size: var(--y-fs-base);
+  font-weight: var(--y-fw-semibold); color: var(--y-n-900);
+}
+.acct-gift-placeholder span {
+  display: block; font-size: var(--y-fs-sm);
+  color: var(--y-n-600); margin-top: 2px; line-height: 1.4;
+}

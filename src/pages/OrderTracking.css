@@ -963,3 +963,121 @@
 }
 .track-info-card h3 { font-size: 13px; font-weight: 700; margin-bottom: 8px; }
 .track-info-card p { font-size: 13px; padding: 2px 0; }
+
+/* ═══════════════════════════════════════════════════════════
+   Phase D — Actions secondaires + Rating snackbar 24h
+   Tokens uniquement.
+   ═══════════════════════════════════════════════════════════ */
+.track-actions .track-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--y-sp-2);
+}
+.track-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--y-sp-2);
+  padding: 10px 14px;
+  border-radius: var(--y-rad-pill);
+  font-size: var(--y-fs-sm);
+  font-weight: var(--y-fw-semibold);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background var(--y-dur-fast) var(--y-ease-out),
+              transform var(--y-dur-fast) var(--y-ease-out),
+              box-shadow var(--y-dur-fast) var(--y-ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+.track-action-btn:active { transform: scale(0.97); }
+.track-action-btn svg { flex-shrink: 0; }
+.track-action-ghost {
+  background: var(--y-n-100);
+  color: var(--y-n-800);
+  border-color: var(--y-n-200);
+}
+.track-action-ghost:hover { background: var(--y-n-200); }
+.track-action-danger {
+  background: var(--y-danger-soft);
+  color: var(--y-danger);
+  border-color: var(--y-danger-soft);
+}
+.track-action-danger:hover {
+  background: var(--y-danger);
+  color: var(--y-n-0);
+}
+.track-action-star {
+  background: var(--y-warning-soft);
+  color: var(--y-warning-text);
+  border-color: var(--y-warning-soft);
+}
+.track-action-star:hover {
+  background: var(--y-warning);
+  color: var(--y-n-900);
+}
+
+.track-rating-snack {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--tabbar-height, 0px) + var(--y-sp-4));
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: var(--y-sp-3);
+  padding: var(--y-sp-3) var(--y-sp-4);
+  background: var(--y-n-900);
+  color: var(--y-n-0);
+  border-radius: var(--y-rad-xl);
+  box-shadow: var(--y-shadow-xl);
+  max-width: min(560px, calc(100% - var(--y-sp-6)));
+  animation: yTrackSnackIn 0.4s var(--y-ease-out);
+}
+@keyframes yTrackSnackIn {
+  from { opacity: 0; transform: translate(-50%, 10px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+.track-rating-snack-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.track-rating-snack-body strong {
+  font-size: var(--y-fs-base);
+  font-weight: var(--y-fw-semibold);
+  letter-spacing: -0.1px;
+}
+.track-rating-snack-body span {
+  font-size: var(--y-fs-sm);
+  color: rgba(255,255,255,0.72);
+  font-weight: var(--y-fw-normal);
+}
+.track-rating-snack-cta {
+  padding: 8px 16px;
+  border-radius: var(--y-rad-pill);
+  background: var(--y-brand);
+  color: var(--y-n-0);
+  border: none;
+  font-size: var(--y-fs-sm);
+  font-weight: var(--y-fw-semibold);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--y-dur-fast) var(--y-ease-out);
+}
+.track-rating-snack-cta:hover { background: var(--y-brand-light); }
+.track-rating-snack-dismiss {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.72);
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--y-dur-fast) var(--y-ease-out), color var(--y-dur-fast) var(--y-ease-out);
+}
+.track-rating-snack-dismiss:hover {
+  background: rgba(255,255,255,0.08);
+  color: var(--y-n-0);
+}

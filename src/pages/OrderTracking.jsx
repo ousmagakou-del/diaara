@@ -1,11 +1,17 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useNav } from '../App';
 import { supabase } from '../lib/supabase';
-import { toast } from '../lib/toast';
+import { clientReportDispute } from '../lib/supabase';
+import { toast, confirmDialog } from '../lib/toast';
 import { formatPrice, safeFormatDate, safeNumber, YARAM_WHATSAPP } from '../lib/utils';
 import { formatArrivalDate } from '../lib/preorder';
 import SignedImage from '../components/SignedImage';
 import './OrderTracking.css';
+
+// Statuts autorisant l'annulation cote client
+const CANCELLABLE_STATUSES = new Set(['pending', 'pending_payment', 'confirmed', 'paid']);
+// Statuts terminaux ou trop avances pour un signalement de type dispute
+const REPORTABLE_FALLBACK_WA = 'contactez-nous';
 
 /* ───────────── Flows (étapes timeline) ───────────── */
 // Local : commande Dakar (J+1)
@@ -221,6 +227,25 @@ export default function OrderTracking({ orderId }) {
     }
   }, [order?.status, order?.delivery_rating]);
 
+  // Rappel notation snackbar : si livree depuis 24h et pas encore notee,
+  // on montre une snackbar discrete "Note ta livraison" (dismiss + tap).
+  const [showRatingSnack, setShowRatingSnack] = useState(false);
+  useEffect(() => {
+    if (!order) return;
+    if (order.status !== 'delivered') return;
+    if (order.delivery_rating) return;
+    const dismissKey = `yaram_rated_snack_${orderId}`;
+    if (localStorage.getItem(dismissKey)) return;
+    const deliveredAt = order.delivered_at || tracking?.delivered_at;
+    if (!deliveredAt) return;
+    const dt = new Date(deliveredAt).getTime();
+    if (isNaN(dt)) return;
+    const hoursSince = (Date.now() - dt) / (1000 * 60 * 60);
+    if (hoursSince >= 24) {
+      setShowRatingSnack(true);
+    }
+  }, [order?.status, order?.delivery_rating, order?.delivered_at, tracking?.delivered_at, orderId]);
+
   // Numéro de commande compact (#XXXX)
   const compactId = useMemo(() => {
     if (!order?.id) return '';
@@ -296,6 +321,67 @@ export default function OrderTracking({ orderId }) {
   )}`;
 
   const driverPhoneClean = tracking?.delivery_person_phone?.replace(/\D/g, '');
+
+  // ─── Actions client (annuler / signaler) ───
+  const canCancel = order && CANCELLABLE_STATUSES.has(order.status);
+  const handleCancelOrder = async () => {
+    if (!order) return;
+    const ok = await confirmDialog(
+      'Confirmer l\'annulation de cette commande ?',
+      { confirmLabel: 'Annuler la commande', cancelLabel: 'Retour', danger: true }
+    );
+    if (!ok) return;
+    // Tentative directe UPDATE sur orders (RLS decide). Si echec, on route
+    // vers WhatsApp support pour finaliser l'annulation cote humain.
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: 'cancelled' })
+        .eq('id', order.id)
+        .in('status', ['pending', 'pending_payment', 'confirmed', 'paid']);
+      if (error) throw error;
+      toast.success('Commande annulee');
+      // Rafraichit
+      refresh(false);
+    } catch (e) {
+      console.warn('[OrderTracking] cancel failed, fallback WA:', e?.message);
+      toast.info('On finalise l\'annulation avec le support');
+      const msg = encodeURIComponent(
+        `Bonjour YARAM, je souhaite annuler ma commande ${compactId}.`
+      );
+      window.open(`https://wa.me/${YARAM_WHATSAPP}?text=${msg}`, '_blank');
+    }
+  };
+
+  const handleReportIssue = async () => {
+    if (!order) return;
+    // Livree : on peut declarer un litige via RPC. Sinon on route WA.
+    if (order.status === 'delivered') {
+      const reason = await (async () => {
+        try {
+          const { promptDialog } = await import('../lib/toast');
+          return await promptDialog('Decris brievement le probleme rencontre', {
+            placeholder: 'Colis incomplet, article endommage...',
+            confirmLabel: 'Envoyer',
+          });
+        } catch { return null; }
+      })();
+      if (!reason) return;
+      try {
+        await clientReportDispute(order.id, reason);
+        toast.success('Signalement envoye. On revient vers toi rapidement.');
+      } catch (e) {
+        console.warn('[OrderTracking] dispute failed:', e?.message);
+        toast.error('Impossible d\'envoyer. Contacte-nous sur WhatsApp.');
+      }
+      return;
+    }
+    // Statut non livre : direct WhatsApp support
+    const msg = encodeURIComponent(
+      `Bonjour YARAM, j'ai un probleme sur ma commande ${compactId} (statut : ${order.status}).`
+    );
+    window.open(`https://wa.me/${YARAM_WHATSAPP}?text=${msg}`, '_blank');
+  };
 
   return (
     <div className="track-screen page-anim">
@@ -586,6 +672,51 @@ export default function OrderTracking({ orderId }) {
           </div>
         </section>
 
+        {/* ═══ Actions secondaires (annuler / signaler) ═══ */}
+        <section className="track-card track-actions track-col-main" aria-label="Actions">
+          <h3 className="track-card-title">Aide sur cette commande</h3>
+          <div className="track-actions-row">
+            {canCancel && (
+              <button
+                type="button"
+                className="track-action-btn track-action-danger"
+                onClick={handleCancelOrder}
+              >
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="15" y1="9" x2="9" y2="15"/>
+                  <line x1="9" y1="9" x2="15" y2="15"/>
+                </svg>
+                Annuler la commande
+              </button>
+            )}
+            <button
+              type="button"
+              className="track-action-btn track-action-ghost"
+              onClick={handleReportIssue}
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 9v4"/>
+                <path d="M12 17h.01"/>
+                <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              </svg>
+              Signaler un probleme
+            </button>
+            {order.status === 'delivered' && !order.delivery_rating && (
+              <button
+                type="button"
+                className="track-action-btn track-action-star"
+                onClick={() => setShowRating(true)}
+              >
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                </svg>
+                Noter la livraison
+              </button>
+            )}
+          </div>
+        </section>
+
         {/* ═══ Paiement ═══ */}
         <section className="track-card track-pay track-col-main">
           <h3 className="track-card-title">💳 Paiement</h3>
@@ -616,6 +747,34 @@ export default function OrderTracking({ orderId }) {
           driverName={tracking?.delivery_person_name}
           onClose={() => { setShowRating(false); refresh(); }}
         />
+      )}
+
+      {/* ═══ Rappel notation 24h+ ═══ */}
+      {showRatingSnack && (
+        <div className="track-rating-snack" role="status">
+          <div className="track-rating-snack-body">
+            <strong>Comment s'est passee ta livraison ?</strong>
+            <span>Prends 10 secondes pour noter, ca aide toute la communaute.</span>
+          </div>
+          <button
+            type="button"
+            className="track-rating-snack-cta"
+            onClick={() => { setShowRatingSnack(false); setShowRating(true); }}
+          >Noter</button>
+          <button
+            type="button"
+            className="track-rating-snack-dismiss"
+            aria-label="Ignorer"
+            onClick={() => {
+              try { localStorage.setItem(`yaram_rated_snack_${orderId}`, '1'); } catch {}
+              setShowRatingSnack(false);
+            }}
+          >
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
       )}
 
       {/* ═══ Confettis ═══ */}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNav, useUser } from '../App';
 import { supabase, signOut, updateProfile } from '../lib/supabase';
 import { usePersistedData, invalidatePersisted } from '../lib/usePersistedData';
@@ -7,6 +7,7 @@ import { getWhatsAppNumber, getWhatsAppDisplay, safeFormatDate, safeNumber } fro
 import { isIOSApp } from '../lib/platform';
 import { getMyAddresses } from '../lib/supabase';
 import { toast, confirmDialog, promptDialog } from '../lib/toast';
+import { useMyOrders } from '../lib/queries';
 import SiteLayout from '../components/SiteLayout';
 import './Profile.css';
 
@@ -223,6 +224,70 @@ export default function Profile() {
     }
   };
 
+  const handleEditLastName = async () => {
+    const current = user?.last_name || '';
+    const value = await promptDialog(
+      'Ton nom de famille',
+      { initialValue: current, confirmLabel: 'Enregistrer' }
+    );
+    if (value == null) return;
+    const t = value.trim();
+    if (!t) return;
+    try {
+      const { error } = await updateProfile({ last_name: t });
+      if (error) {
+        toast.error('Erreur : ' + (error.message || 'sauvegarde impossible'));
+        return;
+      }
+      toast.success('Nom enregistre');
+      await refreshUser();
+    } catch (e) {
+      toast.error('Erreur : ' + (e?.message || 'sauvegarde impossible'));
+    }
+  };
+
+  // Upload photo profil (Supabase Storage bucket 'avatars' si dispo,
+  // sinon on route vers un helper existant). Fallback : toast informatif.
+  const handleUploadPhoto = async () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      if (file.size > 4 * 1024 * 1024) {
+        toast.error('Photo trop lourde (max 4 Mo)');
+        return;
+      }
+      try {
+        const path = `${user.id}/avatar-${Date.now()}.${(file.name.split('.').pop() || 'jpg')}`;
+        const { error: upErr } = await supabase.storage
+          .from('avatars')
+          .upload(path, file, { upsert: true, cacheControl: '3600' });
+        if (upErr) throw upErr;
+        const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path);
+        const url = pub?.publicUrl;
+        if (url) {
+          const { error } = await updateProfile({ avatar: url });
+          if (error) throw error;
+          toast.success('Photo mise a jour');
+          await refreshUser();
+        }
+      } catch (e) {
+        console.warn('[Profile] avatar upload failed:', e?.message);
+        toast.error('Upload impossible : ' + (e?.message || 'reessaie'));
+      }
+    };
+    input.click();
+  };
+
+  // Preview 3 dernieres commandes (visible desktop, permet clic direct)
+  const { data: recentOrders = [] } = useMyOrders(user?.id);
+  const previewOrders = useMemo(
+    () => (Array.isArray(recentOrders) ? recentOrders.slice(0, 3) : []),
+    [recentOrders]
+  );
+
   const firstName = user?.first_name || 'Toi';
   const initial = (firstName.trim().charAt(0) || 'Y').toUpperCase();
   const hasPhoto = !!user?.avatar;
@@ -371,14 +436,17 @@ export default function Profile() {
           {/* ── Sidebar navigation ── */}
           <aside className="acct-sidebar">
             <nav className="acct-nav">
-              <a href="#compte"  className="acct-nav-link">Compte</a>
-              <a href="#peau"    className="acct-nav-link">Mon profil peau</a>
-              <a href="#prefs"   className="acct-nav-link">Préférences</a>
-              <a href="#support" className="acct-nav-link">Support</a>
+              <a href="#compte"    className="acct-nav-link">Mon compte</a>
+              <a href="#commandes" className="acct-nav-link">Historique commandes</a>
+              <a href="#peau"      className="acct-nav-link">Profil peau</a>
+              <a href="#giftcards" className="acct-nav-link">Cartes cadeaux MySargal</a>
+              <a href="#prefs"     className="acct-nav-link">Preferences</a>
+              <a href="#reglages"  className="acct-nav-link">Reglages compte</a>
+              <a href="#support"   className="acct-nav-link">Aide et support</a>
             </nav>
             <div className="acct-sidebar-sep" />
             <button className="acct-logout-btn" onClick={handleLogout} type="button">
-              Se déconnecter
+              Se deconnecter
             </button>
           </aside>
 
@@ -420,6 +488,66 @@ export default function Profile() {
                 <MenuItem icon="📬" tint="rgba(244,181,58,0.14)" label="Newsletter"
                   sub="Promos exclusives & conseils beauté"
                   onClick={() => navigate({ name: 'newsletter', params: {} })} />
+              </div>
+            </section>
+
+            {/* HISTORIQUE COMMANDES — preview 3 dernieres */}
+            <section id="commandes" className="acct-section">
+              <div className="acct-section-head">
+                <h2 className="acct-section-title">Historique commandes</h2>
+                <button
+                  type="button"
+                  className="acct-section-link"
+                  onClick={() => navigate('/orders')}
+                >Tout voir</button>
+              </div>
+              <div className="prof2-card">
+                {previewOrders.length === 0 ? (
+                  <div className="acct-empty-row">
+                    <div className="acct-empty-row-icon">
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M3 3h2l3.6 12h10l3-8H6" />
+                        <circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <strong>Aucune commande pour l'instant</strong>
+                      <span>Tes commandes recentes apparaitront ici.</span>
+                    </div>
+                  </div>
+                ) : (
+                  previewOrders.map((o, idx) => (
+                    <div key={o.id}>
+                      {idx > 0 && <div className="prof2-sep" />}
+                      <button
+                        type="button"
+                        className="prof2-row"
+                        onClick={() => navigate({ name: 'order_tracking', params: { orderId: o.id } })}
+                      >
+                        <div
+                          className="prof2-row-icon"
+                          style={{ background: 'var(--y-brand-soft)', color: 'var(--y-brand)' }}
+                        >
+                          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                            <line x1="12" y1="22.08" x2="12" y2="12"/>
+                          </svg>
+                        </div>
+                        <div className="prof2-row-text">
+                          <strong>Commande {String(o.id).slice(-6).toUpperCase()}</strong>
+                          <span>
+                            {safeFormatDate(o.created_at, { type: 'datetime' })} ·{' '}
+                            {safeNumber(o.total).toLocaleString('fr-FR')} FCFA · {o.status}
+                          </span>
+                        </div>
+                        <div className="prof2-row-trailing">
+                          <span className="prof2-row-arrow" aria-hidden>&rsaquo;</span>
+                        </div>
+                      </button>
+                    </div>
+                  ))
+                )}
               </div>
             </section>
 
@@ -472,6 +600,84 @@ export default function Profile() {
                       <span className="prof2-toggle-knob" />
                     </span>
                   }
+                />
+              </div>
+            </section>
+
+            {/* CARTES CADEAUX MYSARGAL */}
+            <section id="giftcards" className="acct-section">
+              <h2 className="acct-section-title">Cartes cadeaux MySargal</h2>
+              <div className="prof2-card">
+                <div className="acct-gift-placeholder">
+                  <div className="acct-gift-illu" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 12 20 22 4 22 4 12"/>
+                      <rect x="2" y="7" width="20" height="5"/>
+                      <line x1="12" y1="22" x2="12" y2="7"/>
+                      <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
+                      <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <strong>Bientot disponible</strong>
+                    <span>Retrouve ici tes cartes cadeaux MySargal, leur solde et leur expiration.</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* REGLAGES COMPTE */}
+            <section id="reglages" className="acct-section">
+              <h2 className="acct-section-title">Reglages compte</h2>
+              <div className="prof2-card">
+                <MenuItem
+                  icon="Ph" tint="var(--y-brand-soft)"
+                  label="Photo de profil"
+                  sub={hasPhoto ? 'Remplacer ma photo' : 'Ajouter une photo'}
+                  onClick={handleUploadPhoto}
+                />
+                <div className="prof2-sep" />
+                <MenuItem
+                  icon="Pr" tint="var(--y-brand-soft)"
+                  label="Prenom"
+                  sub={user?.first_name || 'A renseigner'}
+                  onClick={handleEditFirstName}
+                />
+                <div className="prof2-sep" />
+                <MenuItem
+                  icon="No" tint="var(--y-brand-soft)"
+                  label="Nom de famille"
+                  sub={user?.last_name || 'A renseigner'}
+                  onClick={handleEditLastName}
+                />
+                <div className="prof2-sep" />
+                <MenuItem
+                  icon="Wa" tint="var(--y-brand-soft)"
+                  label="Numero WhatsApp"
+                  sub={user?.phone || 'Requis pour les notifs commande'}
+                  onClick={handleEditPhone}
+                />
+                <div className="prof2-sep" />
+                <MenuItem
+                  icon="Mp" tint="var(--y-n-200)"
+                  label="Mot de passe"
+                  sub="Modifier via lien magique par email"
+                  onClick={async () => {
+                    if (!user?.email) { toast.error('Email manquant'); return; }
+                    try {
+                      const { error } = await supabase.auth.resetPasswordForEmail(user.email);
+                      if (error) throw error;
+                      toast.success('Lien envoye par email');
+                    } catch (e) {
+                      toast.error('Erreur : ' + (e?.message || ''));
+                    }
+                  }}
+                />
+                <div className="prof2-sep" />
+                <MenuItem
+                  icon="Em" tint="var(--y-n-200)"
+                  label="Email"
+                  sub={user?.email || 'Non renseigne'}
                 />
               </div>
             </section>
