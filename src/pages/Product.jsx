@@ -8,7 +8,7 @@ import { addToCart as cartAddToCart } from '../lib/cart';
 import { toast } from '../lib/toast';
 import { usePageSEO, useJsonLd } from '../lib/seo';
 import { trackEvent } from '../lib/analytics';
-import ProductTile from '../components/ProductTile';
+import { ProductTile } from '../components/tiles';
 import ReviewsSection from '../components/ReviewsSection';
 import PullToRefresh from '../components/PullToRefresh';
 import './Product.css';

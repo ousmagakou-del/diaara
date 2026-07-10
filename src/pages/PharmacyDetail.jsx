@@ -4,7 +4,7 @@ import { supabase, isFavorite, toggleFavorite } from '../lib/supabase';
 import { usePersistedData, invalidatePersisted } from '../lib/usePersistedData';
 import { getUserPosition, haversineDistance, formatDistance } from '../lib/geo';
 import { haptic } from '../lib/haptic';
-import ProductTile from '../components/ProductTile';
+import { ProductTile } from '../components/tiles';
 import './PharmacyDetail.css';
 
 const FALLBACK_AVATAR = null; // on bascule sur initiale si pas de logo

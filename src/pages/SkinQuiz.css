@@ -1042,3 +1042,12 @@
   }
   .squiz-cta-secondary:hover { background: #ece5dd; }
 }
+
+/* Dark mode overrides (iOS/Android system dark) */
+@media (prefers-color-scheme: dark) {
+  .squiz-option { background: #1A1D24; border-color: #2D3139; }
+  .squiz-option.selected { background: rgba(31,139,76,0.15); border-color: var(--y-brand); }
+  .squiz-textarea { background: #1A1D24; border-color: #2D3139; color: #F2F2F2; }
+  .squiz-reco-card { background: #1A1D24; border-color: #2D3139; }
+}
+

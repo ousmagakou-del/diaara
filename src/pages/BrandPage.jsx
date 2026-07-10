@@ -12,6 +12,7 @@ import { useNav } from '../App';
 import { getAllBrands, getAllProducts, getAllPharmacies } from '../lib/supabase';
 import { addToCart } from '../lib/cart';
 import SiteLayout from '../components/SiteLayout';
+import { ProductTile } from '../components/tiles';
 import './BrandPage.css';
 
 const PAGE_SIZE = 24;
@@ -263,7 +264,7 @@ export default function BrandPage() {
           <div className="bp-container">
             <div className="bp-grid">
               {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="bp-card bp-skel-card">
+                <div key={i} className="bp-skel-card">
                   <div className="bp-skel bp-skel-img" />
                   <div className="bp-skel-line bp-skel-line--short" />
                   <div className="bp-skel-line" />
@@ -491,39 +492,12 @@ export default function BrandPage() {
             <>
               <div className="bp-grid">
                 {visibleProducts.map((p) => (
-                  <div key={p.id} className="bp-card" onClick={() => goProduct(p)}>
-                    <div className="bp-card-img-wrap">
-                      {(p.image_url || p.img) ? (
-                        <img
-                          src={p.image_url || p.img}
-                          alt={p.name}
-                          loading="lazy"
-                          className="bp-card-img"
-                        />
-                      ) : (
-                        <div className="bp-card-img-fallback"></div>
-                      )}
-                      {p.is_imported && (
-                        <span className="bp-card-tag">
-                          <Ico.globe /> Import
-                        </span>
-                      )}
-                    </div>
-                    <div className="bp-card-info">
-                      <span className="bp-card-brand">{p.brand_name || p.brand || brand.name}</span>
-                      <span className="bp-card-name">{p.name}</span>
-                      <div className="bp-card-bottom">
-                        <span className="bp-card-price">{formatPrice(p.price)}</span>
-                        <button
-                          className="bp-card-add"
-                          onClick={(e) => onAddToCart(p, e)}
-                          aria-label="Ajouter au panier"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                  <ProductTile
+                    key={p.id}
+                    product={p}
+                    size="md"
+                    onOpen={() => goProduct(p)}
+                  />
                 ))}
               </div>
 

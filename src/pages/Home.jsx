@@ -12,7 +12,7 @@ import {
   supabase,
 } from '../lib/supabase';
 import { getUserPosition, sortByDistance, formatDistance, getPermissionState } from '../lib/geo';
-import ProductTile from '../components/ProductTile';
+import { ProductTile } from '../components/tiles';
 import PullToRefresh from '../components/PullToRefresh';
 import TabBar from '../components/TabBar';
 import BarcodeScannerClient from '../components/BarcodeScannerClient';

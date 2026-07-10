@@ -4,7 +4,7 @@ import { toggleFavorite } from '../lib/supabase';
 import { useMyFavorites, QUERY_KEYS } from '../lib/queries';
 import { useQueryClient } from '@tanstack/react-query';
 import { haptic } from '../lib/haptic';
-import ProductTile from '../components/ProductTile';
+import { ProductTile } from '../components/tiles';
 import TabBar from '../components/TabBar';
 import './Favorites.css';
 

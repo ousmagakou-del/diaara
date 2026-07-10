@@ -47,15 +47,17 @@ export default function Skeleton({
 export function SkeletonProductCard() {
   return (
     <div className="y-skel-card">
-      <Skeleton variant="thumb" />
+      {/* image 1:1 (matche .y-tile__img) */}
+      <span className="y-skel y-skel-card-thumb" />
       <div className="y-skel-card-body">
-        <Skeleton variant="text" width="40%" height={10} />
-        <Skeleton variant="text" width="90%" height={13} />
-        <Skeleton variant="text" width="70%" height={13} />
-        <div className="y-skel-card-row">
-          <Skeleton variant="text" width={70} height={16} />
-          <Skeleton variant="circle" width={28} height={28} />
-        </div>
+        {/* brand line ~12px (matche .y-tile__brand fs-xs) */}
+        <Skeleton variant="text" width="40%" height={12} />
+        {/* name 2 lignes ~48px (matche .y-tile__name min-height) */}
+        <Skeleton variant="text" width="100%" height={48} radius={6} />
+        {/* meta 18px (matche .y-tile__meta min-height) */}
+        <Skeleton variant="text" width="50%" height={18} />
+        {/* prix 20px (matche .y-tile__price fs-md) */}
+        <Skeleton variant="text" width={90} height={20} />
       </div>
     </div>
   );
