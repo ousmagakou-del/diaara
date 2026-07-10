@@ -785,6 +785,101 @@
   font-size: 15px;
 }
 
+/* Mobile bar qty selector (aligne native) */
+.pp-mobile-qty {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #F5F5F5;
+  border-radius: 999px;
+  padding: 4px;
+}
+.pp-mobile-qty-btn {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  background: #fff;
+  border-radius: 50%;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--pp-ink);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-family: inherit;
+  transition: background .15s;
+}
+.pp-mobile-qty-btn:hover { background: var(--pp-line-soft); }
+.pp-mobile-qty-btn--plus {
+  background: var(--pp-brand);
+  color: #fff;
+}
+.pp-mobile-qty-btn--plus:hover { background: var(--pp-brand-dark); }
+.pp-mobile-qty-val {
+  min-width: 22px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--pp-ink);
+  user-select: none;
+}
+
+/* Conseil WhatsApp CTA (aligne native l.454-473) */
+.pp-btn-whatsapp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  background: #25D366;
+  color: #fff;
+  border: 0;
+  border-radius: 999px;
+  padding: 14px 20px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: inherit;
+  margin-top: 12px;
+  margin-bottom: 20px;
+  transition: filter .15s, transform .15s;
+}
+.pp-btn-whatsapp:hover { filter: brightness(0.95); transform: translateY(-1px); }
+.pp-btn-whatsapp svg { flex-shrink: 0; }
+
+/* Avantages cles section (aligne native l.423-435) */
+.pp-benefits-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px 24px;
+}
+.pp-benefit-li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--pp-ink-2);
+  font-weight: 500;
+  line-height: 1.45;
+}
+.pp-benefit-check {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--pp-brand-soft);
+  color: var(--pp-brand);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+@media (max-width: 768px) {
+  .pp-benefits-list { grid-template-columns: 1fr; gap: 10px; }
+}
+
 .pp-toast {
   position: fixed;
   bottom: 32px;

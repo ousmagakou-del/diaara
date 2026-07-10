@@ -28,6 +28,7 @@ import {
   getProductReviews,
 } from '../lib/supabase';
 import { addToCart } from '../lib/cart';
+import { getWhatsAppNumber } from '../lib/utils';
 import './ProductPage.css';
 
 // ─── Data helpers ─────────────────────────────────────────────────
@@ -515,17 +516,20 @@ export default function ProductPage() {
   return (
     <SiteLayout>
       <div className="pp-root">
-        {/* Breadcrumb */}
+        {/* Breadcrumb — aligne native : Accueil > Categorie > Nom */}
         <nav className="pp-breadcrumb" aria-label="Fil d'Ariane">
           <button onClick={() => navigate('landing')}>Accueil</button>
-          <Icon.ChevR />
-          <button onClick={() => navigate('shop')}>Catalogue</button>
-          {product?.brand_name && (
+          {product?.category_name ? (
             <>
               <Icon.ChevR />
-              <button onClick={() => product.brand_id && navigate({ name: 'brand', id: product.brand_id })}>
-                {product.brand_name}
+              <button onClick={() => navigate({ name: 'search', params: { category: product.category_id || product.category_name } })}>
+                <span style={{ textTransform: 'capitalize' }}>{product.category_name}</span>
               </button>
+            </>
+          ) : (
+            <>
+              <Icon.ChevR />
+              <button onClick={() => navigate('shop')}>Catalogue</button>
             </>
           )}
           {product?.name && (
@@ -704,7 +708,11 @@ export default function ProductPage() {
                 onClick={handleAddToCart}
                 disabled={stockState?.cls === 'out'}
               >
-                {stockState?.cls === 'out' ? 'Indisponible' : `Ajouter au panier · ${formatPrice(priceCurrent * qty)}`}
+                {stockState?.cls === 'out'
+                  ? 'Indisponible'
+                  : product?.is_imported
+                    ? `Précommander · ${formatPrice(priceCurrent * qty)}`
+                    : `Ajouter au panier · ${formatPrice(priceCurrent * qty)}`}
               </button>
 
               <button
@@ -713,6 +721,22 @@ export default function ProductPage() {
                 disabled={stockState?.cls === 'out'}
               >
                 Acheter maintenant
+              </button>
+
+              {/* CTA Conseil WhatsApp (aligne native l.454-473) */}
+              <button
+                type="button"
+                className="pp-btn-whatsapp"
+                onClick={() => {
+                  const msg = `Bonjour, j'aimerais des conseils sur ${product?.name || ''}${product?.brand_name ? ` (${product.brand_name})` : ''}`;
+                  const num = String(getWhatsAppNumber() || '').replace(/[^\d]/g, '');
+                  if (num) window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M20.52 3.48A11.9 11.9 0 0 0 12 0C5.37 0 0 5.37 0 12c0 2.11.55 4.16 1.6 5.98L0 24l6.2-1.62A11.94 11.94 0 0 0 12 24c6.63 0 12-5.37 12-12 0-3.2-1.25-6.21-3.48-8.52zM12 21.82a9.83 9.83 0 0 1-5.02-1.38l-.36-.21-3.68.96.98-3.59-.24-.37A9.82 9.82 0 1 1 21.82 12c0 5.42-4.4 9.82-9.82 9.82zm5.4-7.36c-.3-.15-1.77-.87-2.05-.97-.28-.1-.48-.15-.68.15-.2.3-.78.97-.96 1.17-.18.2-.35.22-.65.07-.3-.15-1.27-.47-2.42-1.5-.9-.8-1.5-1.78-1.68-2.08-.18-.3-.02-.46.13-.61.14-.14.3-.35.45-.53.15-.18.2-.3.3-.5.1-.2.05-.38-.02-.53-.07-.15-.68-1.62-.93-2.22-.24-.58-.5-.5-.68-.51h-.58c-.2 0-.53.08-.8.38-.28.3-1.05 1.03-1.05 2.5s1.07 2.9 1.22 3.1c.15.2 2.1 3.22 5.08 4.52.71.3 1.26.48 1.7.62.71.22 1.36.19 1.87.12.57-.08 1.77-.72 2.02-1.42.25-.7.25-1.29.17-1.42-.07-.13-.27-.2-.57-.35z"/>
+                </svg>
+                <span>Conseil WhatsApp</span>
               </button>
 
               <div className="pp-vendor-line">
@@ -731,6 +755,21 @@ export default function ProductPage() {
                 <li><Icon.Refresh size={16} /> Retours 14 jours</li>
               </ul>
             </aside>
+          </section>
+        )}
+
+        {/* ─── AVANTAGES CLES (aligne native l.423-435) ─── */}
+        {!productLoading && Array.isArray(product?.key_benefits) && product.key_benefits.length > 0 && (
+          <section className="pp-section pp-section--benefits">
+            <h2 className="pp-h2">Avantages cles</h2>
+            <ul className="pp-benefits-list">
+              {product.key_benefits.slice(0, 6).map((b, i) => (
+                <li key={i} className="pp-benefit-li">
+                  <span className="pp-benefit-check"><Icon.Check size={14} /></span>
+                  <span>{b}</span>
+                </li>
+              ))}
+            </ul>
           </section>
         )}
 
@@ -970,16 +1009,38 @@ export default function ProductPage() {
           )}
         </section>
 
-        {/* Mobile sticky bar */}
+        {/* Mobile sticky bar — qty + CTA total (aligne native l.496-571) */}
         {product && (
           <div className="pp-mobile-bar pp-show-mobile">
-            <div className="pp-mobile-price">{formatPrice(priceCurrent * qty)}</div>
+            <div className="pp-mobile-qty" aria-label="Quantite">
+              <button
+                type="button"
+                className="pp-mobile-qty-btn"
+                onClick={() => setQty((q) => Math.max(1, q - 1))}
+                aria-label="Diminuer"
+              >
+                −
+              </button>
+              <span className="pp-mobile-qty-val">{qty}</span>
+              <button
+                type="button"
+                className="pp-mobile-qty-btn pp-mobile-qty-btn--plus"
+                onClick={() => setQty((q) => Math.min(99, q + 1))}
+                aria-label="Augmenter"
+              >
+                +
+              </button>
+            </div>
             <button
               className="pp-btn-primary pp-mobile-cta"
               onClick={handleAddToCart}
               disabled={stockState?.cls === 'out'}
             >
-              {stockState?.cls === 'out' ? 'Indisponible' : 'Ajouter au panier'}
+              {stockState?.cls === 'out'
+                ? 'Indisponible'
+                : product?.is_imported
+                  ? `Précommander · ${formatPrice(priceCurrent * qty)}`
+                  : `Ajouter · ${formatPrice(priceCurrent * qty)}`}
             </button>
           </div>
         )}

@@ -941,3 +941,113 @@
   background: var(--y-danger-soft);
 }
 
+/* ════════════════════════════════════════════════════════════════════
+   MARSHALL — Alignement natif : progress livraison + empty suggestions
+   ════════════════════════════════════════════════════════════════════ */
+.cart-free-progress {
+  max-width: 1200px;
+  margin: 0 auto 20px;
+  background: var(--y-brand-soft);
+  border-radius: var(--y-rad-lg);
+  padding: 14px 20px;
+  border: 1px solid rgba(31, 139, 76, 0.15);
+}
+.cart-free-progress-text {
+  font-size: 13px;
+  color: var(--y-brand-dark);
+  font-weight: 600;
+  margin: 0;
+}
+.cart-free-progress-text strong { font-weight: 800; }
+.cart-free-progress-bar {
+  margin-top: 8px;
+  height: 5px;
+  background: rgba(31, 139, 76, 0.2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.cart-free-progress-fill {
+  height: 100%;
+  background: var(--y-brand);
+  border-radius: 999px;
+  transition: width .35s ease;
+}
+.cart-free-progress--unlocked {
+  background: var(--y-brand-softer, #DFF0E5);
+  border-color: var(--y-brand);
+}
+.cart-free-progress--unlocked .cart-free-progress-text {
+  color: var(--y-brand-dark);
+  font-weight: 800;
+}
+
+/* Empty state — suggestions populaires (aligne native l.177-201) */
+.cart-empty-suggest {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--c-border);
+  width: 100%;
+  text-align: center;
+}
+.cart-empty-suggest-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--c-text-2);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.cart-empty-suggest-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+.cart-empty-chip {
+  background: var(--c-card);
+  border: 1px solid var(--c-border);
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--c-text);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all .15s;
+  box-shadow: var(--shadow-sm);
+}
+.cart-empty-chip:hover {
+  border-color: var(--c-brand);
+  color: var(--c-brand);
+  transform: translateY(-1px);
+}
+
+/* Livraison "GRATUITE" green label (aligne native l.303) */
+.cart-summary-free { color: var(--c-brand); font-weight: 900; }
+
+/* Mobile bar arrow inside CTA (aligne native l.355-362) */
+.cart-mobile-bar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.cart-mobile-bar-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  font-weight: 900;
+  font-size: 14px;
+  color: #fff;
+}
+@media (max-width: 768px) {
+  .cart-free-progress {
+    margin-left: 14px;
+    margin-right: 14px;
+    padding: 12px 16px;
+  }
+}
+

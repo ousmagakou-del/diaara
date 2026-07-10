@@ -22,6 +22,7 @@ function formatPrice(n) {
 const DELIVERY_FEE = 1500;          // FCFA fixe Dakar
 const SERVICE_FEE_PCT = 0.05;       // 5%
 const SERVICE_FEE_MIN = 250;        // 250 FCFA min
+const FREE_DELIVERY_THRESHOLD = 30000; // aligne native cart.jsx l.17
 
 // ─── Save-for-later (localStorage v2) ──────────────────────────────
 const SAVED_KEY = 'yaram-cart-v2-saved';
@@ -281,7 +282,8 @@ export default function CartPage() {
       0
     );
     const itemCount = items.reduce((s, it) => s + (Number(it.qty) || 0), 0);
-    const delivery = items.length ? DELIVERY_FEE : 0;
+    const freeDelivery = subtotal >= FREE_DELIVERY_THRESHOLD;
+    const delivery = items.length ? (freeDelivery ? 0 : DELIVERY_FEE) : 0;
     const serviceFee = Math.max(
       Math.round(subtotal * SERVICE_FEE_PCT),
       items.length ? SERVICE_FEE_MIN : 0
@@ -292,31 +294,31 @@ export default function CartPage() {
     );
     const promoOff = Math.min(promoDiscount, subtotal);
     const total = subtotal + delivery + serviceFee - promoOff;
-    return { subtotal, delivery, serviceFee, total, itemCount, loyaltyAvail, promoOff };
+    const remainingForFree = Math.max(0, FREE_DELIVERY_THRESHOLD - subtotal);
+    const freeProgress = Math.min(100, (subtotal / FREE_DELIVERY_THRESHOLD) * 100);
+    return { subtotal, delivery, serviceFee, total, itemCount, loyaltyAvail, promoOff, freeDelivery, remainingForFree, freeProgress };
   }, [items, user, promoDiscount]);
 
-  // ─── Promo code (validation temps reel cote client) ─────────────
+  // ─── Promo code (aligne native cart.jsx l.86-103) ─────────────
   const applyPromo = useCallback(() => {
     const code = promoCode.trim().toUpperCase();
     if (!code) return;
-    // Table statique de codes cote client pour affichage instant.
-    // La revalidation reelle a lieu au checkout via RPC.
+    // Codes memes libelles que native — la revalidation cote server a lieu au checkout.
+    const st = items.reduce((s, it) => s + (Number(it.price) || 0) * (Number(it.qty) || 0), 0);
     const table = {
-      YARAM10: { type: 'pct', value: 0.1, label: '-10 %' },
-      YARAM5: { type: 'pct', value: 0.05, label: '-5 %' },
-      BIENVENUE: { type: 'flat', value: 2000, label: '-2 000 FCFA' },
+      BIENVENUE10: { off: Math.min(Math.round(st * 0.1), 2000), label: '-10 %' },
+      YARAM2000: { off: 2000, label: '-2 000 FCFA' },
+      LIVRAISON: { off: DELIVERY_FEE, label: 'Livraison offerte' },
     };
     const t = table[code];
     if (!t) {
       setPromoDiscount(0);
-      setPromoMsg('Code non reconnu. Reessaie a l etape suivante.');
+      setPromoMsg("Code invalide. Ce code promo n'existe pas ou est expire.");
       return;
     }
-    const st = items.reduce((s, it) => s + (Number(it.price) || 0) * (Number(it.qty) || 0), 0);
-    const off = t.type === 'pct' ? Math.round(st * t.value) : t.value;
-    setPromoDiscount(off);
-    setPromoMsg(`Code applique : ${t.label} (-${formatPrice(off)} FCFA)`);
-    try { sessionStorage.setItem('yaram-checkout-promo', JSON.stringify({ code, off })); } catch {}
+    setPromoDiscount(t.off);
+    setPromoMsg(`Code applique : ${t.label} (-${formatPrice(t.off)} FCFA)`);
+    try { sessionStorage.setItem('yaram-checkout-promo', JSON.stringify({ code, off: t.off })); } catch {}
   }, [promoCode, items]);
 
   // ─── Auto-reapply promo if items change ────────────────────────
@@ -336,14 +338,14 @@ export default function CartPage() {
             <CartEmptyArt />
             <h1 className="cart-empty-title">Ton panier est vide</h1>
             <p className="cart-empty-sub">
-              Decouvre nos 5 000+ produits beaute et sante, livres en moins de 60 minutes a Dakar.
+              Decouvre nos best-sellers et trouve les produits qui vont faire briller ta peau.
             </p>
             <div className="cart-empty-actions">
               <button
                 className="cart-btn-primary cart-btn-lg"
                 onClick={() => navigate('shop')}
               >
-                Explorer le catalogue
+                Explorer la boutique
               </button>
               <button
                 className="cart-empty-secondary"
@@ -351,6 +353,26 @@ export default function CartPage() {
               >
                 Continuer sur la home
               </button>
+            </div>
+
+            {/* Suggestions populaires (aligne native l.177-201) */}
+            <div className="cart-empty-suggest">
+              <div className="cart-empty-suggest-label">Populaires en ce moment</div>
+              <div className="cart-empty-suggest-chips">
+                {[
+                  { label: 'Visage', category: 'visage' },
+                  { label: 'Solaire', category: 'solaire' },
+                  { label: 'Corps', category: 'corps' },
+                ].map((s) => (
+                  <button
+                    key={s.category}
+                    className="cart-empty-chip"
+                    onClick={() => navigate({ name: 'search', params: { category: s.category } })}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="cart-empty-trust">
               <span><IcoLock /> Paiement securise</span>
@@ -396,6 +418,28 @@ export default function CartPage() {
             Vider le panier
           </button>
         </div>
+
+        {/* Progress livraison gratuite (aligne native l.137-151) */}
+        {items.length > 0 && !totals.freeDelivery && (
+          <div className="cart-free-progress">
+            <p className="cart-free-progress-text">
+              Plus que <strong>{formatPrice(totals.remainingForFree)} FCFA</strong> pour la livraison gratuite
+            </p>
+            <div className="cart-free-progress-bar">
+              <div
+                className="cart-free-progress-fill"
+                style={{ width: `${totals.freeProgress}%` }}
+              />
+            </div>
+          </div>
+        )}
+        {items.length > 0 && totals.freeDelivery && (
+          <div className="cart-free-progress cart-free-progress--unlocked">
+            <p className="cart-free-progress-text">
+              <strong>Livraison gratuite debloquee</strong>
+            </p>
+          </div>
+        )}
 
         <div className="cart-grid">
           {/* ───── LEFT : items list ───── */}
@@ -448,8 +492,10 @@ export default function CartPage() {
               </div>
 
               <div className="cart-summary-row">
-                <span>Livraison</span>
-                <strong>{formatPrice(totals.delivery)} FCFA</strong>
+                <span>{totals.freeDelivery ? 'Livraison' : 'Livraison Dakar'}</span>
+                <strong className={totals.freeDelivery ? 'cart-summary-free' : undefined}>
+                  {totals.freeDelivery ? 'GRATUITE' : `${formatPrice(totals.delivery)} FCFA`}
+                </strong>
               </div>
 
               <div className="cart-summary-row">
@@ -483,9 +529,9 @@ export default function CartPage() {
                 <div className="cart-promo-row">
                   <input
                     className="cart-promo-input"
-                    placeholder="Code promo"
+                    placeholder="BIENVENUE10, YARAM2000..."
                     value={promoCode}
-                    onChange={(e) => setPromoCode(e.target.value)}
+                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
                     onKeyDown={(e) => { if (e.key === 'Enter') applyPromo(); }}
                   />
                   <button className="cart-promo-apply" onClick={applyPromo}>
@@ -506,14 +552,14 @@ export default function CartPage() {
                 className="cart-btn-primary cart-btn-lg cart-checkout-btn"
                 onClick={() => navigate('checkout')}
               >
-                Passer la commande
+                Commander
               </button>
 
               <button
                 className="cart-continue-link"
                 onClick={() => navigate('shop')}
               >
-                Continuer mes achats
+                ← Continuer mes achats
               </button>
 
               <div className="cart-trust-row">
@@ -525,17 +571,18 @@ export default function CartPage() {
           </aside>
         </div>
 
-        {/* ───── Mobile sticky bar ───── */}
+        {/* ───── Mobile sticky bar (aligne native l.320-366) ───── */}
         <div className="cart-mobile-bar">
           <div className="cart-mobile-bar-info">
-            <span className="cart-mobile-bar-label">Total</span>
+            <span className="cart-mobile-bar-label">TOTAL A PAYER</span>
             <strong className="cart-mobile-bar-total">{formatPrice(totals.total)} FCFA</strong>
           </div>
           <button
             className="cart-btn-primary cart-mobile-bar-btn"
             onClick={() => navigate('checkout')}
           >
-            Commander
+            <span>Commander</span>
+            <span className="cart-mobile-bar-arrow" aria-hidden="true">→</span>
           </button>
         </div>
       </div>
