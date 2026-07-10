@@ -32,14 +32,30 @@ import './Search.css';
 // ─── Constantes ────────────────────────────────────────────────────
 const DEBOUNCE_MS = 200;
 
+// Libelles calques sur l'app native SearchFiltersSheet SORT_OPTIONS
 const SORT_OPTIONS = [
   { id: 'relevance', label: 'Pertinence' },
   { id: 'price_asc', label: 'Prix croissant' },
   { id: 'price_desc', label: 'Prix decroissant' },
-  { id: 'rating', label: 'Note client' },
-  { id: 'popularity', label: 'Popularite' },
-  { id: 'newest', label: 'Nouveautes' },
+  { id: 'popularity', label: 'Plus populaires' },
+  { id: 'rating', label: 'Meilleures notes' },
+  { id: 'newest', label: 'Plus recents' },
 ];
+
+// Suggestions populaires (calque native POPULAR_SUGGESTIONS)
+const POPULAR_SUGGESTIONS = [
+  'Serum vitamine C',
+  'Creme hydratante',
+  'Bioderma',
+  'La Roche-Posay',
+  'Avene',
+  'Creme solaire',
+  'Rouge a levres',
+  'Creme bebe',
+];
+
+// Marques tendance prioritaires (calque native TRENDING_BRAND_NAMES)
+const TRENDING_BRAND_NAMES = ['La Roche-Posay', 'CeraVe', 'Bioderma', 'Avene', 'Vichy', 'Nuxe'];
 
 const SKIN_TYPES = [
   { id: 'mixte', label: 'Mixte' },
@@ -374,6 +390,26 @@ export default function Search({ initialCategory, initialBrand }) {
     return 'Sans limite';
   };
 
+  // Landing state (calque native isLanding) — pas de query, pas de filtre
+  const isLanding =
+    !qDebounced.trim() &&
+    !category &&
+    brands.length === 0 &&
+    skinTypes.length === 0 &&
+    ingredients.length === 0 &&
+    !ratingMin && !inStockOnly && !fastShip && !promoOnly &&
+    !priceMin && !priceMax;
+
+  // Marques tendance (calque native trendingBrands) — top 6 par ordre TRENDING_BRAND_NAMES
+  const trendingBrands = useMemo(() => {
+    if (!allBrands?.length) return [];
+    const matched = TRENDING_BRAND_NAMES
+      .map((name) => allBrands.find((b) => (b?.name || '').toLowerCase() === name.toLowerCase()))
+      .filter(Boolean);
+    if (matched.length >= 2) return matched.slice(0, 6);
+    return allBrands.slice(0, 6);
+  }, [allBrands]);
+
   const pageTitle = category
     ? category.charAt(0).toUpperCase() + category.slice(1)
     : brands.length === 1
@@ -534,6 +570,15 @@ export default function Search({ initialCategory, initialBrand }) {
               <div className="ysearch__grid">
                 {Array.from({ length: 8 }).map((_, i) => <SkeletonProductCard key={i} />)}
               </div>
+            ) : isLanding ? (
+              <SearchLanding
+                suggestions={POPULAR_SUGGESTIONS}
+                trendingBrands={trendingBrands}
+                categories={categories}
+                onPickSuggestion={(s) => setQ(s)}
+                onPickBrand={(b) => setBrands([b])}
+                onPickCategory={(slug) => setCategory(slug)}
+              />
             ) : sorted.length === 0 ? (
               <NoResults
                 term={qDebounced || category || brands.join(', ')}
@@ -864,6 +909,92 @@ function FiltersContent({
           onChange={(e) => setPromoOnly(e.target.checked)}
         />
       </FilterBlock>
+    </div>
+  );
+}
+
+// ─── SearchLanding (calque native search landing) ─────────────────
+//   Suggestions populaires (chips vert clair)
+//   Marques tendance (cards logo)
+//   Parcourir par categorie (grid initiales colorees)
+function SearchLanding({ suggestions, trendingBrands, categories, onPickSuggestion, onPickBrand, onPickCategory }) {
+  return (
+    <div className="ysearch-landing">
+      {/* Suggestions populaires */}
+      <section className="ysearch-landing__section">
+        <h2 className="ysearch-landing__title">Suggestions populaires</h2>
+        <div className="ysearch-landing__chips">
+          {suggestions.map((s) => (
+            <button
+              key={s}
+              type="button"
+              className="ysearch-landing__chip"
+              onClick={() => onPickSuggestion(s)}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* Marques tendance */}
+      {trendingBrands.length > 0 && (
+        <section className="ysearch-landing__section">
+          <h2 className="ysearch-landing__title">Marques tendance</h2>
+          <div className="ysearch-landing__brands">
+            {trendingBrands.map((b) => (
+              <button
+                key={b.id || b.name}
+                type="button"
+                className="ysearch-landing__brand"
+                onClick={() => onPickBrand(b.name)}
+              >
+                <span className="ysearch-landing__brand-logo">
+                  {b.img ? (
+                    <img src={b.img} alt="" loading="lazy" decoding="async" />
+                  ) : (
+                    <span className="ysearch-landing__brand-fallback">
+                      {(b.name || '?').slice(0, 8)}
+                    </span>
+                  )}
+                </span>
+                <span className="ysearch-landing__brand-name">{b.name}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Parcourir par catégorie */}
+      {categories?.length > 0 && (
+        <section className="ysearch-landing__section">
+          <h2 className="ysearch-landing__title">Parcourir par categorie</h2>
+          <div className="ysearch-landing__cats">
+            {categories.slice(0, 12).map((c) => {
+              const slug = c.slug || c.id || c.name;
+              const initial = (c.name || slug || '?').trim().charAt(0).toUpperCase();
+              const bg = c.bg_color || 'var(--y-brand-soft)';
+              return (
+                <button
+                  key={slug}
+                  type="button"
+                  className="ysearch-landing__cat"
+                  onClick={() => onPickCategory(slug)}
+                >
+                  <span className="ysearch-landing__cat-disc" style={{ backgroundColor: bg }}>
+                    {c.icon_url ? (
+                      <img src={c.icon_url} alt="" loading="lazy" decoding="async" />
+                    ) : (
+                      <span className="ysearch-landing__cat-initial">{initial}</span>
+                    )}
+                  </span>
+                  <span className="ysearch-landing__cat-label">{c.name || slug}</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

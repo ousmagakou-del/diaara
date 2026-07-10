@@ -136,10 +136,12 @@ export default function Categories() {
           <div className="ycatp__hero-inner">
             <span className="ycatp__eyebrow">Univers YARAM</span>
             <h1 className="ycatp__title">
-              Explorer par categorie
+              Categories
             </h1>
             <p className="ycatp__sub">
-              Selection premium par nos pharmaciens, filtrable par marque, prix et type de peau.
+              {categories.length > 0
+                ? `${categories.length} categorie${categories.length > 1 ? 's' : ''} disponible${categories.length > 1 ? 's' : ''} — selection premium par nos pharmaciens.`
+                : 'Selection premium par nos pharmaciens, filtrable par marque, prix et type de peau.'}
             </p>
           </div>
         </section>
