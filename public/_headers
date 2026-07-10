@@ -1,10 +1,52 @@
-# Content-Type correct pour Apple App Site Association
+# ═══════════════════════════════════════════════════════════════
+# YARAM — Cloudflare Pages headers
+# ═══════════════════════════════════════════════════════════════
+# Doc: https://developers.cloudflare.com/pages/configuration/headers/
+# Ordre : les règles plus spécifiques doivent précéder les génériques.
+# ═══════════════════════════════════════════════════════════════
+
+# ─── Content-Type impératif pour .well-known JSON ──────────────
 # Apple REFUSE l'AASA si pas servi en application/json
 /.well-known/apple-app-site-association
   Content-Type: application/json
   Cache-Control: public, max-age=3600
 
-# Pareil pour l'Android Asset Links (Universal Links Android plus tard)
+# Android Asset Links (Universal Links Android)
 /.well-known/assetlinks.json
   Content-Type: application/json
   Cache-Control: public, max-age=3600
+
+# ─── Assets hashés Vite : cache 1 an immutable ────────────────
+# Les fichiers /assets/*.[hash].js|css ont un hash dans le nom.
+# Un changement de contenu → nouveau hash → nouveau nom de fichier.
+# Donc on peut cacher agressivement : immutable = le navigateur ne
+# refera JAMAIS de conditional GET pour ces URLs pendant 1 an.
+# Gain mesuré : le 2e chargement ne re-télécharge aucun chunk.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# ─── Service Worker : jamais cacher ────────────────────────────
+# sw.js doit être re-check à chaque visite pour détecter les updates
+# (nouveau SW_BUILD dans public/sw.js) et propager les nouveaux chunks.
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+# ─── HTML entry : jamais cacher ────────────────────────────────
+# index.html référence des noms de chunk hashés qui changent à chaque
+# deploy. Si le navigateur cache un vieux index.html, il pointera vers
+# des chunks JS qui ont été supprimés → écran blanc.
+/index.html
+  Cache-Control: no-cache, no-store, must-revalidate
+
+# Manifests PWA : cache court (peuvent être édités côté admin)
+/manifest.json
+  Cache-Control: public, max-age=300, must-revalidate
+/driver-manifest.webmanifest
+  Cache-Control: public, max-age=300, must-revalidate
+
+# ─── Images/icônes statiques : cache 1 jour + SWR ─────────────
+# Icons PWA + logo peuvent changer sans hash. 1j = compromis raisonnable.
+/*.svg
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/*.png
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800

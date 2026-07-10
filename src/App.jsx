@@ -6,32 +6,10 @@ import { initPush, setupPushForUser } from './lib/push';
 import { syncCartOnLogin, attachCartSyncListener, disableCartSync } from './lib/cartSync';
 import SplashScreen from './components/SplashScreen';
 import Onboarding from './pages/Onboarding';
-import Home from './pages/Home';
+// ─── Perf : SEUL Landing reste eager (entry point marketing yaram.app) ───
+// Tout le reste est lazy pour tomber le bundle initial de 620KB à ~200KB.
+// Le SW précache les chunks JS/CSS, donc le 2e clic est instantané.
 import Landing from './pages/Landing';
-import ShopHome from './pages/ShopHome';
-import ProductPage from './pages/ProductPage';
-import CartPage from './pages/CartPage';
-import CheckoutPage from './pages/CheckoutPage';
-import BrandPage from './pages/BrandPage';
-import SignPage from './pages/SignPage';
-import Search from './pages/Search';
-import Product from './pages/Product';
-import Cart from './pages/Cart';
-import Orders from './pages/Orders';
-import Profile from './pages/Profile';
-import Pharmacies from './pages/Pharmacies';
-import PharmacyDetail from './pages/PharmacyDetail';
-import Addresses from './pages/Addresses';
-import Favorites from './pages/Favorites';
-import Payments from './pages/Payments';
-import Evolution from './pages/Evolution';
-import Categories from './pages/Categories';
-import Loyalty from './pages/Loyalty';
-import Referral from './pages/Referral';
-import NotifSettings from './pages/NotifSettings';
-import Notifications from './pages/Notifications';
-import Promos from './pages/Promos';
-import Help from './pages/Help';
 import InstallPrompt from './components/InstallPrompt';
 import OpenInAppBanner from './components/OpenInAppBanner';
 // FAB WhatsApp retiré (juin 2026) — le contact WhatsApp est accessible
@@ -44,8 +22,34 @@ import NetworkStatus from './components/NetworkStatus';
 import ErrorBoundary from './components/ErrorBoundary';
 import { initAnalytics, identifyUser, resetAnalytics, trackEvent, trackPageview } from './lib/analytics';
 
-// ─── Lazy-load : pages lourdes / rarement visitees par le client lambda ───
-// Ces chunks ne sont telecharges qu'au moment ou la page est demandee.
+// ─── Lazy-load : TOUTES les pages sauf Landing (entry point) ───
+// Chaque route ne télécharge que son chunk quand l'user y navigue.
+// Le SW cache-first sur /assets/* rend la 2e visite instantanée.
+const Home          = lazy(() => import('./pages/Home'));
+const ShopHome      = lazy(() => import('./pages/ShopHome'));
+const ProductPage   = lazy(() => import('./pages/ProductPage'));
+const CartPage      = lazy(() => import('./pages/CartPage'));
+const CheckoutPage  = lazy(() => import('./pages/CheckoutPage'));
+const BrandPage     = lazy(() => import('./pages/BrandPage'));
+const SignPage      = lazy(() => import('./pages/SignPage'));
+const Search        = lazy(() => import('./pages/Search'));
+const Product       = lazy(() => import('./pages/Product'));
+const Cart          = lazy(() => import('./pages/Cart'));
+const Orders        = lazy(() => import('./pages/Orders'));
+const Profile       = lazy(() => import('./pages/Profile'));
+const Pharmacies    = lazy(() => import('./pages/Pharmacies'));
+const PharmacyDetail= lazy(() => import('./pages/PharmacyDetail'));
+const Addresses     = lazy(() => import('./pages/Addresses'));
+const Favorites     = lazy(() => import('./pages/Favorites'));
+const Payments      = lazy(() => import('./pages/Payments'));
+const Evolution     = lazy(() => import('./pages/Evolution'));
+const Categories    = lazy(() => import('./pages/Categories'));
+const Loyalty       = lazy(() => import('./pages/Loyalty'));
+const Referral      = lazy(() => import('./pages/Referral'));
+const NotifSettings = lazy(() => import('./pages/NotifSettings'));
+const Notifications = lazy(() => import('./pages/Notifications'));
+const Promos        = lazy(() => import('./pages/Promos'));
+const Help          = lazy(() => import('./pages/Help'));
 const SkinQuiz      = lazy(() => import('./pages/SkinQuiz'));
 const Checkout      = lazy(() => import('./pages/Checkout'));
 const Payment       = lazy(() => import('./pages/Payment'));
@@ -111,7 +115,10 @@ const UserContext = createContext(null);
 export function useUser() { return useContext(UserContext); }
 
 // Splash minimum display time (pour que ce soit visible meme si le auth est ultra rapide)
-const SPLASH_MIN_DURATION = 600;
+// Perf juillet 2026 : 600ms → 350ms. Le splash inline (index.html #yaram-boot)
+// est déjà visible dès le 1er byte, ce délai ne fait qu'ajouter du temps
+// perçu si l'auth+prewarm sont ultra rapides (2e visite avec SW cache).
+const SPLASH_MIN_DURATION = 350;
 
 function routeToPath(route) {
   if (!route || !route.name || route.name === 'landing') return '/';

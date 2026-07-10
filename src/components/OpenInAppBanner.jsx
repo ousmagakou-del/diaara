@@ -92,8 +92,10 @@ export default function OpenInAppBanner() {
     if (!isMobile()) return;
     if (isStandaloneOrWebView()) return;
     if (wasDismissedRecently()) return;
-    // Petit delai : ne pas flasher pendant le splash / premier paint.
-    const t = setTimeout(() => setVisible(true), 800);
+    // Delai perf : 2.5s pour laisser hero + 1re image au-dessus du fold
+    // finir leur render/décoder AVANT que le banner s'anime (sinon il
+    // dispute le main thread avec le paint initial).
+    const t = setTimeout(() => setVisible(true), 2500);
     return () => clearTimeout(t);
   }, []);
 

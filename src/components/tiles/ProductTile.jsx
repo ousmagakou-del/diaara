@@ -78,9 +78,17 @@ function ProductTile({ product, size = 'md', pharmacy = null, onOpen }) {
         {image ? (
           <img
             src={imgSrc(image, { w: size === 'sm' ? 260 : 420, q: 82 })}
+            srcSet={[
+              `${imgSrc(image, { w: size === 'sm' ? 200 : 300, q: 80 })} 300w`,
+              `${imgSrc(image, { w: size === 'sm' ? 260 : 420, q: 82 })} 500w`,
+              `${imgSrc(image, { w: size === 'sm' ? 400 : 640, q: 82 })} 800w`,
+            ].join(', ')}
+            sizes={size === 'sm' ? '(max-width: 600px) 40vw, 200px' : '(max-width: 600px) 45vw, 260px'}
             alt={product.name}
             loading="lazy"
             decoding="async"
+            width={size === 'sm' ? 200 : 260}
+            height={size === 'sm' ? 200 : 260}
             onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
           />
         ) : (

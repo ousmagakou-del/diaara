@@ -30,8 +30,10 @@ const BUSTER = 'v2-2026-06-22';
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Cache mémoire : ne refetch pas si on a la donnée depuis moins de 5 min
-      staleTime: 5 * 60 * 1000,
+      // Cache mémoire : la plupart des données catalogue (products, brands,
+      // categories) ne bougent que quand l'admin publie. 15 min = compromis
+      // entre fraîcheur et perf. Les mutations invalident manuellement.
+      staleTime: 15 * 60 * 1000,
       // GC : garde 24h après le dernier mount qui a utilisé cette query
       gcTime: 24 * 60 * 60 * 1000,
       // Retry réseau : 2x avec backoff exponentiel
@@ -42,13 +44,18 @@ export const queryClient = new QueryClient({
         return failureCount < 2;
       },
       retryDelay: (attempt) => Math.min(1000 * Math.pow(2, attempt), 8000),
-      // Refetch silencieux quand l'app revient en foreground
-      refetchOnWindowFocus: true,
+      // Refetch AU FOCUS uniquement si la donnée est stale (>15min).
+      // Avant : true → refetchait TOUTES les queries à chaque focus tab,
+      // provoquant des lenteurs perceptibles quand l'user revient de
+      // WhatsApp / Notes / etc.
+      refetchOnWindowFocus: 'stale',
       // Refetch silencieux quand le réseau revient (très utile Dakar)
       refetchOnReconnect: true,
-      // PAS de refetch automatique au mount si on a déjà des données stale —
-      // on AFFICHE le stale tout de suite (paint instant) et on revalide en background
-      refetchOnMount: 'always',
+      // Refetch au mount SEULEMENT si stale — sinon on affiche le cache
+      // instantanément (paint 0ms) et on ne relance aucune requête.
+      // Avant : 'always' → chaque navigation refetchait tout, même si
+      // le cache était frais → skeletons flashaient partout.
+      refetchOnMount: true,
     },
     mutations: {
       // Retry les mutations réseau 1x (au cas où réseau a flickr)
