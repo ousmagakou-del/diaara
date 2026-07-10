@@ -158,7 +158,7 @@ function pathToRoute(pathname, search = '') {
   // ─── Shop (catalogue e-commerce complet) ───
   if (parts[0] === 'shop' || parts[0] === 'home') return { name: 'shop', params: {} };
 
-  const simpleRoutes = ['search', 'cart', 'checkout', 'orders', 'profile', 'pharmacies', 'scan', 'scan_history', 'addresses', 'favorites', 'payments', 'evolution', 'categories', 'quiz', 'loyalty', 'referral', 'notifications', 'notif_settings', 'promos', 'privacy', 'terms', 'mentions', 'delete_account', 'international', 'help', 'newsletter', 'brands'];
+  const simpleRoutes = ['search', 'cart', 'checkout', 'orders', 'profile', 'pharmacies', 'scan', 'scan_history', 'addresses', 'favorites', 'payments', 'evolution', 'categories', 'quiz', 'loyalty', 'referral', 'notifications', 'notif_settings', 'promos', 'privacy', 'terms', 'mentions', 'delete_account', 'international', 'help', 'newsletter', 'brands', 'partner-application', 'driver-application'];
   if (simpleRoutes.includes(parts[0])) {
     const params = {};
     if (parts[0] === 'search') {
