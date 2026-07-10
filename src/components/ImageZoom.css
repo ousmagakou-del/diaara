@@ -1,0 +1,43 @@
+/* ═══════════════════════════════════════════════════════════════
+   ImageZoom — styles
+   ═══════════════════════════════════════════════════════════════ */
+
+.img-zoom {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: var(--y-rad-2xl);
+  background: var(--y-n-50);
+  cursor: zoom-in;
+  touch-action: pan-y pinch-zoom;
+}
+
+.img-zoom-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.img-zoom.is-hover .img-zoom-img {
+  opacity: 0;
+  transition: opacity var(--y-dur-fast) var(--y-ease-out);
+}
+
+.img-zoom-lens {
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+  background-color: var(--y-n-0);
+  border-radius: inherit;
+  pointer-events: none;
+  animation: img-zoom-fade var(--y-dur-fast) var(--y-ease-out);
+}
+
+@keyframes img-zoom-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}

@@ -1,0 +1,108 @@
+/* ═══════════════════════════════════════════════════════════════
+   ProgressBar checkout
+   ═══════════════════════════════════════════════════════════════ */
+
+.pb {
+  width: 100%;
+  padding: var(--y-sp-4) 0;
+}
+
+.pb-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 0;
+}
+
+.pb-step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.pb-conn {
+  position: absolute;
+  top: 18px;
+  right: 50%;
+  width: 100%;
+  height: 3px;
+  background: var(--y-n-200);
+  border-radius: var(--y-rad-pill);
+  z-index: 0;
+}
+.pb-conn--filled {
+  background: linear-gradient(90deg, var(--y-brand), var(--y-brand-light));
+}
+
+.pb-node {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--y-sp-2);
+  background: transparent;
+  border: 0;
+  cursor: default;
+  padding: 0;
+  font-family: inherit;
+  color: inherit;
+}
+
+.pb-node:not(:disabled) { cursor: pointer; }
+
+.pb-node-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--y-n-0);
+  border: 2px solid var(--y-n-300);
+  color: var(--y-n-600);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--y-fw-bold);
+  font-size: var(--y-fs-base);
+  transition: all var(--y-dur-medium) var(--y-ease-out);
+}
+
+.pb-node-label {
+  font-size: var(--y-fs-sm);
+  color: var(--y-n-600);
+  font-weight: var(--y-fw-medium);
+  text-align: center;
+  transition: color var(--y-dur-fast) var(--y-ease-out);
+}
+
+.pb-step--current .pb-node-circle {
+  background: var(--y-brand);
+  border-color: var(--y-brand);
+  color: var(--y-n-0);
+  box-shadow: var(--y-focus-ring);
+}
+
+.pb-step--current .pb-node-label {
+  color: var(--y-n-900);
+  font-weight: var(--y-fw-semibold);
+}
+
+.pb-step--done .pb-node-circle {
+  background: var(--y-brand);
+  border-color: var(--y-brand);
+  color: var(--y-n-0);
+}
+
+.pb-step--done .pb-node-label {
+  color: var(--y-n-800);
+}
+
+@media (max-width: 640px) {
+  .pb-node-label { font-size: var(--y-fs-xs); }
+  .pb-node-circle { width: 30px; height: 30px; font-size: var(--y-fs-sm); }
+  .pb-conn { top: 15px; height: 2px; }
+}

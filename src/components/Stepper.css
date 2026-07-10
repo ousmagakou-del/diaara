@@ -1,0 +1,56 @@
+/* ═══════════════════════════════════════════════════════════════
+   Stepper premium
+   ═══════════════════════════════════════════════════════════════ */
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid var(--y-n-200);
+  border-radius: var(--y-rad-pill);
+  background: var(--y-n-0);
+  padding: 3px;
+}
+
+.stepper-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--y-n-50);
+  border: 0;
+  color: var(--y-n-800);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--y-dur-fast) var(--y-ease-out), transform var(--y-dur-fast) var(--y-ease-out);
+}
+
+.stepper-btn:hover:not(:disabled) {
+  background: var(--y-brand-soft);
+  color: var(--y-brand);
+}
+.stepper-btn:active:not(:disabled) {
+  transform: scale(0.94);
+}
+.stepper-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.stepper-value {
+  min-width: 40px;
+  text-align: center;
+  font-weight: var(--y-fw-semibold);
+  font-size: var(--y-fs-lg);
+  color: var(--y-n-900);
+  padding: 0 var(--y-sp-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.stepper--sm .stepper-btn { width: 30px; height: 30px; }
+.stepper--sm .stepper-value { font-size: var(--y-fs-base); min-width: 32px; }
+.stepper--lg .stepper-btn { width: 44px; height: 44px; }
+.stepper--lg .stepper-value { font-size: var(--y-fs-xl); min-width: 48px; }
+
+.stepper.is-disabled { opacity: 0.5; pointer-events: none; }
