@@ -567,22 +567,46 @@ export default function Search({ initialCategory, initialBrand }) {
                 className={`ysearch__ai-toggle ${aiMode ? 'is-on' : ''}`}
                 onClick={() => (aiMode ? exitAIMode() : enterAIMode())}
                 aria-pressed={aiMode}
+                aria-expanded={aiMode}
+                aria-controls="ysearch-ai-panel"
                 aria-label="Demander a Yara IA"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="16" height="16" aria-hidden>
                   <path d="M12 2 L13.5 9 L21 12 L13.5 15 L12 22 L10.5 15 L3 12 L10.5 9 Z" />
                 </svg>
                 <span>Demander a Yara IA</span>
+                <svg
+                  className="ysearch__ai-toggle-chev"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  width="12"
+                  height="12"
+                  aria-hidden
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
               </button>
             </div>
 
             {/* ─── Panneau AI Search (visible en mode AI) ─── */}
             {aiMode && (
-              <div className="ysearch__ai-panel" role="region" aria-label="Recherche assistee par Yara IA">
+              <div
+                id="ysearch-ai-panel"
+                className="ysearch__ai-panel"
+                role="region"
+                aria-label="Recherche assistee par Yara IA"
+              >
                 <div className="ysearch__ai-head">
                   <div className="ysearch__ai-head-title">
                     <span className="ysearch__ai-badge">IA</span>
-                    <span>Pose ta question a Yara IA</span>
+                    <div className="ysearch__ai-head-text">
+                      <span className="ysearch__ai-head-strong">Pose ta question a Yara IA</span>
+                      <span className="ysearch__ai-head-sub">Reponse instantanee, produits recommandes bases sur nos experts.</span>
+                    </div>
                   </div>
                   <button type="button" className="ysearch__ai-close" onClick={exitAIMode} aria-label="Fermer le mode IA">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" width="14" height="14" aria-hidden>
@@ -599,8 +623,9 @@ export default function Search({ initialCategory, initialBrand }) {
                     className="ysearch__ai-input"
                     value={aiQuery}
                     onChange={(e) => setAiQuery(e.target.value)}
-                    placeholder='Ex : "produit contre l acne pour peau sensible"'
+                    placeholder="Ex : produit contre l acne pour peau sensible..."
                     aria-label="Question a l IA"
+                    autoFocus
                   />
                   <button
                     type="submit"
@@ -613,17 +638,29 @@ export default function Search({ initialCategory, initialBrand }) {
 
                 {/* Suggestions IA (chips) - visibles tant qu on n a pas de reponse */}
                 {!aiReply && !aiLoading && !aiError && (
-                  <div className="ysearch__ai-suggestions">
-                    {AI_SUGGESTIONS.map((s) => (
-                      <button
-                        key={s}
-                        type="button"
-                        className="ysearch__ai-suggestion"
-                        onClick={() => { setAiQuery(s); runAISearch(s); }}
-                      >
-                        {s}
-                      </button>
-                    ))}
+                  <div className="ysearch__ai-empty">
+                    <span className="ysearch__ai-empty-hint">Ou pars d une idee :</span>
+                    <div className="ysearch__ai-suggestions">
+                      {AI_SUGGESTIONS.map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          className="ysearch__ai-suggestion"
+                          onClick={() => { setAiQuery(s); runAISearch(s); }}
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {aiLoading && (
+                  <div className="ysearch__ai-loading" aria-live="polite">
+                    <span className="ysearch__ai-loading-dot" />
+                    <span className="ysearch__ai-loading-dot" />
+                    <span className="ysearch__ai-loading-dot" />
+                    <span className="ysearch__ai-loading-txt">Yara IA analyse ta demande...</span>
                   </div>
                 )}
 
@@ -631,11 +668,12 @@ export default function Search({ initialCategory, initialBrand }) {
                   <div className="ysearch__ai-error" role="alert">{aiError}</div>
                 )}
 
-                {(aiReply || aiFollowUps.length > 0) && !aiError && (
+                {(aiReply || aiFollowUps.length > 0) && !aiError && !aiLoading && (
                   <div className="ysearch__ai-reply">
                     {aiReply && <p className="ysearch__ai-reply-text">{aiReply}</p>}
                     {aiFollowUps.length > 0 && (
                       <div className="ysearch__ai-follows">
+                        <span className="ysearch__ai-follows-label">Pour aller plus loin :</span>
                         {aiFollowUps.slice(0, 4).map((f) => (
                           <button
                             key={f}

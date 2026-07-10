@@ -480,20 +480,29 @@
 
 /* ───────── FORM ───────── */
 .da-form {
-  padding: var(--y-sp-24) var(--y-sp-8);
+  padding: var(--y-sp-20) var(--y-sp-8);
   background: var(--y-n-0);
+  scroll-margin-top: 96px;
 }
 .da-form-inner {
   max-width: 1280px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: 1fr 1.2fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
   gap: var(--y-sp-16);
   align-items: start;
+  min-height: 480px;
 }
 .da-form-side {
+  min-width: 0;
+  align-self: start;
   position: sticky;
-  top: 100px;
+  top: 96px;
+}
+/* Fallback si grid indispo */
+@supports not (display: grid) {
+  .da-form-inner { display: block; }
+  .da-form-side { position: static; margin-bottom: var(--y-sp-10); }
 }
 .da-form-side h2 {
   font-size: var(--y-fs-6xl);
@@ -570,6 +579,11 @@
   background: var(--y-n-50);
   border-radius: var(--y-rad-3xl);
   border: 1px solid var(--y-n-300);
+  min-width: 0;
+  min-height: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 .da-form-card h3 {
   margin: 0 0 var(--y-sp-6);
@@ -760,8 +774,9 @@
   .da-hero-content h1 { font-size: var(--y-fs-7xl); }
   .da-values-grid { grid-template-columns: repeat(2, 1fr); }
   .da-req-grid { grid-template-columns: 1fr; }
-  .da-form-inner { grid-template-columns: 1fr; gap: var(--y-sp-10); }
-  .da-form-side { position: static; }
+  .da-form-inner { grid-template-columns: 1fr; gap: var(--y-sp-10); min-height: 0; }
+  .da-form-side { position: static; top: auto; }
+  .da-form-card { min-height: 0; }
   .da-values, .da-calc, .da-req, .da-form { padding: var(--y-sp-20) var(--y-sp-6); }
   .da-values h2, .da-calc h2, .da-req h2, .da-form-side h2 { font-size: var(--y-fs-5xl); }
 }

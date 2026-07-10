@@ -379,20 +379,29 @@
 
 /* ───────── FORM ───────── */
 .pa-form {
-  padding: var(--y-sp-24) var(--y-sp-8);
+  padding: var(--y-sp-20) var(--y-sp-8);
   background: var(--y-n-0);
+  scroll-margin-top: 96px;
 }
 .pa-form-inner {
   max-width: 1280px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: 1fr 1.2fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
   gap: var(--y-sp-16);
   align-items: start;
+  min-height: 480px;
 }
 .pa-form-side {
+  min-width: 0;
+  align-self: start;
   position: sticky;
-  top: 100px;
+  top: 96px;
+}
+/* Fallback si grid indispo — les 2 blocs s empilent proprement */
+@supports not (display: grid) {
+  .pa-form-inner { display: block; }
+  .pa-form-side { position: static; margin-bottom: var(--y-sp-10); }
 }
 .pa-form-side h2 {
   font-size: var(--y-fs-6xl);
@@ -469,6 +478,11 @@
   background: var(--y-n-50);
   border-radius: var(--y-rad-3xl);
   border: 1px solid var(--y-n-300);
+  min-width: 0;
+  min-height: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 .pa-form-card h3 {
   margin: 0 0 var(--y-sp-6);
@@ -605,8 +619,9 @@
   .pa-hero-content h1 { font-size: var(--y-fs-7xl); }
   .pa-values-grid { grid-template-columns: repeat(2, 1fr); }
   .pa-how-grid { grid-template-columns: 1fr; gap: var(--y-sp-5); }
-  .pa-form-inner { grid-template-columns: 1fr; gap: var(--y-sp-10); }
-  .pa-form-side { position: static; }
+  .pa-form-inner { grid-template-columns: 1fr; gap: var(--y-sp-10); min-height: 0; }
+  .pa-form-side { position: static; top: auto; }
+  .pa-form-card { min-height: 0; }
   .pa-values, .pa-how, .pa-form { padding: var(--y-sp-20) var(--y-sp-6); }
   .pa-values h2, .pa-how h2, .pa-form-side h2 { font-size: var(--y-fs-5xl); }
 }
