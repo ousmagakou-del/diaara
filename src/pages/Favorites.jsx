@@ -9,17 +9,17 @@ import TabBar from '../components/TabBar';
 import './Favorites.css';
 
 const SORT_OPTIONS = [
-  { id: 'recent', label: 'Plus récents', icon: '🕒' },
-  { id: 'name',   label: 'Nom A → Z',    icon: '🔤' },
+  { id: 'recent', label: 'Plus récents', icon: '' },
+  { id: 'name',   label: 'Nom A → Z',    icon: '' },
   { id: 'price_asc',  label: 'Prix croissant',  icon: '↑' },
   { id: 'price_desc', label: 'Prix décroissant', icon: '↓' },
-  { id: 'pharmacy',   label: 'Par pharmacie', icon: '🏥' },
+  { id: 'pharmacy',   label: 'Par pharmacie', icon: '' },
 ];
 
 const TABS = [
-  { id: 'products',   label: 'Produits',   icon: '✨' },
-  { id: 'pharmacies', label: 'Pharmacies', icon: '🏥' },
-  { id: 'brands',     label: 'Marques',    icon: '⭐' },
+  { id: 'products',   label: 'Produits',   icon: '' },
+  { id: 'pharmacies', label: 'Pharmacies', icon: '' },
+  { id: 'brands',     label: 'Marques',    icon: '' },
 ];
 
 export default function Favorites() {
@@ -203,7 +203,7 @@ export default function Favorites() {
         style={{ animationDelay: `${Math.min(index * 35, 600)}ms` }}
       >
         <div className="yfav-swipe-wrap">
-          <div className="yfav-swipe-bg">Retirer ❤️</div>
+          <div className="yfav-swipe-bg">Retirer </div>
           <div
             className="yfav-swipe-content"
             style={{ transform: `translateX(${dx}px)` }}
@@ -305,11 +305,11 @@ export default function Favorites() {
                 style={{ animationDelay: `${i * 50}ms` }}
                 onClick={() => navigate(`/pharmacy/${ph.id}`)}
               >
-                <div className="yfav-pharma-logo">🏥</div>
+                <div className="yfav-pharma-logo"></div>
                 <div className="yfav-pharma-info">
                   <h3 className="yfav-pharma-name">{ph.name}</h3>
                   <div className="yfav-pharma-meta">
-                    <span>📍 {ph.distance} km</span>
+                    <span> {ph.distance} km</span>
                     <span className="dot" />
                     <span>{ph.count} produit{ph.count > 1 ? 's' : ''}</span>
                   </div>

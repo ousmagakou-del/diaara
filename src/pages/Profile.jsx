@@ -139,7 +139,7 @@ export default function Profile() {
 
   const handleShare = () => {
     const code = 'AICHA-YARAM';
-    const msg = `Salut ! J'utilise YARAM, l'app beauté validée pour notre peau africaine. Avec mon code ${code} tu as 3000 FCFA offerts sur ta 1ère commande 💚 https://yaram.app`;
+    const msg = `Salut ! J'utilise YARAM, l'app beauté validée pour notre peau africaine. Avec mon code ${code} tu as 3000 FCFA offerts sur ta 1ère commande. https://yaram.app`;
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
@@ -417,7 +417,7 @@ export default function Profile() {
             onClick={() => navigate({ name: 'scan', params: {} })}
             type="button"
           >
-            <span className="acct-scan-icon" aria-hidden>📷</span>
+            <span className="acct-scan-icon" aria-hidden></span>
             <div className="acct-scan-text">
               <strong>{hasScan ? 'Mettre à jour mon diagnostic peau' : 'Faire mon 1er scan peau'}</strong>
               <span>Photo + quiz · 2 min</span>
@@ -457,35 +457,35 @@ export default function Profile() {
             <section id="compte" className="acct-section">
               <h2 className="acct-section-title">Compte</h2>
               <div className="prof2-card">
-                <MenuItem icon="📍" tint="rgba(31,139,76,0.10)" label="Mes adresses"
+                <MenuItem icon="" tint="rgba(31,139,76,0.10)" label="Mes adresses"
                   sub={city ? `${neighborhood ? neighborhood + ', ' : ''}${city}` : 'Ajouter une adresse'}
                   onClick={() => navigate({ name: 'addresses', params: {} })} />
                 <div className="prof2-sep" />
-                <MenuItem icon="📦" tint="rgba(31,139,76,0.10)" label="Mes commandes"
+                <MenuItem icon="" tint="rgba(31,139,76,0.10)" label="Mes commandes"
                   sub={stats.ordersCount > 0 ? `${stats.ordersCount} commande${stats.ordersCount > 1 ? 's' : ''}` : "Voir l'historique"}
                   onClick={() => navigate('/orders')} />
                 <div className="prof2-sep" />
-                <MenuItem icon="💳" tint="rgba(31,139,76,0.10)" label="Moyens de paiement"
+                <MenuItem icon="" tint="rgba(31,139,76,0.10)" label="Moyens de paiement"
                   sub="Wave · OM · Cash · Carte"
                   onClick={() => navigate({ name: 'payments', params: {} })} />
                 <div className="prof2-sep" />
-                <MenuItem icon="❤️" tint="rgba(232,56,92,0.10)" label="Favoris"
+                <MenuItem icon="" tint="rgba(232,56,92,0.10)" label="Favoris"
                   sub={stats.favoritesCount > 0 ? `${stats.favoritesCount} produit${stats.favoritesCount > 1 ? 's' : ''}` : 'Tes coups de cœur'}
                   onClick={() => navigate({ name: 'favorites', params: {} })} />
                 <div className="prof2-sep" />
-                <MenuItem icon="⭐" tint="rgba(244,181,58,0.14)" label="Programme fidélité"
+                <MenuItem icon="" tint="rgba(244,181,58,0.14)" label="Programme fidélité"
                   sub={`${loyaltyPoints.toLocaleString('fr-FR')} points · Voir mes récompenses`}
                   onClick={() => navigate({ name: 'loyalty', params: {} })} />
                 <div className="prof2-sep" />
-                <MenuItem icon="🎁" tint="rgba(244,181,58,0.14)" label="Parrainage"
+                <MenuItem icon="" tint="rgba(244,181,58,0.14)" label="Parrainage"
                   sub="+3 000 FCFA offerts"
                   onClick={() => navigate({ name: 'referral', params: {} })} />
                 <div className="prof2-sep" />
-                <MenuItem icon="🏷️" tint="rgba(232,56,92,0.10)" label="Bons plans"
+                <MenuItem icon="" tint="rgba(232,56,92,0.10)" label="Bons plans"
                   sub="Promos & codes actifs"
                   onClick={() => navigate({ name: 'promos', params: {} })} />
                 <div className="prof2-sep" />
-                <MenuItem icon="📬" tint="rgba(244,181,58,0.14)" label="Newsletter"
+                <MenuItem icon="" tint="rgba(244,181,58,0.14)" label="Newsletter"
                   sub="Promos exclusives & conseils beauté"
                   onClick={() => navigate({ name: 'newsletter', params: {} })} />
               </div>
@@ -555,19 +555,19 @@ export default function Profile() {
             <section id="peau" className="acct-section">
               <h2 className="acct-section-title">Mon profil peau</h2>
               <div className="prof2-card">
-                <MenuItem icon="✨" tint="rgba(31,139,76,0.10)" label="Mon diagnostic peau"
+                <MenuItem icon="" tint="rgba(31,139,76,0.10)" label="Mon diagnostic peau"
                   sub={hasScan ? `Dernier scan : ${safeFormatDate(stats.lastScan?.created_at)}` : 'Faire le scan'}
                   onClick={() => navigate({ name: 'scan', params: {} })} />
                 <div className="prof2-sep" />
-                <MenuItem icon="📈" tint="rgba(31,139,76,0.10)" label="Mon évolution"
+                <MenuItem icon="" tint="rgba(31,139,76,0.10)" label="Mon évolution"
                   sub="Avant/Après mensuel"
                   onClick={() => navigate({ name: 'evolution', params: {} })} />
                 <div className="prof2-sep" />
-                <MenuItem icon="👤" tint="rgba(31,139,76,0.10)" label="Mon prénom"
+                <MenuItem icon="" tint="rgba(31,139,76,0.10)" label="Mon prénom"
                   sub={user?.first_name || 'À renseigner'}
                   onClick={handleEditFirstName} />
                 <div className="prof2-sep" />
-                <MenuItem icon="📱" tint="rgba(31,139,76,0.10)" label="Mon WhatsApp"
+                <MenuItem icon="" tint="rgba(31,139,76,0.10)" label="Mon WhatsApp"
                   sub={user?.phone || 'Requis pour les notifs commande'}
                   onClick={handleEditPhone} />
               </div>
@@ -579,18 +579,18 @@ export default function Profile() {
               <div className="prof2-card">
                 {!isIOSApp() && (
                   <>
-                    <MenuItem icon="🔔" tint="rgba(244,181,58,0.14)" label="Notifications"
+                    <MenuItem icon="" tint="rgba(244,181,58,0.14)" label="Notifications"
                       sub="Push · Rappels · Commandes"
                       onClick={() => navigate({ name: 'notif_settings', params: {} })} />
                     <div className="prof2-sep" />
                   </>
                 )}
-                <MenuItem icon="🌍" tint="rgba(31,139,76,0.10)" label="Langue"
+                <MenuItem icon="" tint="rgba(31,139,76,0.10)" label="Langue"
                   sub="Français"
                   onClick={() => toast.info('Bientôt : Wolof + Anglais')} />
                 <div className="prof2-sep" />
                 <MenuItem
-                  icon={getTheme() === 'dark' ? '🌙' : '☀️'}
+                  icon=""
                   tint="rgba(0,0,0,0.06)"
                   label="Apparence"
                   sub={`Mode ${getTheme() === 'dark' ? 'sombre' : 'clair'}`}
@@ -686,29 +686,29 @@ export default function Profile() {
             <section id="support" className="acct-section">
               <h2 className="acct-section-title">Support</h2>
               <div className="prof2-card">
-                <MenuItem icon="💬" tint="rgba(37,211,102,0.12)" label="WhatsApp YARAM"
+                <MenuItem icon="" tint="rgba(37,211,102,0.12)" label="WhatsApp YARAM"
                   sub={getWhatsAppDisplay()} href={`https://wa.me/${getWhatsAppNumber()}`} />
                 <div className="prof2-sep" />
-                <MenuItem icon="❓" tint="rgba(31,139,76,0.10)" label="Aide & FAQ"
+                <MenuItem icon="" tint="rgba(31,139,76,0.10)" label="Aide & FAQ"
                   sub="Réponses aux questions courantes"
                   onClick={() => navigate({ name: 'help', params: {} })} />
                 <div className="prof2-sep" />
-                <MenuItem icon="📥" tint="rgba(0,0,0,0.06)" label="Télécharger mes données"
+                <MenuItem icon="" tint="rgba(0,0,0,0.06)" label="Télécharger mes données"
                   sub="Export RGPD (JSON)" onClick={handleExportData} />
                 <div className="prof2-sep" />
-                <MenuItem icon="🏛️" tint="rgba(0,0,0,0.06)" label="Mentions légales"
+                <MenuItem icon="" tint="rgba(0,0,0,0.06)" label="Mentions légales"
                   sub="Éditeur, hébergeur, contact"
                   onClick={() => navigate({ name: 'mentions', params: {} })} />
                 <div className="prof2-sep" />
-                <MenuItem icon="🔒" tint="rgba(0,0,0,0.06)" label="Politique de confidentialité"
+                <MenuItem icon="" tint="rgba(0,0,0,0.06)" label="Politique de confidentialité"
                   sub="Comment on protège tes données"
                   onClick={() => navigate({ name: 'privacy', params: {} })} />
                 <div className="prof2-sep" />
-                <MenuItem icon="📄" tint="rgba(0,0,0,0.06)" label="Conditions générales"
+                <MenuItem icon="" tint="rgba(0,0,0,0.06)" label="Conditions générales"
                   sub="CGV / CGU YARAM"
                   onClick={() => navigate({ name: 'terms', params: {} })} />
                 <div className="prof2-sep" />
-                <MenuItem icon="🗑️" tint="rgba(217,52,43,0.10)" label="Supprimer mon compte"
+                <MenuItem icon="" tint="rgba(217,52,43,0.10)" label="Supprimer mon compte"
                   sub="Action irréversible" danger
                   onClick={() => navigate({ name: 'delete_account', params: {} })} />
               </div>

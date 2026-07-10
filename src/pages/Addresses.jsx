@@ -7,11 +7,11 @@ import { toast, confirmDialog } from '../lib/toast';
 import './Addresses.css';
 
 const PRESET_ICONS = [
-  { icon: '🏠', label: 'Domicile' },
-  { icon: '🏢', label: 'Bureau' },
-  { icon: '👨‍👩‍👧', label: 'Famille' },
-  { icon: '💕', label: 'Conjoint·e' },
-  { icon: '📍', label: 'Autre' },
+  { icon: '', label: 'Domicile' },
+  { icon: '', label: 'Bureau' },
+  { icon: '', label: 'Famille' },
+  { icon: '', label: 'Conjoint·e' },
+  { icon: '', label: 'Autre' },
 ];
 
 export default function Addresses() {
@@ -39,7 +39,7 @@ export default function Addresses() {
     setEditing({
       id: null,
       label: 'Domicile',
-      icon: '🏠',
+      icon: '',
       name: (user?.first_name || '') + ' ' + (user?.last_name || ''),
       phone: user?.phone || '',
       city: user?.city || 'Dakar',
@@ -104,7 +104,7 @@ export default function Addresses() {
           </div>
         ) : addresses.length === 0 ? (
           <div className="addr-empty">
-            <div style={{fontSize: 64, opacity: 0.2}}>📍</div>
+            <div style={{fontSize: 64, opacity: 0.2}}></div>
             <h3>Aucune adresse</h3>
             <p>Ajoute ta première adresse de livraison</p>
           </div>
@@ -122,19 +122,19 @@ export default function Addresses() {
               <p className="addr-meta">
                 {a.neighborhood ? `${a.neighborhood}, ` : ''}{a.city}
               </p>
-              {a.phone && <p className="addr-meta">📞 {a.phone}</p>}
+              {a.phone && <p className="addr-meta"> {a.phone}</p>}
 
               <div className="addr-actions">
                 {!a.is_default && (
                   <button className="addr-btn" onClick={() => handleSetDefault(a.id)}>
-                    ⭐ Définir par défaut
+                     Définir par défaut
                   </button>
                 )}
                 <button className="addr-btn" onClick={() => setEditing(a)}>
-                  ✏️ Modifier
+                   Modifier
                 </button>
                 <button className="addr-btn danger" onClick={() => handleDelete(a.id)}>
-                  🗑️
+                  
                 </button>
               </div>
             </div>
@@ -223,7 +223,7 @@ function AddressEditor({ address, onSave, onCancel }) {
         </div>
 
         <button className="addr-detect" onClick={detectLocation}>
-          📍 Détecter ma position automatiquement
+           Détecter ma position automatiquement
         </button>
 
         <div className="phone-input-wrap">
@@ -257,7 +257,7 @@ function AddressEditor({ address, onSave, onCancel }) {
             checked={a.is_default}
             onChange={e => update('is_default', e.target.checked)}
           />
-          <span>⭐ Adresse par défaut pour la livraison</span>
+          <span> Adresse par défaut pour la livraison</span>
         </label>
       </div>
 

@@ -11,7 +11,7 @@ import './Help.css';
 const FAQ_CATEGORIES = [
   {
     id: 'orders',
-    icon: '📦',
+    icon: '',
     tint: 'rgba(31,139,76,0.10)',
     name: 'Commandes',
     desc: 'Passer, suivre, modifier',
@@ -36,7 +36,7 @@ const FAQ_CATEGORIES = [
   },
   {
     id: 'payment',
-    icon: '💳',
+    icon: '',
     tint: 'rgba(244,181,58,0.14)',
     name: 'Paiement',
     desc: 'Wave, OM, cash, carte',
@@ -61,7 +61,7 @@ const FAQ_CATEGORIES = [
   },
   {
     id: 'account',
-    icon: '👤',
+    icon: '',
     tint: 'rgba(31,139,76,0.10)',
     name: 'Compte',
     desc: 'Profil, sécurité, données',
@@ -86,7 +86,7 @@ const FAQ_CATEGORIES = [
   },
   {
     id: 'delivery',
-    icon: '🚚',
+    icon: '',
     tint: 'rgba(31,139,76,0.10)',
     name: 'Livraison',
     desc: 'Zones, frais, suivi',
@@ -111,7 +111,7 @@ const FAQ_CATEGORIES = [
   },
   {
     id: 'scan',
-    icon: '📷',
+    icon: '',
     tint: 'rgba(232,56,92,0.10)',
     name: 'Scan IA peau',
     desc: 'Diagnostic, confidentialité',
@@ -132,7 +132,7 @@ const FAQ_CATEGORIES = [
   },
   {
     id: 'loyalty',
-    icon: '⭐',
+    icon: '',
     tint: 'rgba(244,181,58,0.14)',
     name: 'Fidélité & promos',
     desc: 'Points, codes, parrainage',
@@ -153,7 +153,7 @@ const FAQ_CATEGORIES = [
   },
   {
     id: 'import',
-    icon: '✈️',
+    icon: '',
     tint: 'rgba(0,0,0,0.06)',
     name: 'Import / Preorder',
     desc: 'Produits internationaux',
@@ -177,28 +177,28 @@ const FAQ_CATEGORIES = [
 const ARTICLES = [
   {
     id: 'routine-peau-noire',
-    icon: '🌿',
+    icon: '',
     title: 'Routine peau noire : le guide complet',
     excerpt: 'Les 5 étapes essentielles pour une peau éclatante adaptée aux peaux africaines.',
     body: `Une routine peau noire efficace s'articule autour de 5 étapes clés.\n\n**1. Nettoyage doux** — Utilise un gel sans sulfates matin et soir.\n\n**2. Hydratation** — La peau noire perd plus d'eau que les autres types. Privilégie les sérums à l'acide hyaluronique.\n\n**3. Protection solaire** — OUI, même avec une peau foncée. La mélanine ne protège qu'à hauteur d'un SPF 13.\n\n**4. Exfoliation hebdomadaire** — Une fois par semaine maximum, avec un acide doux (PHA, lactique).\n\n**5. Traitement ciblé** — Pour les taches, les boutons, la sécheresse. Sérums spécifiques le soir.`,
   },
   {
     id: 'creme-solaire',
-    icon: '☀️',
+    icon: '',
     title: 'Choisir sa crème solaire (peau noire)',
     excerpt: "Pourquoi le SPF est crucial, même au Sénégal, et comment éviter l'effet blanc.",
     body: `**Pourquoi la protection solaire est essentielle ?**\n\nLe soleil cause 80% du vieillissement cutané et déclenche l'hyperpigmentation chez les peaux foncées (taches, masque de grossesse, cicatrices qui foncent).\n\n**Quel SPF choisir ?**\n\nMinimum **SPF 30**, idéalement **SPF 50**. À renouveler toutes les 2h en extérieur.\n\n**Comment éviter l'effet blanc ?**\n\nÉvite les filtres minéraux purs (oxyde de zinc en concentration élevée). Privilégie les **chimiques modernes** ou les **hybrides** spécialement formulés pour peaux foncées.`,
   },
   {
     id: 'hyperpigmentation',
-    icon: '✨',
+    icon: '',
     title: 'Hyperpigmentation : que faire ?',
     excerpt: 'Taches brunes, cicatrices, masque de grossesse — les solutions qui marchent vraiment.',
     body: `**Les causes principales**\n\n- Exposition solaire sans protection\n- Inflammation post-acné\n- Grossesse / pilule (mélasma)\n- Frottements répétés\n\n**Les actifs qui fonctionnent**\n\n- **Vitamine C** (matin) — éclaircit en douceur\n- **Niacinamide 10%** — réduit la production de mélanine\n- **Acide azélaïque** — anti-inflammatoire + dépigmentant\n- **Rétinol** (soir, progressif) — accélère le renouvellement\n\n**Important :** la protection solaire est **non-négociable**. Sans SPF, aucun soin éclaircissant ne fonctionnera.`,
   },
   {
     id: 'acne-adulte',
-    icon: '💚',
+    icon: '',
     title: 'Acné adulte : que faire ?',
     excerpt: 'Boutons hormonaux, kystes — comprendre et traiter sans agresser sa peau.',
     body: `**L'acné adulte n'est pas un échec personnel.** 30% des femmes de 25-40 ans en souffrent au Sénégal.\n\n**Les bons réflexes**\n\n- Ne pas surcharger en produits — l'acné s'aggrave avec l'agressivité\n- Nettoyer 2x par jour maximum\n- Acide salicylique 2% ciblé sur les zones à problème\n- Hydratation légère sans huile comédogène\n\n**Quand consulter ?**\n\nSi l'acné est kystique, douloureuse, ou laisse des cicatrices — direction le dermatologue. Notre IA peut t'orienter mais ne remplace pas un avis médical.`,
@@ -284,7 +284,7 @@ export default function Help() {
   const handleWhatsApp = () => {
     tapHaptic();
     const userInfo = user?.id ? ` (ID: ${user.id.slice(0, 8)}, ${user.first_name || user.email || 'client'})` : '';
-    const msg = `Bonjour YARAM 👋\n\nJ'ai besoin d'aide${userInfo}.\n\n[Décris ta question ici]`;
+    const msg = `Bonjour YARAM \n\nJ'ai besoin d'aide${userInfo}.\n\n[Décris ta question ici]`;
     window.open(`https://wa.me/${getWhatsAppNumber()}?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
@@ -317,7 +317,7 @@ export default function Help() {
     if (!desc) return;
     const platform = navigator.userAgent.includes('iPhone') ? 'iOS' :
                      navigator.userAgent.includes('Android') ? 'Android' : 'Web';
-    const subject = encodeURIComponent('🐞 Bug report YARAM');
+    const subject = encodeURIComponent('Bug report YARAM');
     const body = encodeURIComponent(
       `Description :\n${desc}\n\n---\nMETA\n` +
       `Version app : 0.1\nPlateforme : ${platform}\n` +
@@ -364,8 +364,8 @@ export default function Help() {
           </div>
           <div className="help-article-cta">
             <p>Cet article t'a aidé ?</p>
-            <button onClick={() => { setActiveArticle(null); toast.success('Merci pour ton retour 💚'); }}>
-              Oui, merci 💚
+            <button onClick={() => { setActiveArticle(null); toast.success('Merci pour ton retour'); }}>
+              Oui, merci 
             </button>
             <button onClick={handleWhatsApp} className="help-article-cta-alt">
               J'ai encore une question
@@ -396,7 +396,7 @@ export default function Help() {
           <h2 className="help-hero-title">Comment pouvons-nous t'aider ?</h2>
           <p className="help-hero-sub">Cherche dans notre base ou contacte-nous directement</p>
           <div className="help-search-wrap">
-            <span className="help-search-icon" aria-hidden>🔍</span>
+            <span className="help-search-icon" aria-hidden></span>
             <input
               type="text"
               className="help-search-input"
@@ -418,22 +418,22 @@ export default function Help() {
         <section className="help-section help-anim" style={{ animationDelay: '60ms' }}>
           <div className="help-quick-grid">
             <button className="help-quick-card help-quick-whatsapp" onClick={handleWhatsApp} type="button">
-              <span className="help-quick-icon">💬</span>
+              <span className="help-quick-icon"></span>
               <strong>WhatsApp YARAM</strong>
               <span className="help-quick-meta">Réponse &lt; 1h en heures ouvrables</span>
             </button>
             <button className="help-quick-card" onClick={handleEmail} type="button">
-              <span className="help-quick-icon">📧</span>
+              <span className="help-quick-icon"></span>
               <strong>Email</strong>
               <span className="help-quick-meta">contact@yaram.app</span>
             </button>
             <button className="help-quick-card" onClick={handleCall} type="button">
-              <span className="help-quick-icon">📞</span>
+              <span className="help-quick-icon"></span>
               <strong>Appeler</strong>
               <span className="help-quick-meta">+221 77 760 89 83</span>
             </button>
             <button className="help-quick-card" onClick={handleBugReport} type="button">
-              <span className="help-quick-icon">🛠</span>
+              <span className="help-quick-icon"></span>
               <strong>Signaler un bug</strong>
               <span className="help-quick-meta">Avec ta version & plateforme</span>
             </button>
@@ -450,7 +450,7 @@ export default function Help() {
 
           {filteredCategories.length === 0 && (
             <div className="help-empty">
-              <span aria-hidden>🤔</span>
+              <span aria-hidden></span>
               <p>Pas de résultat pour <strong>« {debouncedQuery} »</strong></p>
               <button onClick={handleWhatsApp}>Demander sur WhatsApp</button>
             </div>

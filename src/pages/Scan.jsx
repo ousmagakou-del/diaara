@@ -4,17 +4,17 @@ import { analyzeSkinPhotos, uploadScanPhoto, saveSkinScan } from '../lib/supabas
 import './Scan.css';
 
 const STEPS = [
-  { id: 'front', title: 'Regarde droit', icon: '⬆', instruction: 'Garde la tête droite, regarde l\'objectif', cue: 'Face' },
+  { id: 'front', title: 'Regarde droit', icon: '', instruction: 'Garde la tête droite, regarde l\'objectif', cue: 'Face' },
   { id: 'left', title: 'Tourne à gauche', icon: '←', instruction: 'Tourne doucement ta tête vers la gauche', cue: 'Profil gauche' },
   { id: 'right', title: 'Tourne à droite', icon: '→', instruction: 'Maintenant doucement vers la droite', cue: 'Profil droit' },
 ];
 
 const ANALYZING_MESSAGES = [
-  { label: 'Analyse de la texture…', icon: '✨' },
-  { label: 'Détection des zones…', icon: '🔍' },
-  { label: 'Mesure de l\'hydratation…', icon: '💧' },
-  { label: 'Calcul des recommandations…', icon: '🧪' },
-  { label: 'Personnalisation de ta routine…', icon: '💚' },
+  { label: 'Analyse de la texture…', icon: '' },
+  { label: 'Détection des zones…', icon: '' },
+  { label: 'Mesure de l\'hydratation…', icon: '' },
+  { label: 'Calcul des recommandations…', icon: '' },
+  { label: 'Personnalisation de ta routine…', icon: '' },
 ];
 
 export default function Scan() {
@@ -347,15 +347,15 @@ export default function Scan() {
 
           <div className="fs-feature-row">
             <div className="fs-feature">
-              <div className="fs-feature-ico">🔒</div>
+              <div className="fs-feature-ico"></div>
               <span>Privé</span>
             </div>
             <div className="fs-feature">
-              <div className="fs-feature-ico">⚡</div>
+              <div className="fs-feature-ico"></div>
               <span>30 sec</span>
             </div>
             <div className="fs-feature">
-              <div className="fs-feature-ico">💚</div>
+              <div className="fs-feature-ico"></div>
               <span>Sur-mesure</span>
             </div>
           </div>
@@ -363,9 +363,9 @@ export default function Scan() {
           <div className="fs-tips-card">
             <div className="fs-tips-title">Pour un résultat optimal</div>
             <div className="fs-tips-grid">
-              <div className="fs-tip"><span>☀️</span><p>Lumière naturelle</p></div>
-              <div className="fs-tip"><span>🧼</span><p>Sans maquillage</p></div>
-              <div className="fs-tip"><span>💁</span><p>Cheveux dégagés</p></div>
+              <div className="fs-tip"><span></span><p>Lumière naturelle</p></div>
+              <div className="fs-tip"><span></span><p>Sans maquillage</p></div>
+              <div className="fs-tip"><span></span><p>Cheveux dégagés</p></div>
             </div>
           </div>
 
@@ -533,7 +533,7 @@ export default function Scan() {
             {countdown !== null && (
               <div className="fs-countdown-wrap">
                 <div className="fs-countdown">
-                  {countdown > 0 ? countdown : '📸'}
+                  {countdown > 0 ? countdown : ''}
                 </div>
               </div>
             )}

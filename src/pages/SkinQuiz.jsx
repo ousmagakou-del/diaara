@@ -15,11 +15,11 @@ const STEPS = [
     question: 'Quel est ton type de peau ?',
     sub: 'Au quotidien, comment ta peau se comporte',
     options: [
-      { value: 'sèche', label: 'Sèche', icon: '🌵', desc: 'Tire, parfois rugueuse' },
-      { value: 'normale', label: 'Normale', icon: '🌟', desc: 'Équilibrée, peu de soucis' },
-      { value: 'mixte', label: 'Mixte', icon: '🌗', desc: 'Brillante zone T, normale sur joues' },
-      { value: 'grasse', label: 'Grasse', icon: '✨', desc: 'Brillante, pores visibles' },
-      { value: 'inconnu', label: 'Je ne sais pas', icon: '🤔', desc: 'Aide-moi à découvrir' },
+      { value: 'sèche', label: 'Sèche', icon: '', desc: 'Tire, parfois rugueuse' },
+      { value: 'normale', label: 'Normale', icon: '', desc: 'Équilibrée, peu de soucis' },
+      { value: 'mixte', label: 'Mixte', icon: '', desc: 'Brillante zone T, normale sur joues' },
+      { value: 'grasse', label: 'Grasse', icon: '', desc: 'Brillante, pores visibles' },
+      { value: 'inconnu', label: 'Je ne sais pas', icon: '', desc: 'Aide-moi à découvrir' },
     ],
   },
   {
@@ -28,13 +28,13 @@ const STEPS = [
     sub: 'Tu peux en choisir plusieurs',
     multi: true,
     options: [
-      { value: 'acne', label: 'Acné', icon: '🔴', desc: 'Boutons, imperfections' },
-      { value: 'taches', label: 'Taches', icon: '🟤', desc: 'Hyperpigmentation, post-acné' },
-      { value: 'rides', label: 'Rides', icon: '⏳', desc: 'Premiers signes, fermeté' },
-      { value: 'sensibilite', label: 'Sensibilité', icon: '🌹', desc: 'Rougeurs, réactions' },
-      { value: 'brillance', label: 'Brillance', icon: '✨', desc: 'Excès de sébum' },
-      { value: 'secheresse', label: 'Sécheresse', icon: '💧', desc: 'Peau tiraille' },
-      { value: 'hyperpigmentation', label: 'Hyperpigmentation', icon: '🌑', desc: 'Zones plus foncées' },
+      { value: 'acne', label: 'Acné', icon: '', desc: 'Boutons, imperfections' },
+      { value: 'taches', label: 'Taches', icon: '', desc: 'Hyperpigmentation, post-acné' },
+      { value: 'rides', label: 'Rides', icon: '', desc: 'Premiers signes, fermeté' },
+      { value: 'sensibilite', label: 'Sensibilité', icon: '', desc: 'Rougeurs, réactions' },
+      { value: 'brillance', label: 'Brillance', icon: '', desc: 'Excès de sébum' },
+      { value: 'secheresse', label: 'Sécheresse', icon: '', desc: 'Peau tiraille' },
+      { value: 'hyperpigmentation', label: 'Hyperpigmentation', icon: '', desc: 'Zones plus foncées' },
     ],
   },
   {
@@ -42,9 +42,9 @@ const STEPS = [
     question: 'À quoi ressemble ta routine actuelle ?',
     sub: 'Sois honnête, pas de jugement',
     options: [
-      { value: 'rien', label: 'Rien du tout', icon: '🤷‍♀️', desc: 'Eau et c\'est tout' },
-      { value: 'basique', label: 'Basique', icon: '🧴', desc: 'Nettoyant + hydratant' },
-      { value: 'experte', label: 'Experte', icon: '🧪', desc: 'Routine complète, sérums, actifs' },
+      { value: 'rien', label: 'Rien du tout', icon: '', desc: 'Eau et c\'est tout' },
+      { value: 'basique', label: 'Basique', icon: '', desc: 'Nettoyant + hydratant' },
+      { value: 'experte', label: 'Experte', icon: '', desc: 'Routine complète, sérums, actifs' },
     ],
   },
   {
@@ -52,9 +52,9 @@ const STEPS = [
     question: 'Combien de temps par jour pour tes soins ?',
     sub: 'On adapte la complexité',
     options: [
-      { value: 'court', label: 'Moins de 5 min', icon: '⚡', desc: 'L\'essentiel, vite fait' },
-      { value: 'moyen', label: '5 à 10 min', icon: '⏱️', desc: 'Le bon équilibre' },
-      { value: 'long', label: 'Plus de 10 min', icon: '🧘‍♀️', desc: 'J\'adore prendre mon temps' },
+      { value: 'court', label: 'Moins de 5 min', icon: '', desc: 'L\'essentiel, vite fait' },
+      { value: 'moyen', label: '5 à 10 min', icon: '', desc: 'Le bon équilibre' },
+      { value: 'long', label: 'Plus de 10 min', icon: '', desc: 'J\'adore prendre mon temps' },
     ],
   },
   {
@@ -62,9 +62,9 @@ const STEPS = [
     question: 'Quel budget mensuel pour tes soins ?',
     sub: 'Pour adapter les recommandations',
     options: [
-      { value: 'eco', label: 'Petit budget', icon: '💰', desc: 'Moins de 10 000 FCFA' },
-      { value: 'medium', label: 'Confortable', icon: '💸', desc: '10 000 - 25 000 FCFA' },
-      { value: 'premium', label: 'Premium', icon: '👑', desc: 'Plus de 25 000 FCFA' },
+      { value: 'eco', label: 'Petit budget', icon: '', desc: 'Moins de 10 000 FCFA' },
+      { value: 'medium', label: 'Confortable', icon: '', desc: '10 000 - 25 000 FCFA' },
+      { value: 'premium', label: 'Premium', icon: '', desc: 'Plus de 25 000 FCFA' },
     ],
   },
   {
@@ -72,11 +72,11 @@ const STEPS = [
     question: 'Quel est ton âge ?',
     sub: 'Les besoins évoluent avec le temps',
     options: [
-      { value: 'teen', label: '13 - 19 ans', icon: '🌱', desc: 'Adolescence' },
-      { value: 'twenties', label: '20 - 29 ans', icon: '🌸', desc: 'Premier soin sérieux' },
-      { value: 'thirties', label: '30 - 39 ans', icon: '🌺', desc: 'Prévention' },
-      { value: 'forties', label: '40 - 49 ans', icon: '🌻', desc: 'Maturité' },
-      { value: 'fifties_plus', label: '50 ans et plus', icon: '🌷', desc: 'Soins ciblés' },
+      { value: 'teen', label: '13 - 19 ans', icon: '', desc: 'Adolescence' },
+      { value: 'twenties', label: '20 - 29 ans', icon: '', desc: 'Premier soin sérieux' },
+      { value: 'thirties', label: '30 - 39 ans', icon: '', desc: 'Prévention' },
+      { value: 'forties', label: '40 - 49 ans', icon: '', desc: 'Maturité' },
+      { value: 'fifties_plus', label: '50 ans et plus', icon: '', desc: 'Soins ciblés' },
     ],
   },
   {
@@ -84,8 +84,8 @@ const STEPS = [
     question: 'Es-tu enceinte ou allaitante ?',
     sub: 'Certains actifs sont à éviter dans ces périodes',
     options: [
-      { value: 'non', label: 'Non', icon: '✅', desc: 'Aucune restriction' },
-      { value: 'oui', label: 'Oui', icon: '🤰', desc: 'On évite rétinol, salicylique fort, etc.' },
+      { value: 'non', label: 'Non', icon: '', desc: 'Aucune restriction' },
+      { value: 'oui', label: 'Oui', icon: '', desc: 'On évite rétinol, salicylique fort, etc.' },
     ],
   },
   {
@@ -372,14 +372,14 @@ export default function SkinQuiz({ onComplete }) {
               <span className="squiz-mouth" />
               <span className="squiz-blush left" />
               <span className="squiz-blush right" />
-              <span className="squiz-sparkle s1">✨</span>
-              <span className="squiz-sparkle s2">✨</span>
-              <span className="squiz-sparkle s3">✨</span>
+              <span className="squiz-sparkle s1"></span>
+              <span className="squiz-sparkle s2"></span>
+              <span className="squiz-sparkle s3"></span>
             </div>
-            <span className="squiz-float squiz-float-1">🧴</span>
-            <span className="squiz-float squiz-float-2">💧</span>
-            <span className="squiz-float squiz-float-3">🌿</span>
-            <span className="squiz-float squiz-float-4">🌸</span>
+            <span className="squiz-float squiz-float-1"></span>
+            <span className="squiz-float squiz-float-2"></span>
+            <span className="squiz-float squiz-float-3"></span>
+            <span className="squiz-float squiz-float-4"></span>
           </div>
 
           <h1 className="squiz-intro-title">
@@ -454,7 +454,7 @@ export default function SkinQuiz({ onComplete }) {
             </div>
           </div>
           <p className="squiz-score-label">
-            {animatedScore >= 75 ? 'Peau en pleine forme ✨' :
+            {animatedScore >= 75 ? 'Peau en pleine forme' :
              animatedScore >= 55 ? 'Bonne base, on peut affiner' :
              'On va prendre soin de toi'}
           </p>
@@ -482,7 +482,7 @@ export default function SkinQuiz({ onComplete }) {
                   onClick={() => { haptic('light'); navigate({ name: 'product', params: { id: p.id } }); }}
                 >
                   <div className="squiz-reco-img">
-                    {p.img ? <img src={p.img} alt={p.name} loading="lazy" decoding="async" /> : <span>🧴</span>}
+                    {p.img ? <img src={p.img} alt={p.name} loading="lazy" decoding="async" /> : <span></span>}
                   </div>
                   <div className="squiz-reco-info">
                     <p className="squiz-reco-brand">{p.brand}</p>
@@ -560,7 +560,7 @@ export default function SkinQuiz({ onComplete }) {
       <div className={`squiz-content squiz-anim-${direction}`} key={step}>
         <h1 className="squiz-question">{currentStep.question}</h1>
         <p className="squiz-sub">
-          {currentStep.sub}{isMulti && ' · Plusieurs choix possibles'}
+          {currentStep.sub}{isMulti && 'Plusieurs choix possibles'}
         </p>
 
         {isFreeText ? (

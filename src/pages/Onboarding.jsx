@@ -110,7 +110,7 @@ function BrandPanel() {
         </ul>
         <div className="ob-brand-trust">
           <div>
-            <strong>4.9★</strong>
+            <strong>4.9/5</strong>
             <span>App Store</span>
           </div>
           <span className="ob-brand-trust-sep" />
@@ -652,7 +652,7 @@ export default function Onboarding({ onComplete }) {
           </h2>
           <p className="ob-auth-desc">
             {authView === 'signup'
-              ? 'En 30 secondes, et tu profites de YARAM 💚'
+              ? 'En 30 secondes, et tu profites de YARAM'
               : authView === 'login'
                 ? 'Retrouve ta routine et tes commandes'
                 : 'Choisis comment tu veux te connecter'}
@@ -992,9 +992,7 @@ export default function Onboarding({ onComplete }) {
         {askEnableBio && (
           <div className="ob-modal-overlay">
             <div className="ob-modal ob-modal-bio">
-              <div className="ob-modal-bio-icon">
-                {bioType === 'touchId' ? '👆' : '🤳'}
-              </div>
+              <div className="ob-modal-bio-icon" />
               <h2 className="ob-modal-title">
                 Activer {bioType === 'touchId' ? 'Touch ID' : 'Face ID'} ?
               </h2>
@@ -1017,7 +1015,7 @@ export default function Onboarding({ onComplete }) {
           <div className="ob-modal-overlay">
             <div className="ob-modal">
               <div className="ob-modal-head">
-                <span className="ob-modal-emoji">🔑</span>
+                <span className="ob-modal-emoji"></span>
                 <h2 className="ob-modal-title-sm">Mot de passe oublié</h2>
               </div>
               <p className="ob-modal-desc">

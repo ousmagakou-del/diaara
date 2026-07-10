@@ -3,7 +3,7 @@
 // URL : /partner-application
 // ════════════════════════════════════════════════════════════════
 //
-// Page de recrutement pharmacies partenaires. Style premium DoorDash-like.
+// Page de recrutement pharmacies partenaires. Style premium sobre.
 // Hero + value props + how it works + form → RPC public_submit_partner_application.
 // ════════════════════════════════════════════════════════════════
 
@@ -57,12 +57,16 @@ export default function PartnerApplication() {
       <SiteLayout>
         <div className="pa-success">
           <div className="pa-success-inner">
-            <div className="pa-success-icon">✓</div>
-            <h1>Candidature envoyée !</h1>
+            <div className="pa-success-icon" aria-hidden="true">
+              <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+                <path d="M12 22.5l7 7L32 15" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <h1>Candidature envoyée</h1>
             <p>Notre équipe commerciale vous contacte sous <strong>48h ouvrées</strong>.</p>
             <p className="pa-success-sub">
               En attendant, on peut discuter directement :{' '}
-              <a href="https://wa.me/221774388766">📞 WhatsApp +221 77 438 87 66</a>
+              <a href="https://wa.me/221774388766">WhatsApp +221 77 438 87 66</a>
             </p>
             <a href="/" className="pa-btn-secondary">Retour à l'accueil</a>
           </div>
@@ -77,29 +81,32 @@ export default function PartnerApplication() {
       <section className="pa-hero">
         <div className="pa-hero-inner">
           <div className="pa-hero-content">
-            <div className="pa-eyebrow">💼 PROGRAMME PARTENAIRES YARAM</div>
+            <div className="pa-eyebrow">Programme partenaires YARAM</div>
             <h1>Vends plus. Sans embaucher un livreur.</h1>
             <p className="pa-lead">
               Rejoins le réseau de pharmacies YARAM et touche <strong>+45 000 clients actifs</strong> à Dakar.
               Zéro frais d'inscription. Zéro équipe à recruter. On gère tout — commandes, paiement, livraison.
             </p>
             <div className="pa-hero-cta">
-              <a href="#form" className="pa-btn-primary">Devenir partenaire →</a>
+              <a href="#form" className="pa-btn-primary">Devenir partenaire</a>
               <a href="https://wa.me/221774388766" className="pa-btn-ghost">Parler à un commercial</a>
             </div>
             <div className="pa-trust">
               <div className="pa-trust-item"><strong>25+</strong><span>Pharmacies actives</span></div>
               <div className="pa-trust-item"><strong>45k</strong><span>Clientes YARAM</span></div>
-              <div className="pa-trust-item"><strong>4.9★</strong><span>Note moyenne</span></div>
+              <div className="pa-trust-item"><strong>4.9/5</strong><span>Note moyenne</span></div>
             </div>
           </div>
           <div className="pa-hero-visual">
             <div className="pa-hero-card">
               <div className="pa-hero-card-header">
-                <div className="pa-hero-card-icon">📊</div>
                 <div>
                   <div className="pa-hero-card-title">Dashboard temps réel</div>
                   <div className="pa-hero-card-sub">Aujourd'hui · Pharmacie Sacré-Cœur</div>
+                </div>
+                <div className="pa-hero-badge">
+                  <span className="pa-hero-badge-dot" />
+                  Live
                 </div>
               </div>
               <div className="pa-hero-stats">
@@ -107,7 +114,7 @@ export default function PartnerApplication() {
                   <div className="pa-hero-stat-value">37</div>
                   <div className="pa-hero-stat-label">Commandes</div>
                 </div>
-                <div className="pa-hero-stat pa-hero-stat--green">
+                <div className="pa-hero-stat pa-hero-stat--brand">
                   <div className="pa-hero-stat-value">128 500</div>
                   <div className="pa-hero-stat-label">FCFA CA</div>
                 </div>
@@ -117,10 +124,7 @@ export default function PartnerApplication() {
                 </div>
               </div>
               <div className="pa-hero-card-footer">
-                <div className="pa-hero-live">
-                  <span className="pa-hero-live-dot" />
-                  <span>3 commandes en cours de préparation</span>
-                </div>
+                3 commandes en cours de préparation
               </div>
             </div>
           </div>
@@ -130,15 +134,15 @@ export default function PartnerApplication() {
       {/* VALUE PROPS */}
       <section className="pa-values">
         <div className="pa-values-inner">
-          <div className="pa-section-eyebrow">POURQUOI YARAM</div>
+          <div className="pa-section-eyebrow">Pourquoi YARAM</div>
           <h2>Un vrai canal de vente. Sans les tracas.</h2>
           <div className="pa-values-grid">
-            <ValueCard icon="🎯" title="Seulement 5% de commission" desc="Le taux le plus bas du marché. Aucun frais fixe, aucun abonnement, aucune franchise cachée." />
-            <ValueCard icon="🛵" title="Livreurs YARAM inclus" desc="Notre flotte gère la livraison. Toi tu prépares, on récupère, on livre. Le client paye tout via l'app." />
-            <ValueCard icon="💰" title="Paiement chaque vendredi" desc="Virement Wave / Orange Money / bancaire. Fin de suspens : tu sais exactement combien tu reçois." />
-            <ValueCard icon="📊" title="Dashboard temps réel" desc="Suis commandes, ventes, top produits, feedbacks clientes — depuis ton téléphone." />
-            <ValueCard icon="🚀" title="Setup en 24h" desc="Signature en ligne, catalogue importé, formation du staff, tu es live le lendemain." />
-            <ValueCard icon="🎁" title="Zéro frais cachés" desc="Pas de setup fee. Pas de matériel à acheter. Tu résilies en 30 jours si tu veux — sans pénalité." />
+            <ValueCard num="01" title="Seulement 5% de commission" desc="Le taux le plus bas du marché. Aucun frais fixe, aucun abonnement, aucune franchise cachée." />
+            <ValueCard num="02" title="Livreurs YARAM inclus" desc="Notre flotte gère la livraison. Toi tu prépares, on récupère, on livre. Le client paye tout via l'app." />
+            <ValueCard num="03" title="Paiement chaque vendredi" desc="Virement Wave / Orange Money / bancaire. Fin de suspens : tu sais exactement combien tu reçois." />
+            <ValueCard num="04" title="Dashboard temps réel" desc="Suis commandes, ventes, top produits, feedbacks clientes — depuis ton téléphone." />
+            <ValueCard num="05" title="Setup en 24h" desc="Signature en ligne, catalogue importé, formation du staff, tu es live le lendemain." />
+            <ValueCard num="06" title="Zéro frais cachés" desc="Pas de setup fee. Pas de matériel à acheter. Tu résilies en 30 jours si tu veux — sans pénalité." />
           </div>
         </div>
       </section>
@@ -146,7 +150,7 @@ export default function PartnerApplication() {
       {/* HOW IT WORKS */}
       <section className="pa-how">
         <div className="pa-how-inner">
-          <div className="pa-section-eyebrow">COMMENT ÇA MARCHE</div>
+          <div className="pa-section-eyebrow">Comment ça marche</div>
           <h2>Trois étapes. Quinze minutes chacune.</h2>
           <div className="pa-how-grid">
             <HowStep num="1" title="On s'appelle" desc="15 min au téléphone. On comprend ton activité, tes horaires, tes produits phares. On répond à tes questions." />
@@ -174,19 +178,19 @@ export default function PartnerApplication() {
       <section id="form" className="pa-form">
         <div className="pa-form-inner">
           <div className="pa-form-side">
-            <div className="pa-section-eyebrow">CANDIDATURE</div>
+            <div className="pa-section-eyebrow">Candidature</div>
             <h2>Prêt à démarrer ?</h2>
             <p>Remplis ce formulaire. Un commercial YARAM t'appelle dans les 48h avec une offre concrète et un contrat pré-rempli.</p>
             <ul className="pa-form-checklist">
-              <li>✓ Réponse sous 48h ouvrées</li>
-              <li>✓ Aucun engagement à ce stade</li>
-              <li>✓ Contrat signable en ligne</li>
-              <li>✓ Support français / wolof</li>
+              <li>Réponse sous 48h ouvrées</li>
+              <li>Aucun engagement à ce stade</li>
+              <li>Contrat signable en ligne</li>
+              <li>Support français / wolof</li>
             </ul>
             <div className="pa-form-contact">
               <div className="pa-form-contact-label">Ou contacte-nous directement</div>
-              <a href="https://wa.me/221774388766" className="pa-form-contact-link">📱 +221 77 438 87 66</a>
-              <a href="mailto:partenaires@yaram.app" className="pa-form-contact-link">✉ partenaires@yaram.app</a>
+              <a href="https://wa.me/221774388766" className="pa-form-contact-link">WhatsApp · +221 77 438 87 66</a>
+              <a href="mailto:partenaires@yaram.app" className="pa-form-contact-link">Email · partenaires@yaram.app</a>
             </div>
           </div>
 
@@ -223,7 +227,7 @@ export default function PartnerApplication() {
             </div>
 
             <button type="submit" className="pa-form-submit" disabled={submitting}>
-              {submitting ? 'Envoi…' : 'Envoyer ma candidature →'}
+              {submitting ? 'Envoi…' : 'Envoyer ma candidature'}
             </button>
             <p className="pa-form-note">En cliquant, vous acceptez que YARAM vous recontacte au numéro fourni.</p>
           </form>
@@ -233,10 +237,10 @@ export default function PartnerApplication() {
   );
 }
 
-function ValueCard({ icon, title, desc }) {
+function ValueCard({ num, title, desc }) {
   return (
     <div className="pa-value-card">
-      <div className="pa-value-icon">{icon}</div>
+      <div className="pa-value-num">{num}</div>
       <div className="pa-value-title">{title}</div>
       <div className="pa-value-desc">{desc}</div>
     </div>

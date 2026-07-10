@@ -227,7 +227,7 @@ export default function PharmacyDetail({ pharmacyId }) {
 
   const phone = pharmacy.phone?.replace(/\s/g, '') || '';
   const whatsapp = pharmacy.whatsapp?.replace(/\s|\+/g, '') || '';
-  const waMessage = `Bonjour ${pharmacy.name} 👋\n\nJe vous écris depuis YARAM.\n\nMerci 💚`;
+  const waMessage = `Bonjour ${pharmacy.name} \n\nJe vous écris depuis YARAM.\n\nMerci `;
   const initial = (pharmacy.name || 'P').trim().charAt(0).toUpperCase();
 
   return (
@@ -286,7 +286,7 @@ export default function PharmacyDetail({ pharmacyId }) {
           <div className="pd-meta">
             {pharmacy.rating > 0 && (
               <span className="pd-rating">
-                <span className="star">★</span>
+                <span className="star"></span>
                 {Number(pharmacy.rating).toFixed(1)}
                 {pharmacy.review_count > 0 && <span style={{ color: '#8B8B8B', fontWeight: 500 }}>({pharmacy.review_count})</span>}
               </span>
@@ -305,10 +305,10 @@ export default function PharmacyDetail({ pharmacyId }) {
               <span className="pd-badge closed"><span className="dot" />Fermé</span>
             )}
             {pharmacy.delivery_hours && (
-              <span className="pd-badge delivery">🛵 Livraison 24h</span>
+              <span className="pd-badge delivery"> Livraison 24h</span>
             )}
             {pharmacy.rating >= 4.5 && (
-              <span className="pd-badge top">⭐ Top vendeur</span>
+              <span className="pd-badge top"> Top vendeur</span>
             )}
           </div>
         </div>
@@ -322,12 +322,12 @@ export default function PharmacyDetail({ pharmacyId }) {
           rel="noopener noreferrer"
           className="pd-quick-card"
         >
-          <span className="pd-quick-ico">📍</span>
+          <span className="pd-quick-ico"></span>
           <span className="pd-quick-label">Distance</span>
           <span className="pd-quick-value">{distanceLabel || (pharmacy.city || '—')}</span>
         </a>
         <div className="pd-quick-card" style={{ cursor: 'default' }}>
-          <span className="pd-quick-ico">🕒</span>
+          <span className="pd-quick-ico"></span>
           <span className="pd-quick-label">Horaires</span>
           <span className="pd-quick-value">{status.next || pharmacy.hours || '—'}</span>
         </div>
@@ -336,7 +336,7 @@ export default function PharmacyDetail({ pharmacyId }) {
           className="pd-quick-card"
           onClick={(e) => { if (!phone) e.preventDefault(); }}
         >
-          <span className="pd-quick-ico">📞</span>
+          <span className="pd-quick-ico"></span>
           <span className="pd-quick-label">Téléphone</span>
           <span className="pd-quick-value">{pharmacy.phone || '—'}</span>
         </a>
@@ -387,9 +387,9 @@ export default function PharmacyDetail({ pharmacyId }) {
       <div className="pd-filters">
         {[
           { k: 'all', l: 'Tous' },
-          { k: 'promo', l: '🏷️ Promos' },
-          { k: 'new', l: '✨ Nouveautés' },
-          { k: 'top', l: '🔥 Top vendus' },
+          { k: 'promo', l: 'Promos' },
+          { k: 'new', l: 'Nouveautés' },
+          { k: 'top', l: 'Top vendus' },
         ].map(f => (
           <button
             key={f.k}
@@ -431,7 +431,7 @@ export default function PharmacyDetail({ pharmacyId }) {
               <div key={r.id} className="pd-review-card">
                 <div className="pd-review-head">
                   <span className="pd-review-name">{r.name || 'Client'}</span>
-                  <span className="pd-review-stars">{'★'.repeat(Math.round(r.rating || 0))}</span>
+                  <span className="pd-review-stars">{''.repeat(Math.round(r.rating || 0))}</span>
                 </div>
                 <div className="pd-review-text">{r.comment}</div>
               </div>

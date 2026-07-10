@@ -238,7 +238,7 @@ export default function ScanHistory() {
                         {s.photo_front_url ? (
                           <SignedImage src={s.photo_front_url} alt="" />
                         ) : (
-                          <div className="sh-thumb-placeholder">📷</div>
+                          <div className="sh-thumb-placeholder"></div>
                         )}
                         <div
                           className="sh-thumb-score"
@@ -263,11 +263,11 @@ export default function ScanHistory() {
                         <span className="sh-item-date">{formatDateFull(s.created_at)}</span>
                         <div className="sh-item-meta">
                           <span className="sh-meta-chip">
-                            {s.skin_type === 'sèche' && '🌵'}
-                            {s.skin_type === 'grasse' && '✨'}
-                            {s.skin_type === 'mixte' && '💧'}
-                            {s.skin_type === 'sensible' && '🌸'}
-                            {s.skin_type === 'normale' && '💚'}
+                            {s.skin_type === 'sèche' && ''}
+                            {s.skin_type === 'grasse' && ''}
+                            {s.skin_type === 'mixte' && ''}
+                            {s.skin_type === 'sensible' && ''}
+                            {s.skin_type === 'normale' && ''}
                             {' '}Peau {s.skin_type || '—'}
                           </span>
                           {s.diagnosis?.concerns?.length > 0 && (

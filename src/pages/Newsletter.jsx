@@ -191,7 +191,7 @@ export default function Newsletter() {
             <span className="nl-burst-ring nl-burst-ring-1" />
             <span className="nl-burst-ring nl-burst-ring-2" />
             <span className="nl-burst-ring nl-burst-ring-3" />
-            <span className="nl-success-emoji">🎉</span>
+            <span className="nl-success-emoji"></span>
           </div>
           <h1 className="nl-success-title">C'est confirmé !</h1>
           <p className="nl-success-sub">
@@ -199,7 +199,7 @@ export default function Newsletter() {
             Premier mail dans ta boîte sous 24h.
           </p>
           <div className="nl-success-tag">
-            <span aria-hidden>📩</span>
+            <span aria-hidden></span>
             <span>{email}</span>
           </div>
           <button
@@ -248,11 +248,11 @@ export default function Newsletter() {
         </div>
         {/* Sparkles flottantes */}
         <div className="nl-sparkles" aria-hidden>
-          <span className="nl-sparkle nl-sparkle-1">✦</span>
-          <span className="nl-sparkle nl-sparkle-2">✧</span>
-          <span className="nl-sparkle nl-sparkle-3">✦</span>
-          <span className="nl-sparkle nl-sparkle-4">✧</span>
-          <span className="nl-sparkle nl-sparkle-5">✦</span>
+          <span className="nl-sparkle nl-sparkle-1"></span>
+          <span className="nl-sparkle nl-sparkle-2"></span>
+          <span className="nl-sparkle nl-sparkle-3"></span>
+          <span className="nl-sparkle nl-sparkle-4"></span>
+          <span className="nl-sparkle nl-sparkle-5"></span>
         </div>
 
         <div className="nl-hero-inner">
@@ -299,17 +299,17 @@ export default function Newsletter() {
         </div>
         <div className="nl-recv-grid">
           <article className="nl-card nl-recv-card" style={{ '--i': 0 }}>
-            <div className="nl-recv-emoji" aria-hidden>🎁</div>
+            <div className="nl-recv-emoji" aria-hidden></div>
             <h3>Promos exclusives</h3>
             <p>Codes <strong>-20%</strong> réservés aux abonnées, en avance.</p>
           </article>
           <article className="nl-card nl-recv-card" style={{ '--i': 1 }}>
-            <div className="nl-recv-emoji" aria-hidden>💄</div>
+            <div className="nl-recv-emoji" aria-hidden></div>
             <h3>Conseils experts</h3>
             <p>Routines peau africaine validées par dermato.</p>
           </article>
           <article className="nl-card nl-recv-card" style={{ '--i': 2 }}>
-            <div className="nl-recv-emoji" aria-hidden>✨</div>
+            <div className="nl-recv-emoji" aria-hidden></div>
             <h3>Nouveautés first</h3>
             <p>Marques fraîches avant tout le monde.</p>
           </article>
@@ -335,7 +335,7 @@ export default function Newsletter() {
             </div>
             <div className="nl-stat-stars" aria-label="Note 4.9 sur 5">
               {[0,1,2,3,4].map((i) => (
-                <span key={i} className="nl-star" style={{ '--i': i }}>★</span>
+                <span key={i} className="nl-star" style={{ '--i': i }}></span>
               ))}
             </div>
             <div className="nl-stat-lbl">par nos abonnées</div>
@@ -358,7 +358,7 @@ export default function Newsletter() {
             <label className="nl-field">
               <span className="nl-field-lbl">Ton email</span>
               <div className="nl-field-wrap">
-                <span className="nl-field-icon" aria-hidden>✉</span>
+                <span className="nl-field-icon" aria-hidden></span>
                 <input
                   type="email"
                   inputMode="email"
@@ -375,10 +375,10 @@ export default function Newsletter() {
             <div className="nl-prefs">
               <div className="nl-prefs-title">Mes préférences</div>
               {[
-                { k: 'promos',           label: 'Promos exclusives',  emoji: '🏷️' },
-                { k: 'conseils_peau',    label: 'Conseils peau',      emoji: '💧' },
-                { k: 'articles',         label: 'Articles tendances', emoji: '📰' },
-                { k: 'nouveaux_produits',label: 'Nouveaux produits',  emoji: '🆕' },
+                { k: 'promos',           label: 'Promos exclusives',  emoji: '' },
+                { k: 'conseils_peau',    label: 'Conseils peau',      emoji: '' },
+                { k: 'articles',         label: 'Articles tendances', emoji: '' },
+                { k: 'nouveaux_produits',label: 'Nouveaux produits',  emoji: '' },
               ].map(({ k, label, emoji }) => (
                 <button
                   key={k}
@@ -431,7 +431,7 @@ export default function Newsletter() {
                   <span>{t.city}</span>
                 </div>
                 <div className="nl-testi-stars" aria-label="5 étoiles">
-                  {'★★★★★'}
+                  {'5/5'}
                 </div>
               </div>
               <p className="nl-testi-quote">« {t.text} »</p>
@@ -484,7 +484,7 @@ export default function Newsletter() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <span aria-hidden>💬</span>
+          <span aria-hidden></span>
           WhatsApp {getWhatsAppDisplay()}
         </a>
         <div className="nl-footer-brand">YARAM · Beauté Sénégal</div>

@@ -23,36 +23,36 @@ import './International.css';
 
 // ─── Catalogue marques internationales premium ──────────────────────────────
 const BRANDS = [
-  { name: 'Sephora',         flag: '🇫🇷', country: 'France',  status: 'live',    accent: '#000000' },
-  { name: 'La Roche-Posay',  flag: '🇫🇷', country: 'France',  status: 'live',    accent: '#0064B0' },
-  { name: 'The Ordinary',    flag: '🇨🇦', country: 'Canada',  status: 'live',    accent: '#1A1A1A' },
-  { name: 'CeraVe',          flag: '🇺🇸', country: 'USA',     status: 'live',    accent: '#005EB8' },
-  { name: 'Bioderma',        flag: '🇫🇷', country: 'France',  status: 'live',    accent: '#E30613' },
-  { name: 'Yves Rocher',     flag: '🇫🇷', country: 'France',  status: 'live',    accent: '#2D6A2A' },
-  { name: 'Vichy',           flag: '🇫🇷', country: 'France',  status: 'live',    accent: '#E1141A' },
-  { name: "L'Oréal Paris",   flag: '🇫🇷', country: 'France',  status: 'live',    accent: '#000000' },
-  { name: 'Garnier',         flag: '🇫🇷', country: 'France',  status: 'live',    accent: '#0A6B3B' },
-  { name: 'Maybelline',      flag: '🇺🇸', country: 'USA',     status: 'live',    accent: '#1A1A1A' },
-  { name: 'MAC Cosmetics',   flag: '🇺🇸', country: 'USA',     status: 'soon',    accent: '#000000' },
-  { name: 'Estée Lauder',    flag: '🇺🇸', country: 'USA',     status: 'soon',    accent: '#0F2A4A' },
+  { name: 'Sephora',         flag: '', country: 'France',  status: 'live',    accent: '#000000' },
+  { name: 'La Roche-Posay',  flag: '', country: 'France',  status: 'live',    accent: '#0064B0' },
+  { name: 'The Ordinary',    flag: '', country: 'Canada',  status: 'live',    accent: '#1A1A1A' },
+  { name: 'CeraVe',          flag: '', country: 'USA',     status: 'live',    accent: '#005EB8' },
+  { name: 'Bioderma',        flag: '', country: 'France',  status: 'live',    accent: '#E30613' },
+  { name: 'Yves Rocher',     flag: '', country: 'France',  status: 'live',    accent: '#2D6A2A' },
+  { name: 'Vichy',           flag: '', country: 'France',  status: 'live',    accent: '#E1141A' },
+  { name: "L'Oréal Paris",   flag: '', country: 'France',  status: 'live',    accent: '#000000' },
+  { name: 'Garnier',         flag: '', country: 'France',  status: 'live',    accent: '#0A6B3B' },
+  { name: 'Maybelline',      flag: '', country: 'USA',     status: 'live',    accent: '#1A1A1A' },
+  { name: 'MAC Cosmetics',   flag: '', country: 'USA',     status: 'soon',    accent: '#000000' },
+  { name: 'Estée Lauder',    flag: '', country: 'USA',     status: 'soon',    accent: '#0F2A4A' },
 ];
 
 const STEPS = [
   {
     n: 1,
-    emoji: '🛍️',
+    emoji: '',
     title: 'Choisis ta marque',
     desc: 'Sephora, La Roche-Posay, The Ordinary... Dis-nous ce que tu veux, on s\'occupe de la sourcer.',
   },
   {
     n: 2,
-    emoji: '💳',
+    emoji: '',
     title: 'Acompte 50%',
     desc: 'Tu paies la moitié via Wave ou Orange Money pour sécuriser ta commande chez le fournisseur.',
   },
   {
     n: 3,
-    emoji: '📦',
+    emoji: '',
     title: 'Livraison 15 jours',
     desc: 'On expédie depuis la France ou les USA. À la réception, tu règles le solde.',
   },
@@ -348,7 +348,7 @@ export default function International() {
       >
         {hasHeroBg && <div className="intlp-hero-bg-overlay" aria-hidden />}
         {!hasHeroBg && <div className="intlp-hero-aurora" aria-hidden />}
-        {!hasHeroBg && <div className="intlp-hero-globe" aria-hidden>🌍</div>}
+        {!hasHeroBg && <div className="intlp-hero-globe" aria-hidden></div>}
 
         <button
           className="intlp-back"
@@ -375,15 +375,15 @@ export default function International() {
 
           <div className="intlp-hero-badges">
             <div className="intlp-hero-badge">
-              <span className="intlp-hero-badge-icon">🌍</span>
+              <span className="intlp-hero-badge-icon"></span>
               <strong>15+ pays</strong>
             </div>
             <div className="intlp-hero-badge">
-              <span className="intlp-hero-badge-icon">✈️</span>
+              <span className="intlp-hero-badge-icon"></span>
               <strong>15 jours max</strong>
             </div>
             <div className="intlp-hero-badge">
-              <span className="intlp-hero-badge-icon">💰</span>
+              <span className="intlp-hero-badge-icon"></span>
               <strong>50% acompte</strong>
             </div>
           </div>
@@ -486,7 +486,7 @@ export default function International() {
             borderRadius: 18, padding: 32, textAlign: 'center',
             color: '#4A6B5A', fontSize: 14, lineHeight: 1.6,
           }}>
-            <div style={{ fontSize: 36, marginBottom: 8 }}>📦</div>
+            <div style={{ fontSize: 36, marginBottom: 8 }}></div>
             <strong style={{ color: '#0E5B33', display: 'block', marginBottom: 6 }}>
               Pas encore de stock immédiat
             </strong>
@@ -505,14 +505,14 @@ export default function International() {
                     {img ? (
                       <img src={img} alt={p.name} className="intlp-product-img" loading="lazy" decoding="async" />
                     ) : (
-                      <div className="intlp-product-img intlp-product-img-fallback">📦</div>
+                      <div className="intlp-product-img intlp-product-img-fallback"></div>
                     )}
                     <div className="intlp-product-body">
                       {p.brand && <div className="intlp-product-brand">{p.brand}</div>}
                       <div className="intlp-product-name">{p.name}</div>
                       <div className="intlp-product-foot">
                         {p.origin_country && (
-                          <span className="intlp-product-origin">📍 {p.origin_country}</span>
+                          <span className="intlp-product-origin"> {p.origin_country}</span>
                         )}
                         <span className="intlp-product-price">
                           {Number(p.price || 0).toLocaleString('fr-FR')} FCFA
@@ -697,7 +697,7 @@ export default function International() {
                     key={s}
                     className="intlp-testi-star"
                     style={{ animationDelay: `${idx * 200 + s * 80}ms` }}
-                  >★</span>
+                  ></span>
                 ))}
               </div>
               <p className="intlp-testi-text">"{t.text}"</p>
@@ -713,7 +713,7 @@ export default function International() {
         ref={setSectionRef(5)}
       >
         <div className="intlp-footercta-inner">
-          <div className="intlp-footercta-emoji" aria-hidden>💬</div>
+          <div className="intlp-footercta-emoji" aria-hidden></div>
           <h3 className="intlp-footercta-title">Une question ?</h3>
           <p className="intlp-footercta-sub">
             On répond en moins de 30 min sur WhatsApp.

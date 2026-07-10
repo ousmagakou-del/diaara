@@ -38,29 +38,29 @@ function pickIcon(n) {
   const type = (n.type || '').toLowerCase();
 
   // Détection fine par titre (notifs cycle commande)
-  if (title.includes('payé') || title.includes('paiement validé') || title.includes('acompte')) return '🟢';
-  if (title.includes('paiement') && (title.includes('refus') || title.includes('échou'))) return '❌';
-  if (title.includes('paiement')) return '💳';
-  if (title.includes('prépar')) return '🧪';
-  if (title.includes('prête') || title.includes('pret')) return '📦';
-  if (title.includes('route') || title.includes('chemin') || title.includes('livreur')) return '🛵';
-  if (title.includes('livré') || title.includes('réception confirm')) return '✅';
-  if (title.includes('annul')) return '❌';
-  if (title.includes('contest') || title.includes('litige')) return '⚠️';
-  if (title.includes('transit') || title.includes('import') || title.includes('international')) return '✈️';
-  if (title.includes('solde')) return '💰';
-  if (title.includes('confirme') || title.includes('confirm')) return '👋';
+  if (title.includes('payé') || title.includes('paiement validé') || title.includes('acompte')) return '';
+  if (title.includes('paiement') && (title.includes('refus') || title.includes('échou'))) return '';
+  if (title.includes('paiement')) return '';
+  if (title.includes('prépar')) return '';
+  if (title.includes('prête') || title.includes('pret')) return '';
+  if (title.includes('route') || title.includes('chemin') || title.includes('livreur')) return '';
+  if (title.includes('livré') || title.includes('réception confirm')) return '';
+  if (title.includes('annul')) return '';
+  if (title.includes('contest') || title.includes('litige')) return '';
+  if (title.includes('transit') || title.includes('import') || title.includes('international')) return '';
+  if (title.includes('solde')) return '';
+  if (title.includes('confirme') || title.includes('confirm')) return '';
 
   switch (type) {
     case 'order_status':
-    case 'order':       return '📦';
-    case 'payment':     return '💳';
-    case 'delivery':    return '🛵';
-    case 'promo':       return '🎉';
-    case 'welcome':     return '👋';
-    case 'review':      return '⭐';
-    case 'reminder':    return '⏰';
-    default:            return '🔔';
+    case 'order':       return '';
+    case 'payment':     return '';
+    case 'delivery':    return '';
+    case 'promo':       return '';
+    case 'welcome':     return '';
+    case 'review':      return '';
+    case 'reminder':    return '';
+    default:            return '';
   }
 }
 
@@ -113,10 +113,10 @@ function categoryOf(n) {
 }
 
 const CATEGORY_TABS = [
-  { id: 'all',    label: 'Toutes',    icon: '🔔' },
-  { id: 'orders', label: 'Commandes', icon: '📦' },
-  { id: 'promos', label: 'Promos',    icon: '🎁' },
-  { id: 'system', label: 'Système',   icon: '⚙️' },
+  { id: 'all',    label: 'Toutes',    icon: '' },
+  { id: 'orders', label: 'Commandes', icon: '' },
+  { id: 'promos', label: 'Promos',    icon: '' },
+  { id: 'system', label: 'Système',   icon: '' },
 ];
 
 export default function Notifications() {
@@ -335,7 +335,7 @@ export default function Notifications() {
 
         {!loading && notifs.length === 0 && (
           <div className="notif-empty">
-            <div className="notif-empty-icon">🔕</div>
+            <div className="notif-empty-icon"></div>
             <h3>Pas encore d'activité</h3>
             <p>Le journal de tes commandes et livraisons apparaîtra ici : paiement validé, préparation, livreur en route, livraison…</p>
             <button className="btn-primary" onClick={() => navigate({ name: 'home', params: {} })}>
@@ -393,7 +393,7 @@ export default function Notifications() {
 
         {!loading && notifs.length > 0 && filteredNotifs.length === 0 && (
           <div className="notif-empty">
-            <div className="notif-empty-icon">🎯</div>
+            <div className="notif-empty-icon"></div>
             <h3>Rien dans cette catégorie</h3>
             <p>Aucune notification ne correspond au filtre choisi pour le moment.</p>
             <button className="btn-primary" onClick={() => setCategory('all')}>

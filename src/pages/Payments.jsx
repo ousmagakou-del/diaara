@@ -43,7 +43,7 @@ const CashLogo = ({ size = 44 }) => (
     color: 'white', fontSize: size * 0.5,
     boxShadow: '0 2px 8px rgba(31,139,76,0.3)',
   }}>
-    💵
+    
   </div>
 );
 
@@ -55,7 +55,7 @@ const CardLogo = ({ size = 44 }) => (
     color: 'white', fontSize: size * 0.5,
     boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
   }}>
-    💳
+    
   </div>
 );
 
@@ -110,7 +110,7 @@ export default function Payments() {
           marginBottom: 16,
         }}>
           <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>
-            ✨ YARAM accepte Wave et le cash
+             YARAM accepte Wave et le cash
           </div>
           <div style={{ fontSize: 12, opacity: 0.9 }}>
             Paiement Wave instantané ou cash à la livraison. Choisis ce qui te convient !
@@ -184,7 +184,7 @@ export default function Payments() {
           color: '#4B4B4B',
         }}>
           <div style={{ fontWeight: 700, color: '#1A1A1A', marginBottom: 6 }}>
-            🔒 Paiements 100% sécurisés
+             Paiements 100% sécurisés
           </div>
           <p style={{ lineHeight: 1.5 }}>
             Aucune donnée bancaire n'est stockée par YARAM. Les paiements sont sécurisés par Wave et le réseau de paiement BCEAO.
@@ -200,7 +200,7 @@ export default function Payments() {
           borderRadius: 12,
           fontSize: 12,
         }}>
-          <strong>💡 Conseil :</strong> Wave est le mode le plus rapide. Tes paiements arrivent en moins de 10 secondes.
+          <strong> Conseil :</strong> Wave est le mode le plus rapide. Tes paiements arrivent en moins de 10 secondes.
         </div>
       </div>
     </div>

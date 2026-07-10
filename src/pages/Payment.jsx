@@ -331,7 +331,7 @@ export default function Payment({ orderId }) {
           order_id: order.id,
           amount: chargeAmount,
           is_preorder: !!order.is_preorder,
-          item_name: `YARAM ${order.is_preorder ? 'Acompte ' : ''}Commande ${order.id}`,
+          item_name: `YARAM ${order.is_preorder ? 'Acompte' : ''}Commande ${order.id}`,
           target_payment: order.payment_method === 'wave' ? 'Wave'
                        : order.payment_method === 'om'   ? 'Orange Money'
                        : null,
@@ -354,14 +354,14 @@ export default function Payment({ orderId }) {
             toast('Vérification du paiement…');
             const { data: refreshed } = await supabase.rpc('client_get_order_by_id', { p_order_id: order.id });
             if (refreshed?.status === 'paid' || refreshed?.status === 'confirmed' || refreshed?.status === 'shipped' || refreshed?.status === 'delivered') {
-              toast.success('✅ Paiement confirmé !');
+              toast.success('Paiement confirmé !');
               navigate({ name: 'order_tracking', params: { orderId: order.id } });
             } else {
               // Pas encore confirmé (webhook PayTech en retard) → poll 5 sec puis re-check
               setTimeout(async () => {
                 const { data: r2 } = await supabase.rpc('client_get_order_by_id', { p_order_id: order.id });
                 if (r2?.status === 'paid' || r2?.status === 'confirmed' || r2?.status === 'shipped' || r2?.status === 'delivered') {
-                  toast.success('✅ Paiement confirmé !');
+                  toast.success('Paiement confirmé !');
                   navigate({ name: 'order_tracking', params: { orderId: order.id } });
                 } else {
                   toast('Paiement en cours de confirmation. Si problème, contacte-nous WhatsApp.');
@@ -409,7 +409,7 @@ export default function Payment({ orderId }) {
     <div className="pay-screen page-anim">
       <BackHeader title="Paiement" onBack={() => navigate('/orders')} />
       <div style={{ padding: 40, textAlign: 'center' }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
+        <div style={{ fontSize: 48, marginBottom: 16 }}></div>
         <h2 style={{ marginBottom: 8 }}>Erreur</h2>
         <p style={{ color: '#666', marginBottom: 20 }}>{error}</p>
         <button className="btn-primary" onClick={() => navigate('/')}>Retour</button>
@@ -429,10 +429,10 @@ export default function Payment({ orderId }) {
   const yaramNumberDisplay = getWhatsAppDisplay();     // "+221 77 760 89 83"
   const yaramNumberRaw     = getWhatsAppNumber();       // "221777608983"
   const amountStr          = Number(order.total || 0).toLocaleString('fr-FR');
+  // ─── Methodes alignees sur l app native : wave / cod / om uniquement ───
   const isWave             = order.payment_method === 'wave';
   const isOM               = order.payment_method === 'om';
   const isCOD              = order.payment_method === 'cod';
-  const isCard             = order.payment_method === 'card';
 
   // ─── Order summary helpers ───
   const items = Array.isArray(order.items) ? order.items : [];
@@ -443,7 +443,7 @@ export default function Payment({ orderId }) {
   const isPreorder = !!order.is_preorder;
   const depositAmount = Number(order.deposit_amount || 0);
 
-  const methodLabel = isWave ? 'Wave' : isOM ? 'Orange Money' : isCOD ? 'Espèces à la livraison' : isCard ? 'Carte bancaire' : 'Paiement';
+  const methodLabel = isWave ? 'Wave' : isOM ? 'Orange Money' : isCOD ? 'Cash à la livraison' : 'Paiement';
 
   return (
     <div className="pay-screen page-anim">
@@ -460,8 +460,18 @@ export default function Payment({ orderId }) {
           {isOM && (
             <img src={OM_LOGO} alt="Orange Money" loading="lazy" decoding="async" style={{ height: 56, width: 'auto', objectFit: 'contain', borderRadius: 12 }} />
           )}
-          {isCOD && <span style={{ fontSize: 48 }}>💵</span>}
-          {isCard && <span style={{ fontSize: 48 }}>💳</span>}
+          {isCOD && (
+            <span aria-hidden="true" style={{
+              width: 56, height: 56, borderRadius: 14,
+              background: '#F1F2F0', color: '#1F2937',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="6" width="20" height="12" rx="2" />
+                <circle cx="12" cy="12" r="2.5" />
+              </svg>
+            </span>
+          )}
         </div>
 
         <h1>Confirme le paiement</h1>
@@ -472,25 +482,25 @@ export default function Payment({ orderId }) {
         {isWave && (
           <div className="pay-card pay-card-wave">
             <div className="pay-row">
-              <span className="pay-label">📱 Numéro YARAM</span>
+              <span className="pay-label"> Numéro YARAM</span>
               <button className="pay-copy-btn" onClick={() => copyToClipboard(yaramNumberRaw, 'number')}>
-                {copied === 'number' ? '✓ Copié' : '📋 Copier'}
+                {copied === 'number' ? '✓ Copié' : 'Copier'}
               </button>
             </div>
             <div className="pay-value">{yaramNumberDisplay}</div>
 
             <div className="pay-row" style={{ marginTop: 14 }}>
-              <span className="pay-label">💰 Montant</span>
+              <span className="pay-label"> Montant</span>
               <button className="pay-copy-btn" onClick={() => copyToClipboard(String(order.total), 'amount')}>
-                {copied === 'amount' ? '✓ Copié' : '📋 Copier'}
+                {copied === 'amount' ? '✓ Copié' : 'Copier'}
               </button>
             </div>
             <div className="pay-value">{amountStr} FCFA</div>
 
             <div className="pay-row" style={{ marginTop: 14 }}>
-              <span className="pay-label">🔖 Référence</span>
+              <span className="pay-label"> Référence</span>
               <button className="pay-copy-btn" onClick={() => copyToClipboard(order.id, 'ref')}>
-                {copied === 'ref' ? '✓ Copié' : '📋 Copier'}
+                {copied === 'ref' ? '✓ Copié' : 'Copier'}
               </button>
             </div>
             <div className="pay-value">{order.id}</div>
@@ -531,7 +541,7 @@ export default function Payment({ orderId }) {
             <div className="pay-row" style={{ marginTop: 6 }}>
               <div className="pay-value">{yaramNumberDisplay}</div>
               <button className="pay-copy-btn" onClick={() => copyToClipboard(yaramNumberRaw, 'number')}>
-                {copied === 'number' ? '✓' : '📋'}
+                {copied === 'number' ? '✓' : ''}
               </button>
             </div>
 
@@ -549,32 +559,13 @@ export default function Payment({ orderId }) {
               Tu paieras <strong>{amountStr} FCFA</strong> en cash au livreur YARAM à l'arrivée.
             </p>
             <p style={{ fontSize: 12, color: '#888', marginTop: 12 }}>
-              Pas besoin de pré-payer. Prépare juste l'appoint pour gagner du temps 🙏
+              Pas besoin de pré-payer. Prépare juste l'appoint pour gagner du temps 
             </p>
           </div>
         )}
 
-        {/* ─── CARTE BANCAIRE ─── */}
-        {isCard && (
-          <div className="pay-card pay-card-card">
-            <p style={{ fontSize: 14, color: '#444' }}>
-              Paiement carte sécurisé via PayTech.
-            </p>
-          </div>
-        )}
-
-        {/* ─── PayTech : désactivé pour l'instant (juin 2026), code conservé pour réactivation future ───
-        {(isWave || isOM || isCard) && (
-          <button
-            className="pay-paytech-btn"
-            onClick={handlePayTech}
-            disabled={creatingPayTech}
-            style={{ marginTop: 14 }}
-          >
-            {creatingPayTech ? '⏳ Préparation…' : '🔒 Payer automatiquement (PayTech)'}
-          </button>
-        )}
-        */}
+        {/* ─── Alignement app native : Wave, Cash a la livraison, Orange Money (bientot).
+             Carte bancaire et PayTech retires cote client (blocs supprimes). ─── */}
 
         {/* ─── ACTION PRINCIPALE : confirmation manuelle (desktop) ─── */}
         <button
@@ -590,14 +581,14 @@ export default function Payment({ orderId }) {
         <a
           href={`https://wa.me/${yaramNumberRaw}?text=${encodeURIComponent(
             `Bonjour, j'ai un souci avec le paiement de ma commande ${order.id} (${amountStr} FCFA via ${
-              isWave ? 'Wave' : isOM ? 'Orange Money' : isCOD ? 'Cash' : 'Carte'
+              isWave ? 'Wave' : isOM ? 'Orange Money' : isCOD ? 'Cash à la livraison' : 'Paiement'
             })`
           )}`}
           target="_blank"
           rel="noopener noreferrer"
           className="pay-help-link"
         >
-          💬 Besoin d'aide ? Contacte-nous WhatsApp
+           Besoin d'aide ? Contacte-nous WhatsApp
         </a>
           </div>
 
@@ -616,7 +607,7 @@ export default function Payment({ orderId }) {
                       {it.img ? (
                         <img src={it.img} alt="" loading="lazy" decoding="async" />
                       ) : (
-                        <span className="pay-summary-thumb">📦</span>
+                        <span className="pay-summary-thumb"></span>
                       )}
                       <div className="pay-summary-item-info">
                         <strong>{it.name}</strong>
@@ -655,11 +646,11 @@ export default function Payment({ orderId }) {
               </div>
               {isPreorder && (
                 <div className="pay-summary-preorder">
-                  ✈️ Import — 50% acompte maintenant, solde à l'arrivée à Dakar.
+                   Import — 50% acompte maintenant, solde à l'arrivée à Dakar.
                 </div>
               )}
               <div className="pay-summary-trust">
-                <span>🔒</span>
+                <span></span>
                 <p>Paiement sécurisé. Vérifié manuellement par YARAM avant expédition.</p>
               </div>
             </div>

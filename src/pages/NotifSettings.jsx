@@ -85,7 +85,7 @@ export default function NotifSettings() {
       setPermission('granted');
       // Notification de bienvenue
       setTimeout(() => {
-        showLocalNotification('🎉 Notifications activées !', 'Tu seras notifiée à chaque étape de ta commande.');
+        showLocalNotification('Notifications activées !', 'Tu seras notifiée à chaque étape de ta commande.');
       }, 1000);
     } else {
       toast.error(result.error);
@@ -109,7 +109,7 @@ export default function NotifSettings() {
   };
 
   const handleTestNotif = () => {
-    showLocalNotification('💚 Test YARAM', 'Si tu vois ce message, tout marche parfaitement !');
+    showLocalNotification('Test YARAM', 'Si tu vois ce message, tout marche parfaitement !');
   };
 
   if (!supported) {
@@ -120,7 +120,7 @@ export default function NotifSettings() {
           <h1>Notifications</h1>
         </header>
         <div className="ns-empty">
-          <div style={{ fontSize: 48 }}>📵</div>
+          <div style={{ fontSize: 48 }}></div>
           <h2>Pas supporté</h2>
           <p>Ton navigateur ne supporte pas les notifications push.</p>
           <p>Sur iPhone : Mets à jour iOS vers 16.4 minimum, et installe YARAM en PWA d'abord.</p>
@@ -141,7 +141,7 @@ export default function NotifSettings() {
         <div className={`ns-status ${permission}`}>
           {permission === 'granted' ? (
             <>
-              <div className="ns-status-icon">🔔</div>
+              <div className="ns-status-icon"></div>
               <div>
                 <strong>Notifications activées</strong>
                 <p>Tu reçois les notifications de YARAM</p>
@@ -152,7 +152,7 @@ export default function NotifSettings() {
             </>
           ) : permission === 'denied' ? (
             <>
-              <div className="ns-status-icon">🔕</div>
+              <div className="ns-status-icon"></div>
               <div>
                 <strong>Notifications bloquées</strong>
                 <p>Va dans les réglages du navigateur pour les autoriser</p>
@@ -160,7 +160,7 @@ export default function NotifSettings() {
             </>
           ) : (
             <>
-              <div className="ns-status-icon">🔔</div>
+              <div className="ns-status-icon"></div>
               <div>
                 <strong>Active les notifications</strong>
                 <p>Pour suivre tes commandes et recevoir des rappels</p>
@@ -175,10 +175,10 @@ export default function NotifSettings() {
         {/* Emails marketing (visible que le user ait push activé ou non) */}
         {user?.id && (
           <div className="ns-card">
-            <h3>✉️ Emails marketing</h3>
+            <h3> Emails marketing</h3>
             <p className="ns-meta">Promos, conseils, nouveautés. Les emails de commande restent toujours envoyés.</p>
             <Toggle
-              label="📨 Recevoir les emails marketing"
+              label=" Recevoir les emails marketing"
               desc="Bienvenue, top du moment, bons plans"
               checked={marketingEmailsEnabled}
               onChange={handleToggleMarketing}
@@ -193,13 +193,13 @@ export default function NotifSettings() {
             <div className="ns-card">
               <h3>Types de notifications</h3>
               <Toggle
-                label="📦 Suivi de commandes"
+                label=" Suivi de commandes"
                 desc="Préparation, livraison, livrée"
                 checked={enableOrders}
                 onChange={setEnableOrders}
               />
               <Toggle
-                label="🎁 Promos et offres"
+                label=" Promos et offres"
                 desc="Codes promo, soldes, nouveaux produits"
                 checked={enablePromos}
                 onChange={setEnablePromos}
@@ -208,7 +208,7 @@ export default function NotifSettings() {
 
             {/* Rappels routine */}
             <div className="ns-card">
-              <h3>☀️ Rappels routine peau</h3>
+              <h3> Rappels routine peau</h3>
               <p className="ns-meta">L'app te rappelle ta routine matin et soir</p>
               
               <div className="ns-time-row">
@@ -218,7 +218,7 @@ export default function NotifSettings() {
                     checked={enableMorning}
                     onChange={e => setEnableMorning(e.target.checked)}
                   />
-                  <span>☀️ Rappel matin</span>
+                  <span> Rappel matin</span>
                 </label>
                 {enableMorning && (
                   <input
@@ -237,7 +237,7 @@ export default function NotifSettings() {
                     checked={enableEvening}
                     onChange={e => setEnableEvening(e.target.checked)}
                   />
-                  <span>🌙 Rappel soir</span>
+                  <span> Rappel soir</span>
                 </label>
                 {enableEvening && (
                   <input
@@ -250,13 +250,13 @@ export default function NotifSettings() {
               </div>
               
               <button className="ns-btn-save" onClick={handleSaveReminders}>
-                💾 Sauvegarder les rappels
+                 Sauvegarder les rappels
               </button>
             </div>
 
             {/* Test */}
             <div className="ns-card">
-              <h3>🧪 Tester</h3>
+              <h3> Tester</h3>
               <p className="ns-meta">Envoie-toi une notification test</p>
               <button className="ns-btn-test" onClick={handleTestNotif}>
                 Envoyer une notification test

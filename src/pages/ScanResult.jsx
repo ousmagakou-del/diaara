@@ -17,26 +17,26 @@ const SEVERITY_LABELS = {
 };
 
 const CONCERN_EMOJIS = {
-  default: '🔍',
-  sécheresse: '🌵',
-  taches: '🟤',
-  rides: '〰️',
-  acné: '🔴',
-  pores: '⚫',
-  rougeurs: '🟥',
-  brillance: '✨',
-  cernes: '🌙',
-  sensibilité: '🌸',
-  hyperpigmentation: '🟫',
-  imperfections: '⚪',
+  default: '',
+  sécheresse: '',
+  taches: '',
+  rides: '〰',
+  acné: '',
+  pores: '',
+  rougeurs: '',
+  brillance: '',
+  cernes: '',
+  sensibilité: '',
+  hyperpigmentation: '',
+  imperfections: '',
 };
 
 const SKIN_TYPE_LABELS = {
-  'sèche': { emoji: '🌵', label: 'Peau sèche', tone: 'Recherche d\'hydratation profonde' },
-  'grasse': { emoji: '✨', label: 'Peau grasse', tone: 'Régulation du sébum' },
-  'mixte': { emoji: '💧', label: 'Peau mixte', tone: 'Équilibre zones T et joues' },
-  'sensible': { emoji: '🌸', label: 'Peau sensible', tone: 'Apaisement et protection' },
-  'normale': { emoji: '💚', label: 'Peau normale', tone: 'Entretien et prévention' },
+  'sèche': { emoji: '', label: 'Peau sèche', tone: 'Recherche d\'hydratation profonde' },
+  'grasse': { emoji: '', label: 'Peau grasse', tone: 'Régulation du sébum' },
+  'mixte': { emoji: '', label: 'Peau mixte', tone: 'Équilibre zones T et joues' },
+  'sensible': { emoji: '', label: 'Peau sensible', tone: 'Apaisement et protection' },
+  'normale': { emoji: '', label: 'Peau normale', tone: 'Entretien et prévention' },
 };
 
 function findConcernEmoji(name = '') {
@@ -147,7 +147,7 @@ export default function ScanResult({ scanId }) {
   if (!scan) {
     return (
       <div className="sr-screen sr-empty-screen">
-        <div className="sr-empty-icon">🔍</div>
+        <div className="sr-empty-icon"></div>
         <h2>Scan introuvable</h2>
         <p>Ce diagnostic a peut-être été supprimé.</p>
         <button className="sr-btn-primary" onClick={() => navigate('scan')}>Faire un nouveau scan</button>
@@ -159,7 +159,7 @@ export default function ScanResult({ scanId }) {
   const target = scan.skin_score || 0;
   const scoreColor = target >= 80 ? '#1F8B4C' : target >= 60 ? '#F4B53A' : '#D9342B';
   const scoreLabel = target >= 80 ? 'Excellent' : target >= 60 ? 'Bon' : target >= 40 ? 'À améliorer' : 'À surveiller';
-  const typeInfo = SKIN_TYPE_LABELS[scan.skin_type] || { emoji: '✨', label: `Peau ${scan.skin_type || ''}`, tone: '' };
+  const typeInfo = SKIN_TYPE_LABELS[scan.skin_type] || { emoji: '', label: `Peau ${scan.skin_type || ''}`, tone: '' };
   const radius = 56;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference * (1 - animScore / 100);
@@ -262,7 +262,7 @@ export default function ScanResult({ scanId }) {
                     <span className="sr-concern-badge">{SEVERITY_LABELS[c.severity] || c.severity}</span>
                   </div>
                   <strong className="sr-concern-title">{c.name}</strong>
-                  {c.zone && <span className="sr-concern-zone">📍 {c.zone}</span>}
+                  {c.zone && <span className="sr-concern-zone"> {c.zone}</span>}
                   {c.advice && <p className="sr-concern-advice">{c.advice}</p>}
                 </article>
               ))}
@@ -365,7 +365,7 @@ export default function ScanResult({ scanId }) {
             {d.ingredients_recommandes?.length > 0 && (
               <div className="sr-ing-block sr-ing-good">
                 <div className="sr-ing-label">
-                  <span className="sr-ing-ico">✅</span>
+                  <span className="sr-ing-ico"></span>
                   À privilégier
                 </div>
                 <div className="sr-tags">
@@ -379,7 +379,7 @@ export default function ScanResult({ scanId }) {
             {d.ingredients_a_eviter?.length > 0 && (
               <div className="sr-ing-block sr-ing-bad">
                 <div className="sr-ing-label">
-                  <span className="sr-ing-ico">⚠️</span>
+                  <span className="sr-ing-ico"></span>
                   À éviter
                 </div>
                 <div className="sr-tags">
@@ -418,7 +418,7 @@ export default function ScanResult({ scanId }) {
 
         {/* ===== COMPRENDRE TES RÉSULTATS ===== */}
         <section className="sr-edu">
-          <div className="sr-edu-icon">💡</div>
+          <div className="sr-edu-icon"></div>
           <h3>Comprendre tes résultats</h3>
           <p>
             Ton <strong>score peau</strong> reflète l'état global évalué par l'IA selon
@@ -431,7 +431,7 @@ export default function ScanResult({ scanId }) {
         {/* ===== ADVICE FROM AI ===== */}
         {d.advice && (
           <section className="sr-advice">
-            <div className="sr-advice-icon">💚</div>
+            <div className="sr-advice-icon"></div>
             <h3>Le mot YARAM</h3>
             <p>{d.advice}</p>
           </section>

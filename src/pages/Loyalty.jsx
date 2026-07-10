@@ -11,7 +11,7 @@ const TIERS = [
   {
     id: 'bronze',
     name: 'Bronze',
-    icon: '🥉',
+    icon: '',
     min: 0,
     next: 500,
     bg: 'linear-gradient(135deg, #C8956A 0%, #8C5A2C 100%)',
@@ -20,7 +20,7 @@ const TIERS = [
   {
     id: 'silver',
     name: 'Argent',
-    icon: '🥈',
+    icon: '',
     min: 500,
     next: 2000,
     bg: 'linear-gradient(135deg, #BBC5CB 0%, #6B7780 100%)',
@@ -29,7 +29,7 @@ const TIERS = [
   {
     id: 'gold',
     name: 'Or',
-    icon: '🏆',
+    icon: '',
     min: 2000,
     next: 5000,
     bg: 'linear-gradient(135deg, #F6D365 0%, #BF9B25 100%)',
@@ -38,7 +38,7 @@ const TIERS = [
   {
     id: 'platinum',
     name: 'Platine',
-    icon: '💎',
+    icon: '',
     min: 5000,
     next: null,
     bg: 'linear-gradient(135deg, #B4E0E8 0%, #4A90A8 100%)',
@@ -146,13 +146,13 @@ export default function Loyalty() {
   /* Icon mapping pour transactions */
   const txMeta = (type) => {
     switch (type) {
-      case 'earn_order':    return { icon: '📦', defaultLabel: 'Commande livrée' };
-      case 'earn_admin':    return { icon: '🎁', defaultLabel: 'Bonus offert' };
-      case 'earn_review':   return { icon: '⭐', defaultLabel: 'Avis publié' };
-      case 'earn_referral': return { icon: '👯', defaultLabel: 'Parrainage validé' };
-      case 'redeem':        return { icon: '💸', defaultLabel: 'Points utilisés' };
-      case 'adjust_admin':  return { icon: '⚙️', defaultLabel: 'Ajustement' };
-      default:              return { icon: '✨', defaultLabel: type };
+      case 'earn_order':    return { icon: '', defaultLabel: 'Commande livrée' };
+      case 'earn_admin':    return { icon: '', defaultLabel: 'Bonus offert' };
+      case 'earn_review':   return { icon: '', defaultLabel: 'Avis publié' };
+      case 'earn_referral': return { icon: '', defaultLabel: 'Parrainage validé' };
+      case 'redeem':        return { icon: '', defaultLabel: 'Points utilisés' };
+      case 'adjust_admin':  return { icon: '', defaultLabel: 'Ajustement' };
+      default:              return { icon: '', defaultLabel: type };
     }
   };
 
@@ -199,7 +199,7 @@ export default function Loyalty() {
             {!nextTier && (
               <div className="yloy-hero-progress">
                 <div className="yloy-hero-progress-label">
-                  <span>🏆 Tu es au palier maximum, bravo !</span>
+                  <span> Tu es au palier maximum, bravo !</span>
                 </div>
                 <div className="yloy-hero-progress-bar">
                   <div className="yloy-hero-progress-fill" style={{ width: '100%' }} />
@@ -217,19 +217,19 @@ export default function Loyalty() {
         <div className="yloy-how-scroll">
           <div className="yloy-how-card">
             <div className="yloy-how-num">1</div>
-            <div className="yloy-how-icon">🛒</div>
+            <div className="yloy-how-icon"></div>
             <h3 className="yloy-how-title">Tu commandes</h3>
             <p className="yloy-how-desc">1 FCFA dépensé = 1 point fidélité crédité dès la livraison.</p>
           </div>
           <div className="yloy-how-card">
             <div className="yloy-how-num">2</div>
-            <div className="yloy-how-icon">💰</div>
+            <div className="yloy-how-icon"></div>
             <h3 className="yloy-how-title">Tu accumules</h3>
             <p className="yloy-how-desc">1 000 points = 1 000 FCFA de crédit utilisable directement.</p>
           </div>
           <div className="yloy-how-card">
             <div className="yloy-how-num">3</div>
-            <div className="yloy-how-icon">🎁</div>
+            <div className="yloy-how-icon"></div>
             <h3 className="yloy-how-title">Tu profites</h3>
             <p className="yloy-how-desc">Utilise ton crédit au checkout ou attends de débloquer le palier suivant.</p>
           </div>
@@ -286,7 +286,7 @@ export default function Loyalty() {
             </div>
           ) : transactions.length === 0 ? (
             <div className="yloy-empty">
-              <div style={{ fontSize: 36, opacity: 0.4 }}>📭</div>
+              <div style={{ fontSize: 36, opacity: 0.4 }}></div>
               <p>Aucune transaction pour l'instant</p>
               <p style={{ fontSize: 11, color: '#9B9B9B' }}>Passe ta 1ère commande pour gagner tes premiers points.</p>
             </div>

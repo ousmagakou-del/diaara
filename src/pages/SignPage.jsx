@@ -142,7 +142,7 @@ export default function SignPage() {
 
   if (state === 'invalid' || state === 'not_found') {
     return <div className="sign-full sign-error">
-      <div className="sign-error-icon">⚠️</div>
+      <div className="sign-error-icon"></div>
       <h1>Lien invalide</h1>
       <p>Ce lien de signature n'existe pas ou a été retiré. Contactez l'expéditeur.</p>
     </div>;
@@ -150,7 +150,7 @@ export default function SignPage() {
 
   if (state === 'expired') {
     return <div className="sign-full sign-error">
-      <div className="sign-error-icon">⏰</div>
+      <div className="sign-error-icon"></div>
       <h1>Lien expiré</h1>
       <p>Ce lien a expiré. Demandez à l'expéditeur d'en envoyer un nouveau.</p>
     </div>;
@@ -158,7 +158,7 @@ export default function SignPage() {
 
   if (state === 'error') {
     return <div className="sign-full sign-error">
-      <div className="sign-error-icon">✕</div>
+      <div className="sign-error-icon"></div>
       <h1>Une erreur est survenue</h1>
       <p>{error}</p>
     </div>;
@@ -181,7 +181,7 @@ export default function SignPage() {
     return <div className="sign-page">
       <div className="sign-container">
         <div className="sign-success">
-          <div className="sign-success-icon">🎉</div>
+          <div className="sign-success-icon"></div>
           <h1>Contrat signé avec succès</h1>
           <p>Merci ! Une copie sera envoyée à ton email dans quelques instants.</p>
           <p className="sign-success-sub">Tu peux fermer cette fenêtre.</p>
@@ -205,7 +205,7 @@ export default function SignPage() {
               <div className="sign-brand-sub">Édité par KOMUNITY SENEGAL</div>
             </div>
           </div>
-          <div className="sign-badge">📝 Signature en attente</div>
+          <div className="sign-badge"> Signature en attente</div>
         </header>
 
         <div className="sign-intro">

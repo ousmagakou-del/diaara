@@ -16,57 +16,57 @@ const REPORTABLE_FALLBACK_WA = 'contactez-nous';
 /* ───────────── Flows (étapes timeline) ───────────── */
 // Local : commande Dakar (J+1)
 const STEPS_LOCAL = [
-  { id: 'paid',      icon: '✅', label: 'Commande confirmée',  sub: 'Paiement reçu' },
-  { id: 'preparing', icon: '📦', label: 'En préparation',       sub: 'La pharmacie prépare ton colis' },
-  { id: 'shipped',   icon: '🛵', label: 'En route',             sub: 'Ton livreur arrive' },
-  { id: 'delivered', icon: '🎉', label: 'Livrée',               sub: 'Merci pour ta confiance' },
+  { id: 'paid',      icon: '', label: 'Commande confirmée',  sub: 'Paiement reçu' },
+  { id: 'preparing', icon: '', label: 'En préparation',       sub: 'La pharmacie prépare ton colis' },
+  { id: 'shipped',   icon: '', label: 'En route',             sub: 'Ton livreur arrive' },
+  { id: 'delivered', icon: '', label: 'Livrée',               sub: 'Merci pour ta confiance' },
 ];
 
 // Preorder : import (15j)
 const STEPS_PREORDER = [
-  { id: 'paid',              icon: '💳', label: 'Acompte reçu',          sub: '50% versé' },
-  { id: 'awaiting_supplier', icon: '🛍️', label: 'Commande fournisseur',  sub: 'YARAM commande à l\'étranger' },
-  { id: 'in_transit_intl',   icon: '✈️', label: 'En route vers Dakar',   sub: 'Transport international' },
-  { id: 'arrived_local',     icon: '🇸🇳', label: 'Arrivé à Dakar',        sub: 'Réception locale' },
-  { id: 'awaiting_balance',  icon: '💰', label: 'Solde à régler',        sub: '50% restant' },
-  { id: 'shipped',           icon: '🛵', label: 'En livraison',          sub: 'Ton livreur arrive' },
-  { id: 'delivered',         icon: '🎉', label: 'Livrée',                sub: 'Merci pour ta confiance' },
+  { id: 'paid',              icon: '', label: 'Acompte reçu',          sub: '50% versé' },
+  { id: 'awaiting_supplier', icon: '', label: 'Commande fournisseur',  sub: 'YARAM commande à l\'étranger' },
+  { id: 'in_transit_intl',   icon: '', label: 'En route vers Dakar',   sub: 'Transport international' },
+  { id: 'arrived_local',     icon: '', label: 'Arrivé à Dakar',        sub: 'Réception locale' },
+  { id: 'awaiting_balance',  icon: '', label: 'Solde à régler',        sub: '50% restant' },
+  { id: 'shipped',           icon: '', label: 'En livraison',          sub: 'Ton livreur arrive' },
+  { id: 'delivered',         icon: '', label: 'Livrée',                sub: 'Merci pour ta confiance' },
 ];
 
 /* ───────────── Hero (gros bloc en haut) ───────────── */
 function statusHero(status, isPreorder) {
   // returns { tone, icon, title, subtitle }
   if (status === 'delivered') {
-    return { tone: 'success', icon: '🎉', title: 'Livré !',                subtitle: 'Ton colis est bien arrivé' };
+    return { tone: 'success', icon: '', title: 'Livré !',                subtitle: 'Ton colis est bien arrivé' };
   }
   if (status === 'shipped' || status === 'in_delivery') {
-    return { tone: 'route',   icon: '🛵', title: 'En route',                subtitle: 'Ton livreur arrive bientôt' };
+    return { tone: 'route',   icon: '', title: 'En route',                subtitle: 'Ton livreur arrive bientôt' };
   }
   if (status === 'preparing') {
-    return { tone: 'prep',    icon: '📦', title: 'En préparation',          subtitle: 'La pharmacie prépare ta commande' };
+    return { tone: 'prep',    icon: '', title: 'En préparation',          subtitle: 'La pharmacie prépare ta commande' };
   }
   if (status === 'awaiting_balance') {
-    return { tone: 'warn',    icon: '💰', title: 'Solde à régler',          subtitle: 'Ton import est arrivé — règle le solde' };
+    return { tone: 'warn',    icon: '', title: 'Solde à régler',          subtitle: 'Ton import est arrivé — règle le solde' };
   }
   if (status === 'arrived_local') {
-    return { tone: 'route',   icon: '🇸🇳', title: 'Arrivé à Dakar',         subtitle: 'Bientôt prêt pour la livraison' };
+    return { tone: 'route',   icon: '', title: 'Arrivé à Dakar',         subtitle: 'Bientôt prêt pour la livraison' };
   }
   if (status === 'in_transit_intl') {
-    return { tone: 'transit', icon: '✈️', title: 'En route vers Dakar',     subtitle: 'Transport international en cours' };
+    return { tone: 'transit', icon: '', title: 'En route vers Dakar',     subtitle: 'Transport international en cours' };
   }
   if (status === 'awaiting_supplier') {
-    return { tone: 'prep',    icon: '🛍️', title: 'Commande fournisseur',    subtitle: 'YARAM commande chez le fournisseur' };
+    return { tone: 'prep',    icon: '', title: 'Commande fournisseur',    subtitle: 'YARAM commande chez le fournisseur' };
   }
   if (status === 'pending_payment' || status === 'pending') {
-    return { tone: 'warn',    icon: '⏳', title: 'En attente de paiement',  subtitle: 'On attend la confirmation' };
+    return { tone: 'warn',    icon: '', title: 'En attente de paiement',  subtitle: 'On attend la confirmation' };
   }
   if (status === 'paid' || status === 'confirmed') {
-    return { tone: 'prep',    icon: isPreorder ? '💳' : '✅', title: isPreorder ? 'Acompte reçu' : 'Commande confirmée', subtitle: isPreorder ? 'YARAM va lancer la commande' : 'Préparation imminente' };
+    return { tone: 'prep',    icon: '', title: isPreorder ? 'Acompte reçu' : 'Commande confirmée', subtitle: isPreorder ? 'YARAM va lancer la commande' : 'Préparation imminente' };
   }
   if (status === 'cancelled') {
-    return { tone: 'cancel',  icon: '❌', title: 'Annulée',                 subtitle: 'Cette commande a été annulée' };
+    return { tone: 'cancel',  icon: '', title: 'Annulée',                 subtitle: 'Cette commande a été annulée' };
   }
-  return { tone: 'prep', icon: '📦', title: 'En cours', subtitle: 'Mise à jour bientôt' };
+  return { tone: 'prep', icon: '', title: 'En cours', subtitle: 'Mise à jour bientôt' };
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -212,7 +212,7 @@ export default function OrderTracking({ orderId }) {
         attribution: '© OpenStreetMap',
       }).addTo(mapRef.current);
       const livreurIcon = L.divIcon({
-        html: '<div class="track-rider-pin">🛵</div>',
+        html: '<div class="track-rider-pin"></div>',
         className: '', iconSize: [44, 44], iconAnchor: [22, 22],
       });
       markerRef.current = L.marker([tracking.current_lat, tracking.current_lng], { icon: livreurIcon }).addTo(mapRef.current);
@@ -461,7 +461,7 @@ export default function OrderTracking({ orderId }) {
         {isPreorderOrder && (
           <section className="track-card track-import track-col-main">
             <div className="track-import-head">
-              <span className="track-import-plane">✈️</span>
+              <span className="track-import-plane"></span>
               <div>
                 <strong>Import en cours</strong>
                 <p>Délai estimé : 15 jours</p>
@@ -480,26 +480,26 @@ export default function OrderTracking({ orderId }) {
             </div>
             <div className="track-import-rows">
               <div className="track-import-row">
-                <span>💳 Acompte (50%)</span>
+                <span> Acompte (50%)</span>
                 <strong className={order.deposit_paid_at ? 'ok' : 'pending'}>
                   {formatPrice(order.deposit_amount || 0)} FCFA{order.deposit_paid_at && ' ✓'}
                 </strong>
               </div>
               <div className="track-import-row">
-                <span>📦 Solde (50%)</span>
+                <span> Solde (50%)</span>
                 <strong className={order.balance_paid_at ? 'ok' : 'wait'}>
                   {formatPrice(order.balance_amount || 0)} FCFA{order.balance_paid_at && ' ✓'}
                 </strong>
               </div>
               {order.expected_arrival_date && (
                 <div className="track-import-row">
-                  <span>📅 Arrivée prévue</span>
+                  <span> Arrivée prévue</span>
                   <strong>{formatArrivalDate(order.expected_arrival_date)}</strong>
                 </div>
               )}
               {order.arrived_dakar_at && (
                 <div className="track-import-row">
-                  <span>🇸🇳 Arrivé le</span>
+                  <span> Arrivé le</span>
                   <strong className="ok">{safeFormatDate(order.arrived_dakar_at)}</strong>
                 </div>
               )}
@@ -509,19 +509,19 @@ export default function OrderTracking({ orderId }) {
 
         {/* ═══ Section Adresse (LEFT column desktop) ═══ */}
         <section className="track-card track-col-main">
-          <h3 className="track-card-title">📍 Adresse de livraison</h3>
+          <h3 className="track-card-title"> Adresse de livraison</h3>
           <div className="track-addr">
             <strong>{order.address?.name}</strong>
             <p>{order.address?.line}</p>
             <p className="muted">{order.address?.neighborhood}{order.address?.neighborhood && order.address?.city ? ', ' : ''}{order.address?.city}</p>
-            {order.address?.phone && <p className="muted">📞 {order.address.phone}</p>}
+            {order.address?.phone && <p className="muted"> {order.address.phone}</p>}
           </div>
         </section>
 
         {/* ═══ Section Livreur + Map (RIGHT column desktop, top on mobile) ═══ */}
         {(tracking?.delivery_person_name || hasGPS) && (
           <section className="track-card track-col-aside track-driver-card">
-            <h3 className="track-card-title">🛵 Ton livreur</h3>
+            <h3 className="track-card-title"> Ton livreur</h3>
 
             {hasGPS && (
               <div className="track-mapwrap">
@@ -591,7 +591,7 @@ export default function OrderTracking({ orderId }) {
             {/* Fallback ETA when no driver yet but map missing too */}
             {!tracking?.delivery_person_name && !hasGPS && eta && (
               <div className="track-driver-eta-only">
-                <div className="track-driver-eta-icon">⏱️</div>
+                <div className="track-driver-eta-icon"></div>
                 <div>
                   <small>Livraison</small>
                   <strong>{eta}</strong>
@@ -604,17 +604,17 @@ export default function OrderTracking({ orderId }) {
         {/* ═══ Preuve de livraison (delivered) ═══ */}
         {order.status === 'delivered' && tracking && (tracking.delivery_photo_url || tracking.delivery_signature || tracking.delivery_pin) && (
           <section className="track-card track-col-main">
-            <h3 className="track-card-title">✅ Preuve de livraison</h3>
+            <h3 className="track-card-title"> Preuve de livraison</h3>
             {tracking.delivery_photo_url && (
               <div className="track-proof-img">
                 <SignedImage src={tracking.delivery_photo_url} alt="Preuve livraison" style={{ width: '100%', borderRadius: 12, maxHeight: 280, objectFit: 'cover' }} />
-                <small>📷 Photo du colis remis</small>
+                <small> Photo du colis remis</small>
               </div>
             )}
             {tracking.delivery_signature && (
               <div className="track-proof-sig">
                 <img src={tracking.delivery_signature} alt="Signature" loading="lazy" decoding="async" />
-                <small>✍️ Signature reçue</small>
+                <small> Signature reçue</small>
               </div>
             )}
             {tracking.delivery_pin && (
@@ -629,9 +629,9 @@ export default function OrderTracking({ orderId }) {
         {/* ═══ Notation existante ═══ */}
         {order.delivery_rating && (
           <section className="track-card track-rating-recap track-col-main">
-            <h3 className="track-card-title">⭐ Ton avis</h3>
+            <h3 className="track-card-title"> Ton avis</h3>
             <div className="track-rating-stars">
-              {'★'.repeat(order.delivery_rating)}<span className="muted">{'★'.repeat(5 - order.delivery_rating)}</span>
+              {''.repeat(order.delivery_rating)}<span className="muted">{''.repeat(5 - order.delivery_rating)}</span>
             </div>
             {order.delivery_comment && <p className="track-rating-com">"{order.delivery_comment}"</p>}
           </section>
@@ -645,7 +645,7 @@ export default function OrderTracking({ orderId }) {
             onClick={() => setItemsExpanded(v => !v)}
             aria-expanded={itemsExpanded}
           >
-            <span className="track-card-title">📦 Récap commande</span>
+            <span className="track-card-title"> Récap commande</span>
             <span className="track-card-meta">
               {order.items?.length} article{order.items?.length > 1 ? 's' : ''}
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className={`track-chevron ${itemsExpanded ? 'open' : ''}`}>
@@ -660,7 +660,7 @@ export default function OrderTracking({ orderId }) {
                 <div className="track-item-info">
                   <strong>{it.name}</strong>
                   <span>{safeNumber(it.qty, 1)} × {safeNumber(it.price).toLocaleString('fr-FR')} FCFA</span>
-                  {it.pharmacyName && <small>🏥 {it.pharmacyName}</small>}
+                  {it.pharmacyName && <small> {it.pharmacyName}</small>}
                 </div>
               </div>
             ))}
@@ -719,9 +719,9 @@ export default function OrderTracking({ orderId }) {
 
         {/* ═══ Paiement ═══ */}
         <section className="track-card track-pay track-col-main">
-          <h3 className="track-card-title">💳 Paiement</h3>
+          <h3 className="track-card-title">Paiement</h3>
           <div className={`track-pay-badge ${paymentDone ? 'paid' : 'pending'}`}>
-            <span className="track-pay-icon">{paymentDone ? '✅' : '💵'}</span>
+            <span className="track-pay-icon" />
             <div>
               <strong>{paymentLabel}</strong>
               {order.paid_at && <small>{safeFormatDate(order.paid_at, { type: 'datetime' })}</small>}
@@ -793,7 +793,7 @@ function BottomCTA({ order, onRate, navigate }) {
     return (
       <div className="track-bottom">
         <button className="track-cta track-cta-warn" onClick={() => navigate('/checkout?balance=' + order.id)}>
-          💰 Régler le solde
+           Régler le solde
         </button>
       </div>
     );
@@ -805,10 +805,10 @@ function BottomCTA({ order, onRate, navigate }) {
           className="track-cta track-cta-pri"
           onClick={async () => {
             await supabase.rpc('client_confirm_delivery', { p_order_id: order.id });
-            toast.success('Livraison confirmée 🎉');
+            toast.success('Livraison confirmée');
           }}
         >
-          ✅ Confirmer la livraison
+           Confirmer la livraison
         </button>
       </div>
     );
@@ -817,7 +817,7 @@ function BottomCTA({ order, onRate, navigate }) {
     return (
       <div className="track-bottom">
         <button className="track-cta track-cta-star" onClick={onRate}>
-          ⭐ Noter ma livraison
+           Noter ma livraison
         </button>
       </div>
     );
@@ -826,7 +826,7 @@ function BottomCTA({ order, onRate, navigate }) {
     return (
       <div className="track-bottom">
         <button className="track-cta track-cta-ghost" onClick={() => navigate('/shop')}>
-          🔁 Refaire cette commande
+           Refaire cette commande
         </button>
       </div>
     );
@@ -878,7 +878,7 @@ function RatingModal({ orderId, driverName, onClose }) {
   return (
     <div className="liv-modal-overlay" onClick={onClose}>
       <div className="liv-modal" onClick={e => e.stopPropagation()}>
-        <h3 style={{ textAlign: 'center', fontSize: 22 }}>⭐ Note ta livraison</h3>
+        <h3 style={{ textAlign: 'center', fontSize: 22 }}> Note ta livraison</h3>
         <p style={{ textAlign: 'center', color: '#6B6B6B', fontSize: 13, marginBottom: 20 }}>
           Comment s'est passé ton expérience{driverName ? ` avec ${driverName}` : ''} ?
         </p>
@@ -893,7 +893,7 @@ function RatingModal({ orderId, driverName, onClose }) {
                 color: n <= rating ? '#F4B53A' : '#DDD',
                 transition: 'transform 0.1s',
               }}
-            >★</button>
+            ></button>
           ))}
         </div>
         <textarea
@@ -912,7 +912,7 @@ function RatingModal({ orderId, driverName, onClose }) {
           className="liv-btn-pri"
           onClick={submit}
           disabled={saving}
-        >{saving ? 'Envoi...' : '💚 Valider mon avis'}</button>
+        >{saving ? 'Envoi...' : 'Valider mon avis'}</button>
         <button className="liv-btn-stop" onClick={onClose} style={{ marginTop: 8 }}>Plus tard</button>
       </div>
     </div>

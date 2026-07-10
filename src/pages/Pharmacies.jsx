@@ -89,13 +89,13 @@ export default function Pharmacies() {
                     {p.logo && <img src={p.logo} alt={`Logo ${p.name}`} loading="lazy" decoding="async" className="ph-logo" />}
                     <div style={{flex: 1}}>
                       <h3>{p.name}</h3>
-                      <div className="ph-meta">📍 {p.neighborhood}, {p.city}</div>
+                      <div className="ph-meta"> {p.neighborhood}, {p.city}</div>
                     </div>
-                    {p.rating > 0 && <span className="ph-rating">★ {p.rating}</span>}
+                    {p.rating > 0 && <span className="ph-rating"> {p.rating}</span>}
                   </div>
                   {p.tagline && <p className="ph-tagline">{p.tagline}</p>}
-                  <div className="ph-info-row">🕐 {p.hours}</div>
-                  {p.phone && <div className="ph-info-row">📞 {p.phone}</div>}
+                  <div className="ph-info-row"> {p.hours}</div>
+                  {p.phone && <div className="ph-info-row"> {p.phone}</div>}
                   
                   <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                     {waUrl && (
@@ -107,7 +107,7 @@ export default function Pharmacies() {
                         onClick={(e) => e.stopPropagation()}
                         style={{ flex: 1, textAlign: 'center' }}
                       >
-                        💬 WhatsApp
+                         WhatsApp
                       </a>
                     )}
                     <button

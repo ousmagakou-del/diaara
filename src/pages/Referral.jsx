@@ -101,7 +101,7 @@ export default function Referral() {
           <h1>Parrainage</h1>
         </header>
         <div className="rf-locked">
-          <div className="rf-locked-emoji">💝</div>
+          <div className="rf-locked-emoji"></div>
           <h2>Connecte-toi pour parrainer</h2>
           <p>Invite tes copines et gagnez chacune {REWARD_PER_REFERRAL.toLocaleString('fr-FR')} FCFA de crédit.</p>
           <button className="rf-locked-cta" onClick={() => navigate('/')}>
@@ -291,7 +291,7 @@ export default function Referral() {
           <div className="rf-steps">
             <div className="rf-step">
               <div className="rf-step-num">1</div>
-              <div className="rf-step-illu">📤</div>
+              <div className="rf-step-illu"></div>
               <div className="rf-step-body">
                 <strong>Partage ton code</strong>
                 <p>Envoie-le par WhatsApp, SMS ou copie le lien.</p>
@@ -299,7 +299,7 @@ export default function Referral() {
             </div>
             <div className="rf-step">
               <div className="rf-step-num">2</div>
-              <div className="rf-step-illu">📝</div>
+              <div className="rf-step-illu"></div>
               <div className="rf-step-body">
                 <strong>Ta copine s'inscrit</strong>
                 <p>Elle entre ton code et passe sa première commande.</p>
@@ -307,7 +307,7 @@ export default function Referral() {
             </div>
             <div className="rf-step">
               <div className="rf-step-num">3</div>
-              <div className="rf-step-illu">💸</div>
+              <div className="rf-step-illu"></div>
               <div className="rf-step-body">
                 <strong>Vous gagnez chacune {REWARD_PER_REFERRAL.toLocaleString('fr-FR')} FCFA</strong>
                 <p>Crédit appliqué automatiquement sur ta prochaine commande.</p>
@@ -326,7 +326,7 @@ export default function Referral() {
             <div className="rf-board-list">
               {leaderboard.slice(0, 10).map((row, i) => {
                 const rank = i + 1;
-                const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `${rank}`;
+                const medal = rank === 1 ? '' : rank === 2 ? '' : rank === 3 ? '' : `${rank}`;
                 const name = row.display_name || row.first_name || `YARAMist ${rank}`;
                 const initial = (name[0] || 'Y').toUpperCase();
                 return (
@@ -347,7 +347,7 @@ export default function Referral() {
           <h3 className="rf-section-title">Mes invitations</h3>
           {stats.list.length === 0 ? (
             <div className="rf-invites-empty">
-              <div className="rf-invites-empty-emoji">🤝</div>
+              <div className="rf-invites-empty-emoji"></div>
               <p>Aucune invitation pour l'instant.<br/>Partage ton code et commence à gagner !</p>
             </div>
           ) : (

@@ -365,7 +365,7 @@ export default function BrandPage() {
                 </span>
               )}
               {brand.is_premium && (
-                <span className="bp-badge bp-badge--premium">★ Premium</span>
+                <span className="bp-badge bp-badge--premium"> Premium</span>
               )}
             </div>
 
@@ -501,7 +501,7 @@ export default function BrandPage() {
                           className="bp-card-img"
                         />
                       ) : (
-                        <div className="bp-card-img-fallback">🧴</div>
+                        <div className="bp-card-img-fallback"></div>
                       )}
                       {p.is_imported && (
                         <span className="bp-card-tag">
@@ -569,14 +569,14 @@ export default function BrandPage() {
                   </div>
                 </div>
                 <div className="bp-pillar">
-                  <div className="bp-pillar-icon">⚡</div>
+                  <div className="bp-pillar-icon"></div>
                   <div>
                     <strong>Livraison 30 min</strong>
                     <span>Express à Dakar</span>
                   </div>
                 </div>
                 <div className="bp-pillar">
-                  <div className="bp-pillar-icon">★</div>
+                  <div className="bp-pillar-icon"></div>
                   <div>
                     <strong>Sélection YARAM</strong>
                     <span>Validée par nos pharmaciens</span>

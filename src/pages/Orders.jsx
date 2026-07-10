@@ -70,7 +70,7 @@ export default function Orders() {
           </div>
         ) : orders.length === 0 ? (
           <div className="orders-empty">
-            <div style={{fontSize: 64, opacity: 0.2}}>📦</div>
+            <div style={{fontSize: 64, opacity: 0.2}}></div>
             <h3>Aucune commande</h3>
             <p>Tes commandes apparaîtront ici</p>
           </div>
@@ -93,7 +93,7 @@ export default function Orders() {
                       padding: '2px 7px',
                       borderRadius: 6,
                       letterSpacing: 0.3,
-                    }}>✈️ IMPORT</span>
+                    }}> IMPORT</span>
                   )}
                   <span className={'order-status ' + o.status}>{o.status}</span>
                 </div>
@@ -112,9 +112,9 @@ export default function Orders() {
                   display: 'flex',
                   justifyContent: 'space-between',
                 }}>
-                  <span>📅 Arrivée prévue : {safeFormatDate(o.expected_arrival_date)}</span>
+                  <span> Arrivée prévue : {safeFormatDate(o.expected_arrival_date)}</span>
                   <span style={{ color: '#0066CC', fontWeight: 600 }}>
-                    {o.deposit_paid_at ? '✓ Acompte payé' : '⏳ Acompte en attente'}
+                    {o.deposit_paid_at ? '✓ Acompte payé' : 'Acompte en attente'}
                   </span>
                 </div>
               )}

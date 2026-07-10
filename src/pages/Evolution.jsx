@@ -545,7 +545,7 @@ export default function Evolution() {
             <div className="ev-card-head">
               <div>
                 <h2 className="ev-card-title">
-                  <span className="ev-emoji">✨</span>
+                  <span className="ev-emoji"></span>
                   Préoccupations résolues
                 </h2>
                 <p className="ev-card-sub">Disparues entre ton 1er scan et le dernier</p>

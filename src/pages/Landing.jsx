@@ -72,7 +72,7 @@ export default function Landing() {
             </div>
             <div className="lp-hero-trust">
               <div className="lp-trust-item">
-                <strong>4.9★</strong>
+                <strong>4.9/5</strong>
                 <span>App Store</span>
               </div>
               <div className="lp-trust-divider"></div>
@@ -181,12 +181,12 @@ export default function Landing() {
             <div className="lp-app-badge">L'expérience complète</div>
             <h2>L'app YARAM, le meilleur de la beauté à portée de main</h2>
             <ul className="lp-app-features">
-              <li>📸 Scanner peau et reçois des conseils personnalisés</li>
-              <li>🎁 Programme fidélité YARAM+ et avantages exclusifs</li>
-              <li>🔔 Notifications du statut de tes commandes</li>
-              <li>🌍 Section International — marques exclusives importées</li>
-              <li>📦 Historique de tes commandes et ré-achat 1-click</li>
-              <li>💝 Routines beauté personnalisées</li>
+              <li>Scanner peau et reçois des conseils personnalisés</li>
+              <li>Programme fidélité YARAM+ et avantages exclusifs</li>
+              <li>Notifications du statut de tes commandes</li>
+              <li>Section International — marques exclusives importées</li>
+              <li>Historique de tes commandes et ré-achat 1-click</li>
+              <li>Routines beauté personnalisées</li>
             </ul>
             <div className="lp-app-stores">
               <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" className="lp-store-badge-img" aria-label="Télécharger sur l'App Store">
@@ -253,10 +253,10 @@ export default function Landing() {
             <h2>Gagne ta journée avec YARAM</h2>
             <p>Rejoins notre équipe de livreurs et choisis tes horaires. Bonus selon performance, paiements sous 24h, et une app dédiée pour gérer tes courses comme un pro.</p>
             <ul className="lp-driver-perks">
-              <li>🛵 Moto, voiture ou vélo accepté</li>
-              <li>💰 Gains visibles en temps réel sur ton app</li>
-              <li>⏰ Horaires 100% flexibles</li>
-              <li>📍 Zones de livraison de ton choix</li>
+              <li>Moto, voiture ou vélo accepté</li>
+              <li>Gains visibles en temps réel sur ton app</li>
+              <li>Horaires 100% flexibles</li>
+              <li>Zones de livraison de ton choix</li>
             </ul>
             <button className="lp-btn-primary" onClick={() => navigate('driver-application')}>
               Devenir livreur YARAM
@@ -270,7 +270,7 @@ export default function Landing() {
                   <div className="lp-driver-card-name">Mamadou S.</div>
                   <div className="lp-driver-card-sub">Livreur YARAM · Dakar</div>
                 </div>
-                <span className="lp-driver-card-rating">★ 4.9</span>
+                <span className="lp-driver-card-rating">4.9/5</span>
               </div>
               <div className="lp-driver-card-stat">
                 <span className="lp-driver-card-num">142 000 FCFA</span>
