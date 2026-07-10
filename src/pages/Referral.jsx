@@ -29,11 +29,12 @@ function useCountUp(target, durationMs = 900) {
   return value;
 }
 
+// Statuts calque strict natif (yaram-native/app/referral.jsx STATUS_LABELS)
 const STATUS_LABEL = {
   pending:    { label: 'En attente',     color: '#9B9B9B', bg: '#F4F4F2' },
-  registered: { label: 'Inscrite',       color: '#185FA5', bg: '#E6F1FB' },
-  ordered:    { label: 'A commandé',     color: '#B86E1A', bg: '#FFF4E0' },
-  paid:       { label: 'A payé',         color: '#1F8B4C', bg: '#E8F5EC' },
+  registered: { label: 'Inscrit·e',      color: '#185FA5', bg: '#E6F1FB' },
+  ordered:    { label: '1ère commande',  color: '#B86E1A', bg: '#FFF4E0' },
+  paid:       { label: 'Validé·e',       color: '#1F8B4C', bg: '#E8F5EC' },
 };
 
 function statusFor(filleule) {
@@ -129,7 +130,8 @@ export default function Referral() {
   }
 
   const shareUrl = `https://yaram.app/?ref=${code}`;
-  const shareText = `Hey ! Je t'invite sur YARAM, la marketplace beauté pour la peau africaine. Utilise mon code ${code} et reçois ${REWARD_PER_REFERRAL.toLocaleString('fr-FR')} FCFA de crédit dès ta 1ère commande ! ${shareUrl}`;
+  // Copy calque strict natif (yaram-native/app/referral.jsx shareText)
+  const shareText = `Salut ! J'utilise YARAM pour mes produits beauté et tu as ${REWARD_PER_REFERRAL.toLocaleString('fr-FR')} FCFA offerts avec mon code ${code}.\n\n${shareUrl}`;
 
   const fireToast = (msg) => {
     setToast(msg);
@@ -205,7 +207,7 @@ export default function Referral() {
             Ramène tes amies,<br />gagne <span>ensemble</span>
           </h2>
           <p className="rf-hero-sub">
-            Toi <strong>+{REWARD_PER_REFERRAL.toLocaleString('fr-FR')} FCFA</strong> · Elle <strong>+{REWARD_PER_REFERRAL.toLocaleString('fr-FR')} FCFA</strong> dès sa 1ère commande.
+            <strong>{REWARD_PER_REFERRAL.toLocaleString('fr-FR')} FCFA</strong> de crédit pour chaque amie qui passe sa 1ère commande. Cumulable à l'infini.
           </p>
         </section>
 
@@ -248,13 +250,13 @@ export default function Referral() {
         {/* ════════ CODE PERSONNEL ════════ */}
         <section className="rf-code-card rf-stagger" style={{ '--i': 2 }}>
           <div className="rf-code-header">
-            <span className="rf-code-eyebrow">TON CODE PERSONNEL</span>
+            <span className="rf-code-eyebrow">TON CODE PERSO</span>
             <span className="rf-code-tag">Unique</span>
           </div>
 
           <div className={`rf-code-box ${copied ? 'copied' : ''}`} onClick={handleCopyCode}>
             <div className="rf-code-text">{code}</div>
-            <div className="rf-code-tap-hint">Tap pour copier</div>
+            <div className="rf-code-tap-hint">{copied ? 'Copié' : 'Tap pour copier'}</div>
           </div>
 
           <div className="rf-share-row">
@@ -287,30 +289,31 @@ export default function Referral() {
 
         {/* ════════ COMMENT ÇA MARCHE ════════ */}
         <section className="rf-how rf-stagger" style={{ '--i': 3 }}>
-          <h3 className="rf-section-title">Comment ça marche ?</h3>
+          <h3 className="rf-section-title">Comment ça marche</h3>
           <div className="rf-steps">
+            {/* Calque strict natif (yaram-native/app/referral.jsx COMMENT ÇA MARCHE) */}
             <div className="rf-step">
               <div className="rf-step-num">1</div>
               <div className="rf-step-illu"></div>
               <div className="rf-step-body">
                 <strong>Partage ton code</strong>
-                <p>Envoie-le par WhatsApp, SMS ou copie le lien.</p>
+                <p>Envoie-le à tes amies via WhatsApp, SMS ou copie le lien.</p>
               </div>
             </div>
             <div className="rf-step">
               <div className="rf-step-num">2</div>
               <div className="rf-step-illu"></div>
               <div className="rf-step-body">
-                <strong>Ta copine s'inscrit</strong>
-                <p>Elle entre ton code et passe sa première commande.</p>
+                <strong>Elles commandent</strong>
+                <p>Elles utilisent ton code à leur 1ère commande.</p>
               </div>
             </div>
             <div className="rf-step">
               <div className="rf-step-num">3</div>
               <div className="rf-step-illu"></div>
               <div className="rf-step-body">
-                <strong>Vous gagnez chacune {REWARD_PER_REFERRAL.toLocaleString('fr-FR')} FCFA</strong>
-                <p>Crédit appliqué automatiquement sur ta prochaine commande.</p>
+                <strong>Tu reçois ton bonus</strong>
+                <p>{REWARD_PER_REFERRAL.toLocaleString('fr-FR')} FCFA crédités dès validation du paiement.</p>
               </div>
             </div>
           </div>

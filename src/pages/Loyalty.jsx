@@ -6,44 +6,52 @@ import { haptic } from '../lib/haptic';
 import TabBar from '../components/TabBar';
 import './Loyalty.css';
 
-/* ─── Paliers (Bronze → Platine) ─── */
+/* ─── Paliers (Bronze → Platine) — calque strict natif (yaram-native/app/loyalty.jsx) ─── */
 const TIERS = [
   {
     id: 'bronze',
     name: 'Bronze',
     icon: '',
     min: 0,
-    next: 500,
+    next: 5000,
     bg: 'linear-gradient(135deg, #C8956A 0%, #8C5A2C 100%)',
-    perks: ['Accès à la fidélité', 'Offres newsletter exclusives'],
+    perks: ['Frais livraison standard', 'Newsletter exclusive'],
   },
   {
     id: 'silver',
     name: 'Argent',
     icon: '',
-    min: 500,
-    next: 2000,
+    min: 5000,
+    next: 20000,
     bg: 'linear-gradient(135deg, #BBC5CB 0%, #6B7780 100%)',
-    perks: ['Livraison réduite (-50%)', '+5% de points sur tes commandes'],
+    perks: ['Livraison gratuite dès 20 000 FCFA', 'Accès anticipé aux nouveautés'],
   },
   {
     id: 'gold',
     name: 'Or',
     icon: '',
-    min: 2000,
-    next: 5000,
+    min: 20000,
+    next: 50000,
     bg: 'linear-gradient(135deg, #F6D365 0%, #BF9B25 100%)',
-    perks: ['Livraison gratuite', '10% sur les marques premium', 'Accès anticipé aux nouveautés'],
+    perks: ['Livraison toujours gratuite', '+10% de points par achat', 'Cadeaux surprise'],
   },
   {
     id: 'platinum',
     name: 'Platine',
     icon: '',
-    min: 5000,
+    min: 50000,
     next: null,
     bg: 'linear-gradient(135deg, #B4E0E8 0%, #4A90A8 100%)',
-    perks: ['Tout les avantages Or', 'Conseillère dédiée', 'Cadeaux d\'anniversaire'],
+    perks: ['Tous les avantages Or', 'Conciergerie VIP', 'Promotions privées'],
   },
+];
+
+/* ─── Options d\'échange (calque strict natif) ─── */
+const REDEEM_OPTIONS = [
+  { points: 500,  value: 1000,  label: '1 000 FCFA sur ta commande' },
+  { points: 1000, value: 2500,  label: '2 500 FCFA sur ta commande' },
+  { points: 2500, value: 7000,  label: '7 000 FCFA sur ta commande' },
+  { points: 5000, value: 15000, label: '15 000 FCFA sur ta commande' },
 ];
 
 /* Détermine palier courant depuis totalEarned */
@@ -139,7 +147,22 @@ export default function Loyalty() {
       localStorage.setItem('yaram_loyalty_credit', String(fcfa));
       localStorage.setItem('yaram_loyalty_credit_pts', String(Math.floor(balance / 100) * 100));
     } catch {}
-    showToast(`✓ ${fmt(fcfa)} FCFA prêts à l'usage`);
+    showToast(`${fmt(fcfa)} FCFA prêts à l'usage`);
+    setTimeout(() => navigate('/cart'), 700);
+  };
+
+  /* Échange direct d\'un palier prédéfini (calque natif) */
+  const redeemOption = (opt) => {
+    if (balance < opt.points) {
+      showToast(`Il te faut ${fmt(opt.points - balance)} points de plus`);
+      return;
+    }
+    haptic('medium');
+    try {
+      localStorage.setItem('yaram_loyalty_credit', String(opt.value));
+      localStorage.setItem('yaram_loyalty_credit_pts', String(opt.points));
+    } catch {}
+    showToast(`${fmt(opt.value)} FCFA appliqués à ta prochaine commande`);
     setTimeout(() => navigate('/cart'), 700);
   };
 
@@ -234,6 +257,69 @@ export default function Loyalty() {
             <p className="yloy-how-desc">Utilise ton crédit au checkout ou attends de débloquer le palier suivant.</p>
           </div>
         </div>
+
+        {/* ÉCHANGE POINTS — calque natif (yaram-native/app/loyalty.jsx REDEEM_OPTIONS) */}
+        <section className="yloy-section">
+          <h2 className="yloy-section-title">Échange tes points</h2>
+          <p className="yloy-section-sub">Utilise tes points comme crédit sur ta prochaine commande.</p>
+          <div className="yloy-redeem-list">
+            {REDEEM_OPTIONS.map((opt) => {
+              const canRedeem = balance >= opt.points;
+              return (
+                <button
+                  key={opt.points}
+                  className={`yloy-redeem-item ${canRedeem ? 'ready' : ''}`}
+                  onClick={() => redeemOption(opt)}
+                  disabled={!canRedeem}
+                  type="button"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    width: '100%',
+                    padding: '14px 16px',
+                    borderRadius: 14,
+                    marginBottom: 10,
+                    border: '1px solid rgba(0,0,0,0.06)',
+                    background: canRedeem ? 'var(--y-brand)' : 'var(--y-surface, #fff)',
+                    color: canRedeem ? '#fff' : 'var(--y-ink, #15171A)',
+                    cursor: canRedeem ? 'pointer' : 'not-allowed',
+                    opacity: canRedeem ? 1 : 0.65,
+                    boxShadow: canRedeem
+                      ? '0 6px 14px rgba(31,139,76,0.25)'
+                      : '0 2px 8px rgba(0,0,0,0.05)',
+                    transition: 'transform 0.15s ease',
+                    textAlign: 'left',
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 44, height: 44, borderRadius: 12,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: canRedeem ? 'rgba(255,255,255,0.18)' : 'var(--y-brand-soft, #EAF7F0)',
+                      color: canRedeem ? '#fff' : 'var(--y-brand)',
+                    }}
+                  >
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 12 20 22 4 22 4 12"/>
+                      <rect x="2" y="7" width="20" height="5"/>
+                      <line x1="12" y1="22" x2="12" y2="7"/>
+                      <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
+                      <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
+                    </svg>
+                  </span>
+                  <span style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    <strong style={{ fontSize: 15, fontWeight: 700 }}>{opt.label}</strong>
+                    <span style={{ fontSize: 12, opacity: 0.85, marginTop: 2 }}>
+                      {fmt(opt.points)} points
+                    </span>
+                  </span>
+                  <span style={{ fontSize: 18, fontWeight: 700, opacity: 0.85 }} aria-hidden>→</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
 
         {/* PALIERS */}
         <section className="yloy-section">

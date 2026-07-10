@@ -14,34 +14,34 @@ const PHOTO_WOMAN   = 'https://qxhhnrnworwrnwmqekmb.supabase.co/storage/v1/objec
 const PHOTO_MAN     = 'https://qxhhnrnworwrnwmqekmb.supabase.co/storage/v1/object/public/banner-images/onboarding/onboarding-man.jpg';
 const PHOTO_LIVREUR = 'https://qxhhnrnworwrnwmqekmb.supabase.co/storage/v1/object/public/banner-images/onboarding/onboarding-livreur.jpg';
 
-// ═══ Welcome carousel : 4 slides qui pitchent YARAM ═══
+// ═══ Welcome carousel : 4 slides — calque strict natif (yaram-native/app/onboarding.jsx) ═══
 const SLIDES = [
   {
-    img: PHOTO_WOMAN,
+    img: PHOTO_LIVREUR,
     badge: 'Livraison Dakar',
     title: 'Tes produits beauté livrés à Dakar',
-    desc: 'Pharmacies partenaires, livraison 24h, Wave/OM/cash. Plus jamais besoin de courir après ton sérum.',
+    desc: 'Pharmacies partenaires, livraison 24h, Wave/OM/cash.',
     icon: 'box',
   },
   {
     img: PHOTO_WOMAN,
-    badge: 'IA gratuite',
-    title: 'Scan IA peau gratuit en 30 secondes',
-    desc: 'Photo + analyse intelligente. Type de peau, score sur 100, recommandations personnalisées.',
+    badge: 'Diagnostic gratuit',
+    title: 'Analyse de ta peau en 30 secondes',
+    desc: 'Photo + diagnostic personnalisé. Type de peau, score 100, recommandations.',
     icon: 'scan',
   },
   {
     img: PHOTO_MAN,
     badge: 'Meilleur prix',
     title: 'Compare les prix entre pharmacies',
-    desc: 'On scanne les prix pour toi. Tu paies toujours le meilleur tarif, garanti.',
+    desc: 'On scanne les prix. Meilleur tarif garanti.',
     icon: 'compare',
   },
   {
-    img: PHOTO_LIVREUR,
+    img: PHOTO_WOMAN,
     badge: 'Récompenses',
     title: 'Cumule des points fidélité',
-    desc: 'Chaque commande te rapporte. Bonus parrainage, remises exclusives, cadeaux surprise.',
+    desc: 'Chaque commande = points. Bonus parrainage, remises exclusives.',
     icon: 'gift',
   },
 ];
@@ -648,14 +648,18 @@ export default function Onboarding({ onComplete }) {
         <div className="ob-auth-top">
           <div className="ob-logo-circle">Y</div>
           <h2 className="ob-auth-title">
-            {authView === 'signup' ? 'Crée ton compte' : 'Connecte-toi'}
+            {authView === 'signup'
+              ? 'Crée ton compte'
+              : authView === 'login'
+                ? 'Bon retour'
+                : 'Connecte-toi'}
           </h2>
           <p className="ob-auth-desc">
             {authView === 'signup'
-              ? 'En 30 secondes, et tu profites de YARAM'
+              ? 'Rejoins YARAM en 30 secondes'
               : authView === 'login'
-                ? 'Retrouve ta routine et tes commandes'
-                : 'Choisis comment tu veux te connecter'}
+                ? 'Connecte-toi à ton compte YARAM'
+                : 'Continue ton aventure beauté'}
           </p>
         </div>
 

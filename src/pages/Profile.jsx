@@ -433,31 +433,32 @@ export default function Profile() {
       <div className="acct-body">
         <div className="acct-body-inner">
 
-          {/* ── Sidebar navigation ── */}
+          {/* ── Sidebar navigation ── (ordre calque strict natif : COMPTE / PROFIL PEAU / FONCTIONNALITÉS / PRÉFÉRENCES / SUPPORT) */}
           <aside className="acct-sidebar">
             <nav className="acct-nav">
-              <a href="#compte"    className="acct-nav-link">Mon compte</a>
-              <a href="#commandes" className="acct-nav-link">Historique commandes</a>
-              <a href="#peau"      className="acct-nav-link">Profil peau</a>
-              <a href="#giftcards" className="acct-nav-link">Cartes cadeaux MySargal</a>
-              <a href="#prefs"     className="acct-nav-link">Preferences</a>
-              <a href="#reglages"  className="acct-nav-link">Reglages compte</a>
-              <a href="#support"   className="acct-nav-link">Aide et support</a>
+              <a href="#compte"     className="acct-nav-link">Compte</a>
+              <a href="#commandes"  className="acct-nav-link">Historique commandes</a>
+              <a href="#peau"       className="acct-nav-link">Mon profil peau</a>
+              <a href="#fonctions"  className="acct-nav-link">Fonctionnalités</a>
+              <a href="#prefs"      className="acct-nav-link">Préférences</a>
+              <a href="#giftcards"  className="acct-nav-link">Cartes cadeaux MySargal</a>
+              <a href="#reglages"   className="acct-nav-link">Réglages compte</a>
+              <a href="#support"    className="acct-nav-link">Support</a>
             </nav>
             <div className="acct-sidebar-sep" />
             <button className="acct-logout-btn" onClick={handleLogout} type="button">
-              Se deconnecter
+              Se déconnecter
             </button>
           </aside>
 
           {/* ── Contenu principal ── */}
           <main className="acct-main">
 
-            {/* COMPTE */}
+            {/* COMPTE — calque strict natif : rows dans le meme ordre / meme copy */}
             <section id="compte" className="acct-section">
               <h2 className="acct-section-title">Compte</h2>
               <div className="prof2-card">
-                <MenuItem icon="" tint="rgba(31,139,76,0.10)" label="Mes adresses"
+                <MenuItem icon="" tint="rgba(220,38,38,0.10)" label="Mes adresses"
                   sub={city ? `${neighborhood ? neighborhood + ', ' : ''}${city}` : 'Ajouter une adresse'}
                   onClick={() => navigate({ name: 'addresses', params: {} })} />
                 <div className="prof2-sep" />
@@ -465,19 +466,27 @@ export default function Profile() {
                   sub={stats.ordersCount > 0 ? `${stats.ordersCount} commande${stats.ordersCount > 1 ? 's' : ''}` : "Voir l'historique"}
                   onClick={() => navigate('/orders')} />
                 <div className="prof2-sep" />
-                <MenuItem icon="" tint="rgba(31,139,76,0.10)" label="Moyens de paiement"
+                <MenuItem icon="" tint="rgba(244,181,58,0.16)" label="Moyens de paiement"
                   sub="Wave · OM · Cash · Carte"
                   onClick={() => navigate({ name: 'payments', params: {} })} />
                 <div className="prof2-sep" />
-                <MenuItem icon="" tint="rgba(232,56,92,0.10)" label="Favoris"
+                <MenuItem icon="" tint="rgba(220,38,38,0.10)" label="Favoris"
                   sub={stats.favoritesCount > 0 ? `${stats.favoritesCount} produit${stats.favoritesCount > 1 ? 's' : ''}` : 'Tes coups de cœur'}
                   onClick={() => navigate({ name: 'favorites', params: {} })} />
                 <div className="prof2-sep" />
-                <MenuItem icon="" tint="rgba(244,181,58,0.14)" label="Programme fidélité"
+                <MenuItem icon="" tint="rgba(220,38,38,0.10)" label="Alertes prix"
+                  sub="Baisse de prix sur tes favoris"
+                  onClick={() => navigate({ name: 'price_alerts', params: {} })} />
+                <div className="prof2-sep" />
+                <MenuItem icon="" tint="rgba(31,139,76,0.10)" label="Rappels produits"
+                  sub="Bientôt fini · Recommander"
+                  onClick={() => navigate({ name: 'reminders', params: {} })} />
+                <div className="prof2-sep" />
+                <MenuItem icon="" tint="rgba(244,181,58,0.18)" label="Programme fidélité"
                   sub={`${loyaltyPoints.toLocaleString('fr-FR')} points · Voir mes récompenses`}
                   onClick={() => navigate({ name: 'loyalty', params: {} })} />
                 <div className="prof2-sep" />
-                <MenuItem icon="" tint="rgba(244,181,58,0.14)" label="Parrainage"
+                <MenuItem icon="" tint="rgba(232,119,34,0.12)" label="Parrainage"
                   sub="+3 000 FCFA offerts"
                   onClick={() => navigate({ name: 'referral', params: {} })} />
                 <div className="prof2-sep" />
@@ -488,6 +497,10 @@ export default function Profile() {
                 <MenuItem icon="" tint="rgba(244,181,58,0.14)" label="Newsletter"
                   sub="Promos exclusives & conseils beauté"
                   onClick={() => navigate({ name: 'newsletter', params: {} })} />
+                <div className="prof2-sep" />
+                <MenuItem icon="" tint="rgba(99,102,241,0.10)" label="Magazine YARAM"
+                  sub="Articles & guides beauté"
+                  onClick={() => navigate({ name: 'articles', params: {} })} />
               </div>
             </section>
 
@@ -551,41 +564,82 @@ export default function Profile() {
               </div>
             </section>
 
-            {/* PROFIL PEAU */}
+            {/* MON PROFIL PEAU — calque strict natif (yaram-native/app/(tabs)/profile.jsx) */}
             <section id="peau" className="acct-section">
               <h2 className="acct-section-title">Mon profil peau</h2>
               <div className="prof2-card">
                 <MenuItem icon="" tint="rgba(31,139,76,0.10)" label="Mon diagnostic peau"
-                  sub={hasScan ? `Dernier scan : ${safeFormatDate(stats.lastScan?.created_at)}` : 'Faire le scan'}
+                  sub={hasScan ? `Dernier scan : ${safeFormatDate(stats.lastScan?.created_at)}` : 'Diagnostic en 30 sec'}
                   onClick={() => navigate({ name: 'scan', params: {} })} />
                 <div className="prof2-sep" />
-                <MenuItem icon="" tint="rgba(31,139,76,0.10)" label="Mon évolution"
+                <MenuItem icon="" tint="rgba(168,85,247,0.10)" label="Scanner ingrédients"
+                  sub="Analyse INCI · IA"
+                  onClick={() => navigate({ name: 'ingredient_scan', params: {} })} />
+                <div className="prof2-sep" />
+                <MenuItem icon="" tint="rgba(20,184,166,0.10)" label="Journal peau"
+                  sub="Photo + évolution quotidienne"
+                  onClick={() => navigate({ name: 'diary', params: {} })} />
+                <div className="prof2-sep" />
+                <MenuItem icon="" tint="rgba(244,181,58,0.14)" label="Routines beauté"
+                  sub="6 routines prêtes à l'emploi"
+                  onClick={() => navigate({ name: 'routines', params: {} })} />
+                <div className="prof2-sep" />
+                <MenuItem icon="" tint="rgba(220,38,38,0.10)" label="Mon profil santé"
+                  sub="Grossesse, allergies, conditions"
+                  onClick={() => navigate({ name: 'health_profile', params: {} })} />
+                <div className="prof2-sep" />
+                <MenuItem icon="" tint="rgba(107,91,149,0.12)" label="Quiz peau"
+                  sub="Sans photo · 8 questions"
+                  onClick={() => navigate({ name: 'skin_quiz', params: {} })} />
+                <div className="prof2-sep" />
+                <MenuItem icon="" tint="rgba(34,197,94,0.10)" label="Mon évolution"
                   sub="Avant/Après mensuel"
                   onClick={() => navigate({ name: 'evolution', params: {} })} />
                 <div className="prof2-sep" />
-                <MenuItem icon="" tint="rgba(31,139,76,0.10)" label="Mon prénom"
-                  sub={user?.first_name || 'À renseigner'}
+                <MenuItem icon="" tint="rgba(100,116,139,0.10)" label="Historique des scans"
+                  sub="Tous tes diagnostics"
+                  onClick={() => navigate({ name: 'scan_history', params: {} })} />
+                <div className="prof2-sep" />
+                <MenuItem icon="" tint="rgba(124,58,237,0.12)" label="Modifier mes infos"
+                  sub="Prénom, nom, téléphone, ville"
                   onClick={handleEditFirstName} />
                 <div className="prof2-sep" />
-                <MenuItem icon="" tint="rgba(31,139,76,0.10)" label="Mon WhatsApp"
-                  sub={user?.phone || 'Requis pour les notifs commande'}
+                <MenuItem icon="" tint="rgba(37,211,102,0.14)" label="Mon WhatsApp"
+                  sub={user?.phone || 'Non renseigné'}
                   onClick={handleEditPhone} />
               </div>
             </section>
 
-            {/* PRÉFÉRENCES */}
+            {/* FONCTIONNALITÉS — nouvelle section calque strict natif */}
+            <section id="fonctions" className="acct-section">
+              <h2 className="acct-section-title">Fonctionnalités</h2>
+              <div className="prof2-card">
+                <MenuItem icon="" tint="rgba(0,0,0,0.06)" label="Scanner un produit"
+                  sub="Code-barres"
+                  onClick={() => navigate({ name: 'scan', params: {} })} />
+                <div className="prof2-sep" />
+                <MenuItem icon="" tint="rgba(10,24,56,0.10)" label="Boutique internationale"
+                  sub="Sephora, La Roche-Posay…"
+                  onClick={() => navigate({ name: 'international', params: {} })} />
+                <div className="prof2-sep" />
+                <MenuItem icon="" tint="rgba(0,100,176,0.10)" label="Pharmacies partenaires"
+                  onClick={() => navigate({ name: 'pharmacies', params: {} })} />
+                <div className="prof2-sep" />
+                <MenuItem icon="" tint="rgba(245,158,11,0.12)" label="Notifications"
+                  sub="Mes alertes & préférences"
+                  onClick={() => navigate({ name: 'notifications', params: {} })} />
+                <div className="prof2-sep" />
+                <MenuItem icon="" tint="rgba(100,116,139,0.10)" label="Paramètres notifications"
+                  sub="Commandes, promos, rappels"
+                  onClick={() => navigate({ name: 'notif_settings', params: {} })} />
+              </div>
+            </section>
+
+            {/* PRÉFÉRENCES — calque strict natif : uniquement Langue + Apparence */}
             <section id="prefs" className="acct-section">
               <h2 className="acct-section-title">Préférences</h2>
               <div className="prof2-card">
-                {!isIOSApp() && (
-                  <>
-                    <MenuItem icon="" tint="rgba(244,181,58,0.14)" label="Notifications"
-                      sub="Push · Rappels · Commandes"
-                      onClick={() => navigate({ name: 'notif_settings', params: {} })} />
-                    <div className="prof2-sep" />
-                  </>
-                )}
-                <MenuItem icon="" tint="rgba(31,139,76,0.10)" label="Langue"
+                <MenuItem icon="" tint="rgba(14,165,233,0.10)" label="Langue"
                   sub="Français"
                   onClick={() => toast.info('Bientôt : Wolof + Anglais')} />
                 <div className="prof2-sep" />
@@ -593,7 +647,7 @@ export default function Profile() {
                   icon=""
                   tint="rgba(0,0,0,0.06)"
                   label="Apparence"
-                  sub={`Mode ${getTheme() === 'dark' ? 'sombre' : 'clair'}`}
+                  sub={getTheme() === 'dark' ? 'Sombre' : 'Clair'}
                   onClick={() => toggleTheme()}
                   trailing={
                     <span className={`prof2-toggle ${getTheme() === 'dark' ? 'is-on' : ''}`} aria-hidden>
