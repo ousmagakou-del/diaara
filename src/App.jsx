@@ -40,7 +40,6 @@ import InterstitialPromo from './components/InterstitialPromo';
 import { getNextPromo, computeUserStats } from './lib/promos';
 import NetworkStatus from './components/NetworkStatus';
 import ErrorBoundary from './components/ErrorBoundary';
-import DebugOverlay from './components/DebugOverlay';
 import { initAnalytics, identifyUser, resetAnalytics, trackEvent, trackPageview } from './lib/analytics';
 
 // ─── Lazy-load : pages lourdes / rarement visitees par le client lambda ───
@@ -65,6 +64,8 @@ const MentionsLegales = lazy(() => import('./pages/MentionsLegales'));
 const DeleteAccount   = lazy(() => import('./pages/DeleteAccount'));
 const International = lazy(() => import('./pages/International'));
 const Newsletter      = lazy(() => import('./pages/Newsletter'));
+const PartnerApplication = lazy(() => import('./pages/PartnerApplication'));
+const DriverApplication  = lazy(() => import('./pages/DriverApplication'));
 
 // ════════════════════════════════════════════════════════════════
 //  FIX juin 2026 #8 — LazyFallback FULL SCREEN (CAUSE RACINE BLANCHE)
@@ -917,6 +918,8 @@ function ClientApp() {
     case 'mentions': page = <Suspense fallback={<LazyFallback />}><MentionsLegales /></Suspense>; break;
     case 'delete_account': page = <Suspense fallback={<LazyFallback />}><DeleteAccount /></Suspense>; break;
     case 'newsletter': page = <Suspense fallback={<LazyFallback />}><Newsletter /></Suspense>; break;
+    case 'partner-application': page = <Suspense fallback={<LazyFallback />}><PartnerApplication /></Suspense>; break;
+    case 'driver-application':  page = <Suspense fallback={<LazyFallback />}><DriverApplication /></Suspense>; break;
     // ─── Landing = home marketing (style Uber/DoorDash) ───
     case 'landing': page = <Landing />; break;
     // ─── Shop = nouvelle home e-commerce premium (DoorDash-style) ───
@@ -958,7 +961,6 @@ function ClientApp() {
   return (
     <NavContext.Provider value={{ navigate, goBack, route }}>
       <UserContext.Provider value={{ user, refreshUser }}>
-        {!isSiteMode && <div className="desktop-only-tag">YARAM · Aperçu mobile</div>}
         <div className={`app-shell ${isSiteMode ? 'app-shell--site' : ''}`}>
           {/* ErrorBoundary global : capture les exceptions de render et affiche
               un fallback visible au lieu d'écran blanc silencieux. */}
@@ -966,10 +968,6 @@ function ClientApp() {
             <Suspense fallback={<LazyFallback />} key={pageKey}>{page}</Suspense>
           </ErrorBoundary>
           <InstallPrompt />
-          {/* FIX juin 2026 : Debug overlay activable via ?debug=1.
-              Affiche en live l'état des queries TanStack pour diagnostiquer
-              les pages blanches / skeletons figés. */}
-          <DebugOverlay />
         </div>
         <NetworkStatus />
         <Toaster />

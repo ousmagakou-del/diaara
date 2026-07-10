@@ -1,0 +1,491 @@
+/* ═══════════════════════════════════════════════════════════════
+   DriverApplication — Landing "Devenir Chauffeur" premium
+   ═══════════════════════════════════════════════════════════════ */
+
+.da-eyebrow,
+.da-section-eyebrow {
+  font-size: 11px; font-weight: 900; letter-spacing: 2px;
+  color: #E94E1B; margin-bottom: 14px;
+  text-transform: uppercase;
+}
+
+/* ───────── HERO ───────── */
+.da-hero {
+  background: linear-gradient(135deg, #0A0A0A 0%, #1A1A1A 100%);
+  color: #fff;
+  padding: 80px 32px 60px;
+  position: relative; overflow: hidden;
+}
+.da-hero::before {
+  content: '';
+  position: absolute;
+  top: -100px; right: -100px;
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(233,78,27,0.15), transparent 70%);
+  pointer-events: none;
+}
+.da-hero-inner {
+  max-width: 1280px; margin: 0 auto;
+  display: grid; grid-template-columns: 1.1fr 1fr; gap: 60px;
+  align-items: center; position: relative;
+}
+.da-hero-content h1 {
+  font-size: 56px; font-weight: 900; letter-spacing: -2px;
+  margin: 0 0 20px; line-height: 1.05; color: #fff;
+}
+.da-lead {
+  font-size: 18px; line-height: 1.65; color: #C0C0C0;
+  margin: 0 0 32px; max-width: 540px;
+}
+.da-hero-cta {
+  display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 40px;
+}
+.da-btn-primary {
+  display: inline-block; padding: 16px 32px;
+  background: #E94E1B; color: #fff; text-decoration: none;
+  border-radius: 999px; font-weight: 900; font-size: 15px;
+  letter-spacing: -0.2px;
+  box-shadow: 0 10px 30px rgba(233,78,27,0.35);
+  transition: transform 0.15s, box-shadow 0.15s;
+  border: none; cursor: pointer;
+}
+.da-btn-primary:hover {
+  transform: translateY(-2px); box-shadow: 0 14px 40px rgba(233,78,27,0.5);
+}
+.da-btn-ghost {
+  display: inline-block; padding: 16px 26px;
+  background: rgba(255,255,255,0.08); color: #fff; text-decoration: none;
+  border-radius: 999px; font-weight: 800; font-size: 14.5px;
+  border: 1px solid rgba(255,255,255,0.15);
+  transition: background 0.15s;
+}
+.da-btn-ghost:hover { background: rgba(255,255,255,0.14); }
+
+.da-btn-secondary {
+  display: inline-block; padding: 14px 26px;
+  background: #F4F4F2; color: #0A0A0A; text-decoration: none;
+  border-radius: 999px; font-weight: 800; font-size: 14px;
+  margin-top: 20px;
+}
+
+.da-trust {
+  display: flex; gap: 36px; flex-wrap: wrap;
+}
+.da-trust-item {
+  display: flex; flex-direction: column;
+}
+.da-trust-item strong {
+  font-size: 24px; font-weight: 900; color: #E94E1B; letter-spacing: -1px;
+}
+.da-trust-item span {
+  font-size: 12px; color: #9CA3AF; margin-top: 2px;
+}
+
+/* Hero visual — driver card */
+.da-hero-visual {
+  display: flex; justify-content: center;
+}
+.da-hero-card {
+  background: #fff; color: #0A0A0A; border-radius: 24px;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.4);
+  padding: 24px;
+  width: 100%; max-width: 400px;
+}
+.da-hero-card-header {
+  display: flex; align-items: center; gap: 12px;
+  padding-bottom: 18px; border-bottom: 1px solid #F0F0EE;
+  margin-bottom: 18px;
+}
+.da-hero-driver-avatar {
+  width: 46px; height: 46px; border-radius: 50%;
+  background: linear-gradient(135deg, #E94E1B, #FF7A4C);
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  font-weight: 900; font-size: 20px;
+  flex-shrink: 0;
+}
+.da-hero-driver-name {
+  font-size: 14px; font-weight: 900; color: #0A0A0A;
+}
+.da-hero-driver-rating {
+  font-size: 12px; color: #6B7280; margin-top: 2px;
+}
+.da-hero-online {
+  margin-left: auto; padding: 4px 10px;
+  background: #EAF7F0; color: #1F8B4C;
+  border-radius: 999px;
+  font-size: 11px; font-weight: 800;
+  display: flex; align-items: center; gap: 5px;
+}
+.da-hero-online-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #1F8B4C;
+  animation: da-pulse 1.8s ease-in-out infinite;
+}
+@keyframes da-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.da-hero-week {
+  padding: 20px; background: linear-gradient(135deg, #0A0A0A, #1F2937);
+  color: #fff; border-radius: 16px; margin-bottom: 12px;
+  text-align: center;
+}
+.da-hero-week-label {
+  font-size: 10px; font-weight: 800; letter-spacing: 1.5px;
+  color: rgba(255,255,255,0.6); margin-bottom: 6px;
+}
+.da-hero-week-amount {
+  font-size: 36px; font-weight: 900; letter-spacing: -1.5px;
+  color: #fff;
+}
+.da-hero-week-amount span {
+  font-size: 16px; font-weight: 700; color: rgba(255,255,255,0.7);
+  margin-left: 4px;
+}
+.da-hero-week-details {
+  padding: 14px 16px; background: #FAFAF7; border-radius: 12px;
+  margin-bottom: 12px;
+}
+.da-hero-week-row {
+  display: flex; justify-content: space-between;
+  font-size: 12px; padding: 4px 0; color: #4B5563;
+}
+.da-hero-week-row span:last-child { font-weight: 800; color: #0A0A0A; }
+.da-hero-week-row--tips span:last-child { color: #1F8B4C; }
+.da-hero-payout {
+  padding: 12px; background: #FFF9E6; border-radius: 10px;
+  font-size: 12px; font-weight: 700; color: #B78B00;
+  text-align: center;
+}
+
+/* ───────── VALUES ───────── */
+.da-values {
+  padding: 100px 32px;
+}
+.da-values-inner {
+  max-width: 1280px; margin: 0 auto;
+}
+.da-values h2,
+.da-calc h2,
+.da-req h2,
+.da-form-side h2 {
+  font-size: 40px; font-weight: 900; letter-spacing: -1.5px;
+  margin: 0 0 40px; color: #0A0A0A; line-height: 1.15;
+  max-width: 720px;
+}
+.da-values-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+}
+.da-value-card {
+  padding: 28px 24px; background: #fff;
+  border: 1px solid #E5E4DC; border-radius: 20px;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+.da-value-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.06);
+  border-color: #E94E1B;
+}
+.da-value-icon {
+  width: 52px; height: 52px; border-radius: 14px;
+  background: linear-gradient(135deg, #FFF3EE, #FFE0D3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; margin-bottom: 16px;
+}
+.da-value-title {
+  font-size: 17px; font-weight: 900; color: #0A0A0A;
+  margin-bottom: 6px; letter-spacing: -0.3px;
+}
+.da-value-desc {
+  font-size: 14px; color: #4B5563; line-height: 1.6;
+}
+
+/* ───────── CALCULATOR ───────── */
+.da-calc {
+  padding: 100px 32px;
+  background: linear-gradient(135deg, #FAFAF7 0%, #FFF3EE 100%);
+}
+.da-calc-inner {
+  max-width: 720px; margin: 0 auto;
+}
+.da-calc-card {
+  padding: 48px 40px; background: #fff;
+  border-radius: 24px;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.06);
+}
+.da-calc-card h2 { font-size: 32px; margin-bottom: 12px; }
+.da-calc-card p {
+  color: #4B5563; font-size: 15px; margin: 0 0 24px;
+}
+.da-calc-label {
+  display: block; font-size: 14px; font-weight: 700;
+  margin-bottom: 12px; color: #0A0A0A;
+}
+.da-calc-label strong { color: #E94E1B; font-size: 18px; }
+.da-calc-slider {
+  width: 100%; margin: 0 0 6px;
+  -webkit-appearance: none; appearance: none;
+  height: 8px; border-radius: 999px;
+  background: linear-gradient(90deg, #E94E1B, #F97316);
+  outline: none;
+  cursor: pointer;
+}
+.da-calc-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: #0A0A0A;
+  border: 3px solid #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  cursor: pointer;
+}
+.da-calc-slider::-moz-range-thumb {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: #0A0A0A;
+  border: 3px solid #fff;
+  cursor: pointer;
+}
+.da-calc-marks {
+  display: flex; justify-content: space-between;
+  font-size: 11px; color: #9CA3AF; margin-bottom: 30px;
+}
+.da-calc-result {
+  padding: 28px; background: linear-gradient(135deg, #0A0A0A, #1F2937);
+  border-radius: 20px; color: #fff;
+  text-align: center;
+}
+.da-calc-result-label {
+  font-size: 11px; font-weight: 800; letter-spacing: 1.5px;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 10px;
+}
+.da-calc-result-amount {
+  font-size: 44px; font-weight: 900; letter-spacing: -2px;
+  color: #E94E1B; margin-bottom: 10px;
+}
+.da-calc-result-amount span {
+  font-size: 18px; font-weight: 700; color: rgba(255,255,255,0.7);
+  margin-left: 6px;
+}
+.da-calc-result-note {
+  font-size: 12px; color: rgba(255,255,255,0.55);
+  line-height: 1.5;
+}
+
+/* ───────── REQUIREMENTS ───────── */
+.da-req {
+  padding: 100px 32px;
+}
+.da-req-inner {
+  max-width: 1280px; margin: 0 auto;
+}
+.da-req-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;
+}
+.da-req-item {
+  display: flex; gap: 16px; padding: 24px;
+  background: #FAFAF7; border-radius: 16px;
+}
+.da-req-check {
+  flex-shrink: 0;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: #1F8B4C; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 900;
+}
+.da-req-title {
+  font-size: 15px; font-weight: 900; color: #0A0A0A;
+  margin-bottom: 4px;
+}
+.da-req-desc {
+  font-size: 13.5px; color: #4B5563; line-height: 1.5;
+}
+
+/* ───────── FORM ───────── */
+.da-form {
+  padding: 100px 32px;
+  background: #fff;
+}
+.da-form-inner {
+  max-width: 1280px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 1.2fr; gap: 60px;
+  align-items: start;
+}
+.da-form-side { position: sticky; top: 100px; }
+.da-form-side h2 { font-size: 36px; }
+.da-form-side p {
+  font-size: 16px; color: #4B5563; line-height: 1.6;
+  margin: 0 0 24px;
+}
+.da-form-checklist {
+  list-style: none; padding: 0; margin: 0 0 32px;
+}
+.da-form-checklist li {
+  padding: 8px 0; font-size: 14.5px; color: #0A0A0A; font-weight: 600;
+}
+.da-form-contact {
+  padding: 20px; background: #FAFAF7; border-radius: 16px;
+}
+.da-form-contact-label {
+  font-size: 11px; font-weight: 900; letter-spacing: 1px;
+  color: #6B7280; text-transform: uppercase; margin-bottom: 10px;
+}
+.da-form-contact-link {
+  display: block; font-size: 14px; color: #E94E1B;
+  text-decoration: none; font-weight: 700;
+  padding: 4px 0;
+}
+.da-form-contact-link:hover { text-decoration: underline; }
+
+.da-form-card {
+  padding: 40px;
+  background: #FAFAF7;
+  border-radius: 24px;
+  border: 1px solid #E5E4DC;
+}
+.da-form-card h3 {
+  margin: 0 0 24px; font-size: 22px; font-weight: 900;
+  letter-spacing: -0.5px;
+}
+.da-form-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+}
+.da-form-field {
+  margin-bottom: 14px;
+}
+.da-form-field label {
+  display: block; font-size: 12px; font-weight: 800;
+  color: #0A0A0A; margin-bottom: 6px; letter-spacing: 0.2px;
+}
+.da-form-field input,
+.da-form-field textarea {
+  width: 100%; box-sizing: border-box;
+  padding: 12px 14px;
+  border: 1px solid #E5E4DC; border-radius: 12px;
+  font-size: 14px; font-family: inherit;
+  background: #fff;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.da-form-field input:focus,
+.da-form-field textarea:focus {
+  outline: none; border-color: #E94E1B;
+  box-shadow: 0 0 0 3px rgba(233,78,27,0.1);
+}
+.da-form-field textarea { resize: vertical; }
+
+/* Vehicle picker */
+.da-vehicle-picker {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;
+}
+.da-vehicle-btn {
+  padding: 14px 8px;
+  background: #fff; border: 1.5px solid #E5E4DC;
+  border-radius: 14px;
+  font-size: 12px; font-weight: 700; color: #0A0A0A;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  font-family: inherit;
+}
+.da-vehicle-btn:hover { border-color: #E94E1B; }
+.da-vehicle-btn.active {
+  background: #E94E1B; color: #fff; border-color: #E94E1B;
+  box-shadow: 0 6px 20px rgba(233,78,27,0.3);
+}
+.da-vehicle-icon { font-size: 24px; }
+
+/* Checkbox */
+.da-form-checkbox {
+  display: flex; gap: 10px; align-items: center;
+  padding: 14px; background: #fff; border-radius: 12px;
+  border: 1px solid #E5E4DC;
+  cursor: pointer;
+  font-size: 13.5px; font-weight: 600;
+  margin: 12px 0 20px;
+}
+.da-form-checkbox input {
+  width: 18px; height: 18px; accent-color: #E94E1B;
+}
+
+.da-form-submit {
+  display: block; width: 100%; margin-top: 12px;
+  padding: 16px 24px;
+  background: #E94E1B; color: #fff;
+  border: none; border-radius: 999px;
+  font-size: 15px; font-weight: 900; letter-spacing: -0.2px;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(233,78,27,0.35);
+  transition: transform 0.15s;
+}
+.da-form-submit:hover:not(:disabled) { transform: translateY(-2px); }
+.da-form-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+.da-form-note {
+  font-size: 11px; color: #9CA3AF; text-align: center;
+  margin: 12px 0 0;
+}
+
+/* ───────── SUCCESS ───────── */
+.da-success {
+  min-height: 70vh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 60px 32px;
+  background: linear-gradient(135deg, #FAFAF7, #FFF3EE);
+}
+.da-success-inner {
+  max-width: 560px; text-align: center;
+  padding: 60px 40px; background: #fff;
+  border-radius: 24px;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.06);
+}
+.da-success-icon {
+  width: 88px; height: 88px; border-radius: 50%;
+  background: linear-gradient(135deg, #E94E1B, #FF7A4C);
+  color: #fff; margin: 0 auto 24px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 42px; font-weight: 900;
+}
+.da-success h1 {
+  font-size: 32px; font-weight: 900; letter-spacing: -1px;
+  margin: 0 0 12px; color: #0A0A0A;
+}
+.da-success p {
+  font-size: 16px; color: #4B5563; margin: 0 0 8px;
+}
+.da-success-sub {
+  font-size: 14px; margin-top: 12px !important;
+}
+.da-success a { color: #E94E1B; font-weight: 700; text-decoration: none; }
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE — Mobile & tablet
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1024px) {
+  .da-hero { padding: 60px 24px 48px; }
+  .da-hero-inner { grid-template-columns: 1fr; gap: 40px; }
+  .da-hero-content h1 { font-size: 42px; }
+  .da-values-grid { grid-template-columns: repeat(2, 1fr); }
+  .da-req-grid { grid-template-columns: 1fr; }
+  .da-form-inner { grid-template-columns: 1fr; gap: 40px; }
+  .da-form-side { position: static; }
+  .da-values, .da-calc, .da-req, .da-form { padding: 80px 24px; }
+  .da-values h2, .da-calc h2, .da-req h2, .da-form-side h2 { font-size: 32px; }
+}
+
+@media (max-width: 640px) {
+  .da-hero { padding: 40px 20px 32px; }
+  .da-hero-content h1 { font-size: 32px; letter-spacing: -1px; }
+  .da-lead { font-size: 15px; }
+  .da-values, .da-calc, .da-req, .da-form { padding: 60px 20px; }
+  .da-values-grid { grid-template-columns: 1fr; }
+  .da-values h2, .da-calc h2, .da-req h2, .da-form-side h2 { font-size: 28px; }
+  .da-form-card, .da-calc-card { padding: 24px 20px; border-radius: 20px; }
+  .da-form-row { grid-template-columns: 1fr; gap: 0; }
+  .da-trust { gap: 18px; }
+  .da-trust-item strong { font-size: 20px; }
+  .da-hero-cta { flex-direction: column; align-items: stretch; }
+  .da-btn-primary, .da-btn-ghost { text-align: center; }
+  .da-calc-result-amount { font-size: 34px; }
+  .da-vehicle-picker { grid-template-columns: repeat(3, 1fr); }
+  .da-success-inner { padding: 40px 24px; }
+  .da-success h1 { font-size: 26px; }
+}
