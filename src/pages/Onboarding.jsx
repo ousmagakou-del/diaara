@@ -603,35 +603,41 @@ export default function Onboarding({ onComplete }) {
         </div>
 
         <div className="ob-intro-inner">
-        <div className="ob-content">
-          <div className="ob-icon-pill" key={`icon${slide}`}>
-            <SlideIcon name={SLIDES[slide].icon} />
+        <div className="ob-content" key={`content-${slide}`}>
+          <div className="ob-badge-row">
+            <div className="ob-mini-badge">
+              <span className="ob-mini-badge-dot" />
+              <span>{SLIDES[slide].badge}</span>
+            </div>
+            <div className="ob-icon-chip" aria-hidden="true">
+              <SlideIcon name={SLIDES[slide].icon} />
+            </div>
           </div>
-          <div className="ob-mini-badge" key={`b${slide}`}>
-            <span className="ob-mini-badge-dot" />
-            <span>{SLIDES[slide].badge}</span>
+          <h1 className="ob-title">{SLIDES[slide].title}</h1>
+          <p className="ob-desc">{SLIDES[slide].desc}</p>
+          <div className="ob-cta-row">
+            <button className="ob-next-btn ripple" onClick={handleNext}>
+              <span>{slide < SLIDES.length - 1 ? 'Suivant' : 'Commencer'}</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+              </svg>
+            </button>
           </div>
-          <h1 className="ob-title" key={`t${slide}`}>{SLIDES[slide].title}</h1>
-          <p className="ob-desc" key={`d${slide}`}>{SLIDES[slide].desc}</p>
         </div>
 
         <div className="ob-bottom">
-          <div className="ob-dots">
+          <div className="ob-progress-bars" role="tablist" aria-label="Progression du carousel">
             {SLIDES.map((_, i) => (
               <button
                 key={i}
-                aria-label={`Slide ${i + 1}`}
-                className={`ob-dot ${i === slide ? 'active' : ''}`}
+                role="tab"
+                aria-label={`Slide ${i + 1} sur ${SLIDES.length}`}
+                aria-selected={i === slide}
+                className={`ob-progress-bar ${i === slide ? 'active' : ''} ${i < slide ? 'done' : ''}`}
                 onClick={() => { haptic('light'); setSlide(i); }}
               />
             ))}
           </div>
-          <button className="ob-next-btn" onClick={handleNext}>
-            <span>{slide < SLIDES.length - 1 ? 'Suivant' : 'Commencer'}</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-            </svg>
-          </button>
         </div>
         </div>
       </div>
