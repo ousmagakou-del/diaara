@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { getSiteSettings, updateSiteSettings, uploadBannerImage } from '../lib/supabase';
 import { adminLogAction } from '../lib/adminApi';
 import { toast, confirmDialog } from '../lib/toast';
+import HeroVideo from '../components/HeroVideo';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Configuration generale du site — persistee en DB (table site_settings).
@@ -59,6 +60,11 @@ const DEFAULTS = {
   heroLine3Cycle: 'SERVICE|MARQUES|CHRONO',
   // ─── Boutique internationale ───
   intlBgImage: '',
+  // ─── Video hero (admin editable) ───
+  // Lien YouTube ou fichier direct mp4/webm/mov. Chaine vide = fallback statique.
+  hero_video_url: '',
+  hero_video_url_partner: '',
+  hero_video_url_driver: '',
 };
 
 export default function SettingsSection() {
@@ -490,6 +496,93 @@ export default function SettingsSection() {
             </p>
           </div>
 
+          {/* ════════ VIDEO HERO (Landing + Partner + Driver) ════════ */}
+          <div className="adm-form-section" style={{ gridColumn: '1 / -1' }}>
+            <h3>Video hero</h3>
+            <p style={{ fontSize: 13, color: '#6B6B6B', margin: '0 0 14px', lineHeight: 1.5 }}>
+              Video de fond du hero pour la landing publique, la page Devenir partenaire
+              et la page Devenir chauffeur. Colle un lien <strong>YouTube</strong> (youtu.be/... ou
+              youtube.com/watch?v=...) ou un lien direct vers un fichier <code>.mp4</code>, <code>.webm</code>,
+              <code>.mov</code>. Si la valeur est vide ou invalide, la video statique de secours
+              <code style={{ marginLeft: 4 }}>/hero-video.mp4</code> est utilisee automatiquement.
+            </p>
+
+            <HeroVideoAdminField
+              label="Video hero landing (yaram.app/)"
+              value={settings.hero_video_url}
+              onChange={(v) => setSettings({ ...settings, hero_video_url: v })}
+              onSave={async () => {
+                setSaving(true);
+                const patch = { hero_video_url: settings.hero_video_url || '' };
+                const result = await updateSiteSettings(patch);
+                setSaving(false);
+                if (result.success) {
+                  adminLogAction({
+                    action:     'settings_hero_video_update',
+                    targetType: 'site_settings',
+                    targetId:   'hero_video_url',
+                    before:     null,
+                    after:      { key: 'hero_video_url', value: patch.hero_video_url },
+                  }).catch(() => {});
+                  toast.success('Video hero enregistree');
+                } else {
+                  toast.error('Echec sauvegarde : ' + (result.error || 'erreur inconnue'));
+                }
+              }}
+              disabled={saving || loading}
+            />
+
+            <HeroVideoAdminField
+              label="Video hero Devenir partenaire"
+              value={settings.hero_video_url_partner}
+              onChange={(v) => setSettings({ ...settings, hero_video_url_partner: v })}
+              onSave={async () => {
+                setSaving(true);
+                const patch = { hero_video_url_partner: settings.hero_video_url_partner || '' };
+                const result = await updateSiteSettings(patch);
+                setSaving(false);
+                if (result.success) {
+                  adminLogAction({
+                    action:     'settings_hero_video_update',
+                    targetType: 'site_settings',
+                    targetId:   'hero_video_url_partner',
+                    before:     null,
+                    after:      { key: 'hero_video_url_partner', value: patch.hero_video_url_partner },
+                  }).catch(() => {});
+                  toast.success('Video hero partenaire enregistree');
+                } else {
+                  toast.error('Echec sauvegarde : ' + (result.error || 'erreur inconnue'));
+                }
+              }}
+              disabled={saving || loading}
+            />
+
+            <HeroVideoAdminField
+              label="Video hero Devenir chauffeur"
+              value={settings.hero_video_url_driver}
+              onChange={(v) => setSettings({ ...settings, hero_video_url_driver: v })}
+              onSave={async () => {
+                setSaving(true);
+                const patch = { hero_video_url_driver: settings.hero_video_url_driver || '' };
+                const result = await updateSiteSettings(patch);
+                setSaving(false);
+                if (result.success) {
+                  adminLogAction({
+                    action:     'settings_hero_video_update',
+                    targetType: 'site_settings',
+                    targetId:   'hero_video_url_driver',
+                    before:     null,
+                    after:      { key: 'hero_video_url_driver', value: patch.hero_video_url_driver },
+                  }).catch(() => {});
+                  toast.success('Video hero chauffeur enregistree');
+                } else {
+                  toast.error('Echec sauvegarde : ' + (result.error || 'erreur inconnue'));
+                }
+              }}
+              disabled={saving || loading}
+            />
+          </div>
+
           <div className="adm-form-section">
             <h3>ℹ️ À propos</h3>
             <p style={{ fontSize: 13, lineHeight: 1.6, color: '#6B6B6B' }}>
@@ -499,6 +592,103 @@ export default function SettingsSection() {
               Livraison YARAM mutualisée
             </p>
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Sous-composant : champ URL + preview inline + save dedie ─────────
+function HeroVideoAdminField({ label, value, onChange, onSave, disabled }) {
+  const [showPreview, setShowPreview] = useState(false);
+  const trimmed = (value || '').trim();
+
+  return (
+    <div style={{
+      padding: 14,
+      border: '1px solid #E5E5E5',
+      borderRadius: 12,
+      background: '#FAFAFA',
+      marginBottom: 14,
+    }}>
+      <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 6 }}>
+        {label}
+      </label>
+      <input
+        type="text"
+        value={value || ''}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="https://youtu.be/XXXX ou https://.../video.mp4"
+        disabled={disabled}
+        style={{
+          width: '100%',
+          padding: '10px 12px',
+          border: '1px solid #D5D5D5',
+          borderRadius: 8,
+          fontSize: 13,
+          fontFamily: 'inherit',
+          background: '#fff',
+          boxSizing: 'border-box',
+        }}
+      />
+      <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+        <button
+          type="button"
+          onClick={() => setShowPreview((v) => !v)}
+          disabled={disabled || !trimmed}
+          style={{
+            padding: '8px 14px',
+            border: '1px solid #D5D5D5',
+            borderRadius: 8,
+            background: '#fff',
+            cursor: disabled || !trimmed ? 'not-allowed' : 'pointer',
+            fontWeight: 700,
+            fontSize: 12,
+            opacity: disabled || !trimmed ? 0.5 : 1,
+          }}
+        >
+          {showPreview ? 'Masquer la preview' : 'Preview'}
+        </button>
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={disabled}
+          style={{
+            padding: '8px 14px',
+            border: 'none',
+            borderRadius: 8,
+            background: '#1F8B4C',
+            color: '#fff',
+            cursor: disabled ? 'not-allowed' : 'pointer',
+            fontWeight: 700,
+            fontSize: 12,
+            opacity: disabled ? 0.6 : 1,
+          }}
+        >
+          Enregistrer
+        </button>
+        {!trimmed && (
+          <span style={{ fontSize: 11, color: '#9B9B9B', alignSelf: 'center' }}>
+            Vide = fallback statique
+          </span>
+        )}
+      </div>
+      {showPreview && trimmed && (
+        <div style={{
+          marginTop: 12,
+          position: 'relative',
+          width: 300,
+          height: 170,
+          borderRadius: 10,
+          overflow: 'hidden',
+          background: '#0E0E0E',
+          border: '1px solid #D5D5D5',
+        }}>
+          <HeroVideo
+            settingKey={null}
+            directUrl={trimmed}
+            fallbackSrc="/hero-video.mp4"
+          />
         </div>
       )}
     </div>
