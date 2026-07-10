@@ -20,12 +20,12 @@ const OM_LOGO   = 'https://qxhhnrnworwrnwmqekmb.supabase.co/storage/v1/object/pu
 // `isPreorder` dans son dep array, déclenchant un TDZ "Cannot access K before
 // initialization" au render → CRASH écran blanc sur Checkout (#bug du panier).
 // En sortant la const ici, plus aucune référence avant initialization.
+// Calque EXACT app native (yaram-native/app/checkout.jsx) : wave / cod / om.
+// Fallback icones neutralises (pas d emoji) pour rester coherent avec le web.
 const ALL_PAYMENT_METHODS = [
-  { id: 'wave',    name: 'Wave',                          logoUrl: WAVE_LOGO, fallbackIcon: '🌊', enabled: true,  preorderOk: true  },
-  { id: 'cod',     name: 'Cash à la livraison',           fallbackIcon: '💵',                     enabled: true,  preorderOk: false },
-  { id: 'om',      name: 'Orange Money',                  logoUrl: OM_LOGO,   fallbackIcon: '🟠', enabled: false, preorderOk: true  },
-  { id: 'paytech', name: 'PayTech (Wave + OM + Carte)',   fallbackIcon: '🔒',                     enabled: false, preorderOk: true  },
-  { id: 'card',    name: 'Carte bancaire',                fallbackIcon: '💳',                     enabled: false, preorderOk: true  },
+  { id: 'wave', name: 'Wave',                logoUrl: WAVE_LOGO, sub: 'Paiement instantané', enabled: true,  preorderOk: true  },
+  { id: 'cod',  name: 'Cash à la livraison', logoUrl: null,      sub: 'Tu paies au livreur', enabled: true,  preorderOk: false },
+  { id: 'om',   name: 'Orange Money',        logoUrl: OM_LOGO,   sub: 'OM Sénégal',          enabled: false, preorderOk: true  },
 ];
 
 export default function Checkout({ items: propsItems, paymentMethod }) {
@@ -375,9 +375,10 @@ export default function Checkout({ items: propsItems, paymentMethod }) {
     }
   };
 
-  // ─── Méthodes de paiement filtrées (Wave + COD si non-preorder) ───
+  // ─── Méthodes de paiement calquées sur le native ───
+  // On filtre uniquement sur preorderOk (car preorder = seul Wave dispo).
+  // Les méthodes désactivées (OM) restent visibles avec un badge "Bientôt".
   const PAYMENT_METHODS = ALL_PAYMENT_METHODS.filter(m => {
-    if (!m.enabled) return false;
     if (isPreorder && !m.preorderOk) return false;
     return true;
   });
@@ -642,48 +643,45 @@ export default function Checkout({ items: propsItems, paymentMethod }) {
             <span className="section-emoji">💳</span> Paiement
           </h3>
           <div className="check-pay-list">
-            {PAYMENT_METHODS.map(m => (
+            {PAYMENT_METHODS.map(m => {
+              const disabled = !m.enabled;
+              const active = payment === m.id && !disabled;
+              return (
               <button
                 key={m.id}
-                className={'check-pay-card ' + (payment === m.id ? 'active' : '')}
-                onClick={() => setPayment(m.id)}
+                type="button"
+                className={'check-pay-card ' + (active ? 'active ' : '') + (disabled ? 'is-disabled' : '')}
+                onClick={() => { if (!disabled) setPayment(m.id); }}
+                aria-disabled={disabled}
+                disabled={disabled}
               >
                 <span className="check-pay-icon">
                   {m.logoUrl ? (
-                    <img
-                      src={m.logoUrl}
-                      alt={m.name}
-                      loading="lazy"
-                      decoding="async"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        const parent = e.target.parentNode;
-                        if (parent && !parent.querySelector('.fallback-icon')) {
-                          const span = document.createElement('span');
-                          span.className = 'fallback-icon';
-                          span.textContent = m.fallbackIcon;
-                          parent.appendChild(span);
-                        }
-                      }}
-                    />
+                    <img src={m.logoUrl} alt={m.name} loading="lazy" decoding="async" />
                   ) : (
-                    <span className="fallback-icon">{m.fallbackIcon}</span>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect x="2" y="6" width="20" height="12" rx="2" />
+                      <circle cx="12" cy="12" r="2.5" />
+                    </svg>
                   )}
                 </span>
                 <div className="check-pay-name">
-                  <strong>{m.name}</strong>
-                  {m.id === 'wave' && <span className="check-pay-sub">Paiement instantané</span>}
-                  {m.id === 'cod' && <span className="check-pay-sub">Tu paies au livreur</span>}
+                  <span className="check-pay-title-row">
+                    <strong>{m.name}</strong>
+                    {disabled && <span className="check-pay-badge">Bientôt</span>}
+                  </span>
+                  {m.sub && <span className="check-pay-sub">{m.sub}</span>}
                 </div>
                 <div className="check-pay-radio">
-                  {payment === m.id && (
+                  {active && (
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="20 6 9 17 4 12"/>
                     </svg>
                   )}
                 </div>
               </button>
-            ))}
+              );
+            })}
           </div>
         </div>
 

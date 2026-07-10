@@ -788,6 +788,43 @@
 .check-pay-icon .fallback-icon {
   font-size: 24px;
 }
+.check-pay-icon > svg {
+  width: 22px;
+  height: 22px;
+  color: var(--yaram-green, #1F8B4C);
+}
+
+/* Alignement native : badge Bientot pour methode disabled + etat non selectable */
+.check-pay-title-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.check-pay-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #6B6B6B;
+  background: #F1F2F0;
+  border: 1px solid #E1E2DE;
+  text-transform: uppercase;
+}
+.check-pay-card.is-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: #FAFAF9;
+}
+.check-pay-card.is-disabled:active {
+  transform: none;
+}
+.check-pay-card.is-disabled .check-pay-icon img {
+  filter: grayscale(0.35);
+}
 
 .check-pay-name {
   flex: 1;

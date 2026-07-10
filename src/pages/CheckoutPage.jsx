@@ -6,8 +6,10 @@
 // - Address: existing or new (guest ok) + coordonnees (leaflet reserve
 //   pour geoloc si dispo dans le browser via navigator.geolocation)
 // - Delivery: standard / express / today (par pharmacie si applicable)
-// - Payment: Wave / Orange Money / Free Money / PayTech / Cash /
-//   Carte bancaire + promo + gift card + loyalty
+// - Payment: aligne exactement sur l app native
+//     Wave (actif) - Cash a la livraison (actif, hors preorder) -
+//     Orange Money (bientot, non selectionnable)
+//   + promo + gift card + loyalty
 // - Recap cascade complet
 // - sessionStorage yaram-checkout-progress
 // - Double submit block
@@ -39,13 +41,16 @@ const DELIVERY_MODES = [
   { id: 'standard', name: 'Standard',     time: '30 - 45 min',     price: 1500, desc: 'Livraison classique YARAM' },
 ];
 
+// ─── Payment methods — CALQUE EXACT app native (yaram-native/app/checkout.jsx)
+// Wave (actif), Cash a la livraison (actif hors preorder), Orange Money (bientot).
+// Pas de PayTech, Free Money, ni carte bancaire tant que le native ne les propose pas.
+const WAVE_LOGO = 'https://qxhhnrnworwrnwmqekmb.supabase.co/storage/v1/object/public/banner-images/logo-wave.jpg';
+const OM_LOGO   = 'https://qxhhnrnworwrnwmqekmb.supabase.co/storage/v1/object/public/banner-images/logo-orange.png';
+
 const PAYMENTS = [
-  { id: 'wave',    name: 'Wave',              sub: 'Paiement instantane',   kind: 'wave',    channel: 'mobile_money' },
-  { id: 'om',      name: 'Orange Money',      sub: 'Paiement instantane',   kind: 'om',      channel: 'mobile_money' },
-  { id: 'free',    name: 'Free Money',        sub: 'Paiement instantane',   kind: 'free',    channel: 'mobile_money' },
-  { id: 'paytech', name: 'PayTech',           sub: 'Toutes methodes locales',kind: 'paytech', channel: 'gateway' },
-  { id: 'card',    name: 'Carte bancaire',    sub: 'Visa / Mastercard',     kind: 'card',    channel: 'gateway' },
-  { id: 'cod',     name: 'Especes livraison', sub: 'Payer au livreur',      kind: 'cod',     channel: 'cash' },
+  { id: 'wave', name: 'Wave',                logoUrl: WAVE_LOGO, sub: 'Paiement instantane',  enabled: true,  preorderOk: true  },
+  { id: 'cod',  name: 'Cash a la livraison', logoUrl: null,      sub: 'Tu paies au livreur',  enabled: true,  preorderOk: false },
+  { id: 'om',   name: 'Orange Money',        logoUrl: OM_LOGO,   sub: 'OM Senegal',           enabled: false, preorderOk: true  },
 ];
 
 // ─── Icons ────────────────────────────────────────────────────────
@@ -65,16 +70,23 @@ const Icon = {
   target: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>),
 };
 
-function PayGlyph({ kind }) {
-  const map = {
-    cod: 'Cash',
-    wave: 'Wave',
-    om: 'OM',
-    free: 'Free',
-    paytech: 'PT',
-    card: 'CB',
-  };
-  return <span className={`ck-pay-glyph ck-glyph-${kind}`}>{map[kind] || kind}</span>;
+function PayLogo({ method }) {
+  if (method.logoUrl) {
+    return (
+      <span className={`ck-pay-logo ck-pay-logo--${method.id}`}>
+        <img src={method.logoUrl} alt={method.name} loading="lazy" decoding="async" />
+      </span>
+    );
+  }
+  // Fallback COD : rond neutre + petit pictogramme cash (SVG inline, pas d emoji).
+  return (
+    <span className="ck-pay-logo ck-pay-logo--fallback" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="6" width="20" height="12" rx="2" />
+        <circle cx="12" cy="12" r="2.5" />
+      </svg>
+    </span>
+  );
 }
 
 // ─── Session helpers ──────────────────────────────────────────────
@@ -120,7 +132,26 @@ export default function CheckoutPage() {
 
   // ─── Delivery + payment + notes ─────────────────────────────────
   const [deliveryMode, setDeliveryMode] = useState(persisted.deliveryMode || 'standard');
-  const [payment, setPayment] = useState(persisted.payment || 'wave');
+  // Preorder n est pas encore branche cote web (import). Garde l API pour futur.
+  const isPreorder = false;
+  // Filtre calque native : masque methodes non compatibles preorder si preorder.
+  const visiblePayments = useMemo(
+    () => PAYMENTS.filter((p) => (isPreorder ? p.preorderOk : true)),
+    [isPreorder]
+  );
+  const defaultPayment = useMemo(
+    () => (visiblePayments.find((p) => p.enabled)?.id) || 'wave',
+    [visiblePayments]
+  );
+  const initialPayment = (() => {
+    const candidate = persisted.payment;
+    const found = candidate && PAYMENTS.find((p) => p.id === candidate);
+    // Ecarte les persisted qui ne sont plus proposees (paytech, free, card...).
+    if (!found || !found.enabled) return defaultPayment;
+    if (isPreorder && !found.preorderOk) return defaultPayment;
+    return candidate;
+  })();
+  const [payment, setPayment] = useState(initialPayment);
   const [notes, setNotes] = useState(persisted.notes || '');
 
   // ─── Promo / Gift card / Loyalty ────────────────────────────────
@@ -305,7 +336,10 @@ export default function CheckoutPage() {
   const canGoNext = () => {
     if (step === 'address') return addressValid;
     if (step === 'delivery') return !!currentDelivery;
-    if (step === 'payment') return !!payment;
+    if (step === 'payment') {
+      const chosen = PAYMENTS.find((p) => p.id === payment);
+      return !!chosen && chosen.enabled;
+    }
     return true;
   };
   const goNext = () => {
@@ -584,22 +618,28 @@ export default function CheckoutPage() {
                   </div>
                   <div className="ck-section-body">
                     <div className="ck-pay-list">
-                      {PAYMENTS.map((p) => {
+                      {visiblePayments.map((p) => {
                         const active = payment === p.id;
+                        const disabled = !p.enabled;
                         return (
                           <button
                             key={p.id}
                             type="button"
-                            className={`ck-radio-card ck-pay-card ${active ? 'active' : ''}`}
-                            onClick={() => setPayment(p.id)}
+                            className={`ck-radio-card ck-pay-card ${active ? 'active' : ''} ${disabled ? 'is-disabled' : ''}`}
+                            onClick={() => { if (!disabled) setPayment(p.id); }}
+                            aria-disabled={disabled}
+                            disabled={disabled}
                           >
                             <div className="ck-radio-dot">{active && <span />}</div>
-                            <PayGlyph kind={p.kind} />
+                            <PayLogo method={p} />
                             <div className="ck-radio-body">
-                              <strong>{p.name}</strong>
+                              <div className="ck-pay-name-row">
+                                <strong>{p.name}</strong>
+                                {disabled && <span className="ck-pay-badge">Bientot</span>}
+                              </div>
                               <span className="ck-radio-sub-line">{p.sub}</span>
                             </div>
-                            {active && (
+                            {active && !disabled && (
                               <div className="ck-check-mark" aria-hidden>{Icon.check}</div>
                             )}
                           </button>
