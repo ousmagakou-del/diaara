@@ -98,11 +98,33 @@ const BUCKET_LABEL = {
 };
 const BUCKET_ORDER = ['today', 'yesterday', 'week', 'older'];
 
+// ─── Catégorie (Gmail-style sidebar filter) ────────────────────────────
+function categoryOf(n) {
+  const t = (n.type || '').toLowerCase();
+  const title = (n.title || '').toLowerCase();
+  if (t.startsWith('order') || t === 'payment' || t === 'delivery'
+      || title.includes('commande') || title.includes('livr') || title.includes('paiement')) {
+    return 'orders';
+  }
+  if (t === 'promo' || title.includes('promo') || title.includes('code') || title.includes('offre')) {
+    return 'promos';
+  }
+  return 'system';
+}
+
+const CATEGORY_TABS = [
+  { id: 'all',    label: 'Toutes',    icon: '🔔' },
+  { id: 'orders', label: 'Commandes', icon: '📦' },
+  { id: 'promos', label: 'Promos',    icon: '🎁' },
+  { id: 'system', label: 'Système',   icon: '⚙️' },
+];
+
 export default function Notifications() {
   const { navigate } = useNav();
   const { user } = useUser();
   const [markingAll, setMarkingAll] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [category, setCategory] = useState('all');
 
   // Pull-to-refresh : on track touchstart Y, et si delta > seuil → reload
   const mainRef = useRef(null);
@@ -202,14 +224,32 @@ export default function Notifications() {
 
   const unreadCount = useMemo(() => notifs.filter(n => !n.read).length, [notifs]);
 
+  // ─── Counts par catégorie (Gmail-style sidebar badge) ─────────────────
+  const categoryCounts = useMemo(() => {
+    const c = { all: 0, orders: 0, promos: 0, system: 0 };
+    for (const n of notifs) {
+      if (!n.read) {
+        c.all++;
+        c[categoryOf(n)]++;
+      }
+    }
+    return c;
+  }, [notifs]);
+
+  // ─── Notifs filtrées par catégorie (UI-only, aucun refetch RPC) ───────
+  const filteredNotifs = useMemo(() => {
+    if (category === 'all') return notifs;
+    return notifs.filter((n) => categoryOf(n) === category);
+  }, [notifs, category]);
+
   // ─── Grouping par bucket de fraîcheur ─────────────────────────────────
   const grouped = useMemo(() => {
     const map = { today: [], yesterday: [], week: [], older: [] };
-    for (const n of notifs) {
+    for (const n of filteredNotifs) {
       map[bucketOf(n.sent_at)].push(n);
     }
     return map;
-  }, [notifs]);
+  }, [filteredNotifs]);
 
   return (
     <div className="notif-screen page-anim">
@@ -234,6 +274,48 @@ export default function Notifications() {
           </button>
         )}
       </header>
+
+      {/* Mobile category tabs (visible < 900px) */}
+      <nav className="notif-tabs" role="tablist" aria-label="Catégories notifications">
+        {CATEGORY_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            role="tab"
+            aria-selected={category === tab.id}
+            className={`notif-tab ${category === tab.id ? 'active' : ''}`}
+            onClick={() => setCategory(tab.id)}
+          >
+            <span className="notif-tab-icon" aria-hidden>{tab.icon}</span>
+            <span className="notif-tab-label">{tab.label}</span>
+            {categoryCounts[tab.id] > 0 && (
+              <span className="notif-tab-count">{categoryCounts[tab.id]}</span>
+            )}
+          </button>
+        ))}
+      </nav>
+
+      <div className="notif-body">
+        {/* Desktop sidebar (visible ≥ 900px) — Gmail style */}
+        <aside className="notif-sidebar" aria-label="Filtres">
+          <div className="notif-sidebar-title">Catégories</div>
+          <ul className="notif-sidebar-list">
+            {CATEGORY_TABS.map((tab) => (
+              <li key={tab.id}>
+                <button
+                  className={`notif-sidebar-item ${category === tab.id ? 'active' : ''}`}
+                  onClick={() => setCategory(tab.id)}
+                  aria-current={category === tab.id ? 'true' : undefined}
+                >
+                  <span className="notif-sidebar-icon" aria-hidden>{tab.icon}</span>
+                  <span className="notif-sidebar-label">{tab.label}</span>
+                  {categoryCounts[tab.id] > 0 && (
+                    <span className="notif-sidebar-count">{categoryCounts[tab.id]}</span>
+                  )}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </aside>
 
       <main className="notif-main" ref={mainRef}>
         {refreshing && (
@@ -309,8 +391,20 @@ export default function Notifications() {
           </div>
         )}
 
+        {!loading && notifs.length > 0 && filteredNotifs.length === 0 && (
+          <div className="notif-empty">
+            <div className="notif-empty-icon">🎯</div>
+            <h3>Rien dans cette catégorie</h3>
+            <p>Aucune notification ne correspond au filtre choisi pour le moment.</p>
+            <button className="btn-primary" onClick={() => setCategory('all')}>
+              Voir tout
+            </button>
+          </div>
+        )}
+
         <div style={{ height: 100 }} />
       </main>
+      </div>
 
       <TabBar active="notifications" />
     </div>

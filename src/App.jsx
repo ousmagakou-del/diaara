@@ -848,8 +848,8 @@ function ClientApp() {
     return (
       <NavContext.Provider value={{ navigate, goBack, route }}>
         <UserContext.Provider value={{ user, refreshUser }}>
-          <div className="desktop-only-tag">YARAM · Aperçu mobile</div>
-          <div className="app-shell">
+          {/* app-shell--site : full-width responsive, plus de frame iPhone */}
+          <div className="app-shell app-shell--site">
             <Onboarding onComplete={refreshUser} />
             <InstallPrompt />
           </div>
@@ -863,8 +863,7 @@ function ClientApp() {
     return (
       <NavContext.Provider value={{ navigate, goBack, route }}>
         <UserContext.Provider value={{ user, refreshUser }}>
-          <div className="desktop-only-tag">YARAM · Aperçu mobile</div>
-          <div className="app-shell">
+          <div className="app-shell app-shell--site">
             <Suspense fallback={<LazyFallback />}>
               <SkinQuiz onComplete={refreshUser} />
             </Suspense>
@@ -945,15 +944,16 @@ function ClientApp() {
   // ════════════════════════════════════════════════════════════════
   const pageKey = route.name + (route.params ? JSON.stringify(route.params) : '');
 
-  // ─── Site mode : routes qui doivent s'afficher en pleine largeur desktop
-  //     (au lieu du frame iPhone 480px imposé sur les autres pages app)
-  const SITE_MODE_ROUTES = new Set([
-    'landing', 'shop', 'home', 'product', 'pharmacies', 'pharmacy_detail',
-    'brands', 'categories', 'search', 'cart', 'checkout',
-    'international', 'help', 'privacy', 'terms', 'mentions',
-    'profile', 'orders', 'favorites', 'addresses',
+  // ─── Site mode : TOUTES les routes s'affichent en pleine largeur desktop.
+  //     On garde la Set uniquement pour permettre à des routes futures d'opter-out
+  //     si on veut vraiment un mockup mobile (aujourd'hui : aucune).
+  // Juillet 2026 : conversion complète app cliente → site responsive pour qu'elle
+  // matche le style Uber/DoorDash déjà appliqué au /shop et à /landing.
+  const APP_MOCKUP_ONLY_ROUTES = new Set([
+    // Vide pour l'instant — toutes les routes doivent être responsive.
+    // Ajoute ici si un jour tu veux forcer un frame mobile pour une preview app.
   ]);
-  const isSiteMode = SITE_MODE_ROUTES.has(route.name);
+  const isSiteMode = !APP_MOCKUP_ONLY_ROUTES.has(route.name);
 
   return (
     <NavContext.Provider value={{ navigate, goBack, route }}>

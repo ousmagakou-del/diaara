@@ -701,3 +701,131 @@
 :root.dark .sr-section-routine { background: linear-gradient(180deg, rgba(31, 139, 76, 0.1), rgba(31, 139, 76, 0.04)); }
 :root.dark .sr-edu { background: linear-gradient(135deg, rgba(31, 139, 76, 0.1), rgba(244, 181, 58, 0.08)); }
 :root.dark .sr-section-warn { background: linear-gradient(180deg, rgba(217, 52, 43, 0.1), rgba(217, 52, 43, 0.04)); }
+
+/* ============================================================
+   RESPONSIVE — Desktop
+   Mobile stack conservé, desktop = 2 col avec hero full-width
+   ============================================================ */
+@media (min-width: 900px) {
+  .sr-header {
+    padding: 18px 32px;
+  }
+  .sr-header-title h1 { font-size: 20px; }
+  .sr-header-title p { font-size: 12px; }
+  .sr-back, .sr-share { width: 42px; height: 42px; }
+  .sr-back svg, .sr-share svg { width: 20px; height: 20px; }
+
+  .sr-scroll {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 28px 32px 80px;
+    columns: 2;
+    column-gap: 20px;
+  }
+  .sr-scroll > * { break-inside: avoid; -webkit-column-break-inside: avoid; }
+
+  /* Hero pleine largeur */
+  .sr-hero {
+    column-span: all;
+    -webkit-column-span: all;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "top   top"
+      "score photos"
+      "global global";
+    align-items: center;
+    gap: 22px 40px;
+    padding: 32px 36px 30px;
+    margin-bottom: 24px;
+    border-radius: 28px;
+  }
+  .sr-hero-orbs { grid-area: 1 / 1 / -1 / -1; }
+  .sr-hero-top { grid-area: top; margin-bottom: 0; }
+  .sr-type-name { font-size: 28px; }
+  .sr-type-tone { font-size: 14px; }
+  .sr-type-bubble { width: 76px; height: 76px; }
+  .sr-type-emoji { font-size: 42px; }
+  .sr-score-ring-wrap {
+    grid-area: score;
+    margin: 0 auto;
+    width: 200px;
+    height: 200px;
+  }
+  .sr-score-num { font-size: 62px; }
+  .sr-photos { grid-area: photos; margin-bottom: 0; }
+  .sr-photos img { border-radius: 16px; }
+  .sr-global { grid-area: global; font-size: 15px; max-width: 720px; margin: 0 auto; }
+
+  /* Sections dans le flow multi-col */
+  .sr-section {
+    padding: 20px 20px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+  }
+  .sr-section h2 { font-size: 18px; }
+  .sr-section-head p { font-size: 12px; }
+
+  .sr-concerns-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .sr-concern-title { font-size: 14px; }
+  .sr-concern-advice { font-size: 12px; }
+
+  .sr-zones-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .sr-zone-card p { font-size: 12px; }
+
+  .sr-routine-timeline { gap: 12px; }
+  .sr-routine-step { padding: 14px 16px; }
+  .sr-routine-head strong { font-size: 14px; }
+  .sr-routine-body p { font-size: 12.5px; }
+
+  /* Carousel produits : sur desktop, grille au lieu de carousel */
+  .sr-carousel {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    overflow: visible;
+    margin: 0;
+    padding: 4px 0 4px;
+  }
+  .sr-product-card { flex: 0 0 auto; width: 100%; }
+  .sr-product-info strong { font-size: 12px; }
+  .sr-product-price { font-size: 13px; }
+
+  /* Edu + Advice + Actions */
+  .sr-edu { padding: 22px 20px; border-radius: 20px; }
+  .sr-edu h3 { font-size: 17px; }
+  .sr-edu p { font-size: 13px; }
+  .sr-advice { padding: 24px 22px; border-radius: 20px; }
+  .sr-advice h3 { font-size: 18px; }
+  .sr-advice p { font-size: 14px; }
+
+  .sr-actions {
+    column-span: all;
+    -webkit-column-span: all;
+    max-width: 620px;
+    margin: 24px auto 0;
+  }
+  .sr-btn-primary {
+    padding: 18px;
+    font-size: 15px;
+    border-radius: 999px;
+  }
+  .sr-btn-secondary { padding: 15px; font-size: 14px; border-radius: 999px; }
+}
+
+@media (min-width: 1200px) {
+  .sr-scroll {
+    max-width: 1360px;
+    padding: 36px 40px 100px;
+    column-gap: 28px;
+  }
+  .sr-hero {
+    padding: 40px 48px 36px;
+    gap: 26px 56px;
+  }
+  .sr-hero-top .sr-type-name { font-size: 32px; }
+  .sr-score-ring-wrap { width: 220px; height: 220px; }
+  .sr-score-num { font-size: 72px; }
+  .sr-section { padding: 24px 22px; }
+  .sr-carousel { grid-template-columns: repeat(4, 1fr); }
+}

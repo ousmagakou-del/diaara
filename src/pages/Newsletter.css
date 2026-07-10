@@ -1062,3 +1062,63 @@
     transition: none !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   RESPONSIVE — Tablet ≥ 720px
+   ═══════════════════════════════════════════════════════════════════ */
+@media (min-width: 720px) {
+  .nl-hero {
+    padding: calc(var(--safe-top, 14px) + 72px) 24px 60px;
+    min-height: 620px;
+  }
+  .nl-hero-inner { max-width: 640px; }
+  .nl-section {
+    max-width: 720px;
+    padding: 40px 24px;
+  }
+  .nl-recv-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .nl-recv-card { padding: 20px 20px 20px 20px; }
+  .nl-recv-emoji {
+    position: static;
+    transform: none;
+    margin-bottom: 12px;
+  }
+  .nl-testi-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  .nl-back {
+    top: 22px;
+    left: max(20px, calc((100% - 1200px) / 2 + 20px));
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   RESPONSIVE — Desktop ≥ 1024px
+   Centered 720px form card, 3-col cards for perks/testimonials
+   ═══════════════════════════════════════════════════════════════════ */
+@media (min-width: 1024px) {
+  .nl-hero {
+    min-height: 640px;
+    padding-bottom: 80px;
+  }
+  .nl-hero-title { font-size: clamp(40px, 4.4vw, 56px); }
+  .nl-section { max-width: 960px; padding: 56px 32px; }
+  .nl-recv-grid { grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .nl-testi-grid { grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  /* Form card centered narrower */
+  .nl-form-wrap { max-width: 720px; }
+  .nl-form-card { padding: 32px; border-radius: 24px; }
+  .nl-stats-card { padding: 24px 32px; }
+  /* Hide TabBar for good measure */
+  .tabbar { display: none; }
+}
+
+@media (min-width: 1280px) {
+  .nl-section { max-width: 1120px; }
+}

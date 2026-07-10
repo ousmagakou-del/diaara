@@ -1,4 +1,5 @@
 import { useNav } from '../App';
+import './Payments.css';
 
 // ─── Vrais logos officiels ───
 const WaveLogo = ({ size = 44 }) => (
@@ -85,31 +86,20 @@ export default function Payments() {
   ];
 
   return (
-    <div className="page-anim" style={{
-      height: '100%', 
-      display: 'flex', 
-      flexDirection: 'column', 
-      background: 'var(--bg)',
-    }}>
+    <div className="page-anim pay-screen">
       {/* HEADER */}
-      <div style={{
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: 14, 
-        padding: 'calc(var(--safe-top) + 14px) 16px 14px', 
-        borderBottom: '1px solid var(--line)',
-      }}>
+      <div className="pay-header">
         <button className="icon-back-btn" onClick={() => navigate(-1)}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <line x1="19" y1="12" x2="5" y2="12"/>
             <polyline points="12 19 5 12 12 5"/>
           </svg>
         </button>
-        <h1 style={{fontSize: 18, fontWeight: 700}}>Moyens de paiement</h1>
+        <h1>Moyens de paiement</h1>
       </div>
 
       {/* CONTENU */}
-      <div style={{flex: 1, overflowY: 'auto', padding: 16}}>
+      <div className="pay-body">
         
         {/* Banner pro */}
         <div style={{

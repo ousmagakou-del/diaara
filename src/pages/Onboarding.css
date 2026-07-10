@@ -21,12 +21,17 @@
    ═══════════════════════════════════════════════ */
 .ob-screen {
   position: relative;
-  height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   background: var(--ob-green-deep);
   overflow: hidden;
   touch-action: pan-y;
+}
+
+.ob-intro-inner {
+  display: contents;
 }
 
 /* Stack des images : on cross-fade entre les slides */
@@ -224,12 +229,20 @@
    2. AUTH SCREEN (choice / signup / login)
    ═══════════════════════════════════════════════ */
 .ob-auth-screen {
-  height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   background: var(--ob-bg);
   position: relative;
   overflow: hidden;
+}
+
+.ob-auth-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 /* ─── HEADER VERT : descendu + premium aerial ─── */
@@ -908,10 +921,18 @@
    3. PROFILE COMPLETION
    ═══════════════════════════════════════════════ */
 .ob-profile-screen {
-  height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   background: var(--ob-bg);
+}
+
+.ob-profile-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 .ob-profile-top {
@@ -978,7 +999,8 @@
    4. DONE SCREEN
    ═══════════════════════════════════════════════ */
 .ob-done-screen {
-  height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1225,6 +1247,304 @@
 @keyframes ob-confetti-fall {
   0%   { transform: translateY(0) rotate(0); opacity: 1; }
   100% { transform: translateY(110vh) rotate(540deg); opacity: 0; }
+}
+
+/* ═══════════════════════════════════════════════
+   7. DESKTOP BRAND PANEL (left column ≥ 900px)
+   ═══════════════════════════════════════════════ */
+.ob-brand-panel {
+  display: none;
+}
+
+.ob-brand-inner {
+  max-width: 480px;
+  color: white;
+}
+
+.ob-brand-logo {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  background: white;
+  color: var(--ob-green);
+  font-size: 34px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin-bottom: 32px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28), 0 0 0 6px rgba(255,255,255,0.08);
+}
+.ob-brand-logo em {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 12px;
+  height: 12px;
+  background: var(--ob-orange);
+  border-radius: 50%;
+  box-shadow: 0 0 0 2.5px white;
+}
+
+.ob-brand-title {
+  font-size: 42px;
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -0.8px;
+  margin: 0 0 16px;
+  text-shadow: 0 2px 14px rgba(0,0,0,0.18);
+}
+
+.ob-brand-sub {
+  font-size: 16px;
+  line-height: 1.55;
+  margin: 0 0 32px;
+  color: rgba(255,255,255,0.92);
+  max-width: 420px;
+}
+
+.ob-brand-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.ob-brand-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.ob-brand-bullet {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.18);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.25);
+  margin-top: 2px;
+}
+.ob-brand-list li div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.ob-brand-list li strong {
+  font-size: 15px;
+  font-weight: 700;
+  color: white;
+  letter-spacing: -0.1px;
+}
+.ob-brand-list li em {
+  font-style: normal;
+  font-size: 13px;
+  color: rgba(255,255,255,0.75);
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.ob-brand-trust {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255,255,255,0.18);
+}
+.ob-brand-trust > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ob-brand-trust strong {
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: -0.4px;
+  color: white;
+}
+.ob-brand-trust span {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.ob-brand-trust-sep {
+  width: 1px;
+  height: 30px;
+  background: rgba(255,255,255,0.2);
+}
+
+/* ═══════════════════════════════════════════════
+   8. DESKTOP RESPONSIVE (≥ 900px)
+   ═══════════════════════════════════════════════ */
+@media (min-width: 900px) {
+  /* ─── INTRO CAROUSEL : constrain content to left column, keep photo full ─── */
+  .ob-screen {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  .ob-hero-img::after {
+    background: linear-gradient(
+      100deg,
+      rgba(13, 77, 39, 0.92) 0%,
+      rgba(13, 77, 39, 0.78) 35%,
+      rgba(13, 77, 39, 0.28) 65%,
+      rgba(13, 77, 39, 0.05) 100%
+    );
+  }
+  .ob-skip-bar { padding: 32px 48px 0; }
+  .ob-intro-inner {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    max-width: 640px;
+    padding: 0 24px;
+    margin-left: max(48px, calc((100vw - 1200px) / 2));
+  }
+  .ob-content {
+    padding: 32px 0 12px;
+    justify-content: center;
+    max-width: 560px;
+  }
+  .ob-title { font-size: 52px; letter-spacing: -1px; }
+  .ob-desc { font-size: 17px; max-width: 480px; }
+  .ob-bottom {
+    padding: 0 0 48px;
+    max-width: 420px;
+  }
+  .ob-next-btn { height: 60px; font-size: 17px; }
+
+  /* ─── AUTH SCREEN : two-column grid ─── */
+  .ob-auth-screen,
+  .ob-profile-screen {
+    flex-direction: row;
+    background: var(--ob-bg);
+  }
+
+  .ob-brand-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1 1 50%;
+    min-height: 100vh;
+    padding: 64px 56px;
+    background:
+      radial-gradient(ellipse 90% 80% at 15% 10%, rgba(255,255,255,0.16) 0%, transparent 55%),
+      radial-gradient(ellipse 70% 60% at 85% 90%, rgba(232,119,34,0.32) 0%, transparent 60%),
+      linear-gradient(160deg, var(--ob-green) 0%, var(--ob-green-dark) 55%, var(--ob-green-deep) 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .ob-brand-panel::before {
+    content: '';
+    position: absolute;
+    top: -100px;
+    right: -100px;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 60%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .ob-auth-main,
+  .ob-profile-main {
+    flex: 1 1 50%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 40px;
+    background: var(--ob-bg);
+  }
+
+  /* Turn top header into inline form header (no green banner on desktop right side) */
+  .ob-auth-top,
+  .ob-profile-top {
+    background: transparent !important;
+    color: var(--ob-ink);
+    padding: 0 0 20px;
+    text-align: center;
+    width: 100%;
+    max-width: 460px;
+  }
+  .ob-auth-top::before,
+  .ob-auth-top::after,
+  .ob-profile-top::after {
+    display: none;
+  }
+  .ob-auth-top .ob-logo-circle {
+    background: linear-gradient(135deg, var(--ob-green) 0%, var(--ob-green-dark) 100%);
+    color: white;
+    width: 60px;
+    height: 60px;
+    font-size: 32px;
+    margin-bottom: 20px;
+  }
+  .ob-auth-title {
+    color: var(--ob-ink);
+    text-shadow: none;
+    font-size: 28px;
+  }
+  .ob-auth-desc { color: var(--ob-ink-soft); }
+
+  .ob-profile-progress .ob-progress-pill {
+    background: #E0E0DA;
+    color: var(--ob-ink-soft);
+    border-color: transparent;
+  }
+  .ob-profile-progress .ob-progress-pill.active {
+    background: var(--ob-green);
+    color: white;
+    border-color: var(--ob-green);
+    box-shadow: 0 0 0 4px rgba(31, 139, 76, 0.12);
+  }
+  .ob-profile-progress .ob-progress-pill.done {
+    background: var(--ob-green);
+    color: white;
+    border-color: var(--ob-green);
+  }
+  .ob-profile-progress .ob-progress-line { background: #E0E0DA; }
+  .ob-profile-progress .ob-progress-line.done { background: var(--ob-green); }
+
+  /* Bottom card becomes a floating card centered */
+  .ob-auth-bottom {
+    margin-top: 0;
+    background: white;
+    border-radius: 24px;
+    padding: 32px 32px;
+    width: 100%;
+    max-width: 460px;
+    max-height: none;
+    overflow: visible;
+    box-shadow:
+      0 30px 80px rgba(14, 91, 51, 0.14),
+      0 8px 24px rgba(14, 91, 51, 0.06);
+    animation: none;
+  }
+  .ob-auth-bottom::before { display: none; }
+
+  .auth-divider span { background: white; }
+}
+
+/* ═══════════════════════════════════════════════
+   9. LARGE DESKTOP (≥ 1280px) : more generous
+   ═══════════════════════════════════════════════ */
+@media (min-width: 1280px) {
+  .ob-brand-panel { padding: 80px 96px; }
+  .ob-auth-main,
+  .ob-profile-main { padding: 64px; }
+  .ob-brand-title { font-size: 48px; }
 }
 
 /* Respect prefers-reduced-motion */

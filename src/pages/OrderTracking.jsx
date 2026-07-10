@@ -317,8 +317,9 @@ export default function OrderTracking({ orderId }) {
       </header>
 
       <div className="track-scroll">
+       <div className="track-grid">
         {/* ═══ Hero status premium ═══ */}
-        <section className={`track-hero track-hero-${hero.tone}`}>
+        <section className={`track-hero track-col-main track-hero-${hero.tone}`}>
           <div className="track-hero-iconwrap">
             <div className="track-hero-pulse" aria-hidden="true" />
             <div className="track-hero-icon">{hero.icon}</div>
@@ -336,7 +337,7 @@ export default function OrderTracking({ orderId }) {
         </section>
 
         {/* ═══ Timeline verticale premium ═══ */}
-        <section className="track-card">
+        <section className="track-card track-col-main">
           <h3 className="track-card-title">Suivi de ta commande</h3>
           <ol className="track-tl">
             {STEPS.map((s, i) => {
@@ -372,7 +373,7 @@ export default function OrderTracking({ orderId }) {
 
         {/* ═══ Preorder spécial (si import) ═══ */}
         {isPreorderOrder && (
-          <section className="track-card track-import">
+          <section className="track-card track-import track-col-main">
             <div className="track-import-head">
               <span className="track-import-plane">✈️</span>
               <div>
@@ -420,68 +421,103 @@ export default function OrderTracking({ orderId }) {
           </section>
         )}
 
-        {/* ═══ Section Livraison (adresse + livreur + GPS) ═══ */}
-        <section className="track-card">
-          <h3 className="track-card-title">📍 Livraison</h3>
+        {/* ═══ Section Adresse (LEFT column desktop) ═══ */}
+        <section className="track-card track-col-main">
+          <h3 className="track-card-title">📍 Adresse de livraison</h3>
           <div className="track-addr">
             <strong>{order.address?.name}</strong>
             <p>{order.address?.line}</p>
             <p className="muted">{order.address?.neighborhood}{order.address?.neighborhood && order.address?.city ? ', ' : ''}{order.address?.city}</p>
             {order.address?.phone && <p className="muted">📞 {order.address.phone}</p>}
           </div>
-
-          {tracking?.delivery_person_name && (
-            <div className="track-driver">
-              <div className="track-driver-avatar">
-                {tracking.delivery_person_photo ? (
-                  <img src={tracking.delivery_person_photo} alt={tracking.delivery_person_name} loading="lazy" decoding="async" />
-                ) : (
-                  <span>{(tracking.delivery_person_name || '?').charAt(0).toUpperCase()}</span>
-                )}
-              </div>
-              <div className="track-driver-info">
-                <small>Ton livreur</small>
-                <strong>{tracking.delivery_person_name}</strong>
-                {secondsAgo !== null && hasGPS && (
-                  <span className="track-driver-live">
-                    <span className="live-dot" />
-                    {secondsAgo < 60 ? `Position il y a ${secondsAgo}s` : `Il y a ${Math.floor(secondsAgo / 60)}min`}
-                  </span>
-                )}
-              </div>
-              <div className="track-driver-actions">
-                {driverPhoneClean && (
-                  <a className="track-driver-call" href={`tel:+${driverPhoneClean}`} aria-label="Appeler">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.33 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>
-                    </svg>
-                  </a>
-                )}
-                {driverPhoneClean && (
-                  <a className="track-driver-wa" href={`https://wa.me/${driverPhoneClean}`} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                      <path d="M20.52 3.48A11.93 11.93 0 0 0 12 0C5.37 0 0 5.37 0 12c0 2.11.55 4.18 1.6 6L0 24l6.21-1.63A11.94 11.94 0 0 0 12 24c6.63 0 12-5.37 12-12 0-3.2-1.25-6.21-3.48-8.52zM12 21.82c-1.79 0-3.55-.48-5.09-1.39l-.36-.21-3.69.97.99-3.59-.24-.37A9.78 9.78 0 0 1 2.18 12C2.18 6.57 6.57 2.18 12 2.18S21.82 6.57 21.82 12 17.43 21.82 12 21.82zm5.42-7.31c-.3-.15-1.76-.87-2.04-.97-.27-.1-.47-.15-.66.15-.2.3-.76.97-.93 1.17-.17.2-.34.22-.64.07-.3-.15-1.26-.47-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.34.45-.51.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.66-1.6-.91-2.18-.24-.58-.49-.5-.66-.51l-.56-.01c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48 0 1.46 1.07 2.87 1.22 3.07.15.2 2.1 3.21 5.08 4.5.71.31 1.27.49 1.7.63.71.23 1.36.2 1.87.12.57-.09 1.76-.72 2.01-1.41.25-.69.25-1.28.17-1.41-.07-.13-.27-.2-.57-.35z"/>
-                    </svg>
-                  </a>
-                )}
-              </div>
-            </div>
-          )}
-
-          {hasGPS && (
-            <div className="track-mapwrap">
-              <div ref={mapContainerRef} className="track-map" />
-              <div className="track-map-overlay">
-                <span className="live-dot" />
-                <span>Position en direct</span>
-              </div>
-            </div>
-          )}
         </section>
+
+        {/* ═══ Section Livreur + Map (RIGHT column desktop, top on mobile) ═══ */}
+        {(tracking?.delivery_person_name || hasGPS) && (
+          <section className="track-card track-col-aside track-driver-card">
+            <h3 className="track-card-title">🛵 Ton livreur</h3>
+
+            {hasGPS && (
+              <div className="track-mapwrap">
+                <div ref={mapContainerRef} className="track-map" />
+                <div className="track-map-overlay">
+                  <span className="live-dot" />
+                  <span>Position en direct</span>
+                </div>
+              </div>
+            )}
+
+            {tracking?.delivery_person_name && (
+              <>
+                <div className="track-driver">
+                  <div className="track-driver-avatar">
+                    {tracking.delivery_person_photo ? (
+                      <img src={tracking.delivery_person_photo} alt={tracking.delivery_person_name} loading="lazy" decoding="async" />
+                    ) : (
+                      <span>{(tracking.delivery_person_name || '?').charAt(0).toUpperCase()}</span>
+                    )}
+                  </div>
+                  <div className="track-driver-info">
+                    <small>Livreur YARAM</small>
+                    <strong>{tracking.delivery_person_name}</strong>
+                    {secondsAgo !== null && hasGPS && (
+                      <span className="track-driver-live">
+                        <span className="live-dot" />
+                        {secondsAgo < 60 ? `Position il y a ${secondsAgo}s` : `Il y a ${Math.floor(secondsAgo / 60)}min`}
+                      </span>
+                    )}
+                  </div>
+                  <div className="track-driver-actions">
+                    {driverPhoneClean && (
+                      <a className="track-driver-call" href={`tel:+${driverPhoneClean}`} aria-label="Appeler">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.33 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>
+                        </svg>
+                      </a>
+                    )}
+                    {driverPhoneClean && (
+                      <a className="track-driver-wa" href={`https://wa.me/${driverPhoneClean}`} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                          <path d="M20.52 3.48A11.93 11.93 0 0 0 12 0C5.37 0 0 5.37 0 12c0 2.11.55 4.18 1.6 6L0 24l6.21-1.63A11.94 11.94 0 0 0 12 24c6.63 0 12-5.37 12-12 0-3.2-1.25-6.21-3.48-8.52zM12 21.82c-1.79 0-3.55-.48-5.09-1.39l-.36-.21-3.69.97.99-3.59-.24-.37A9.78 9.78 0 0 1 2.18 12C2.18 6.57 6.57 2.18 12 2.18S21.82 6.57 21.82 12 17.43 21.82 12 21.82zm5.42-7.31c-.3-.15-1.76-.87-2.04-.97-.27-.1-.47-.15-.66.15-.2.3-.76.97-.93 1.17-.17.2-.34.22-.64.07-.3-.15-1.26-.47-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.34.45-.51.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.66-1.6-.91-2.18-.24-.58-.49-.5-.66-.51l-.56-.01c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48 0 1.46 1.07 2.87 1.22 3.07.15.2 2.1 3.21 5.08 4.5.71.31 1.27.49 1.7.63.71.23 1.36.2 1.87.12.57-.09 1.76-.72 2.01-1.41.25-.69.25-1.28.17-1.41-.07-.13-.27-.2-.57-.35z"/>
+                        </svg>
+                      </a>
+                    )}
+                  </div>
+                </div>
+
+                {/* "Contacter le livreur" pill button */}
+                {driverPhoneClean && (
+                  <a
+                    className="track-driver-pill"
+                    href={`https://wa.me/${driverPhoneClean}?text=${encodeURIComponent(`Bonjour, concernant ma commande ${compactId}…`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+                      <path d="M20.52 3.48A11.93 11.93 0 0 0 12 0C5.37 0 0 5.37 0 12c0 2.11.55 4.18 1.6 6L0 24l6.21-1.63A11.94 11.94 0 0 0 12 24c6.63 0 12-5.37 12-12 0-3.2-1.25-6.21-3.48-8.52z"/>
+                    </svg>
+                    Contacter le livreur
+                  </a>
+                )}
+              </>
+            )}
+
+            {/* Fallback ETA when no driver yet but map missing too */}
+            {!tracking?.delivery_person_name && !hasGPS && eta && (
+              <div className="track-driver-eta-only">
+                <div className="track-driver-eta-icon">⏱️</div>
+                <div>
+                  <small>Livraison</small>
+                  <strong>{eta}</strong>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
 
         {/* ═══ Preuve de livraison (delivered) ═══ */}
         {order.status === 'delivered' && tracking && (tracking.delivery_photo_url || tracking.delivery_signature || tracking.delivery_pin) && (
-          <section className="track-card">
+          <section className="track-card track-col-main">
             <h3 className="track-card-title">✅ Preuve de livraison</h3>
             {tracking.delivery_photo_url && (
               <div className="track-proof-img">
@@ -506,7 +542,7 @@ export default function OrderTracking({ orderId }) {
 
         {/* ═══ Notation existante ═══ */}
         {order.delivery_rating && (
-          <section className="track-card track-rating-recap">
+          <section className="track-card track-rating-recap track-col-main">
             <h3 className="track-card-title">⭐ Ton avis</h3>
             <div className="track-rating-stars">
               {'★'.repeat(order.delivery_rating)}<span className="muted">{'★'.repeat(5 - order.delivery_rating)}</span>
@@ -516,7 +552,7 @@ export default function OrderTracking({ orderId }) {
         )}
 
         {/* ═══ Récap items (collapsible) ═══ */}
-        <section className="track-card">
+        <section className="track-card track-col-main">
           <button
             type="button"
             className="track-card-collapse"
@@ -551,7 +587,7 @@ export default function OrderTracking({ orderId }) {
         </section>
 
         {/* ═══ Paiement ═══ */}
-        <section className="track-card track-pay">
+        <section className="track-card track-pay track-col-main">
           <h3 className="track-card-title">💳 Paiement</h3>
           <div className={`track-pay-badge ${paymentDone ? 'paid' : 'pending'}`}>
             <span className="track-pay-icon">{paymentDone ? '✅' : '💵'}</span>
@@ -562,6 +598,7 @@ export default function OrderTracking({ orderId }) {
           </div>
         </section>
 
+       </div>{/* /.track-grid */}
         <div style={{ height: 100 }} />
       </div>
 

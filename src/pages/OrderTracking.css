@@ -3,12 +3,14 @@
    ═══════════════════════════════════════════════════════════ */
 
 .track-screen {
-  height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   background: var(--bg, #FAFAF8);
   position: relative;
   overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Helvetica Neue', sans-serif;
 }
 
 /* ───────── Loading ───────── */
@@ -110,6 +112,43 @@
   flex-direction: column;
   gap: 12px;
   -webkit-overflow-scrolling: touch;
+}
+
+/* ───────── Responsive grid (mobile-first single column) ─────────
+   DOM order on mobile: hero → address (main) → driver+map (aside) → …
+   Desktop ≥ 900px: 2 columns via grid — driver+map sticks to the RIGHT,
+   everything else stays in the LEFT column.
+   Note: on mobile, we want the driver+map ABOVE the address+timeline, so
+   we use `order` on flex to lift .track-col-aside up.               */
+.track-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Mobile: driver+map card floats to top (right below hero) */
+.track-col-aside { order: -1; }
+.track-hero { order: -2; }
+
+@media (min-width: 900px) {
+  .track-scroll { padding: 20px 24px 0; }
+
+  .track-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 20px;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    align-items: flex-start;
+  }
+  .track-col-main { grid-column: 1; order: 0; }
+  .track-col-aside { grid-column: 2; grid-row: 1; order: 0; position: sticky; top: 20px; align-self: flex-start; }
+  .track-hero { grid-column: 1; order: 0; }
+  .track-hero-title { font-size: 32px; }
+  .track-hero { padding: 32px 24px 26px; }
 }
 
 /* ───────── Hero status premium ───────── */
@@ -503,18 +542,83 @@
 .track-driver-call:active,
 .track-driver-wa:active { transform: scale(0.92); }
 
+/* ───────── "Contacter le livreur" pill (below driver row) ───────── */
+.track-driver-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  background: #25D366;
+  color: #fff;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.005em;
+  box-shadow: 0 8px 20px rgba(37, 211, 102, 0.28);
+  transition: transform 0.14s, background 0.18s, box-shadow 0.2s;
+}
+.track-driver-pill:hover {
+  background: #1EBE5D;
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgba(37, 211, 102, 0.32);
+}
+.track-driver-pill:active { transform: translateY(0); }
+.track-driver-pill svg { flex-shrink: 0; }
+
+/* ETA-only fallback (no driver assigned yet) */
+.track-driver-eta-only {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--bg-soft, #F7F7F5);
+  border: 1px solid var(--line, #EEE);
+}
+.track-driver-eta-only .track-driver-eta-icon {
+  font-size: 26px;
+  line-height: 1;
+}
+.track-driver-eta-only small {
+  display: block;
+  font-size: 11px;
+  color: var(--ink-soft, #6B6E73);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+.track-driver-eta-only strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink, #15171A);
+  margin-top: 2px;
+}
+
+/* Driver card (aside) tightens spacing between map + driver row */
+.track-driver-card .track-driver { margin-top: 0; }
+
 /* ───────── Map ───────── */
 .track-mapwrap {
   position: relative;
   border-radius: 14px;
   overflow: hidden;
-  margin-top: 12px;
+  margin-top: 0;
+  margin-bottom: 14px;
   border: 1px solid var(--line, #EEE);
 }
 .track-map {
   width: 100%;
-  height: 220px;
+  height: 300px;
   z-index: 1;
+}
+@media (min-width: 900px) {
+  .track-map { height: 340px; }
+  .track-mapwrap { margin-bottom: 16px; }
 }
 .track-map-overlay {
   position: absolute;
@@ -741,11 +845,23 @@
   backdrop-filter: blur(10px);
   z-index: 10;
 }
+@media (min-width: 900px) {
+  .track-bottom {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+  .track-bottom .track-cta {
+    max-width: 520px;
+    margin: 0 auto;
+    display: block;
+    border-radius: 999px;
+  }
+}
 .track-cta {
   width: 100%;
   padding: 16px;
   border: none;
-  border-radius: 16px;
+  border-radius: 999px;
   font-size: 15px;
   font-weight: 800;
   cursor: pointer;

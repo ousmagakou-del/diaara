@@ -763,3 +763,164 @@
   border-radius: 10px;
   border: 1px solid rgba(255,255,255,0.1);
 }
+
+/* ==========================================================
+   RESPONSIVE — Desktop (>=900px) & Large (>=1200px)
+   Mobile-first : le mobile reste identique, desktop = hero landing
+   ========================================================== */
+@media (min-width: 900px) {
+  .fs-close {
+    top: 20px;
+    right: 24px;
+    width: 44px;
+    height: 44px;
+  }
+  .fs-close svg { width: 20px; height: 20px; }
+
+  /* ── INTRO desktop : hero split 2 colonnes ── */
+  .fs-intro { padding: 0 40px; }
+  .fs-intro-content {
+    max-width: 1080px;
+    display: grid;
+    grid-template-columns: 1.05fr 1fr;
+    grid-template-areas:
+      "face  title"
+      "face  features"
+      "tips  cta"
+      "tips  ghost";
+    column-gap: 60px;
+    row-gap: 22px;
+    align-items: center;
+    padding-top: 90px;
+    padding-bottom: 60px;
+    text-align: left;
+  }
+  .fs-face-animation {
+    grid-area: face;
+    width: 100%;
+    max-width: 420px;
+    height: auto;
+    aspect-ratio: 5 / 6;
+    margin: 0 auto;
+  }
+  .fs-intro-text { grid-area: title; margin-bottom: 0; text-align: left; }
+  .fs-intro h1 { font-size: 46px; letter-spacing: -0.03em; }
+  .fs-intro-subtitle {
+    font-size: 16px;
+    max-width: 460px;
+    margin: 0;
+    line-height: 1.55;
+  }
+  .fs-feature-row {
+    grid-area: features;
+    margin-bottom: 0;
+    max-width: 460px;
+    gap: 12px;
+  }
+  .fs-feature { padding: 16px 10px; }
+  .fs-feature-ico { font-size: 26px; }
+  .fs-feature span { font-size: 12px; }
+  .fs-tips-card {
+    grid-area: tips;
+    margin-bottom: 0;
+    padding: 20px;
+    max-width: 420px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+  }
+  .fs-tips-title { font-size: 13px; }
+  .fs-tip span { font-size: 26px; }
+  .fs-tip p { font-size: 12px; }
+  .fs-btn-start {
+    grid-area: cta;
+    max-width: 460px;
+    padding: 20px 26px;
+    font-size: 16px;
+    border-radius: 999px;
+    margin-bottom: 0;
+  }
+  .fs-btn-ghost {
+    grid-area: ghost;
+    max-width: 460px;
+    text-align: left;
+    padding: 8px 0 0;
+  }
+
+  /* ── CAMERA desktop : agrandir l'ovale, centrer instructions ── */
+  .fs-oval {
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 360px;
+    height: 460px;
+  }
+  .fs-oval.active,
+  .fs-oval.capture {
+    animation: none;
+  }
+  .fs-overlay {
+    background:
+      radial-gradient(
+        ellipse 260px 340px at center 50%,
+        transparent 95%,
+        rgba(0,0,0,0.82) 100%
+      );
+  }
+  .fs-quality-row {
+    top: 32px;
+    justify-content: center;
+    gap: 12px;
+  }
+  .fs-q-chip { padding: 8px 14px; font-size: 12px; }
+  .fs-instructions {
+    padding: 100px 40px 40px;
+    max-width: 720px;
+    margin: 0 auto;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+  }
+  .fs-instructions h2 { font-size: 28px; }
+  .fs-instructions p { font-size: 15px; }
+  .fs-countdown { width: 130px; height: 130px; font-size: 66px; }
+  .fs-thumbnails { top: 88px; gap: 14px; }
+  .fs-thumb { width: 46px; height: 46px; font-size: 16px; }
+  .fs-thumb svg { width: 22px; height: 22px; }
+
+  /* ── ANALYZING desktop : stage plus grand ── */
+  .fs-analyzing { padding: 40px; }
+  .fs-analyzing-content { max-width: 520px; }
+  .fs-analyzing-stage {
+    width: 300px;
+    height: 300px;
+    margin-bottom: 34px;
+  }
+  .fs-analyzing-status { min-height: 84px; }
+  .fs-analyzing-emoji { font-size: 40px; }
+  .fs-analyzing-status h2 { font-size: 22px; }
+  .fs-analyzing-hint { font-size: 13px; }
+
+  /* ── ERROR desktop ── */
+  .fs-error-content { max-width: 460px; }
+  .fs-error-icon { width: 84px; height: 84px; font-size: 42px; }
+  .fs-error h2 { font-size: 26px; }
+  .fs-error > p, .fs-error-content > p { font-size: 15px; }
+}
+
+@media (min-width: 1200px) {
+  .fs-intro-content {
+    max-width: 1180px;
+    column-gap: 80px;
+  }
+  .fs-intro h1 { font-size: 54px; }
+  .fs-face-animation { max-width: 480px; }
+  .fs-oval { width: 400px; height: 520px; }
+  .fs-overlay {
+    background:
+      radial-gradient(
+        ellipse 300px 380px at center 50%,
+        transparent 95%,
+        rgba(0,0,0,0.85) 100%
+      );
+  }
+}

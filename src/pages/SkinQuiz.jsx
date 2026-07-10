@@ -363,6 +363,7 @@ export default function SkinQuiz({ onComplete }) {
           }}>Passer</button>
         </div>
 
+        <div className="squiz-intro-shell">
         <div className="squiz-intro-content">
           <div className="squiz-illustration">
             <div className="squiz-face">
@@ -405,6 +406,7 @@ export default function SkinQuiz({ onComplete }) {
           </button>
           <p className="squiz-intro-foot">2 min · sans inscription supplémentaire</p>
         </div>
+        </div>
       </div>
     );
   }
@@ -428,6 +430,7 @@ export default function SkinQuiz({ onComplete }) {
   if (phase === 'result') {
     return (
       <div className="squiz-screen squiz-result">
+        <div className="squiz-result-shell">
         <div className="squiz-result-hero">
           <div className="squiz-result-bg">
             <span className="squiz-hbubble b1" />
@@ -521,6 +524,7 @@ export default function SkinQuiz({ onComplete }) {
             Analyse photo précise →
           </button>
         </div>
+        </div>
       </div>
     );
   }
@@ -535,6 +539,7 @@ export default function SkinQuiz({ onComplete }) {
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
     >
+      <div className="squiz-quiz-shell">
       <div className="squiz-top">
         <button
           className="squiz-top-back"
@@ -616,6 +621,7 @@ export default function SkinQuiz({ onComplete }) {
           {step < STEPS.length - 1 ? 'Suivant' : 'Voir mon résultat'}
           <span className="squiz-cta-arrow">→</span>
         </button>
+      </div>
       </div>
     </div>
   );

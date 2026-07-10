@@ -718,3 +718,83 @@
   pointer-events: none;
   white-space: nowrap;
 }
+
+/* ═══════════════════════════════════════════════════
+   RESPONSIVE — Tablet ≥ 720px + Desktop ≥ 1024px
+   ═══════════════════════════════════════════════════ */
+@media (min-width: 720px) {
+  .ypromos-screen { min-height: 100vh; height: auto; }
+  .ypromos-scroll { padding-bottom: 40px; }
+  .ypromos-header {
+    padding-left: max(16px, calc((100% - 1200px) / 2 + 24px));
+    padding-right: max(16px, calc((100% - 1200px) / 2 + 24px));
+  }
+  .ypromos-hero-wrap {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 24px 8px;
+  }
+  .ypromos-hero {
+    padding: 32px 32px 28px;
+    border-radius: 28px;
+  }
+  .ypromos-hero-value { font-size: 54px; }
+  .ypromos-tabs-wrap {
+    top: calc(var(--safe-top, 14px) + 72px);
+  }
+  .ypromos-tabs {
+    padding-left: max(24px, calc((100% - 1200px) / 2 + 24px));
+    padding-right: max(24px, calc((100% - 1200px) / 2 + 24px));
+    justify-content: flex-start;
+  }
+  .ypromos-section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 12px 24px 0;
+  }
+  .ypromos-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .ypromos-loyalty {
+    max-width: 1200px;
+    margin: 24px auto 0;
+    padding: 20px 24px;
+    border-radius: 22px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .ypromos-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+  }
+  .ypromos-hero {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    column-gap: 32px;
+    align-items: center;
+  }
+  .ypromos-hero-top,
+  .ypromos-hero-value,
+  .ypromos-hero-desc { grid-column: 1; }
+  .ypromos-hero-code-row {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    flex-direction: column;
+    align-self: center;
+  }
+  .ypromos-hero-cta {
+    grid-column: 1;
+    max-width: 240px;
+  }
+  .ypromos-hero-min { grid-column: 1 / -1; }
+  .ypromos-card { padding: 20px; border-radius: 22px; }
+  /* Hide mobile tabbar on desktop */
+  .tabbar { display: none; }
+}
+
+@media (min-width: 1280px) {
+  .ypromos-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}

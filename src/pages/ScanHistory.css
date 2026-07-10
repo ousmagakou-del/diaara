@@ -449,3 +449,77 @@
 :root.dark .sh-header { background: rgba(15, 17, 21, 0.85); }
 :root.dark .sh-meta-chip { background: var(--bg-soft); }
 :root.dark .sh-item-thumb { background: var(--bg-soft); }
+
+/* ============================================================
+   RESPONSIVE — Desktop grid des scans
+   ============================================================ */
+@media (min-width: 900px) {
+  .sh-header { padding: 18px 32px; }
+  .sh-header-title h1 { font-size: 20px; }
+  .sh-header-title p { font-size: 12px; }
+  .sh-back { width: 42px; height: 42px; }
+  .sh-back svg { width: 20px; height: 20px; }
+
+  .sh-scroll {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 28px 32px 80px;
+  }
+
+  /* Empty state — plus généreux */
+  .sh-empty { padding: 80px 20px; }
+  .sh-empty-illustration { width: 220px; height: 220px; }
+  .sh-empty h2 { font-size: 26px; }
+  .sh-empty p { font-size: 15px; max-width: 420px; }
+  .sh-btn-primary {
+    max-width: 360px;
+    margin-left: auto;
+    margin-right: auto;
+    border-radius: 999px;
+    padding: 18px;
+    font-size: 15px;
+  }
+
+  /* Stats : 4 col équilibré + carte principale plus grande */
+  .sh-stats {
+    grid-template-columns: 1.6fr 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .sh-stat-card { padding: 18px 18px; border-radius: 18px; }
+  .sh-stat-label { font-size: 11px; }
+  .sh-stat-value { font-size: 40px; }
+  .sh-stat-unit { font-size: 15px; }
+  .sh-stat-value-sm { font-size: 26px; }
+
+  /* Chart card plus grand */
+  .sh-chart-card { padding: 22px; border-radius: 22px; margin-bottom: 24px; }
+  .sh-chart-card h2 { font-size: 18px; }
+  .sh-chart-svg { height: 200px; }
+
+  /* Timeline en grille 2 col */
+  .sh-timeline { margin-bottom: 24px; }
+  .sh-timeline-title { font-size: 14px; margin-bottom: 16px; }
+  .sh-timeline-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+  .sh-item { padding: 16px; border-radius: 18px; }
+  .sh-item-thumb { width: 90px; height: 90px; border-radius: 14px; }
+  .sh-item-head strong { font-size: 14px; }
+  .sh-item-date { font-size: 12px; }
+  .sh-meta-chip { font-size: 11px; }
+  .sh-item-concerns { font-size: 12px; }
+
+  /* CTA finale (bouton commun empty + fin de liste) */
+  .sh-btn-primary {
+    margin-top: 24px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .sh-scroll { max-width: 1360px; padding: 36px 40px 100px; }
+  .sh-timeline-list { grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .sh-chart-svg { height: 240px; }
+}

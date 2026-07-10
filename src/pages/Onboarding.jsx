@@ -55,6 +55,80 @@ const SENEGAL_CITIES = [
   'Kédougou', 'Podor', 'Richard-Toll', 'Joal-Fadiouth', 'Autre',
 ];
 
+// ─── Desktop brand panel : shown ≥ 900px, left column of auth / profile ───
+function BrandPanel() {
+  return (
+    <aside className="ob-brand-panel" aria-hidden="true">
+      <div className="ob-brand-inner">
+        <div className="ob-brand-logo">
+          <span>Y</span>
+          <em />
+        </div>
+        <h2 className="ob-brand-title">
+          Tes soins beauté,<br/>livrés à Dakar.
+        </h2>
+        <p className="ob-brand-sub">
+          Pharmacies partenaires, IA gratuite, meilleur prix garanti.
+        </p>
+        <ul className="ob-brand-list">
+          <li>
+            <span className="ob-brand-bullet">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </span>
+            <div>
+              <strong>Livraison 24h à Dakar</strong>
+              <em>Wave, Orange Money, cash à la livraison.</em>
+            </div>
+          </li>
+          <li>
+            <span className="ob-brand-bullet">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </span>
+            <div>
+              <strong>Scan IA peau gratuit</strong>
+              <em>Analyse en 30 s + routine personnalisée.</em>
+            </div>
+          </li>
+          <li>
+            <span className="ob-brand-bullet">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </span>
+            <div>
+              <strong>Meilleur prix</strong>
+              <em>Comparé entre pharmacies partenaires.</em>
+            </div>
+          </li>
+          <li>
+            <span className="ob-brand-bullet">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </span>
+            <div>
+              <strong>Points fidélité</strong>
+              <em>Récompenses, parrainage, cadeaux surprise.</em>
+            </div>
+          </li>
+        </ul>
+        <div className="ob-brand-trust">
+          <div>
+            <strong>4.9★</strong>
+            <span>App Store</span>
+          </div>
+          <span className="ob-brand-trust-sep" />
+          <div>
+            <strong>5 000+</strong>
+            <span>produits</span>
+          </div>
+          <span className="ob-brand-trust-sep" />
+          <div>
+            <strong>24h</strong>
+            <span>livraison</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
 // ─── Icônes SVG des slides (overlay sur photo) ───
 function SlideIcon({ name }) {
   const props = { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' };
@@ -528,6 +602,7 @@ export default function Onboarding({ onComplete }) {
           <button className="ob-skip" onClick={() => { haptic('light'); setStep('auth'); }}>Passer</button>
         </div>
 
+        <div className="ob-intro-inner">
         <div className="ob-content">
           <div className="ob-icon-pill" key={`icon${slide}`}>
             <SlideIcon name={SLIDES[slide].icon} />
@@ -558,6 +633,7 @@ export default function Onboarding({ onComplete }) {
             </svg>
           </button>
         </div>
+        </div>
       </div>
     );
   }
@@ -566,6 +642,8 @@ export default function Onboarding({ onComplete }) {
   if (step === 'auth') {
     return (
       <div className="ob-auth-screen page-anim">
+        <BrandPanel />
+        <div className="ob-auth-main">
         {/* En-tête vert avec logo */}
         <div className="ob-auth-top">
           <div className="ob-logo-circle">Y</div>
@@ -908,6 +986,7 @@ export default function Onboarding({ onComplete }) {
             </>
           )}
         </div>
+        </div>
 
         {/* ─── Popup activation Face ID ─── */}
         {askEnableBio && (
@@ -982,6 +1061,8 @@ export default function Onboarding({ onComplete }) {
   if (step === 'profile') {
     return (
       <div className="ob-profile-screen page-anim">
+        <BrandPanel />
+        <div className="ob-profile-main">
         <div className="ob-profile-top">
           <div className="ob-profile-progress">
             <span className="ob-progress-pill done">1</span>
@@ -1063,6 +1144,7 @@ export default function Onboarding({ onComplete }) {
           <button onClick={handleSkipProfile} className="ob-btn-ghost" style={{ marginTop: 10 }}>
             Plus tard
           </button>
+        </div>
         </div>
       </div>
     );

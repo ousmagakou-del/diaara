@@ -434,10 +434,24 @@ export default function Payment({ orderId }) {
   const isCOD              = order.payment_method === 'cod';
   const isCard             = order.payment_method === 'card';
 
+  // ─── Order summary helpers ───
+  const items = Array.isArray(order.items) ? order.items : [];
+  const previewItems = items.slice(0, 4);
+  const extraCount = Math.max(0, items.length - previewItems.length);
+  const subtotal = Number(order.subtotal || 0);
+  const shippingFee = Number(order.shipping || 0);
+  const isPreorder = !!order.is_preorder;
+  const depositAmount = Number(order.deposit_amount || 0);
+
+  const methodLabel = isWave ? 'Wave' : isOM ? 'Orange Money' : isCOD ? 'Espèces à la livraison' : isCard ? 'Carte bancaire' : 'Paiement';
+
   return (
     <div className="pay-screen page-anim">
       <BackHeader title="Paiement" onBack={() => navigate('/orders')} />
       <div className="pay-content">
+        <div className="pay-grid">
+          {/* ═══════════════ LEFT : méthode + instructions ═══════════════ */}
+          <div className="pay-main">
         {/* Logo officiel du moyen de paiement (au lieu d'emoji fallback) */}
         <div className="pay-icon" style={{ marginBottom: 8 }}>
           {isWave && (
@@ -562,9 +576,9 @@ export default function Payment({ orderId }) {
         )}
         */}
 
-        {/* ─── ACTION PRINCIPALE : confirmation manuelle ─── */}
+        {/* ─── ACTION PRINCIPALE : confirmation manuelle (desktop) ─── */}
         <button
-          className="btn-primary"
+          className="btn-primary pay-confirm-btn pay-confirm-desktop"
           onClick={handlePay}
           disabled={paying}
           style={{ marginTop: 14 }}
@@ -585,6 +599,89 @@ export default function Payment({ orderId }) {
         >
           💬 Besoin d'aide ? Contacte-nous WhatsApp
         </a>
+          </div>
+
+          {/* ═══════════════ RIGHT : order summary sticky ═══════════════ */}
+          <aside className="pay-summary">
+            <div className="pay-summary-card">
+              <h3 className="pay-summary-title">Récapitulatif</h3>
+              <div className="pay-summary-method">
+                <span className="pay-summary-method-label">Moyen</span>
+                <strong>{methodLabel}</strong>
+              </div>
+              {previewItems.length > 0 && (
+                <ul className="pay-summary-items">
+                  {previewItems.map((it, i) => (
+                    <li key={`${it.id || it.name}-${i}`} className="pay-summary-item">
+                      {it.img ? (
+                        <img src={it.img} alt="" loading="lazy" decoding="async" />
+                      ) : (
+                        <span className="pay-summary-thumb">📦</span>
+                      )}
+                      <div className="pay-summary-item-info">
+                        <strong>{it.name}</strong>
+                        <span>{Number(it.qty || 1)} × {Number(it.price || 0).toLocaleString('fr-FR')} FCFA</span>
+                      </div>
+                    </li>
+                  ))}
+                  {extraCount > 0 && (
+                    <li className="pay-summary-more">+{extraCount} autre{extraCount > 1 ? 's' : ''} article{extraCount > 1 ? 's' : ''}</li>
+                  )}
+                </ul>
+              )}
+              <div className="pay-summary-totals">
+                {subtotal > 0 && (
+                  <div className="pay-summary-row">
+                    <span>Sous-total</span>
+                    <strong>{subtotal.toLocaleString('fr-FR')} FCFA</strong>
+                  </div>
+                )}
+                {shippingFee > 0 && (
+                  <div className="pay-summary-row">
+                    <span>Livraison</span>
+                    <strong>{shippingFee.toLocaleString('fr-FR')} FCFA</strong>
+                  </div>
+                )}
+                <div className="pay-summary-row pay-summary-grand">
+                  <span>{isPreorder && depositAmount > 0 ? 'Acompte à payer' : 'Total à payer'}</span>
+                  <strong>{amountStr} FCFA</strong>
+                </div>
+                {isPreorder && depositAmount > 0 && Number(order.total) !== depositAmount && (
+                  <div className="pay-summary-row pay-summary-note">
+                    <span>Solde restant (à l'arrivée)</span>
+                    <strong>{(Number(order.total) - depositAmount).toLocaleString('fr-FR')} FCFA</strong>
+                  </div>
+                )}
+              </div>
+              {isPreorder && (
+                <div className="pay-summary-preorder">
+                  ✈️ Import — 50% acompte maintenant, solde à l'arrivée à Dakar.
+                </div>
+              )}
+              <div className="pay-summary-trust">
+                <span>🔒</span>
+                <p>Paiement sécurisé. Vérifié manuellement par YARAM avant expédition.</p>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+
+      {/* ═══════════════ Sticky bottom CTA (mobile only) ═══════════════ */}
+      <div className="pay-mobile-bar">
+        <div className="pay-mobile-bar-info">
+          <span className="pay-mobile-bar-label">
+            {isPreorder && depositAmount > 0 ? 'Acompte' : 'Total'}
+          </span>
+          <span className="pay-mobile-bar-total">{amountStr} FCFA</span>
+        </div>
+        <button
+          className="btn-primary pay-confirm-btn pay-mobile-bar-cta"
+          onClick={handlePay}
+          disabled={paying}
+        >
+          {paying ? 'Confirmation…' : isCOD ? "C'est noté →" : "J'ai payé →"}
+        </button>
       </div>
     </div>
   );
