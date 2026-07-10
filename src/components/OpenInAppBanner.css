@@ -1,0 +1,125 @@
+/* ══════════════════════════════════════════════════════════════════
+   OpenInAppBanner — bande fixe bas d'ecran (mobile web only)
+   ══════════════════════════════════════════════════════════════════
+   z-index 90 : au-dessus de la TabBar (z 40-50) et du contenu (0-30),
+   mais SOUS les modales (100+) et le splash (1000+).
+   Safe-area inset : evite le home indicator iOS + soft keys Android.
+   ══════════════════════════════════════════════════════════════════ */
+
+.yr-app-banner {
+  position: fixed;
+  left: var(--y-sp-3);
+  right: var(--y-sp-3);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + var(--y-sp-3));
+  z-index: 90;
+
+  display: flex;
+  align-items: center;
+  gap: var(--y-sp-3);
+  padding: var(--y-sp-3) var(--y-sp-4);
+
+  background: var(--y-n-0);
+  border: 1px solid var(--y-n-200);
+  border-radius: var(--y-rad-2xl);
+  box-shadow: var(--y-shadow-lg);
+
+  animation: yr-app-banner-slide-up 260ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+@keyframes yr-app-banner-slide-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Logo carre ─────────────────────────────────────────────── */
+.yr-app-banner__logo {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--y-rad-md);
+  background: var(--y-brand-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.yr-app-banner__logo img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+/* ─── Texte central ─────────────────────────────────────────── */
+.yr-app-banner__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-right: var(--y-sp-2);
+}
+.yr-app-banner__title {
+  font-size: var(--y-fs-base);
+  font-weight: var(--y-fw-bold);
+  color: var(--y-n-900);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+.yr-app-banner__sub {
+  font-size: var(--y-fs-xs);
+  color: var(--y-n-600);
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ─── CTA "Ouvrir" ──────────────────────────────────────────── */
+.yr-app-banner__cta {
+  flex-shrink: 0;
+  appearance: none;
+  border: 0;
+  cursor: pointer;
+  padding: 8px 16px;
+  background: var(--y-brand);
+  color: var(--y-n-0);
+  font-size: var(--y-fs-base);
+  font-weight: var(--y-fw-semibold);
+  border-radius: var(--y-rad-pill);
+  transition: background 120ms ease, transform 120ms ease;
+  min-height: 36px;
+}
+.yr-app-banner__cta:hover { background: var(--y-brand-dark); }
+.yr-app-banner__cta:active { transform: scale(0.96); }
+
+/* ─── Close X ──────────────────────────────────────────────── */
+.yr-app-banner__close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--y-n-500);
+  cursor: pointer;
+  padding: 4px;
+  line-height: 0;
+  border-radius: var(--y-rad-sm);
+  transition: background 120ms ease, color 120ms ease;
+}
+.yr-app-banner__close:hover {
+  background: var(--y-n-100);
+  color: var(--y-n-900);
+}
+
+/* ─── Ecrans tres etroits : compacte le sous-titre ──────────── */
+@media (max-width: 360px) {
+  .yr-app-banner { padding: var(--y-sp-3); gap: var(--y-sp-2); }
+  .yr-app-banner__sub { display: none; }
+  .yr-app-banner__cta { padding: 8px 14px; font-size: var(--y-fs-sm); }
+}
+
+/* ─── Ne s'affiche jamais sur desktop (safety net cote CSS) ── */
+@media (min-width: 901px) {
+  .yr-app-banner { display: none; }
+}

@@ -3,6 +3,12 @@
 
 const KEY = 'yaram_cart';
 const LAST_ADDED_KEY = 'yaram_cart_last_added_at';
+// LAST_WRITE_KEY : timestamp ISO du dernier setCart local (ajout / modif / suppression).
+// Sert d'arbitre au sync cross-device : si local est plus récent que le cart en DB
+// (colonne user_carts.updated_at), on push local -> DB. Sinon on remplace local par DB.
+// Écrit à chaque setCart, remis à jour même quand le panier est vidé (pour distinguer
+// "vidé sur ce device il y a 5 min" de "vidé sur autre device il y a 2h").
+export const CART_LAST_WRITE_KEY = 'yaram_cart_last_write';
 
 // Sanitize : un cart hérité d'avant les nouveaux champs (is_imported, pharmacyName…)
 // pouvait être malformé et planter `grouped.reduce` ou `buildPreorderSummary`,
@@ -39,14 +45,38 @@ export function getCart() {
 export function setCart(items) {
   try {
     localStorage.setItem(KEY, JSON.stringify(items));
-    // Si panier vide → on retire le timestamp (le user a checkout)
+    // Si panier vide → on retire le timestamp d'ajout (le user a checkout)
     if (!items || items.length === 0) {
       try { localStorage.removeItem(LAST_ADDED_KEY); } catch {}
     }
-    // Évenement custom pour que d'autres composants (badge panier dans TabBar) réagissent
+    // Tag le device : "cart modifié ici, à cet instant". Utilisé par cartSync.js
+    // pour arbitrer local vs DB au prochain login sur un autre device.
+    try { localStorage.setItem(CART_LAST_WRITE_KEY, new Date().toISOString()); } catch {}
+    // Évenement custom pour que d'autres composants (badge panier dans TabBar,
+    // cartSync listener dans App.jsx) réagissent au changement.
     window.dispatchEvent(new CustomEvent('yaram-cart-updated', { detail: { items } }));
   } catch (e) {
     console.error('setCart error:', e);
+  }
+}
+
+// Timestamp ISO du dernier setCart sur ce device. null si jamais écrit ici.
+export function getCartLastWrite() {
+  try { return localStorage.getItem(CART_LAST_WRITE_KEY) || null; } catch { return null; }
+}
+
+// Écriture "silencieuse" : remplace le cart local sans redéclencher yaram-cart-updated
+// ni bumper le CART_LAST_WRITE_KEY. Utilisée par cartSync.js après pull DB pour éviter
+// une boucle sync → event → push.
+export function replaceCartFromRemote(items) {
+  try {
+    const sanitized = sanitizeCartItems(items);
+    localStorage.setItem(KEY, JSON.stringify(sanitized));
+    // Notifie les composants pour rafraîchir leur affichage, MAIS sans bumper
+    // le last-write (le detail.silent = true est un signal pour cartSync).
+    window.dispatchEvent(new CustomEvent('yaram-cart-updated', { detail: { items: sanitized, silent: true } }));
+  } catch (e) {
+    console.error('replaceCartFromRemote error:', e);
   }
 }
 

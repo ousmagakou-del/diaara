@@ -3,6 +3,7 @@ import { supabase, getCurrentUser, getAllProducts, getAllBrands, getProductCateg
 import { maybeSendWelcomeEmail } from './lib/emails';
 import { checkAndNotifyCartAbandon, notifyWelcome } from './lib/notifications';
 import { initPush, setupPushForUser } from './lib/push';
+import { syncCartOnLogin, attachCartSyncListener, disableCartSync } from './lib/cartSync';
 import SplashScreen from './components/SplashScreen';
 import Onboarding from './pages/Onboarding';
 import Home from './pages/Home';
@@ -32,6 +33,7 @@ import Notifications from './pages/Notifications';
 import Promos from './pages/Promos';
 import Help from './pages/Help';
 import InstallPrompt from './components/InstallPrompt';
+import OpenInAppBanner from './components/OpenInAppBanner';
 // FAB WhatsApp retiré (juin 2026) — le contact WhatsApp est accessible
 // depuis Profile → Support → "WhatsApp YARAM" et page Help.
 // import WhatsAppButton from './components/WhatsAppButton';
@@ -642,6 +644,26 @@ function ClientApp() {
     };
   }, [authChecked, user?.id, user?.phone]);
 
+  // ─── CART SYNC cross-device : pull DB au login, push DB sur chaque change ─
+  //   Une seule fois par session (guard par ref). Fire-and-forget.
+  //   Sur logout, on coupe le push pour eviter un upsert avec un anon JWT.
+  const cartSyncRef = useRef(false);
+  useEffect(() => {
+    if (!authChecked) return;
+    if (!user?.id) {
+      // Logout OU jamais logue : couper le push. Le cart local reste utilisable.
+      disableCartSync();
+      return;
+    }
+    if (cartSyncRef.current) return;
+    cartSyncRef.current = true;
+    // Attache le listener AVANT le pull : si le pull dispatche un event silent,
+    // le listener l'ignore ; si l'user modifie son cart pendant le pull, le
+    // change sera bien capture et debouncera un push apres la fin du pull.
+    attachCartSyncListener();
+    syncCartOnLogin().catch(() => { /* silent — le cart local reste source de verite */ });
+  }, [authChecked, user?.id]);
+
   // ─── PUSH NOTIFICATIONS : setup après login (popup permission iOS + save device en DB) ───
   // Délai de 3 secondes pour laisser l'user "atterrir" sur l'app avant de
   // lui demander la permission (= meilleur taux d'acceptation).
@@ -979,6 +1001,9 @@ function ClientApp() {
             <Suspense fallback={<LazyFallback />} key={pageKey}>{page}</Suspense>
           </ErrorBoundary>
           <InstallPrompt />
+          {/* Banner "Ouvrir dans l'app YARAM" — mobile web only, dismissible 7j.
+              Interne au composant : matchMedia + UA + display-mode standalone. */}
+          <OpenInAppBanner />
         </div>
         <NetworkStatus />
         <Toaster />
