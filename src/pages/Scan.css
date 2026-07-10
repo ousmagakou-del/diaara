@@ -253,6 +253,30 @@
   text-underline-offset: 4px;
 }
 
+/* Bouton secondaire : import galerie (fallback sans camera) */
+.fs-btn-gallery {
+  width: 100%;
+  padding: 14px 20px;
+  background: rgba(255,255,255,0.12);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.24);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  transition: transform 0.12s, background 0.12s;
+}
+.fs-btn-gallery:active { transform: scale(0.97); background: rgba(255,255,255,0.18); }
+.fs-btn-gallery svg { width: 18px; height: 18px; }
+
 /* ==========================================================
    CAMERA / SCANNING
    ========================================================== */
@@ -787,9 +811,10 @@
       "face  title"
       "face  features"
       "tips  cta"
+      "tips  gallery"
       "tips  ghost";
     column-gap: 60px;
-    row-gap: 22px;
+    row-gap: 18px;
     align-items: center;
     padding-top: 90px;
     padding-bottom: 60px;
@@ -837,6 +862,14 @@
     max-width: 460px;
     padding: 20px 26px;
     font-size: 16px;
+    border-radius: 999px;
+    margin-bottom: 0;
+  }
+  .fs-btn-gallery {
+    grid-area: gallery;
+    max-width: 460px;
+    padding: 16px 22px;
+    font-size: 14px;
     border-radius: 999px;
     margin-bottom: 0;
   }

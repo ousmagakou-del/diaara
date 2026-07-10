@@ -155,6 +155,32 @@ export default function ScanResult({ scanId }) {
     );
   }
 
+  // ─── Fallback analyse incomplete (au lieu d'un ecran blanc) ───
+  // Si la DB contient un scan sans skin_type ni diagnostic exploitable, on affiche
+  // un message clair + CTA pour refaire un scan, plutot que de laisser toutes les
+  // sections vides.
+  {
+    const dg = scan.diagnosis || {};
+    const hasAnything =
+      scan.skin_type ||
+      scan.skin_score ||
+      dg.global ||
+      dg.advice ||
+      (dg.concerns && dg.concerns.length) ||
+      (dg.routine_recommandee && dg.routine_recommandee.length) ||
+      (dg.zones && Object.values(dg.zones).some(Boolean));
+    if (!hasAnything) {
+      return (
+        <div className="sr-screen sr-empty-screen">
+          <div className="sr-empty-icon"></div>
+          <h2>Analyse incomplete</h2>
+          <p>On n'a pas pu extraire ton diagnostic. Refais un scan en bonne lumiere naturelle, sans reflet ni flou.</p>
+          <button className="sr-btn-primary" onClick={() => navigate('scan')}>Refaire un scan</button>
+        </div>
+      );
+    }
+  }
+
   const d = scan.diagnosis || {};
   const target = scan.skin_score || 0;
   const scoreColor = target >= 80 ? '#1F8B4C' : target >= 60 ? '#F4B53A' : '#D9342B';

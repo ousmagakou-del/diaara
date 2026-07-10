@@ -7,14 +7,60 @@ import { getAllProducts } from './products';
 
 export async function analyzeSkinPhotos({ frontBase64, leftBase64, rightBase64 }) {
   try {
+    // ─── JWT user si dispo pour que l'edge function injecte le health_profile ───
+    // Sinon on tombe sur l'anon key (permet un scan sans compte connecte).
+    let bearer = SUPABASE_ANON_KEY;
+    let userId = null;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        bearer = session.access_token;
+        userId = session.user?.id || null;
+      }
+    } catch { /* fallback anon */ }
+
+    // ─── Recupere birth_date + allergies depuis users_profile pour enrichir la requete ───
+    // realAge = year(now) - year(birth_date). quick_allergies = array.
+    let realAge = null;
+    let quickAllergies = [];
+    if (userId) {
+      try {
+        const { data: profile } = await supabase
+          .from('users_profile')
+          .select('birth_date, allergies')
+          .eq('id', userId)
+          .maybeSingle();
+        if (profile?.birth_date) {
+          const y = new Date(profile.birth_date).getFullYear();
+          if (!Number.isNaN(y)) {
+            const age = new Date().getFullYear() - y;
+            if (age > 0 && age < 130) realAge = age;
+          }
+        }
+        // allergies peut etre stocke en TEXT (SkinQuiz) ou array (health_profile).
+        // On normalise en array de strings non vides.
+        const raw = profile?.allergies;
+        if (Array.isArray(raw)) {
+          quickAllergies = raw.filter(x => typeof x === 'string' && x.trim());
+        } else if (typeof raw === 'string' && raw.trim()) {
+          quickAllergies = raw.split(/[,;\n]/).map(s => s.trim()).filter(Boolean);
+        }
+      } catch (e) {
+        console.warn('[analyzeSkinPhotos] users_profile read failed:', e?.message);
+      }
+    }
+
     const response = await fetch(`${SUPABASE_URL}/functions/v1/analyze-skin`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Authorization': `Bearer ${bearer}`,
+        'apikey': SUPABASE_ANON_KEY,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         photos: { front: frontBase64, left: leftBase64, right: rightBase64 },
+        realAge,
+        quick_allergies: quickAllergies,
       }),
     });
     return await response.json();

@@ -38,6 +38,7 @@ export default function Scan() {
   const intervalRef = useRef(null);
   const timeoutRef = useRef(null);
   const cancelledRef = useRef(false);
+  const galleryInputRef = useRef(null);
 
   // Cycle messages d'analyse
   useEffect(() => {
@@ -47,6 +48,63 @@ export default function Scan() {
     }, 2200);
     return () => clearInterval(it);
   }, [phase]);
+
+  // ─── Fallback galerie : si l'utilisateur refuse la camera ou n'en a pas ───
+  // Un seul cliche importe alimente les 3 angles (front/left/right), meme flow analyze.
+  const openGallery = () => {
+    if (galleryInputRef.current) {
+      // Reset value pour permettre de re-selectionner le meme fichier
+      galleryInputRef.current.value = '';
+      galleryInputRef.current.click();
+    }
+  };
+
+  const handleGalleryFile = (e) => {
+    const file = e.target?.files?.[0];
+    if (!file) return;
+
+    // Downscale + compression via canvas pour rester coherent avec captureFrame().
+    const reader = new FileReader();
+    reader.onerror = () => {
+      setError('Impossible de lire ce fichier. Essaie une autre photo.');
+      setPhase('error');
+    };
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => {
+        setError('Format d\'image non supporte. Essaie JPG ou PNG.');
+        setPhase('error');
+      };
+      img.onload = () => {
+        try {
+          const maxDim = 512;
+          let w = img.naturalWidth || img.width;
+          let h = img.naturalHeight || img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+            else { w = Math.round((w * maxDim) / h); h = maxDim; }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+
+          // Une seule photo alimente les 3 slots (fallback sans camera).
+          photosRef.current = { front: dataUrl, left: dataUrl, right: dataUrl };
+          setPhotos({ ...photosRef.current });
+          cancelledRef.current = false;
+          stopCamera();
+          analyzeAll();
+        } catch (err) {
+          console.error('[Scan] Gallery process error:', err);
+          setError('Impossible de traiter cette photo : ' + (err?.message || 'erreur'));
+          setPhase('error');
+        }
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  };
 
   const startCamera = async () => {
     if (!navigator?.mediaDevices?.getUserMedia) {
@@ -375,10 +433,26 @@ export default function Scan() {
               <polyline points="9 18 15 12 9 6"/>
             </svg>
           </button>
+          <button className="fs-btn-gallery" onClick={openGallery}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="3"/>
+              <circle cx="8.5" cy="8.5" r="1.6"/>
+              <path d="M21 15l-5-5L5 21"/>
+            </svg>
+            Importer depuis la galerie
+          </button>
           <button className="fs-btn-ghost" onClick={() => navigate({ name: 'scan_history' })}>
             Voir mes anciens scans
           </button>
         </div>
+        <input
+          ref={galleryInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          hidden
+          onChange={handleGalleryFile}
+        />
       </div>
     );
   }
@@ -399,11 +473,29 @@ export default function Scan() {
           <p>{cameraError || error}</p>
           <button className="fs-btn-start" onClick={restart}>Réessayer</button>
           {isCameraIssue && (
-            <p className="fs-error-hint">
-              Astuce : Réglages iOS → YARAM → Caméra → active l'accès.
-            </p>
+            <>
+              <button className="fs-btn-gallery" onClick={openGallery}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="3"/>
+                  <circle cx="8.5" cy="8.5" r="1.6"/>
+                  <path d="M21 15l-5-5L5 21"/>
+                </svg>
+                Importer depuis la galerie
+              </button>
+              <p className="fs-error-hint">
+                Astuce : Réglages iOS → YARAM → Caméra → active l'accès.
+              </p>
+            </>
           )}
         </div>
+        <input
+          ref={galleryInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          hidden
+          onChange={handleGalleryFile}
+        />
       </div>
     );
   }
