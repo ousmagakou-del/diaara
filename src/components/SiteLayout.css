@@ -34,12 +34,22 @@
   display: flex; align-items: center; gap: 36px;
 }
 
-/* Logo */
+/* Logo - SVG YARAM */
 .site-logo {
   display: flex; align-items: center; gap: 10px;
   background: none; border: none; cursor: pointer;
   padding: 4px 0; flex-shrink: 0;
 }
+.site-logo-img {
+  display: block;
+  height: 32px;
+  width: auto;
+}
+.site-logo-img--footer {
+  height: 36px;
+  filter: brightness(0) invert(1);
+}
+/* Legacy classes gardees si utilisees ailleurs */
 .site-logo-mark {
   width: 36px; height: 36px; border-radius: 10px;
   background: linear-gradient(135deg, #1F8B4C 0%, #2DAA5E 100%);

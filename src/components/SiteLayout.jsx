@@ -80,9 +80,8 @@ export default function SiteLayout({ children, transparentHeader = false, hideFo
       {/* ━━━━━━━━━ HEADER ━━━━━━━━━ */}
       <header className={`site-header ${transparentHeader && !scrolled ? 'site-header--transparent' : ''} ${scrolled ? 'site-header--scrolled' : ''}`}>
         <div className="site-header-inner">
-          <button className="site-logo" onClick={() => navigate('landing')}>
-            <span className="site-logo-mark">Y</span>
-            <span className="site-logo-text">YARAM</span>
+          <button className="site-logo" onClick={() => navigate('landing')} aria-label="YARAM - Retour a l accueil">
+            <img src="/yaram-logo.svg" alt="YARAM" className="site-logo-img" />
           </button>
 
           {/* Desktop nav */}
@@ -181,8 +180,7 @@ export default function SiteLayout({ children, transparentHeader = false, hideFo
           <div className="site-footer-inner">
             <div className="site-footer-col site-footer-brand">
               <div className="site-logo site-footer-logo">
-                <span className="site-logo-mark">Y</span>
-                <span className="site-logo-text">YARAM</span>
+                <img src="/yaram-logo.svg" alt="YARAM" className="site-logo-img site-logo-img--footer" />
               </div>
               <p>La première parapharmacie 100% digitale du Sénégal. Livraison express, produits authentiques.</p>
               <div className="site-footer-app">
