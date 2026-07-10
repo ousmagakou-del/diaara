@@ -636,7 +636,7 @@ export default function ProductPage() {
               {product?.brand_name && (
                 <button
                   className="pp-brand-link"
-                  onClick={() => product.brand_id && navigate({ name: 'brand', id: product.brand_id })}
+                  onClick={() => product.brand_id && navigate({ name: 'brand', params: { id: product.brand_id } })}
                 >
                   {product.brand_name}
                 </button>
@@ -977,7 +977,7 @@ export default function ProductPage() {
                 <article
                   key={p.id}
                   className="pp-rel-card"
-                  onClick={() => navigate({ name: 'product', id: p.id })}
+                  onClick={() => navigate({ name: 'product', params: { id: p.id } })}
                 >
                   <div className="pp-rel-img-wrap">
                     {p.image_url ? (

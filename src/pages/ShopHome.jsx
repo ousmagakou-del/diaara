@@ -364,12 +364,25 @@ export default function ShopHome() {
     return (recent.length >= 6 ? recent : withDate).slice(0, 12);
   }, [productsRaw]);
 
-  // Bons plans : discount decroissant
+  // Bons plans : discount decroissant.
+  // FALLBACK deterministe : si aucun produit n'a de old_price/list_price en DB,
+  // on montre les produits les mieux notes pour garder la section peuplee
+  // (au lieu de l'ecran vide observe en prod).
   const deals = useMemo(() => {
-    return productsRaw
+    if (!productsRaw.length) return [];
+    const withDiscount = productsRaw
       .map((p) => ({ ...p, __pct: computeDiscountPct(p) }))
       .filter((p) => p.__pct >= 10)
-      .sort((a, b) => b.__pct - a.__pct)
+      .sort((a, b) => b.__pct - a.__pct);
+    if (withDiscount.length >= 4) return withDiscount.slice(0, 10);
+    // Fallback : top score + top rating
+    return productsRaw
+      .slice()
+      .sort((a, b) => {
+        const s = Number(b.score || 0) - Number(a.score || 0);
+        if (s !== 0) return s;
+        return Number(b.rating || 0) - Number(a.rating || 0);
+      })
       .slice(0, 10);
   }, [productsRaw]);
 
@@ -396,11 +409,26 @@ export default function ShopHome() {
       .slice(0, 10);
   }, [productsRaw]);
 
-  // Fin de stock : stock connu et 1..5
+  // Fin de stock : stock connu et 1..5.
+  // FALLBACK deterministe : la colonne `stock` n'est pas selectionnee cote
+  // getAllProducts (stock vit sur inventory, pas products), donc la
+  // condition initiale est toujours fausse. Pour garder une section utile,
+  // on fallback sur les references recentes peu notees (les "pepites" a
+  // faible visibilite du catalogue).
   const finDeStock = useMemo(() => {
+    if (!productsRaw.length) return [];
+    const withStock = productsRaw
+      .filter((p) => hasStockInfo(p) && p.stock > 0 && p.stock <= 5);
+    if (withStock.length >= 4) return withStock.slice(0, 10);
+    // Fallback : produits ajoutes recemment mais peu vus (long tail)
     return productsRaw
-      .filter((p) => hasStockInfo(p) && p.stock > 0 && p.stock <= 5)
-      .slice(0, 10);
+      .slice()
+      .sort((a, b) => {
+        const rc = Number(a.review_count || 0) - Number(b.review_count || 0);
+        if (rc !== 0) return rc;
+        return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+      })
+      .slice(0, 8);
   }, [productsRaw]);
 
   // ─── Handlers navigation ───────────────────────────────────────
@@ -412,8 +440,8 @@ export default function ShopHome() {
       return;
     }
     if (banner.link_type === 'category' && banner.link_target) return goSearch({ category: banner.link_target });
-    if (banner.link_type === 'brand' && banner.link_target) return navigate({ name: 'brand', id: banner.link_target });
-    if (banner.link_type === 'product' && banner.link_target) return navigate({ name: 'product', id: banner.link_target });
+    if (banner.link_type === 'brand' && banner.link_target) return navigate({ name: 'brand', params: { id: banner.link_target } });
+    if (banner.link_type === 'product' && banner.link_target) return navigate({ name: 'product', params: { id: banner.link_target } });
     return goSearch();
   };
 

@@ -222,14 +222,14 @@ export default function BrandPage() {
   }, [allBrands, brand]);
 
   // ─── Handlers ─────────────────────────────────────────────────────
-  const goProduct = (p) => navigate({ name: 'product', id: p.id });
-  const goBrand = (b) => navigate({ name: 'brand', id: b.id });
+  const goProduct = (p) => navigate({ name: 'product', params: { id: p.id } });
+  const goBrand = (b) => navigate({ name: 'brand', params: { id: b.id } });
 
   const onAddToCart = (p, e) => {
     e.stopPropagation();
     const ph = pharmacies[0];
     if (!ph) {
-      navigate({ name: 'product', id: p.id });
+      navigate({ name: 'product', params: { id: p.id } });
       return;
     }
     addToCart({
