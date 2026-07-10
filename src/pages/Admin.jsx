@@ -49,6 +49,8 @@ const PharmacistSessionsSection  = lazy(() => import('../admin/PharmacistSession
 const DistributorsSection        = lazy(() => import('../admin/DistributorsSection'));
 const RgpdExportsSection         = lazy(() => import('../admin/RgpdExportsSection'));
 const SignaturesSection          = lazy(() => import('../admin/SignaturesSection'));
+const PartnerApplicationsSection = lazy(() => import('../admin/PartnerApplicationsSection'));
+const DriverApplicationsSection  = lazy(() => import('../admin/DriverApplicationsSection'));
 
 import './Admin.css';
 
@@ -110,7 +112,9 @@ const NAV = [
   { id: 'inventory',   icon: '📦', label: 'Inventaire global', roles: ROLES_ALL },
   { id: 'restock',     icon: '⚠️', label: 'Alertes restock', badge: true, roles: ROLES_ALL },
   { id: 'history',     icon: '📜', label: 'Historique', roles: ROLES_ALL },
-  { id: 'signatures',  icon: '✍️', label: 'Signatures contrats', roles: ROLES_ALL_PLUS_COMMERCIAL },
+  { id: 'signatures',  icon: '', label: 'Signatures contrats', roles: ROLES_ALL_PLUS_COMMERCIAL },
+  { id: 'partner_apps', icon: '', label: 'Candidatures partenaires', badge: true, roles: ROLES_ALL_PLUS_COMMERCIAL },
+  { id: 'driver_apps',  icon: '', label: 'Candidatures livreurs',   badge: true, roles: ROLES_ALL_PLUS_COMMERCIAL },
   { id: 'settings',    icon: '⚙️', label: 'Paramètres', roles: ['super_admin'] },
   { id: 'adminusers',  icon: '👥', label: 'Gestion admins', roles: ['super_admin'] },
   { id: 'adminlogs',   icon: '📜', label: 'Logs activité', roles: ['super_admin'] },
@@ -139,6 +143,8 @@ export default function Admin() {
   };
   const [newOrdersCount, setNewOrdersCount] = useState(0);
   const [pendingValidationCount, setPendingValidationCount] = useState(0);
+  const [newPartnerAppsCount, setNewPartnerAppsCount] = useState(0);
+  const [newDriverAppsCount, setNewDriverAppsCount] = useState(0);
 
   const [pinModal, setPinModal] = useState(false);
   const [oldPin, setOldPin] = useState('');
@@ -249,6 +255,23 @@ export default function Admin() {
   useEffect(() => {
     if (section === 'orders') setNewOrdersCount(0);
   }, [section]);
+
+  // Compteurs candidatures partenaires + livreurs (badges NAV)
+  useEffect(() => {
+    if (!session?.token) return;
+    const refresh = async () => {
+      try {
+        const { data } = await supabase.rpc('admin_applications_counts', { p_admin_token: session.token });
+        if (data?.success) {
+          setNewPartnerAppsCount(data.partner_new || 0);
+          setNewDriverAppsCount(data.driver_new || 0);
+        }
+      } catch (e) {}
+    };
+    refresh();
+    const t = setInterval(refresh, 45000);
+    return () => clearInterval(t);
+  }, [session?.token]);
 
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
@@ -369,6 +392,12 @@ export default function Admin() {
               {item.id === 'validation' && pendingValidationCount > 0 && (
                 <span className="adm-nav-badge">{pendingValidationCount}</span>
               )}
+              {item.id === 'partner_apps' && newPartnerAppsCount > 0 && (
+                <span className="adm-nav-badge">{newPartnerAppsCount}</span>
+              )}
+              {item.id === 'driver_apps' && newDriverAppsCount > 0 && (
+                <span className="adm-nav-badge">{newDriverAppsCount}</span>
+              )}
             </button>
           ))}
         </nav>
@@ -476,6 +505,8 @@ export default function Admin() {
           {section === 'distributors'         && <DistributorsSection />}
           {section === 'rgpd'                 && <RgpdExportsSection />}
           {section === 'signatures'           && <SignaturesSection />}
+          {section === 'partner_apps'         && <PartnerApplicationsSection />}
+          {section === 'driver_apps'          && <DriverApplicationsSection />}
               </>
             );
           })()}
