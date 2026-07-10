@@ -3,22 +3,12 @@
 /.well-known/apple-app-site-association  /.well-known/apple-app-site-association  200
 /.well-known/assetlinks.json             /.well-known/assetlinks.json             200
 
-# Assets Vite hashes : NE PAS rewrite vers index.html. Si un chunk manque
-# (deploy Cloudflare en cours, cache SW client obsolete), on renvoie un vrai
-# 404 pour que le navigateur/SW sache qu il faut recharger le shell HTML,
-# au lieu de recevoir du text/html a la place de text/css ou javascript
-# (le browser refuse d executer et casse la page).
-/assets/*  /assets/:splat  200
-
-# Fichiers statiques racine : idem, laisse passer les vrais 404
-/sw.js               /sw.js               200
-/favicon.svg         /favicon.svg         200
-/yaram-logo.svg      /yaram-logo.svg      200
-/manifest.webmanifest /manifest.webmanifest 200
-/hero-video.mp4      /hero-video.mp4      200
-/hero-video.webm     /hero-video.webm     200
-/hero-poster.jpg     /hero-poster.jpg     200
-/hero-poster.webp    /hero-poster.webp    200
+# ═══════════════════════════════════════════════════════════════
+# Assets Vite / media : Cloudflare Pages Functions les gerent.
+# Voir functions/assets/[[path]].ts et functions/hero-video.mp4.ts.
+# Si le fichier existe, il est servi avec bon MIME + cache long.
+# Sinon la Function renvoie un vrai 404 (pas de fallback vers index.html).
+# ═══════════════════════════════════════════════════════════════
 
 # SPA fallback : toute autre route → index.html
 /*  /index.html  200
