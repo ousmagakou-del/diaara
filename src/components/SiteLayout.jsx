@@ -8,6 +8,7 @@
 import { useState, useEffect } from 'react';
 import { useNav, useUser } from '../App';
 import { getCartCount } from '../lib/cart';
+import HeaderSearch from './HeaderSearch';
 import './SiteLayout.css';
 
 const APP_STORE_URL = 'https://apps.apple.com/app/yaram/id6771017009';
@@ -97,9 +98,18 @@ export default function SiteLayout({ children, transparentHeader = false, hideFo
             ))}
           </nav>
 
+          {/* Autocomplete search integree */}
+          <div className="site-header-search">
+            <HeaderSearch />
+          </div>
+
           {/* CTA cluster */}
           <div className="site-header-cta">
-            <button className="site-icon-btn" onClick={() => navigate('search')} aria-label="Rechercher">
+            <button
+              className="site-icon-btn site-icon-btn--search-mobile"
+              onClick={() => navigate('search')}
+              aria-label="Rechercher"
+            >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
               </svg>
@@ -122,7 +132,7 @@ export default function SiteLayout({ children, transparentHeader = false, hideFo
               </button>
             )}
             <button className="site-btn-primary site-hide-mobile" onClick={downloadApp}>
-              📱 Télécharger l'app
+              Télécharger l'app
             </button>
             <button
               className="site-icon-btn site-show-mobile"
@@ -150,13 +160,13 @@ export default function SiteLayout({ children, transparentHeader = false, hideFo
             ))}
             <div className="site-mobile-menu-divider"></div>
             {!user && (
-              <button onClick={() => navigate('auth')}>👤 Se connecter</button>
+              <button onClick={() => navigate('auth')}>Se connecter</button>
             )}
             {user && (
-              <button onClick={() => navigate('profile')}>👤 Mon compte</button>
+              <button onClick={() => navigate('profile')}>Mon compte</button>
             )}
             <button className="site-mobile-cta" onClick={downloadApp}>
-              📱 Télécharger l'app
+              Télécharger l'app
             </button>
           </div>
         )}

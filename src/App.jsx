@@ -123,10 +123,17 @@ function routeToPath(route) {
     case 'order_tracking': return `/order/${params.orderId}`;
     case 'scan_result': return `/scan/result/${params.scanId}`;
     case 'payment': return `/payment/${params.orderId}`;
-    case 'search':
-      if (params.category) return `/search?category=${encodeURIComponent(params.category)}`;
-      if (params.brand) return `/search?brand=${encodeURIComponent(params.brand)}`;
-      return '/search';
+    case 'search': {
+      const sp = new URLSearchParams();
+      if (params.q) sp.set('q', params.q);
+      if (params.category) sp.set('category', params.category);
+      if (params.brand) sp.set('brand', params.brand);
+      if (params.marque) sp.set('marque', params.marque);
+      if (params.tri) sp.set('tri', params.tri);
+      if (params.promo) sp.set('promo', String(params.promo));
+      const q = sp.toString();
+      return q ? `/search?${q}` : '/search';
+    }
     default: return `/${route.name}`;
   }
 }
@@ -158,6 +165,8 @@ function pathToRoute(pathname, search = '') {
       if (cat) params.category = cat;
       const br = searchParams.get('brand');
       if (br) params.brand = br;
+      const qq = searchParams.get('q');
+      if (qq) params.q = qq;
     }
     return { name: parts[0], params };
   }

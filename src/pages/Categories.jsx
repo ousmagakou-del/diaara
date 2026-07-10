@@ -1,24 +1,27 @@
-import { useState, useMemo } from 'react';
+// ════════════════════════════════════════════════════════════════════
+// YARAM — Categories (route /categories)
+// ────────────────────────────────────────────────────────────────────
+// Vitrine de toutes les categories du catalogue + top marques.
+// Layout responsive : hero univers + grid categories + rail marques.
+// Base tokens design uniquement.
+// ════════════════════════════════════════════════════════════════════
+
+import { useMemo } from 'react';
 import { useNav } from '../App';
 import { useCategories, useBrands, useProductCategorySlugs } from '../lib/queries';
-import { haptic } from '../lib/haptic';
-import TabBar from '../components/TabBar';
+import SiteLayout from '../components/SiteLayout';
+import { BrandTile } from '../components/tiles';
+import Skeleton, { SkeletonBrandCard } from '../components/Skeleton';
 import './Categories.css';
 
-/* ─────────────────────────────────────────────────────────────
-   FEATURED — gros tiles type Sephora / Apple App Store browse
-   On mappe sur les slugs reels du catalogue Yaram quand possible.
-   ───────────────────────────────────────────────────────────── */
+// ─── FEATURED (categories "vitrines" avec icone) ───────────────────
 const FEATURED = [
   {
     key: 'pharmacie',
     label: 'Pharmacie',
     slug: 'pharmacie',
-    bg: '#FEF3C7',
-    fg: '#92400E',
-    // pilule
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="28" height="28">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="30" height="30">
         <path d="M10.5 20.5a7 7 0 0 1-9.9-9.9l9.9-9.9a7 7 0 0 1 9.9 9.9l-9.9 9.9z" />
         <line x1="8.5" y1="8.5" x2="15.5" y2="15.5" />
       </svg>
@@ -26,13 +29,10 @@ const FEATURED = [
   },
   {
     key: 'beaute',
-    label: 'Beauté',
+    label: 'Beaute',
     slug: 'beaute',
-    bg: '#FCE7F3',
-    fg: '#9D174D',
-    // rouge à lèvres
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="28" height="28">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="30" height="30">
         <path d="M9 4l4-2 4 6-3 2z" />
         <rect x="7" y="10" width="9" height="11" rx="1.5" />
         <line x1="7" y1="14" x2="16" y2="14" />
@@ -41,13 +41,10 @@ const FEATURED = [
   },
   {
     key: 'bebe',
-    label: 'Bébé',
+    label: 'Bebe',
     slug: 'bebe',
-    bg: '#DBEAFE',
-    fg: '#1E40AF',
-    // biberon
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="28" height="28">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="30" height="30">
         <path d="M9 2h6v3H9z" />
         <path d="M8 5h8l-1 4H9z" />
         <rect x="9" y="9" width="6" height="13" rx="2" />
@@ -57,14 +54,11 @@ const FEATURED = [
     ),
   },
   {
-    key: 'wellness',
-    label: 'Bien-être',
+    key: 'bien-etre',
+    label: 'Bien-etre',
     slug: 'bien-etre',
-    bg: '#DCFCE7',
-    fg: '#166534',
-    // feuille
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="28" height="28">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="30" height="30">
         <path d="M20 4c-8 0-14 6-14 14 0 .5 0 1 .1 1.5C12 19 18 14 20 4z" />
         <path d="M6 18s4-2 8-6" />
       </svg>
@@ -72,13 +66,10 @@ const FEATURED = [
   },
   {
     key: 'hygiene',
-    label: 'Hygiène',
+    label: 'Hygiene',
     slug: 'hygiene',
-    bg: '#CFFAFE',
-    fg: '#155E75',
-    // gouttes
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="28" height="28">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="30" height="30">
         <path d="M12 2s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z" />
         <path d="M9 14a3 3 0 0 0 3 3" />
       </svg>
@@ -88,11 +79,8 @@ const FEATURED = [
     key: 'international',
     label: 'Import',
     slug: 'international',
-    bg: '#FEE7DC',
-    fg: '#993C1D',
-    // globe
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="28" height="28">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="30" height="30">
         <circle cx="12" cy="12" r="9" />
         <path d="M3 12h18" />
         <path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18z" />
@@ -101,170 +89,88 @@ const FEATURED = [
   },
 ];
 
-// Palette douce pour fallback quand la categorie n'a pas de couleurs en base
-const SOFT_PALETTE = [
-  { bg: '#FEF3C7', fg: '#92400E' },
-  { bg: '#FCE7F3', fg: '#9D174D' },
-  { bg: '#DBEAFE', fg: '#1E40AF' },
-  { bg: '#DCFCE7', fg: '#166534' },
-  { bg: '#CFFAFE', fg: '#155E75' },
-  { bg: '#FEE7DC', fg: '#993C1D' },
-  { bg: '#EDE9FE', fg: '#5B21B6' },
-  { bg: '#FEF2F2', fg: '#991B1B' },
-];
-
-function pickSoft(seed) {
-  const s = String(seed || '');
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-  return SOFT_PALETTE[h % SOFT_PALETTE.length];
-}
-
 export default function Categories() {
   const { navigate } = useNav();
-  const [query, setQuery] = useState('');
 
-  // ════════════════════════════════════════════════════════════════
-  //  FIX juin 2026 #10 (RACINE PAGE BLANCHE CATÉGORIES) :
-  //  Migré de useState+useEffect→getAll() vers TanStack Query.
-  //
-  //  AVANT : useState([]) + useEffect → 3 appels Supabase → loading=true
-  //  pendant 1-3s. Au retour navigation, useState repart à [] → skeletons
-  //  permanents tant que les 3 RPCs n'avaient pas tous répondu.
-  //
-  //  APRÈS : useCategories + useBrands + useProductCategorySlugs avec
-  //  placeholderData: keepPreviousData → l'UI reste peuplée même quand
-  //  une revalidation tourne en arrière-plan. PLUS DE SKELETONS au retour.
-  // ════════════════════════════════════════════════════════════════
   const { data: categoriesRaw = [], isLoading: catLoading } = useCategories();
   const { data: brands = [], isLoading: brandsLoading } = useBrands();
   const { data: slugRows = [], isLoading: slugsLoading } = useProductCategorySlugs();
 
-  // Counts par catégorie depuis les slugRows (mémoïsé)
   const counts = useMemo(() => {
     const c = {};
     (slugRows || []).forEach((row) => {
-      if (row.category) c[row.category] = (c[row.category] || 0) + 1;
+      if (row?.category) c[row.category] = (c[row.category] || 0) + 1;
     });
     return c;
   }, [slugRows]);
 
-  // Categories : utilise catData, sinon reconstruit depuis slugRows
   const categories = useMemo(() => {
-    if (categoriesRaw && categoriesRaw.length) return categoriesRaw;
-    // Fallback : reconstitue depuis les slugs
+    if (categoriesRaw?.length) return categoriesRaw;
     const map = {};
     (slugRows || []).forEach((row) => {
-      const cat = row.category;
+      const cat = row?.category;
       if (!cat) return;
-      if (!map[cat]) {
-        map[cat] = {
-          id: cat,
-          slug: cat,
-          name: cat.charAt(0).toUpperCase() + cat.slice(1),
-        };
-      }
+      if (!map[cat]) map[cat] = { id: cat, slug: cat, name: cat.charAt(0).toUpperCase() + cat.slice(1) };
     });
     return Object.values(map).sort(
       (a, b) => (counts[b.slug] || 0) - (counts[a.slug] || 0),
     );
   }, [categoriesRaw, slugRows, counts]);
 
-  // Loading = true UNIQUEMENT au tout premier fetch (jamais eu de data).
-  // Au retour navigation, les hooks gardent leur previous data via keepPreviousData.
-  const loading = (catLoading && categoriesRaw.length === 0) ||
-                  (brandsLoading && brands.length === 0) ||
-                  (slugsLoading && slugRows.length === 0);
+  const loading =
+    (catLoading && categoriesRaw.length === 0) ||
+    (slugsLoading && slugRows.length === 0);
 
-  // Featured tiles enrichies avec le count reel
   const featuredTiles = useMemo(
-    () =>
-      FEATURED.map((f) => ({
-        ...f,
-        count: counts[f.slug] || 0,
-      })),
+    () => FEATURED.map((f) => ({ ...f, count: counts[f.slug] || 0 })),
     [counts],
   );
 
-  const goToSearch = (params) => {
-    haptic('light');
-    navigate({ name: 'search', params });
-  };
-
-  const onSearchClick = () => {
-    haptic('light');
-    navigate({ name: 'search', params: query ? { q: query } : {} });
-  };
+  const goSearch = (params) => navigate({ name: 'search', params });
 
   return (
-    <div className="ycat-screen page-anim">
-      <div className="ycat-scroll">
-        {/* ─── HEADER STICKY ─── */}
-        <header className="ycat-header">
-          <div className="ycat-header-top">
-            <button
-              className="ycat-back-btn"
-              onClick={() => {
-                haptic('light');
-                navigate(-1);
-              }}
-              aria-label="Retour"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
-                <line x1="19" y1="12" x2="5" y2="12" />
-                <polyline points="12 19 5 12 12 5" />
-              </svg>
-            </button>
-            <h1>Catégories</h1>
-            <div className="ycat-header-spacer" />
+    <SiteLayout>
+      <div className="ycatp">
+        {/* ─── HERO ─── */}
+        <section className="ycatp__hero">
+          <div className="ycatp__hero-inner">
+            <span className="ycatp__eyebrow">Univers YARAM</span>
+            <h1 className="ycatp__title">
+              Explorer par categorie
+            </h1>
+            <p className="ycatp__sub">
+              Selection premium par nos pharmaciens, filtrable par marque, prix et type de peau.
+            </p>
           </div>
+        </section>
 
-          <button
-            type="button"
-            className="ycat-searchbar"
-            onClick={onSearchClick}
-            aria-label="Rechercher un produit"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
-              <circle cx="11" cy="11" r="7" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <span>Rechercher un produit, une marque…</span>
-          </button>
-        </header>
-
-        {/* ─── HERO FEATURED ─── */}
-        <section className="ycat-section">
-          <div className="ycat-section-head">
-            <h2>À la une</h2>
-            <span className="ycat-section-sub">Nos univers populaires</span>
-          </div>
-
+        {/* ─── FEATURED ─── */}
+        <section className="ycatp__section">
+          <header className="ycatp__shead">
+            <h2 className="ycatp__shead-title">A la une</h2>
+            <p className="ycatp__shead-sub">Nos univers les plus consultes</p>
+          </header>
           {loading ? (
-            <div className="ycat-hero-row">
-              {[0, 1, 2, 3].map((i) => (
-                <div key={i} className="ycat-hero-card ycat-skel" style={{ animationDelay: `${i * 60}ms` }} />
+            <div className="ycatp__featured">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} variant="card" height={160} />
               ))}
             </div>
           ) : (
-            <div className="ycat-hero-row">
-              {featuredTiles.map((f, i) => (
+            <div className="ycatp__featured">
+              {featuredTiles.map((f) => (
                 <button
                   key={f.key}
-                  className="ycat-hero-card"
-                  style={{
-                    background: f.bg,
-                    color: f.fg,
-                    animationDelay: `${i * 40}ms`,
-                  }}
-                  onClick={() => goToSearch({ category: f.slug })}
+                  type="button"
+                  className="ycatp__feat"
+                  onClick={() => goSearch({ category: f.slug })}
                 >
-                  <div className="ycat-hero-icon" style={{ color: f.fg }}>
-                    {f.icon}
-                  </div>
-                  <div className="ycat-hero-name">{f.label}</div>
-                  <div className="ycat-hero-count">
-                    {f.count > 0 ? `${f.count} produit${f.count > 1 ? 's' : ''}` : 'À découvrir'}
+                  <div className="ycatp__feat-icon">{f.icon}</div>
+                  <div className="ycatp__feat-body">
+                    <span className="ycatp__feat-label">{f.label}</span>
+                    <span className="ycatp__feat-count">
+                      {f.count > 0 ? `${f.count} produit${f.count > 1 ? 's' : ''}` : 'A decouvrir'}
+                    </span>
                   </div>
                 </button>
               ))}
@@ -272,64 +178,56 @@ export default function Categories() {
           )}
         </section>
 
-        {/* ─── TOUTES LES CATÉGORIES (grille 2 col) ─── */}
-        <section className="ycat-section">
-          <div className="ycat-section-head">
-            <h2>Toutes les catégories</h2>
-          </div>
-
+        {/* ─── TOUTES LES CATEGORIES ─── */}
+        <section className="ycatp__section">
+          <header className="ycatp__shead">
+            <h2 className="ycatp__shead-title">Toutes les categories</h2>
+            <p className="ycatp__shead-sub">{categories.length > 0 && `${categories.length} categorie${categories.length > 1 ? 's' : ''}`}</p>
+          </header>
           {loading ? (
-            <div className="ycat-grid2">
-              {[0, 1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="ycat-row-skel ycat-skel" style={{ animationDelay: `${i * 50}ms` }} />
+            <div className="ycatp__grid">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <Skeleton key={i} variant="rect" height={72} radius={14} />
               ))}
             </div>
           ) : categories.length === 0 ? (
-            <div className="ycat-empty">
-              <p>Aucune catégorie pour l'instant</p>
+            <div className="ycatp__empty">
+              <p>Aucune categorie pour l instant.</p>
             </div>
           ) : (
-            <div className="ycat-grid2">
-              {categories.map((cat, i) => {
-                const palette =
-                  cat.bg_color && cat.text_color
-                    ? { bg: cat.bg_color, fg: cat.text_color }
-                    : pickSoft(cat.slug || cat.name);
-                const cnt = counts[cat.slug] || cat.product_count || 0;
+            <div className="ycatp__grid">
+              {categories.map((cat) => {
+                const slug = cat.slug || cat.id;
+                const cnt = counts[slug] || cat.product_count || 0;
                 return (
                   <button
-                    key={cat.id || cat.slug}
-                    className="ycat-row"
-                    style={{ animationDelay: `${Math.min(i * 35, 480)}ms` }}
-                    onClick={() => goToSearch({ category: cat.slug })}
+                    key={slug}
+                    type="button"
+                    className="ycatp__row"
+                    onClick={() => goSearch({ category: slug })}
                   >
-                    <div
-                      className="ycat-row-icon"
-                      style={{ background: palette.bg, color: palette.fg }}
-                    >
+                    <span className="ycatp__row-icon" aria-hidden>
                       {cat.icon_url ? (
                         <img
                           src={cat.icon_url}
                           alt=""
                           loading="lazy"
                           decoding="async"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                          }}
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
                         />
                       ) : (
                         <span>{(cat.name || '?').charAt(0).toUpperCase()}</span>
                       )}
-                    </div>
-                    <div className="ycat-row-text">
-                      <div className="ycat-row-name">{cat.name}</div>
+                    </span>
+                    <span className="ycatp__row-text">
+                      <span className="ycatp__row-name">{cat.name}</span>
                       {cnt > 0 && (
-                        <div className="ycat-row-sub">
+                        <span className="ycatp__row-sub">
                           {cnt} produit{cnt > 1 ? 's' : ''}
-                        </div>
+                        </span>
                       )}
-                    </div>
-                    <svg className="ycat-row-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" width="16" height="16">
+                    </span>
+                    <svg className="ycatp__row-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" width="16" height="16" aria-hidden>
                       <polyline points="9 18 15 12 9 6" />
                     </svg>
                   </button>
@@ -340,55 +238,26 @@ export default function Categories() {
         </section>
 
         {/* ─── MARQUES POPULAIRES ─── */}
-        {(loading || brands.length > 0) && (
-          <section className="ycat-section">
-            <div className="ycat-section-head">
-              <h2>Marques populaires</h2>
-              <span className="ycat-section-sub">{brands.length > 0 ? `${brands.length} marques` : ''}</span>
+        <section className="ycatp__section ycatp__section--bg">
+          <header className="ycatp__shead">
+            <h2 className="ycatp__shead-title">Marques populaires</h2>
+            <p className="ycatp__shead-sub">
+              {brands.length > 0 ? `${brands.length} marques` : 'Selection dermato'}
+            </p>
+          </header>
+          {brandsLoading && brands.length === 0 ? (
+            <div className="ycatp__brand-grid">
+              {Array.from({ length: 6 }).map((_, i) => <SkeletonBrandCard key={i} />)}
             </div>
-
-            {loading ? (
-              <div className="ycat-brand-row">
-                {[0, 1, 2, 3, 4].map((i) => (
-                  <div key={i} className="ycat-brand-card ycat-skel" style={{ animationDelay: `${i * 50}ms` }} />
-                ))}
-              </div>
-            ) : (
-              <div className="ycat-brand-row">
-                {brands.slice(0, 20).map((b, i) => (
-                  <button
-                    key={b.id || b.name}
-                    className="ycat-brand-card"
-                    style={{ animationDelay: `${Math.min(i * 40, 400)}ms` }}
-                    onClick={() => goToSearch({ brand: b.name })}
-                  >
-                    <div className="ycat-brand-logo">
-                      {b.img || b.logo_url || b.logo ? (
-                        <img
-                          src={b.img || b.logo_url || b.logo}
-                          alt={b.name}
-                          loading="lazy"
-                          decoding="async"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
-                      ) : (
-                        <span>{(b.name || '?').charAt(0).toUpperCase()}</span>
-                      )}
-                    </div>
-                    <div className="ycat-brand-name">{b.name}</div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </section>
-        )}
-
-        <div style={{ height: 40 }} />
+          ) : (
+            <div className="ycatp__brand-grid">
+              {brands.slice(0, 12).map((b) => (
+                <BrandTile key={b.id || b.name} brand={b} />
+              ))}
+            </div>
+          )}
+        </section>
       </div>
-
-      <TabBar active="home" />
-    </div>
+    </SiteLayout>
   );
 }

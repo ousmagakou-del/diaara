@@ -1,300 +1,321 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+// ════════════════════════════════════════════════════════════════════
+// YARAM — Search / Category page (route /search)
+// ────────────────────────────────────────────────────────────────────
+// Page unifiee de recherche + navigation par filtres avances.
+// Layout 2 colonnes desktop : filtres sticky a gauche (260px), resultats
+// a droite (grille 2/3/4 col selon breakpoint). Sur mobile, les filtres
+// sont accessibles via un bottom sheet.
+//
+// URL SEO : /search?q=xxx&marque=biotherm,vichy&prix_min=5000&prix_max=25000&peau=grasse&tri=prix_asc
+//
+// Filtres avances :
+//   - Marque (multi-select checkbox liste avec search)
+//   - Prix (slider min/max FCFA)
+//   - Type de peau (mixte, seche, grasse, sensible, mature, normale)
+//   - Ingredients recherches (multi-select)
+//   - Rating min (3 stars, 4 stars, 4.5+)
+//   - En stock uniquement (toggle)
+//   - Livrable demain (toggle : exclut les imports)
+//
+// Tri : Pertinence · Prix asc · Prix desc · Note · Popularite · Nouveautes
+// ════════════════════════════════════════════════════════════════════
+
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNav } from '../App';
 import { useProducts, useBrands, useCategories } from '../lib/queries';
-import ProductTile from '../components/ProductTile';
-import TabBar from '../components/TabBar';
+import SiteLayout from '../components/SiteLayout';
+import { ProductTile } from '../components/tiles';
+import { SkeletonProductCard } from '../components/Skeleton';
 import { usePageSEO, useJsonLd } from '../lib/seo';
 import './Search.css';
 
-// ─── Constantes ────────────────────────────────────────────────────────────────
-const HISTORY_KEY = 'yaram-search-history';
-const HISTORY_MAX = 8;
+// ─── Constantes ────────────────────────────────────────────────────
 const DEBOUNCE_MS = 200;
-const STAGGER_MS = 30;
-
-const POPULAR_SUGGESTIONS = [
-  'Sérum vitamine C',
-  'Crème hydratante',
-  'Bioderma',
-  'La Roche-Posay',
-  'Avène',
-  'Crème solaire',
-  'Rouge à lèvres',
-  'Crème bébé',
-];
-
-// Marques tendance — affichées en grid avec logo
-const TRENDING_BRANDS = [
-  'Bioderma', 'La Roche-Posay', 'Avène', 'Nuxe',
-  'CeraVe', 'Vichy', 'Mixa', 'Eucerin',
-];
 
 const SORT_OPTIONS = [
   { id: 'relevance', label: 'Pertinence' },
-  { id: 'price-asc', label: 'Prix ↑' },
-  { id: 'price-desc', label: 'Prix ↓' },
-  { id: 'newest', label: 'Nouveautés' },
+  { id: 'price_asc', label: 'Prix croissant' },
+  { id: 'price_desc', label: 'Prix decroissant' },
+  { id: 'rating', label: 'Note client' },
+  { id: 'popularity', label: 'Popularite' },
+  { id: 'newest', label: 'Nouveautes' },
 ];
 
-const TAB_FILTERS = [
-  { id: 'all', label: 'Tous' },
-  { id: 'products', label: 'Produits' },
-  { id: 'brands', label: 'Marques' },
-  { id: 'promos', label: 'Promos' },
+const SKIN_TYPES = [
+  { id: 'mixte', label: 'Mixte' },
+  { id: 'seche', label: 'Seche' },
+  { id: 'grasse', label: 'Grasse' },
+  { id: 'sensible', label: 'Sensible' },
+  { id: 'mature', label: 'Mature' },
+  { id: 'normale', label: 'Normale' },
 ];
 
-const CAT_LABELS = {
-  visage: 'Visage', serum: 'Sérums', solaire: 'Solaires', nettoyant: 'Nettoyants',
-  hydratant: 'Hydratants', masque: 'Masques', corps: 'Corps', levres: 'Lèvres',
-  maquillage: 'Maquillage', cheveux: 'Cheveux', huile: 'Huiles', hygiene: 'Hygiène',
-  bebe: 'Bébé', bouche: 'Bouche', complement: 'Compléments', parfum: 'Parfums',
-  pieds_mains: 'Pieds & Mains', intime: 'Intime', deodorants: 'Déodorants',
-};
+const RATING_MIN_OPTIONS = [
+  { id: 0,   label: 'Toutes les notes' },
+  { id: 3,   label: '3 etoiles et plus' },
+  { id: 4,   label: '4 etoiles et plus' },
+  { id: 4.5, label: '4.5 etoiles et plus' },
+];
 
-const CAT_EMOJI = {
-  visage: '✨', serum: '💧', solaire: '☀️', nettoyant: '🧼', hydratant: '💦',
-  masque: '🎭', corps: '🧴', levres: '💋', maquillage: '💄', cheveux: '💇‍♀️',
-  huile: '🌿', hygiene: '🛁', bebe: '👶', bouche: '🦷', complement: '💊',
-  parfum: '🌸', pieds_mains: '👣', intime: '🌷', deodorants: '🌬️',
-};
+const PRICE_LIMIT = 200000;
 
-function catLabel(cat) {
-  if (!cat) return '';
-  return CAT_LABELS[cat] || (cat.charAt(0).toUpperCase() + cat.slice(1));
+// Ingredients frequents pour le multi-select — la vraie liste est
+// hydratee dynamiquement a partir des produits.
+const DEFAULT_INGREDIENTS = [
+  'Acide hyaluronique', 'Retinol', 'Vitamine C', 'Niacinamide',
+  'AHA', 'BHA', 'Ceramides', 'Karite', 'Aloe vera', 'SPF',
+];
+
+// ─── Helpers URL params <-> etat ───────────────────────────────────
+function readParams() {
+  if (typeof window === 'undefined') return {};
+  const sp = new URLSearchParams(window.location.search);
+  const parseMulti = (v) => (v ? v.split(',').map((x) => x.trim()).filter(Boolean) : []);
+  return {
+    q: sp.get('q') || '',
+    category: sp.get('category') || sp.get('categorie') || '',
+    brands: parseMulti(sp.get('marque') || sp.get('brand') || ''),
+    priceMin: Number(sp.get('prix_min') || sp.get('price_min') || 0) || 0,
+    priceMax: Number(sp.get('prix_max') || sp.get('price_max') || 0) || 0,
+    skinTypes: parseMulti(sp.get('peau') || sp.get('skin') || ''),
+    ingredients: parseMulti(sp.get('ingredients') || ''),
+    ratingMin: Number(sp.get('note_min') || sp.get('rating_min') || 0) || 0,
+    inStockOnly: sp.get('stock') === '1' || sp.get('in_stock') === '1',
+    fastShip: sp.get('livraison') === '1' || sp.get('fast') === '1',
+    promoOnly: sp.get('promo') === '1',
+    sort: sp.get('tri') || sp.get('sort') || 'relevance',
+  };
 }
 
-function catEmoji(cat) {
-  return CAT_EMOJI[cat] || '🛍️';
+function writeParams(state, opts = {}) {
+  if (typeof window === 'undefined') return;
+  const sp = new URLSearchParams();
+  if (state.q) sp.set('q', state.q);
+  if (state.category) sp.set('category', state.category);
+  if (state.brands?.length) sp.set('marque', state.brands.join(','));
+  if (state.priceMin) sp.set('prix_min', String(state.priceMin));
+  if (state.priceMax) sp.set('prix_max', String(state.priceMax));
+  if (state.skinTypes?.length) sp.set('peau', state.skinTypes.join(','));
+  if (state.ingredients?.length) sp.set('ingredients', state.ingredients.join(','));
+  if (state.ratingMin) sp.set('note_min', String(state.ratingMin));
+  if (state.inStockOnly) sp.set('stock', '1');
+  if (state.fastShip) sp.set('livraison', '1');
+  if (state.promoOnly) sp.set('promo', '1');
+  if (state.sort && state.sort !== 'relevance') sp.set('tri', state.sort);
+  const q = sp.toString();
+  const url = q ? `/search?${q}` : '/search';
+  if (opts.replace) window.history.replaceState({}, '', url);
+  else window.history.pushState({}, '', url);
 }
 
-// Haptic léger (silencieux si pas supporté)
-function hapticTap() {
-  try { if (navigator.vibrate) navigator.vibrate(8); } catch {}
+// ─── Helpers matching produit ──────────────────────────────────────
+function productMatchesSearch(p, term) {
+  if (!term) return true;
+  const t = term.toLowerCase();
+  return (
+    p.name?.toLowerCase().includes(t) ||
+    p.brand?.toLowerCase().includes(t) ||
+    p.category?.toLowerCase().includes(t) ||
+    (Array.isArray(p.badges) && p.badges.join(' ').toLowerCase().includes(t))
+  );
 }
 
-// ─── localStorage history ──────────────────────────────────────────────────────
-function loadHistory() {
-  try {
-    const raw = localStorage.getItem(HISTORY_KEY);
-    if (!raw) return [];
-    const arr = JSON.parse(raw);
-    return Array.isArray(arr) ? arr.slice(0, HISTORY_MAX) : [];
-  } catch {
-    return [];
-  }
+function productMatchesSkinType(p, skinTypes) {
+  if (!skinTypes?.length) return true;
+  // Verifie sur badges (array) ou champ skin_type direct
+  const badges = Array.isArray(p.badges) ? p.badges.map((b) => String(b).toLowerCase()) : [];
+  const direct = String(p.skin_type || '').toLowerCase();
+  return skinTypes.some((s) => badges.includes(s) || badges.some((b) => b.includes(s)) || direct.includes(s));
 }
 
-function saveHistory(arr) {
-  try {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(arr.slice(0, HISTORY_MAX)));
-  } catch {}
+function productMatchesIngredients(p, ingredients) {
+  if (!ingredients?.length) return true;
+  const src = [
+    p.inci, p.long_desc, p.reason, p.name,
+    Array.isArray(p.badges) ? p.badges.join(' ') : '',
+  ].filter(Boolean).join(' ').toLowerCase();
+  return ingredients.every((i) => src.includes(i.toLowerCase()));
 }
 
-function pushHistory(term) {
-  const t = (term || '').trim();
-  if (!t || t.length < 2) return;
-  const cur = loadHistory();
-  const next = [t, ...cur.filter(x => x.toLowerCase() !== t.toLowerCase())].slice(0, HISTORY_MAX);
-  saveHistory(next);
+function computeDiscountPct(p) {
+  const price = Number(p?.price) || 0;
+  const old = Number(p?.old_price || p?.list_price || 0);
+  if (!price || !old || old <= price) return 0;
+  return Math.round(((old - price) / old) * 100);
 }
 
-// ─── Composant principal ───────────────────────────────────────────────────────
+function productIsPromo(p) {
+  return computeDiscountPct(p) > 0 || !!p?.promo || !!p?.discount;
+}
+
+// ─── Composant principal ───────────────────────────────────────────
 export default function Search({ initialCategory, initialBrand }) {
   const { navigate } = useNav();
+  const initial = useMemo(() => {
+    const p = readParams();
+    if (initialCategory && !p.category) p.category = initialCategory;
+    if (initialBrand && !p.brands.length) p.brands = [initialBrand];
+    return p;
+  }, [initialCategory, initialBrand]);
 
-  // SEO
-  const seoTitle = initialBrand
-    ? `${initialBrand} — Produits beauté · YARAM`
-    : initialCategory
-      ? `${catLabel(initialCategory)} — Produits beauté · YARAM`
-      : 'Recherche · YARAM';
-  const seoDesc = initialBrand
-    ? `Tous les produits ${initialBrand} adaptés à la peau africaine, validés par YARAM`
-    : initialCategory
-      ? `${catLabel(initialCategory)} pour ta peau africaine · 800+ références validées par dermato · Livraison Dakar`
-      : 'Recherche produits beauté validés par YARAM · Filtres par marque, prix, score, badges';
-  const seoCanonical = initialBrand
-    ? `https://yaram.app/search?brand=${encodeURIComponent(initialBrand)}`
-    : initialCategory
-      ? `https://yaram.app/search?category=${encodeURIComponent(initialCategory)}`
-      : 'https://yaram.app/search';
-  usePageSEO({ title: seoTitle, description: seoDesc, canonical: seoCanonical });
+  // ─── State ────────────────────────────────────────────────────
+  const [q, setQ] = useState(initial.q);
+  const [qDebounced, setQDebounced] = useState(initial.q);
+  const [category, setCategory] = useState(initial.category);
+  const [brands, setBrands] = useState(initial.brands);
+  const [priceMin, setPriceMin] = useState(initial.priceMin);
+  const [priceMax, setPriceMax] = useState(initial.priceMax);
+  const [skinTypes, setSkinTypes] = useState(initial.skinTypes);
+  const [ingredients, setIngredients] = useState(initial.ingredients);
+  const [ratingMin, setRatingMin] = useState(initial.ratingMin);
+  const [inStockOnly, setInStockOnly] = useState(initial.inStockOnly);
+  const [fastShip, setFastShip] = useState(initial.fastShip);
+  const [promoOnly, setPromoOnly] = useState(initial.promoOnly);
+  const [sort, setSort] = useState(initial.sort);
 
-  // ─── State ────────────────────────────────────────────────────────────────
-  const [q, setQ] = useState('');                  // valeur input (instantanée)
-  const [qDebounced, setQDebounced] = useState(''); // valeur utilisée pour filtrer
-  const [category, setCategory] = useState(initialCategory || null);
-  const [brand, setBrand] = useState(initialBrand || null);
+  const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
+  const [brandFilterQ, setBrandFilterQ] = useState('');
 
-  // FIX juin 2026 #11 (CAUSE RACINE PAGE BLANCHE SEARCH) :
-  // Migré de useState+useEffect+Promise.all vers TanStack Query.
-  // Les 3 hooks ont placeholderData: keepPreviousData → l'UI reste peuplée
-  // au remount, plus de skeletons figés sur Search?category=cheveux.
+  // Data
   const { data: products = [], isLoading: prodLoading } = useProducts();
-  const { data: brands = [], isLoading: brandsLoading } = useBrands();
-  const { data: categories = [], isLoading: catLoading } = useCategories();
-  // loading=true UNIQUEMENT au tout 1er fetch (jamais eu de data).
-  // Au retour navigation, on a déjà des produits → loading=false → pas de skeletons.
-  const loading = (prodLoading && products.length === 0) ||
-                  (brandsLoading && brands.length === 0) ||
-                  (catLoading && categories.length === 0);
+  const { data: allBrands = [], isLoading: brandsLoading } = useBrands();
+  const { data: categories = [] } = useCategories();
 
-  const [tab, setTab] = useState('all');
-  const [sort, setSort] = useState('relevance');
+  const loading = prodLoading && products.length === 0;
 
-  const [history, setHistory] = useState(() => loadHistory());
-
-  const inputRef = useRef(null);
-
-  // ─── Debounce sur q ───────────────────────────────────────────────────────
+  // ─── Debounce recherche ──────────────────────────────────────
   useEffect(() => {
     const t = setTimeout(() => setQDebounced(q), DEBOUNCE_MS);
     return () => clearTimeout(t);
   }, [q]);
 
-  // Réagir aux changements de props initiales (navigation Home → Search)
-  useEffect(() => {
-    if (initialBrand) setBrand(initialBrand);
-  }, [initialBrand]);
-  useEffect(() => {
-    if (initialCategory) setCategory(initialCategory);
-  }, [initialCategory]);
-
-  // ─── Recherche effective ──────────────────────────────────────────────────
-  const hasQuery = qDebounced.trim() !== '';
-  const hasFilter = !!category || !!brand;
-  const isActiveSearch = hasQuery || hasFilter;
-
-  // Suggestions live (instantanées sur input) ─────────────────────────────
-  const liveSuggestions = useMemo(() => {
-    if (!qDebounced.trim()) return null;
-    const s = qDebounced.toLowerCase().trim();
-
-    const matchedProducts = products
-      .filter(p =>
-        p.name?.toLowerCase().includes(s) ||
-        p.brand?.toLowerCase().includes(s)
-      )
-      .slice(0, 5);
-
-    const matchedBrands = brands
-      .filter(b => b.name?.toLowerCase().includes(s))
-      .slice(0, 3);
-
-    const matchedCategoriesObj = (categories.length > 0 ? categories : []).filter(c =>
-      (c.slug || c.id || '').toString().toLowerCase().includes(s) ||
-      (c.name || '').toLowerCase().includes(s) ||
-      catLabel(c.slug || c.id)?.toLowerCase().includes(s)
-    ).slice(0, 3);
-
-    // Fallback si la table categories est vide : utiliser CAT_LABELS
-    const matchedCategories = matchedCategoriesObj.length > 0
-      ? matchedCategoriesObj.map(c => ({ slug: c.slug || c.id, label: c.name || catLabel(c.slug || c.id) }))
-      : Object.entries(CAT_LABELS)
-          .filter(([slug, label]) => slug.includes(s) || label.toLowerCase().includes(s))
-          .slice(0, 3)
-          .map(([slug, label]) => ({ slug, label }));
-
-    return { products: matchedProducts, brands: matchedBrands, categories: matchedCategories };
-  }, [qDebounced, products, brands, categories]);
-
-  // ─── Liste filtrée (résultats) ────────────────────────────────────────────
-  const filtered = useMemo(() => {
-    if (!isActiveSearch) return [];
-    let list = [...products];
-    if (category) list = list.filter(p => p.category === category);
-    if (brand) list = list.filter(p => p.brand === brand);
-    if (qDebounced.trim() !== '') {
-      const s = qDebounced.toLowerCase().trim();
-      list = list.filter(p =>
-        p.name?.toLowerCase().includes(s) ||
-        p.brand?.toLowerCase().includes(s) ||
-        p.category?.toLowerCase().includes(s)
-      );
-    }
-
-    // Tab filter
-    if (tab === 'promos') list = list.filter(p => p.discount || p.promo || (p.old_price && p.old_price > p.price));
-
-    if (sort === 'price-asc') list.sort((a, b) => (a.price || 0) - (b.price || 0));
-    else if (sort === 'price-desc') list.sort((a, b) => (b.price || 0) - (a.price || 0));
-    else if (sort === 'newest') list.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-    // 'relevance' = ordre naturel (laisser tel quel)
-
-    return list;
-  }, [products, category, brand, qDebounced, tab, sort, isActiveSearch]);
-
-  // Marques matchant la recherche (pour onglet "Marques")
-  const matchedBrandsForResults = useMemo(() => {
-    if (!qDebounced.trim()) return brands;
-    const s = qDebounced.toLowerCase().trim();
-    return brands.filter(b => b.name?.toLowerCase().includes(s));
-  }, [qDebounced, brands]);
-
-  // ─── Handlers ─────────────────────────────────────────────────────────────
-  const handleClear = () => {
-    setQ('');
-    setQDebounced('');
-    inputRef.current?.focus();
+  // ─── Sync URL <-> state ──────────────────────────────────────
+  const stateRef = useRef();
+  stateRef.current = {
+    q: qDebounced, category, brands, priceMin, priceMax, skinTypes, ingredients,
+    ratingMin, inStockOnly, fastShip, promoOnly, sort,
   };
 
-  const handleCancel = () => {
-    hapticTap();
-    navigate(-1);
-  };
+  useEffect(() => {
+    // Debounce URL write pour eviter le spam d'entrees historiques
+    const t = setTimeout(() => writeParams(stateRef.current, { replace: true }), 250);
+    return () => clearTimeout(t);
+  }, [qDebounced, category, brands, priceMin, priceMax, skinTypes, ingredients, ratingMin, inStockOnly, fastShip, promoOnly, sort]);
 
-  const submitTerm = useCallback((term) => {
-    if (!term) return;
-    pushHistory(term);
-    setHistory(loadHistory());
-    setQ(term);
+  // Reagir aux changements de props initiales
+  useEffect(() => { if (initialCategory) setCategory(initialCategory); }, [initialCategory]);
+  useEffect(() => { if (initialBrand) setBrands([initialBrand]); }, [initialBrand]);
+
+  // Reagir au back/forward navigator
+  useEffect(() => {
+    const onPop = () => {
+      const p = readParams();
+      setQ(p.q); setQDebounced(p.q);
+      setCategory(p.category);
+      setBrands(p.brands);
+      setPriceMin(p.priceMin);
+      setPriceMax(p.priceMax);
+      setSkinTypes(p.skinTypes);
+      setIngredients(p.ingredients);
+      setRatingMin(p.ratingMin);
+      setInStockOnly(p.inStockOnly);
+      setFastShip(p.fastShip);
+      setPromoOnly(p.promoOnly);
+      setSort(p.sort);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
   }, []);
 
-  const removeHistoryItem = (term) => {
-    const next = loadHistory().filter(x => x !== term);
-    saveHistory(next);
-    setHistory(next);
-  };
+  // ─── Liste ingredients extraite du catalogue (top 20) ────────
+  const availableIngredients = useMemo(() => {
+    // On extrait des inci les mots frequents. Fallback : liste par defaut.
+    const bag = new Map();
+    (products || []).forEach((p) => {
+      const inci = (p.inci || '').split(/[,;.]/).map((x) => x.trim()).filter(Boolean);
+      inci.forEach((tag) => {
+        if (tag.length < 3 || tag.length > 40) return;
+        const key = tag.toLowerCase();
+        bag.set(key, (bag.get(key) || 0) + 1);
+      });
+    });
+    const top = Array.from(bag.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 20)
+      .map(([k]) => k.charAt(0).toUpperCase() + k.slice(1));
+    return top.length >= 6 ? top : DEFAULT_INGREDIENTS;
+  }, [products]);
 
-  const clearAllHistory = () => {
-    saveHistory([]);
-    setHistory([]);
-  };
+  // ─── Filtrage ─────────────────────────────────────────────────
+  const filtered = useMemo(() => {
+    let list = products || [];
 
-  const goToProduct = (p) => {
-    hapticTap();
-    pushHistory(p.name);
-    navigate(`/product/${p.id}`);
-  };
+    if (qDebounced.trim()) list = list.filter((p) => productMatchesSearch(p, qDebounced.trim()));
+    if (category) list = list.filter((p) => (p.category || '').toLowerCase() === category.toLowerCase());
+    if (brands.length) {
+      const set = new Set(brands.map((b) => b.toLowerCase()));
+      list = list.filter((p) => set.has((p.brand || '').toLowerCase()));
+    }
+    if (priceMin > 0) list = list.filter((p) => Number(p.price || 0) >= priceMin);
+    if (priceMax > 0) list = list.filter((p) => Number(p.price || 0) <= priceMax);
+    if (skinTypes.length) list = list.filter((p) => productMatchesSkinType(p, skinTypes));
+    if (ingredients.length) list = list.filter((p) => productMatchesIngredients(p, ingredients));
+    if (ratingMin > 0) list = list.filter((p) => Number(p.rating || 0) >= ratingMin);
+    if (inStockOnly) list = list.filter((p) => p.active !== false && (p.stock === undefined || Number(p.stock) > 0));
+    if (fastShip) list = list.filter((p) => !p.is_imported);
+    if (promoOnly) list = list.filter((p) => productIsPromo(p));
 
-  const goToBrand = (b) => {
-    hapticTap();
-    pushHistory(b.name || b);
-    setBrand(b.name || b);
-    setQ('');
-    setQDebounced('');
-  };
+    return list;
+  }, [products, qDebounced, category, brands, priceMin, priceMax, skinTypes, ingredients, ratingMin, inStockOnly, fastShip, promoOnly]);
 
-  const goToCategory = (slug, label) => {
-    hapticTap();
-    if (label) pushHistory(label);
-    setCategory(slug);
-    setQ('');
-    setQDebounced('');
-  };
+  // ─── Tri ──────────────────────────────────────────────────────
+  const sorted = useMemo(() => {
+    const list = filtered.slice();
+    switch (sort) {
+      case 'price_asc':
+        list.sort((a, b) => Number(a.price || 0) - Number(b.price || 0));
+        break;
+      case 'price_desc':
+        list.sort((a, b) => Number(b.price || 0) - Number(a.price || 0));
+        break;
+      case 'rating':
+        list.sort((a, b) => Number(b.rating || 0) - Number(a.rating || 0));
+        break;
+      case 'popularity':
+        list.sort((a, b) => Number(b.review_count || 0) - Number(a.review_count || 0));
+        break;
+      case 'newest':
+        list.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+        break;
+      default:
+        break; // relevance = ordre naturel
+    }
+    return list;
+  }, [filtered, sort]);
 
-  const clearCategoryFilter = () => setCategory(null);
-  const clearBrandFilter = () => setBrand(null);
+  // ─── SEO ──────────────────────────────────────────────────────
+  const seoTitle = category
+    ? `${category.charAt(0).toUpperCase()}${category.slice(1)} — Recherche · YARAM`
+    : brands.length === 1
+      ? `${brands[0]} — Produits · YARAM`
+      : qDebounced
+        ? `${qDebounced} — Recherche · YARAM`
+        : 'Recherche · YARAM';
 
-  // ─── JSON-LD ItemList (SEO) ───────────────────────────────────────────────
+  usePageSEO({
+    title: seoTitle,
+    description: 'Recherche produits, marques et categories · Filtres avances, tri, promotions · YARAM',
+    canonical: `https://yaram.app${typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/search'}`,
+  });
+
   useJsonLd(
-    (initialCategory || initialBrand) && filtered.length > 0
+    sorted.length > 0
       ? {
           '@context': 'https://schema.org',
           '@type': 'ItemList',
           name: seoTitle,
-          numberOfItems: filtered.length,
-          itemListElement: filtered.slice(0, 20).map((p, i) => ({
+          numberOfItems: sorted.length,
+          itemListElement: sorted.slice(0, 20).map((p, i) => ({
             '@type': 'ListItem',
             position: i + 1,
             url: `https://yaram.app/product/${p.id}`,
@@ -302,526 +323,582 @@ export default function Search({ initialCategory, initialBrand }) {
           })),
         }
       : null,
-    `searchitemlist-${initialCategory || initialBrand || 'none'}`
+    `search-jsonld-${category || brands[0] || qDebounced || 'none'}`
   );
 
-  // ─── Render ───────────────────────────────────────────────────────────────
-  const showResults = isActiveSearch;
-  const showLiveSuggestions = hasQuery && !hasFilter && liveSuggestions
-    && (liveSuggestions.products.length + liveSuggestions.brands.length + liveSuggestions.categories.length > 0);
+  // ─── Handlers filtres ─────────────────────────────────────────
+  const toggleBrand = useCallback((name) => {
+    setBrands((prev) => prev.includes(name) ? prev.filter((b) => b !== name) : [...prev, name]);
+  }, []);
+  const toggleSkinType = useCallback((id) => {
+    setSkinTypes((prev) => prev.includes(id) ? prev.filter((b) => b !== id) : [...prev, id]);
+  }, []);
+  const toggleIngredient = useCallback((id) => {
+    setIngredients((prev) => prev.includes(id) ? prev.filter((b) => b !== id) : [...prev, id]);
+  }, []);
 
-  // Contexte d'arrivée : true quand on vient d'un tap sur Marque/Catégorie depuis Home.
-  // On affiche alors un chevron retour à gauche du header (le "Annuler" reste
-  // visible à droite pour le réflexe iOS).
-  const cameFromFilter = !!(initialBrand || initialCategory);
-  const contextLabel = brand
-    ? `Marque · ${brand}`
-    : category
-      ? `Catégorie · ${catLabel(category)}`
-      : null;
+  const resetFilters = () => {
+    setBrands([]);
+    setPriceMin(0);
+    setPriceMax(0);
+    setSkinTypes([]);
+    setIngredients([]);
+    setRatingMin(0);
+    setInStockOnly(false);
+    setFastShip(false);
+    setPromoOnly(false);
+    setCategory('');
+  };
+
+  const activeFilterCount =
+    brands.length + skinTypes.length + ingredients.length +
+    (category ? 1 : 0) +
+    (priceMin > 0 ? 1 : 0) +
+    (priceMax > 0 ? 1 : 0) +
+    (ratingMin > 0 ? 1 : 0) +
+    (inStockOnly ? 1 : 0) +
+    (fastShip ? 1 : 0) +
+    (promoOnly ? 1 : 0);
+
+  const visibleBrandsInFilter = useMemo(() => {
+    const term = brandFilterQ.trim().toLowerCase();
+    const list = (allBrands || []).filter((b) => b?.name);
+    if (!term) return list.slice(0, 50);
+    return list.filter((b) => b.name.toLowerCase().includes(term)).slice(0, 50);
+  }, [allBrands, brandFilterQ]);
+
+  const priceRangeLabel = () => {
+    if (priceMin > 0 && priceMax > 0) return `${priceMin.toLocaleString('fr-FR')} - ${priceMax.toLocaleString('fr-FR')} F`;
+    if (priceMin > 0) return `A partir de ${priceMin.toLocaleString('fr-FR')} F`;
+    if (priceMax > 0) return `Jusqu a ${priceMax.toLocaleString('fr-FR')} F`;
+    return 'Sans limite';
+  };
+
+  const pageTitle = category
+    ? category.charAt(0).toUpperCase() + category.slice(1)
+    : brands.length === 1
+      ? brands[0]
+      : qDebounced
+        ? `Resultats pour "${qDebounced}"`
+        : 'Rechercher un produit';
+
+  // ─── Render ───────────────────────────────────────────────────
+  const FiltersPanel = (
+    <FiltersContent
+      allBrands={visibleBrandsInFilter}
+      brandsLoading={brandsLoading}
+      brandFilterQ={brandFilterQ}
+      setBrandFilterQ={setBrandFilterQ}
+      brands={brands} toggleBrand={toggleBrand}
+      priceMin={priceMin} setPriceMin={setPriceMin}
+      priceMax={priceMax} setPriceMax={setPriceMax}
+      skinTypes={skinTypes} toggleSkinType={toggleSkinType}
+      ingredients={ingredients} toggleIngredient={toggleIngredient}
+      availableIngredients={availableIngredients}
+      ratingMin={ratingMin} setRatingMin={setRatingMin}
+      inStockOnly={inStockOnly} setInStockOnly={setInStockOnly}
+      fastShip={fastShip} setFastShip={setFastShip}
+      promoOnly={promoOnly} setPromoOnly={setPromoOnly}
+      categories={categories}
+      category={category} setCategory={setCategory}
+      onReset={resetFilters}
+      activeCount={activeFilterCount}
+    />
+  );
 
   return (
-    <div className="search-screen page-anim">
-      {/* ─── Header sticky ─── */}
-      <div className="ysearch-header">
-        {cameFromFilter && (
-          <button
-            type="button"
-            className="ysearch-back"
-            onClick={() => { hapticTap(); navigate(-1); }}
-            aria-label="Retour"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
-              <line x1="19" y1="12" x2="5" y2="12"/>
-              <polyline points="12 19 5 12 12 5"/>
-            </svg>
-          </button>
+    <SiteLayout>
+      <div className="ysearch">
+        {/* ─── Barre haute (recherche + tri) ─── */}
+        <div className="ysearch__top">
+          <div className="ysearch__top-inner">
+            <div className="ysearch__title-wrap">
+              <h1 className="ysearch__title">{pageTitle}</h1>
+              {!loading && (
+                <span className="ysearch__count">
+                  {sorted.length.toLocaleString('fr-FR')} produit{sorted.length > 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
+
+            <div className="ysearch__query-row">
+              <label className="ysearch__query">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18" aria-hidden>
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <input
+                  type="search"
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="Affiner : mot cle, marque, ingredient..."
+                  aria-label="Affiner la recherche"
+                />
+                {q && (
+                  <button type="button" className="ysearch__query-clear" onClick={() => setQ('')} aria-label="Effacer">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
+                      <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+                )}
+              </label>
+
+              <div className="ysearch__sort-wrap">
+                <label className="ysearch__sort-label" htmlFor="ysearch-sort">Trier par</label>
+                <select
+                  id="ysearch-sort"
+                  className="ysearch__sort"
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value)}
+                >
+                  {SORT_OPTIONS.map((o) => (
+                    <option key={o.id} value={o.id}>{o.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Chips filtres actifs */}
+            {activeFilterCount > 0 && (
+              <div className="ysearch__chips">
+                {category && (
+                  <button type="button" className="ysearch__chip" onClick={() => setCategory('')}>
+                    Categorie · {category}
+                    <ChipCross />
+                  </button>
+                )}
+                {brands.map((b) => (
+                  <button key={b} type="button" className="ysearch__chip" onClick={() => toggleBrand(b)}>
+                    Marque · {b}
+                    <ChipCross />
+                  </button>
+                ))}
+                {skinTypes.map((s) => (
+                  <button key={s} type="button" className="ysearch__chip" onClick={() => toggleSkinType(s)}>
+                    Peau · {SKIN_TYPES.find((x) => x.id === s)?.label || s}
+                    <ChipCross />
+                  </button>
+                ))}
+                {ingredients.map((i) => (
+                  <button key={i} type="button" className="ysearch__chip" onClick={() => toggleIngredient(i)}>
+                    Ingredient · {i}
+                    <ChipCross />
+                  </button>
+                ))}
+                {ratingMin > 0 && (
+                  <button type="button" className="ysearch__chip" onClick={() => setRatingMin(0)}>
+                    Note ≥ {ratingMin}
+                    <ChipCross />
+                  </button>
+                )}
+                {(priceMin > 0 || priceMax > 0) && (
+                  <button type="button" className="ysearch__chip" onClick={() => { setPriceMin(0); setPriceMax(0); }}>
+                    Prix · {priceRangeLabel()}
+                    <ChipCross />
+                  </button>
+                )}
+                {inStockOnly && (
+                  <button type="button" className="ysearch__chip" onClick={() => setInStockOnly(false)}>
+                    En stock
+                    <ChipCross />
+                  </button>
+                )}
+                {fastShip && (
+                  <button type="button" className="ysearch__chip" onClick={() => setFastShip(false)}>
+                    Livrable demain
+                    <ChipCross />
+                  </button>
+                )}
+                {promoOnly && (
+                  <button type="button" className="ysearch__chip" onClick={() => setPromoOnly(false)}>
+                    Promo
+                    <ChipCross />
+                  </button>
+                )}
+                <button type="button" className="ysearch__chip-reset" onClick={resetFilters}>
+                  Reinitialiser
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ─── Layout 2 colonnes ─── */}
+        <div className="ysearch__body">
+          <aside className="ysearch__filters" aria-label="Filtres">
+            {FiltersPanel}
+          </aside>
+
+          <main className="ysearch__results">
+            {loading ? (
+              <div className="ysearch__grid">
+                {Array.from({ length: 8 }).map((_, i) => <SkeletonProductCard key={i} />)}
+              </div>
+            ) : sorted.length === 0 ? (
+              <NoResults
+                term={qDebounced || category || brands.join(', ')}
+                onReset={resetFilters}
+                categories={categories}
+                onPickCategory={(c) => setCategory(c)}
+              />
+            ) : (
+              <div className="ysearch__grid">
+                {sorted.map((p) => <ProductTile key={p.id} product={p} />)}
+              </div>
+            )}
+          </main>
+        </div>
+
+        {/* ─── Bouton floating mobile ─── */}
+        <button
+          type="button"
+          className="ysearch__fab"
+          onClick={() => setMobileSheetOpen(true)}
+          aria-label="Ouvrir les filtres"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18" aria-hidden>
+            <line x1="4" y1="21" x2="4" y2="14" />
+            <line x1="4" y1="10" x2="4" y2="3" />
+            <line x1="12" y1="21" x2="12" y2="12" />
+            <line x1="12" y1="8" x2="12" y2="3" />
+            <line x1="20" y1="21" x2="20" y2="16" />
+            <line x1="20" y1="12" x2="20" y2="3" />
+            <line x1="1" y1="14" x2="7" y2="14" />
+            <line x1="9" y1="8" x2="15" y2="8" />
+            <line x1="17" y1="16" x2="23" y2="16" />
+          </svg>
+          Filtres
+          {activeFilterCount > 0 && <span className="ysearch__fab-badge">{activeFilterCount}</span>}
+        </button>
+
+        {/* ─── Bottom sheet mobile ─── */}
+        {mobileSheetOpen && (
+          <div className="ysearch__sheet-root" onClick={() => setMobileSheetOpen(false)}>
+            <div className="ysearch__sheet" onClick={(e) => e.stopPropagation()}>
+              <div className="ysearch__sheet-head">
+                <span>Filtres</span>
+                <button
+                  type="button"
+                  className="ysearch__sheet-close"
+                  onClick={() => setMobileSheetOpen(false)}
+                  aria-label="Fermer les filtres"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+              <div className="ysearch__sheet-body">
+                {FiltersPanel}
+              </div>
+              <div className="ysearch__sheet-foot">
+                <button type="button" className="ysearch__sheet-reset" onClick={resetFilters}>
+                  Reinitialiser
+                </button>
+                <button
+                  type="button"
+                  className="ysearch__sheet-apply"
+                  onClick={() => setMobileSheetOpen(false)}
+                >
+                  Voir {sorted.length} produit{sorted.length > 1 ? 's' : ''}
+                </button>
+              </div>
+            </div>
+          </div>
         )}
-        <div className="ysearch-input-wrap">
-          <svg className="ysearch-loupe" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
-            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </div>
+    </SiteLayout>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Sous composants
+// ═══════════════════════════════════════════════════════════════════
+
+function ChipCross() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" width="12" height="12" aria-hidden>
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  );
+}
+
+function FilterBlock({ title, children }) {
+  return (
+    <div className="ysearch__block">
+      <div className="ysearch__block-title">{title}</div>
+      <div className="ysearch__block-body">{children}</div>
+    </div>
+  );
+}
+
+function CheckboxRow({ id, label, checked, onChange, hint }) {
+  return (
+    <label className="ysearch__check">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={onChange}
+        aria-labelledby={id ? `${id}-label` : undefined}
+      />
+      <span className="ysearch__check-box" aria-hidden />
+      <span id={id ? `${id}-label` : undefined} className="ysearch__check-label">{label}</span>
+      {hint !== undefined && <span className="ysearch__check-hint">{hint}</span>}
+    </label>
+  );
+}
+
+function ToggleRow({ label, checked, onChange, hint }) {
+  return (
+    <label className="ysearch__toggle-row">
+      <div className="ysearch__toggle-txt">
+        <span className="ysearch__toggle-label">{label}</span>
+        {hint && <span className="ysearch__toggle-hint">{hint}</span>}
+      </div>
+      <span className={`ysearch__toggle ${checked ? 'is-on' : ''}`}>
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={onChange}
+          aria-label={label}
+        />
+        <span className="ysearch__toggle-track" />
+        <span className="ysearch__toggle-thumb" />
+      </span>
+    </label>
+  );
+}
+
+function FiltersContent({
+  allBrands, brandsLoading, brandFilterQ, setBrandFilterQ,
+  brands, toggleBrand,
+  priceMin, setPriceMin, priceMax, setPriceMax,
+  skinTypes, toggleSkinType,
+  ingredients, toggleIngredient, availableIngredients,
+  ratingMin, setRatingMin,
+  inStockOnly, setInStockOnly,
+  fastShip, setFastShip,
+  promoOnly, setPromoOnly,
+  categories, category, setCategory,
+  onReset, activeCount,
+}) {
+  return (
+    <div className="ysearch__filters-inner">
+      <div className="ysearch__filters-head">
+        <span>Affiner</span>
+        <button
+          type="button"
+          className="ysearch__filters-reset"
+          onClick={onReset}
+          disabled={activeCount === 0}
+        >
+          Reinitialiser
+        </button>
+      </div>
+
+      {categories?.length > 0 && (
+        <FilterBlock title="Categorie">
+          <div className="ysearch__cat-list">
+            <button
+              type="button"
+              className={`ysearch__cat ${!category ? 'is-active' : ''}`}
+              onClick={() => setCategory('')}
+            >
+              Toutes les categories
+            </button>
+            {categories.slice(0, 12).map((c) => {
+              const slug = c.slug || c.id;
+              return (
+                <button
+                  key={slug}
+                  type="button"
+                  className={`ysearch__cat ${category === slug ? 'is-active' : ''}`}
+                  onClick={() => setCategory(slug)}
+                >
+                  {c.name || slug}
+                </button>
+              );
+            })}
+          </div>
+        </FilterBlock>
+      )}
+
+      <FilterBlock title="Marque">
+        <label className="ysearch__brand-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="14" height="14" aria-hidden>
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
           <input
-            ref={inputRef}
-            autoFocus={!category && !initialBrand}
-            value={q}
-            onChange={e => setQ(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && q.trim()) submitTerm(q.trim()); }}
-            placeholder={category ? `Filtrer dans ${catLabel(category)}…` : brand ? `Filtrer dans ${brand}…` : 'Produit, marque, ingrédient…'}
-            inputMode="search"
-            enterKeyHint="search"
-            autoCapitalize="off"
-            autoCorrect="off"
-            spellCheck="false"
+            type="search"
+            placeholder="Chercher une marque"
+            value={brandFilterQ}
+            onChange={(e) => setBrandFilterQ(e.target.value)}
           />
-          {q && (
-            <button onClick={handleClear} className="ysearch-clear" aria-label="Effacer">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
-                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-            </button>
-          )}
-        </div>
-        <button className="ysearch-cancel" onClick={handleCancel}>Annuler</button>
-      </div>
-
-      {/* ─── Bandeau contexte (titre quand on arrive avec un filtre) ─── */}
-      {contextLabel && cameFromFilter && (
-        <div className="ysearch-context-bar">
-          <span className="ysearch-context-label">{contextLabel}</span>
-        </div>
-      )}
-
-      {/* ─── Bandeau filtres actifs ─── */}
-      {(category || brand) && (
-        <div className="ysearch-pinned-filters">
-          {category && (
-            <span className="ysearch-pin-chip">
-              {catEmoji(category)} {catLabel(category)}
-              <button onClick={clearCategoryFilter} aria-label="Retirer catégorie">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="12" height="12">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-              </button>
-            </span>
-          )}
-          {brand && (
-            <span className="ysearch-pin-chip">
-              🏷️ {brand}
-              <button onClick={clearBrandFilter} aria-label="Retirer marque">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="12" height="12">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-              </button>
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* ─── Filtres tabs (quand résultats) ─── */}
-      {showResults && (
-        <div className="ysearch-tabs-bar">
-          <div className="ysearch-tabs">
-            {TAB_FILTERS.map(t => (
-              <button
-                key={t.id}
-                className={`ysearch-tab ${tab === t.id ? 'active' : ''}`}
-                onClick={() => { setTab(t.id); hapticTap(); }}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-          <div className="ysearch-tabs ysearch-tabs-sort">
-            {SORT_OPTIONS.map(s => (
-              <button
-                key={s.id}
-                className={`ysearch-tab small ${sort === s.id ? 'active' : ''}`}
-                onClick={() => { setSort(s.id); hapticTap(); }}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ─── Scroll body ─── */}
-      <div className="ysearch-scroll">
-        {/* CAS 1 : input avec texte → suggestions live */}
-        {hasQuery && !hasFilter && (
-          <LiveSuggestions
-            suggestions={liveSuggestions}
-            loading={loading}
-            onPickProduct={goToProduct}
-            onPickBrand={goToBrand}
-            onPickCategory={goToCategory}
-          />
-        )}
-
-        {/* CAS 2 : recherche active (filtres ou query+filtre) → résultats */}
-        {showResults && !(hasQuery && !hasFilter) && (
-          loading ? (
-            <SearchSkeleton />
-          ) : tab === 'brands' ? (
-            <BrandsResults brands={matchedBrandsForResults} onPick={goToBrand} />
-          ) : filtered.length === 0 ? (
-            <NoResults
-              term={qDebounced || category || brand}
-              categories={categories}
-              onPickCategory={goToCategory}
-              onReset={() => { setCategory(null); setBrand(null); setQ(''); setQDebounced(''); }}
-            />
+        </label>
+        <div className="ysearch__brand-list">
+          {brandsLoading && allBrands.length === 0 ? (
+            <div className="ysearch__block-empty">Chargement...</div>
+          ) : allBrands.length === 0 ? (
+            <div className="ysearch__block-empty">Aucune marque correspondante</div>
           ) : (
-            <ResultsGrid products={filtered} category={category} brand={brand} />
-          )
-        )}
-
-        {/* CAS 3 : rien tapé → empty state premium */}
-        {!isActiveSearch && (
-          <EmptyState
-            history={history}
-            onPickHistory={(term) => { setQ(term); }}
-            onRemoveHistory={removeHistoryItem}
-            onClearHistory={clearAllHistory}
-            onPickSuggestion={(s) => { setQ(s); }}
-            trendingBrands={brands.length > 0
-              ? brands.filter(b => TRENDING_BRANDS.includes(b.name)).slice(0, 8)
-              : TRENDING_BRANDS.map(name => ({ name, logo: null }))}
-            onPickBrand={goToBrand}
-            categories={categories}
-            onPickCategory={goToCategory}
-          />
-        )}
-
-        <div style={{ height: 40 }} />
-      </div>
-
-      <TabBar active="search" />
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// SOUS-COMPOSANTS
-// ═══════════════════════════════════════════════════════════════════════════════
-
-function LiveSuggestions({ suggestions, loading, onPickProduct, onPickBrand, onPickCategory }) {
-  if (loading) return <SearchSkeleton mini />;
-  if (!suggestions) return null;
-  const { products, brands, categories } = suggestions;
-  if (products.length + brands.length + categories.length === 0) {
-    return (
-      <div className="ysearch-no-live">
-        <div className="ysearch-no-live-emoji">🔍</div>
-        <p>Aucune correspondance directe.</p>
-        <span>Appuie sur Entrée pour lancer une recherche complète.</span>
-      </div>
-    );
-  }
-
-  let idx = 0;
-  return (
-    <div className="ysearch-live">
-      {products.length > 0 && (
-        <div className="ysearch-live-section">
-          <h4 className="ysearch-live-title">Produits</h4>
-          <div className="ysearch-live-list">
-            {products.map((p) => (
-              <button
-                key={p.id}
-                className="ysearch-live-row stagger-in"
-                style={{ animationDelay: `${(idx++) * STAGGER_MS}ms` }}
-                onClick={() => onPickProduct(p)}
-              >
-                <div className="ysearch-live-thumb">
-                  {p.image ? <img src={p.image} alt="" loading="lazy" /> : <div className="ysearch-live-thumb-ph">{(p.name || '?')[0]}</div>}
-                </div>
-                <div className="ysearch-live-meta">
-                  <div className="ysearch-live-name">{p.name}</div>
-                  <div className="ysearch-live-sub">{p.brand}</div>
-                </div>
-                <div className="ysearch-live-price">{p.price ? `${p.price.toLocaleString('fr-FR')} F` : ''}</div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {brands.length > 0 && (
-        <div className="ysearch-live-section">
-          <h4 className="ysearch-live-title">Marques</h4>
-          <div className="ysearch-live-list">
-            {brands.map((b) => (
-              <button
+            allBrands.map((b) => (
+              <CheckboxRow
                 key={b.id || b.name}
-                className="ysearch-live-row stagger-in"
-                style={{ animationDelay: `${(idx++) * STAGGER_MS}ms` }}
-                onClick={() => onPickBrand(b)}
-              >
-                <div className="ysearch-live-thumb brand">
-                  {b.logo ? <img src={b.logo} alt="" loading="lazy" /> : <div className="ysearch-live-thumb-ph">{(b.name || '?')[0]}</div>}
-                </div>
-                <div className="ysearch-live-meta">
-                  <div className="ysearch-live-name">{b.name}</div>
-                  <div className="ysearch-live-sub">Marque{b.local ? ' · 🇸🇳 locale' : ''}</div>
-                </div>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="16" height="16" className="ysearch-live-arrow">
-                  <polyline points="9 18 15 12 9 6"/>
-                </svg>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {categories.length > 0 && (
-        <div className="ysearch-live-section">
-          <h4 className="ysearch-live-title">Catégories</h4>
-          <div className="ysearch-live-list">
-            {categories.map((c) => (
-              <button
-                key={c.slug}
-                className="ysearch-live-row stagger-in"
-                style={{ animationDelay: `${(idx++) * STAGGER_MS}ms` }}
-                onClick={() => onPickCategory(c.slug, c.label)}
-              >
-                <div className="ysearch-live-thumb cat">{catEmoji(c.slug)}</div>
-                <div className="ysearch-live-meta">
-                  <div className="ysearch-live-name">{c.label}</div>
-                  <div className="ysearch-live-sub">Catégorie</div>
-                </div>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="16" height="16" className="ysearch-live-arrow">
-                  <polyline points="9 18 15 12 9 6"/>
-                </svg>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ResultsGrid({ products, category, brand }) {
-  return (
-    <div className="search-results">
-      <div className="ysearch-count">
-        <strong>{products.length}</strong> résultat{products.length > 1 ? 's' : ''}
-        {category ? ` · ${catLabel(category)}` : ''}
-        {brand ? ` · ${brand}` : ''}
-      </div>
-      <div className="search-product-grid-2">
-        {products.map((p, i) => (
-          <div key={p.id} className="stagger-in" style={{ animationDelay: `${Math.min(i, 12) * STAGGER_MS}ms` }}>
-            <ProductTile product={p} />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function BrandsResults({ brands, onPick }) {
-  if (brands.length === 0) {
-    return (
-      <div className="ysearch-no-live">
-        <div className="ysearch-no-live-emoji">🏷️</div>
-        <p>Aucune marque correspondante</p>
-      </div>
-    );
-  }
-  return (
-    <div className="ysearch-brands-grid">
-      {brands.map((b, i) => (
-        <button
-          key={b.id || b.name}
-          className="ysearch-brand-card stagger-in"
-          style={{ animationDelay: `${Math.min(i, 12) * STAGGER_MS}ms` }}
-          onClick={() => onPick(b)}
-        >
-          <div className="ysearch-brand-logo">
-            {(b.img || b.logo) ? (
-              <img
-                src={b.img || b.logo}
-                alt={b.name}
-                loading="lazy"
-                decoding="async"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                  if (e.currentTarget.nextSibling) e.currentTarget.nextSibling.style.display = 'flex';
-                }}
+                id={`brand-${b.id || b.name}`}
+                label={b.name}
+                checked={brands.includes(b.name)}
+                onChange={() => toggleBrand(b.name)}
+                hint={b.product_count ? String(b.product_count) : undefined}
               />
-            ) : null}
-            <span style={{ display: (b.img || b.logo) ? 'none' : 'flex' }}>{(b.name || '?')[0]}</span>
-          </div>
-          <div className="ysearch-brand-name">{b.name}</div>
-          {b.local && <div className="ysearch-brand-tag">🇸🇳 Locale</div>}
-        </button>
-      ))}
+            ))
+          )}
+        </div>
+      </FilterBlock>
+
+      <FilterBlock title="Prix (FCFA)">
+        <div className="ysearch__price-row">
+          <input
+            type="number"
+            className="ysearch__price-in"
+            placeholder="Min"
+            min={0}
+            max={PRICE_LIMIT}
+            step={1000}
+            value={priceMin || ''}
+            onChange={(e) => setPriceMin(Math.max(0, Number(e.target.value) || 0))}
+            aria-label="Prix minimum"
+          />
+          <span aria-hidden>—</span>
+          <input
+            type="number"
+            className="ysearch__price-in"
+            placeholder="Max"
+            min={0}
+            max={PRICE_LIMIT}
+            step={1000}
+            value={priceMax || ''}
+            onChange={(e) => setPriceMax(Math.max(0, Number(e.target.value) || 0))}
+            aria-label="Prix maximum"
+          />
+        </div>
+        <input
+          type="range"
+          className="ysearch__price-slider"
+          min={0}
+          max={PRICE_LIMIT}
+          step={1000}
+          value={priceMax || PRICE_LIMIT}
+          onChange={(e) => setPriceMax(Number(e.target.value))}
+          aria-label="Curseur prix maximum"
+        />
+        <div className="ysearch__price-hint">
+          Jusqu a {(priceMax || PRICE_LIMIT).toLocaleString('fr-FR')} F
+        </div>
+      </FilterBlock>
+
+      <FilterBlock title="Type de peau">
+        <div className="ysearch__grid-check">
+          {SKIN_TYPES.map((s) => (
+            <CheckboxRow
+              key={s.id}
+              id={`skin-${s.id}`}
+              label={s.label}
+              checked={skinTypes.includes(s.id)}
+              onChange={() => toggleSkinType(s.id)}
+            />
+          ))}
+        </div>
+      </FilterBlock>
+
+      <FilterBlock title="Ingredients">
+        <div className="ysearch__grid-check">
+          {availableIngredients.slice(0, 12).map((i) => (
+            <CheckboxRow
+              key={i}
+              id={`ing-${i}`}
+              label={i}
+              checked={ingredients.includes(i)}
+              onChange={() => toggleIngredient(i)}
+            />
+          ))}
+        </div>
+      </FilterBlock>
+
+      <FilterBlock title="Note minimum">
+        <div className="ysearch__grid-check">
+          {RATING_MIN_OPTIONS.map((o) => (
+            <label key={o.id} className="ysearch__check ysearch__check--radio">
+              <input
+                type="radio"
+                name="rating-min"
+                checked={ratingMin === o.id}
+                onChange={() => setRatingMin(o.id)}
+              />
+              <span className="ysearch__check-box ysearch__check-box--radio" aria-hidden />
+              <span className="ysearch__check-label">{o.label}</span>
+            </label>
+          ))}
+        </div>
+      </FilterBlock>
+
+      <FilterBlock title="Disponibilite & livraison">
+        <ToggleRow
+          label="En stock uniquement"
+          hint="Masque les produits en rupture"
+          checked={inStockOnly}
+          onChange={(e) => setInStockOnly(e.target.checked)}
+        />
+        <ToggleRow
+          label="Livrable demain"
+          hint="Exclut les imports internationaux"
+          checked={fastShip}
+          onChange={(e) => setFastShip(e.target.checked)}
+        />
+        <ToggleRow
+          label="En promotion"
+          hint="Uniquement les produits en solde"
+          checked={promoOnly}
+          onChange={(e) => setPromoOnly(e.target.checked)}
+        />
+      </FilterBlock>
     </div>
   );
 }
 
 function NoResults({ term, categories, onPickCategory, onReset }) {
   const suggested = (categories || []).slice(0, 6);
-  const fallback = Object.entries(CAT_LABELS).slice(0, 6).map(([slug, label]) => ({ slug, name: label }));
-  const list = suggested.length > 0 ? suggested : fallback;
   return (
-    <div className="ysearch-no-results">
-      <div className="ysearch-no-illust">🌿</div>
-      <h3>Pas de résultat pour <span className="ysearch-no-term">« {term} »</span></h3>
-      <p>Essaie une autre orthographe ou explore ces catégories :</p>
-      <div className="ysearch-no-cats">
-        {list.map(c => {
-          const slug = c.slug || c.id;
-          return (
-            <button key={slug} className="ysearch-no-cat" onClick={() => onPickCategory(slug, c.name || catLabel(slug))}>
-              <span>{catEmoji(slug)}</span>
-              <span>{c.name || catLabel(slug)}</span>
-            </button>
-          );
-        })}
+    <div className="ysearch__no-results">
+      <div className="ysearch__no-icon" aria-hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" width="48" height="48">
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
       </div>
-      <button className="ysearch-reset-btn" onClick={onReset}>Réinitialiser la recherche</button>
-    </div>
-  );
-}
-
-function EmptyState({ history, onPickHistory, onRemoveHistory, onClearHistory, onPickSuggestion, trendingBrands, onPickBrand, categories, onPickCategory }) {
-  return (
-    <div className="ysearch-empty">
-      {/* Recherches récentes */}
-      {history.length > 0 && (
-        <section className="ysearch-section">
-          <div className="ysearch-section-head">
-            <h3 className="ysearch-section-title">Recherches récentes</h3>
-            <button className="ysearch-section-action" onClick={onClearHistory}>Effacer tout</button>
-          </div>
-          <div className="ysearch-chips">
-            {history.map((term, i) => (
-              <span
-                key={term}
-                className="ysearch-chip removable stagger-in"
-                style={{ animationDelay: `${i * STAGGER_MS}ms` }}
-              >
-                <button className="ysearch-chip-main" onClick={() => onPickHistory(term)}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="12" height="12">
-                    <polyline points="12 8 12 12 14 14"/><circle cx="12" cy="12" r="10"/>
-                  </svg>
-                  {term}
-                </button>
-                <button className="ysearch-chip-remove" onClick={() => onRemoveHistory(term)} aria-label={`Retirer ${term}`}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="11" height="11">
-                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                  </svg>
-                </button>
-              </span>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Suggestions populaires */}
-      <section className="ysearch-section">
-        <div className="ysearch-section-head">
-          <h3 className="ysearch-section-title">Suggestions populaires</h3>
-        </div>
-        <div className="ysearch-chips">
-          {POPULAR_SUGGESTIONS.map((s, i) => (
+      <h3 className="ysearch__no-title">Aucun resultat</h3>
+      <p className="ysearch__no-sub">
+        Aucun produit ne correspond a{term ? ` "${term}" et` : ''} tes filtres actuels.
+      </p>
+      {suggested.length > 0 && (
+        <div className="ysearch__no-cats">
+          {suggested.map((c) => (
             <button
-              key={s}
-              className="ysearch-chip suggestion stagger-in"
-              style={{ animationDelay: `${i * STAGGER_MS}ms` }}
-              onClick={() => onPickSuggestion(s)}
+              key={c.slug || c.id}
+              type="button"
+              className="ysearch__no-cat"
+              onClick={() => onPickCategory(c.slug || c.id)}
             >
-              {s}
+              {c.name || c.slug}
             </button>
           ))}
         </div>
-      </section>
-
-      {/* Marques tendance */}
-      {trendingBrands.length > 0 && (
-        <section className="ysearch-section">
-          <div className="ysearch-section-head">
-            <h3 className="ysearch-section-title">Marques tendance</h3>
-          </div>
-          <div className="ysearch-trending-grid">
-            {trendingBrands.map((b, i) => (
-              <button
-                key={b.id || b.name}
-                className="ysearch-trending-card stagger-in"
-                style={{ animationDelay: `${i * STAGGER_MS}ms` }}
-                onClick={() => onPickBrand(b)}
-              >
-                <div className="ysearch-trending-logo">
-                  {(b.img || b.logo) ? (
-                    <img
-                      src={b.img || b.logo}
-                      alt={b.name}
-                      loading="lazy"
-                      decoding="async"
-                      onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling && (e.currentTarget.nextSibling.style.display = 'flex'); }}
-                    />
-                  ) : null}
-                  <span style={{ display: (b.img || b.logo) ? 'none' : 'flex' }}>{(b.name || '?')[0]}</span>
-                </div>
-                <div className="ysearch-trending-name">{b.name}</div>
-              </button>
-            ))}
-          </div>
-        </section>
       )}
-
-      {/* Catégories quick access */}
-      {categories.length > 0 && (
-        <section className="ysearch-section">
-          <div className="ysearch-section-head">
-            <h3 className="ysearch-section-title">Parcourir par catégorie</h3>
-          </div>
-          <div className="ysearch-chips">
-            {categories.slice(0, 10).map((c, i) => {
-              const slug = c.slug || c.id;
-              return (
-                <button
-                  key={slug}
-                  className="ysearch-chip stagger-in"
-                  style={{ animationDelay: `${i * STAGGER_MS}ms` }}
-                  onClick={() => onPickCategory(slug, c.name || catLabel(slug))}
-                >
-                  <span>{catEmoji(slug)}</span>
-                  <span>{c.name || catLabel(slug)}</span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-      )}
-    </div>
-  );
-}
-
-// Skeleton shimmer ─────────────────────────────────────────────────────────────
-function SearchSkeleton({ mini }) {
-  if (mini) {
-    return (
-      <div className="ysearch-live">
-        <div className="ysearch-live-section">
-          <div className="ysearch-sk-line" style={{ width: 90, height: 12, marginBottom: 12 }} />
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="ysearch-sk-row">
-              <div className="ysearch-sk-box" style={{ width: 48, height: 48, borderRadius: 12 }} />
-              <div style={{ flex: 1 }}>
-                <div className="ysearch-sk-line" style={{ width: '70%', height: 11, marginBottom: 6 }} />
-                <div className="ysearch-sk-line" style={{ width: '40%', height: 10 }} />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-  return (
-    <div className="search-results">
-      <div className="ysearch-sk-line" style={{ width: 120, height: 14, marginBottom: 14 }} />
-      <div className="search-product-grid-2">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="product-tile" style={{ pointerEvents: 'none' }}>
-            <div className="pt-img-wrap">
-              <div className="ysearch-sk-line" style={{ width: '100%', aspectRatio: '1/1', borderRadius: 12 }} />
-            </div>
-            <div className="pt-info">
-              <div className="ysearch-sk-line" style={{ width: '50%', height: 10, marginBottom: 6 }} />
-              <div className="ysearch-sk-line" style={{ width: '90%', height: 12, marginBottom: 8 }} />
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <div className="ysearch-sk-line" style={{ width: 60, height: 14 }} />
-                <div className="ysearch-sk-line" style={{ width: 32, height: 14 }} />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      <button type="button" className="ysearch__no-reset" onClick={onReset}>
+        Reinitialiser les filtres
+      </button>
     </div>
   );
 }

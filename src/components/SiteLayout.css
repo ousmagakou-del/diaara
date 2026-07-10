@@ -54,8 +54,18 @@
 
 /* Nav */
 .site-nav {
-  display: flex; gap: 28px; flex: 1;
+  display: flex; gap: 28px;
 }
+
+/* Header search (autocomplete) — occupe l'espace flex central */
+.site-header-search {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 520px;
+}
+.site-icon-btn--search-mobile { display: none; }
 .site-nav-item {
   background: none; border: none; cursor: pointer;
   padding: 8px 0; font-size: 14.5px; font-weight: 700;
@@ -253,6 +263,8 @@
   .site-nav { display: none; }
   .site-hide-mobile { display: none !important; }
   .site-show-mobile { display: flex !important; }
+  .site-header-search { display: none; }
+  .site-icon-btn--search-mobile { display: flex; }
 }
 
 @media (max-width: 768px) {
