@@ -48,13 +48,27 @@ function catLabel(slug) {
   return CATEGORY_LABELS[slug] || (slug.charAt(0).toUpperCase() + slug.slice(1));
 }
 
+// Sert le SPA (index.html) en preservant l URL /search?... .
+// Voir functions/product/[id].js pour la raison detaillee.
+async function serveSpa(request, env) {
+  const indexResponse = await env.ASSETS.fetch(new URL('/', request.url));
+  const html = await indexResponse.text();
+  return new Response(html, {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-cache',
+    },
+  });
+}
+
 export async function onRequest(context) {
-  const { request, env, next } = context;
+  const { request, env } = context;
   const userAgent = request.headers.get('user-agent') || '';
 
-  // Humain : laisse passer le SPA standard
+  // Humain : sert le SPA
   if (!isBotUA(userAgent)) {
-    return next();
+    return serveSpa(request, env);
   }
 
   // Bot : lit ?brand= ou ?category= dans l'URL
@@ -64,7 +78,7 @@ export async function onRequest(context) {
 
   // Si ni brand ni category → fallback (SPA standard avec og: par défaut)
   if (!brandName && !categorySlug) {
-    return next();
+    return serveSpa(request, env);
   }
 
   try {
@@ -78,7 +92,7 @@ export async function onRequest(context) {
       );
       const brand = brands?.[0];
 
-      if (!brand) return next(); // brand introuvable → fallback
+      if (!brand) return serveSpa(request, env); // brand introuvable → SPA
 
       // Compte les produits actifs de la brand (pour la description)
       let productCount = 0;
@@ -158,6 +172,6 @@ export async function onRequest(context) {
     });
   } catch (e) {
     console.error('[og-search] error:', e.message);
-    return next();
+    return serveSpa(request, env);
   }
 }

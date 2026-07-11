@@ -15,13 +15,31 @@
 
 import { sbFetch, escapeHtml, isBotUA, buildMetaTags, injectMetaTags } from '../_lib.js';
 
+// Sert le SPA (index.html) en preservant l URL /product/:id dans le navigateur.
+// Utilise env.ASSETS.fetch au lieu de next() car next() delegue au pipeline
+// static + _redirects, et Cloudflare Pages ignore le fallback SPA quand
+// une Function a deja repondu -> on tombait sur public/404.html "Ressource
+// introuvable" (bug decouvert le 2026-07-10 sur les fiches Google Merchant
+// qui pointent toutes vers /product/:uuid).
+async function serveSpa(request, env) {
+  const indexResponse = await env.ASSETS.fetch(new URL('/', request.url));
+  const html = await indexResponse.text();
+  return new Response(html, {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-cache',
+    },
+  });
+}
+
 export async function onRequest(context) {
-  const { request, params, env, next } = context;
+  const { request, params, env } = context;
   const userAgent = request.headers.get('user-agent') || '';
 
-  // Humain : laisse passer le SPA standard (index.html + JS)
+  // Humain : sert le SPA (index.html). React lit /product/:id et affiche la fiche.
   if (!isBotUA(userAgent)) {
-    return next();
+    return serveSpa(request, env);
   }
 
   // Bot : fetch produit + sert HTML enrichi
@@ -32,8 +50,8 @@ export async function onRequest(context) {
     );
     const p = products?.[0];
 
-    // Produit introuvable → laisse passer (le SPA affichera "Produit introuvable")
-    if (!p) return next();
+    // Produit introuvable -> sert le SPA (le SPA affichera "Produit introuvable")
+    if (!p) return serveSpa(request, env);
 
     const title = `${p.brand ? p.brand + ' — ' : ''}${p.name} · YARAM`;
     const description = p.short_desc
@@ -85,6 +103,6 @@ export async function onRequest(context) {
   } catch (e) {
     // Si erreur (Supabase down, etc.), on fallback sur le SPA standard
     console.error('[og-product] error:', e.message);
-    return next();
+    return serveSpa(request, env);
   }
 }

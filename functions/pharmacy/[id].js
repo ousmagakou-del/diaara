@@ -4,11 +4,25 @@
 
 import { sbFetch, isBotUA, buildMetaTags, injectMetaTags } from '../_lib.js';
 
+// Sert le SPA (index.html) en preservant l URL /pharmacy/:id.
+// Voir functions/product/[id].js pour la raison detaillee.
+async function serveSpa(request, env) {
+  const indexResponse = await env.ASSETS.fetch(new URL('/', request.url));
+  const html = await indexResponse.text();
+  return new Response(html, {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-cache',
+    },
+  });
+}
+
 export async function onRequest(context) {
-  const { request, params, env, next } = context;
+  const { request, params, env } = context;
   const userAgent = request.headers.get('user-agent') || '';
 
-  if (!isBotUA(userAgent)) return next();
+  if (!isBotUA(userAgent)) return serveSpa(request, env);
 
   try {
     const pharmacies = await sbFetch(
@@ -16,7 +30,7 @@ export async function onRequest(context) {
       `pharmacies?id=eq.${encodeURIComponent(params.id)}&select=id,name,tagline,description,city,neighborhood,address,phone,whatsapp,logo,cover,rating,review_count,hours,delivery_hours&active=eq.true&limit=1`
     );
     const ph = pharmacies?.[0];
-    if (!ph) return next();
+    if (!ph) return serveSpa(request, env);
 
     const title = `${ph.name} · Pharmacie YARAM ${ph.city || 'Sénégal'}`;
     const description = ph.tagline
@@ -64,6 +78,6 @@ export async function onRequest(context) {
     });
   } catch (e) {
     console.error('[og-pharmacy] error:', e.message);
-    return next();
+    return serveSpa(request, env);
   }
 }
