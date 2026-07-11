@@ -41,6 +41,20 @@ const DELIVERY_MODES = [
   { id: 'standard', name: 'Standard',     time: '30 - 45 min',     price: 1500, desc: 'Livraison classique YARAM' },
 ];
 
+// Mode dedie pour les commandes contenant au moins un produit import.
+// Le produit doit d abord etre importe (2-3 semaines), puis livre a Dakar.
+// Les modes today/express/standard sont masques dans ce cas — sinon promesse
+// mensongere de livraison en 30 min pour un produit qui arrive dans 3 semaines.
+function buildImportDeliveryMode(leadDays) {
+  return {
+    id: 'import',
+    name: 'Import YARAM',
+    time: `${leadDays}-${leadDays + 7} jours`,
+    price: 1500,
+    desc: 'Import international puis livraison Dakar',
+  };
+}
+
 // ─── Payment methods — CALQUE EXACT app native (yaram-native/app/checkout.jsx)
 // Wave (actif), Cash a la livraison (actif hors preorder), Orange Money (bientot).
 // Pas de PayTech, Free Money, ni carte bancaire tant que le native ne les propose pas.
@@ -132,8 +146,39 @@ export default function CheckoutPage() {
 
   // ─── Delivery + payment + notes ─────────────────────────────────
   const [deliveryMode, setDeliveryMode] = useState(persisted.deliveryMode || 'standard');
-  // Preorder n est pas encore branche cote web (import). Garde l API pour futur.
-  const isPreorder = false;
+
+  // ─── Detection Import / Preorder ────────────────────────────────
+  // Un cart contient au moins un produit is_imported=true -> tout le cart
+  // bascule en mode import. Impossible de mixer produits locaux + import
+  // dans le meme flow de livraison (delais incompatibles).
+  const hasImportedItem = useMemo(
+    () => items.some((it) => it.is_imported === true),
+    [items]
+  );
+  const importLeadDays = useMemo(() => {
+    if (!hasImportedItem) return 0;
+    const days = items
+      .filter((it) => it.is_imported)
+      .map((it) => Number(it.lead_time_days) || 15);
+    return days.length > 0 ? Math.max(...days) : 15;
+  }, [items, hasImportedItem]);
+  const isPreorder = hasImportedItem;
+
+  // Liste de modes visible : soit les 3 modes normaux, soit UN SEUL mode import.
+  const availableDeliveryModes = useMemo(
+    () => (hasImportedItem ? [buildImportDeliveryMode(importLeadDays)] : DELIVERY_MODES),
+    [hasImportedItem, importLeadDays]
+  );
+
+  // Force le mode adequat des qu on detecte / retire des items import.
+  useEffect(() => {
+    if (hasImportedItem && deliveryMode !== 'import') {
+      setDeliveryMode('import');
+    } else if (!hasImportedItem && deliveryMode === 'import') {
+      setDeliveryMode('standard');
+    }
+  }, [hasImportedItem, deliveryMode]);
+
   // Filtre calque native : masque methodes non compatibles preorder si preorder.
   const visiblePayments = useMemo(
     () => PAYMENTS.filter((p) => (isPreorder ? p.preorderOk : true)),
@@ -232,7 +277,7 @@ export default function CheckoutPage() {
 
   // ─── Totals cascade ─────────────────────────────────────────────
   const subtotal = items.reduce((s, it) => s + (Number(it.price) || 0) * (Number(it.qty) || 0), 0);
-  const currentDelivery = DELIVERY_MODES.find((m) => m.id === deliveryMode) || DELIVERY_MODES[0];
+  const currentDelivery = availableDeliveryModes.find((m) => m.id === deliveryMode) || availableDeliveryModes[0];
   const deliveryFee = currentDelivery.price;
   const serviceFee = Math.max(250, Math.round(subtotal * 0.05));
 
@@ -566,7 +611,7 @@ export default function CheckoutPage() {
                 </div>
                 <div className="ck-section-body">
                   <div className="ck-delivery-list">
-                    {DELIVERY_MODES.map((m) => {
+                    {availableDeliveryModes.map((m) => {
                       const active = deliveryMode === m.id;
                       return (
                         <button
