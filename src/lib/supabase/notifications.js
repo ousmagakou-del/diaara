@@ -188,73 +188,244 @@ export function subscribeNotificationsCount(userId, onUpdate) {
 }
 
 // ═══════════════════════════════════════════════
-// REVIEWS
+// REVIEWS — table `product_reviews` (aligne native/app)
+// Colonnes : id, user_id, product_id, order_id, rating,
+//            title, body, photos jsonb, verified_purchase,
+//            helpful_count, status ('published'), created_at
 // ═══════════════════════════════════════════════
 
-export async function getProductReviews(productId) {
-  const { data } = await supabase.from('reviews').select('*')
-    .eq('product_id', productId).eq('status', 'approved')
-    .order('created_at', { ascending: false });
-  return data || [];
-}
+// Whitelist des hosts autorises pour les URLs de photos.
+// Anti-XSS/anti-SSRF : on refuse tout ce qui n'est pas Supabase Storage YARAM.
+const SUPABASE_STORAGE_HOSTS = [
+  'qxhhnrnworwrnwmqekmb.supabase.co',
+  'qxhhnrnworwrnwmqekmb.supabase.in',
+];
 
-export async function createReview({ productId, userId, userName, rating, title, comment, photoUrls = [] }) {
-  const { data: existing } = await supabase.from('reviews').select('id')
-    .eq('product_id', productId).eq('user_id', userId).maybeSingle();
-  if (existing) {
-    const { error } = await supabase.from('reviews').update({ rating, title, comment, photo_urls: photoUrls }).eq('id', existing.id);
-    return !error;
+export function isSafeReviewPhotoUrl(url) {
+  if (!url || typeof url !== 'string') return false;
+  try {
+    const u = new URL(url);
+    if (u.protocol !== 'https:') return false;
+    if (!SUPABASE_STORAGE_HOSTS.includes(u.hostname)) return false;
+    if (!u.pathname.startsWith('/storage/v1/object/public/review-photos/')) return false;
+    return true;
+  } catch {
+    return false;
   }
-  const { error } = await supabase.from('reviews').insert({
-    product_id: productId, user_id: userId, user_name: userName,
-    rating, title, comment, photo_urls: photoUrls, verified_purchase: true,
-  });
-  return !error;
 }
 
-export async function uploadReviewPhoto(file) {
-  const fileName = `review_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.jpg`;
-  const compressed = await compressImage(file, 800, 0.85);
-  const { error } = await supabase.storage.from('review-photos').upload(fileName, compressed, {
-    contentType: 'image/jpeg', upsert: true,
+function sanitizePhotos(arr) {
+  if (!Array.isArray(arr)) return [];
+  return arr.filter(isSafeReviewPhotoUrl).slice(0, 5);
+}
+
+// Mappe une row product_reviews vers la shape UI (compat ReviewCard.jsx)
+function mapReviewRow(r, nameById) {
+  return {
+    id: r.id,
+    product_id: r.product_id,
+    user_id: r.user_id,
+    order_id: r.order_id,
+    rating: r.rating,
+    title: r.title || '',
+    comment: r.body || '',
+    body: r.body || '',
+    photos: sanitizePhotos(r.photos),
+    photo_urls: sanitizePhotos(r.photos), // alias legacy
+    verified_purchase: !!r.verified_purchase,
+    helpful_count: Number(r.helpful_count) || 0,
+    status: r.status || 'published',
+    created_at: r.created_at,
+    author_name: nameById?.[r.user_id] || 'Anonyme',
+    user_name: nameById?.[r.user_id] || 'Anonyme',
+  };
+}
+
+export async function getProductReviews(productId) {
+  if (!productId) return [];
+  const { data, error } = await supabase
+    .from('product_reviews')
+    .select('id, user_id, product_id, order_id, rating, title, body, photos, verified_purchase, helpful_count, status, created_at')
+    .eq('product_id', productId)
+    .eq('status', 'published')
+    .order('helpful_count', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(200);
+  if (error) { console.warn('[getProductReviews]', error.message); return []; }
+
+  // Enrichissement noms user (safe RLS-side via users_profile)
+  const userIds = [...new Set((data || []).map((r) => r.user_id).filter(Boolean))];
+  let nameById = {};
+  if (userIds.length > 0) {
+    const { data: profs } = await supabase
+      .from('users_profile')
+      .select('id, full_name, email')
+      .in('id', userIds);
+    nameById = Object.fromEntries(
+      (profs || []).map((p) => [
+        p.id,
+        p.full_name || (p.email ? p.email.split('@')[0] : 'Anonyme'),
+      ])
+    );
+  }
+
+  return (data || []).map((r) => mapReviewRow(r, nameById));
+}
+
+// Auto-detection verified_purchase depuis l'historique orders.
+async function _checkVerifiedPurchase(userId, productId) {
+  if (!userId || !productId) return { verified: false, orderId: null };
+  try {
+    const { data: orders } = await supabase
+      .from('orders')
+      .select('id, status, items')
+      .eq('user_id', userId)
+      .in('status', ['delivered', 'client_confirmed', 'livre', 'livré', 'completed']);
+    if (!Array.isArray(orders)) return { verified: false, orderId: null };
+    for (const o of orders) {
+      const items = Array.isArray(o.items) ? o.items : [];
+      const match = items.some((it) =>
+        it && (it.id === productId || it.product_id === productId || String(it.id) === String(productId))
+      );
+      if (match) return { verified: true, orderId: o.id };
+    }
+  } catch (e) {
+    console.warn('[verifiedPurchase] failed:', e?.message);
+  }
+  return { verified: false, orderId: null };
+}
+
+export async function createReview({ productId, userId, rating, title, comment, body, photoUrls = [], photos: photosArg = [] }) {
+  if (!userId || !productId) return false;
+  const r = Number(rating);
+  if (!Number.isFinite(r) || r < 1 || r > 5) return false;
+
+  const photos = sanitizePhotos(
+    Array.isArray(photosArg) && photosArg.length > 0 ? photosArg : photoUrls
+  );
+  const bodyText = String(body || comment || '').slice(0, 1000);
+  const titleText = title ? String(title).slice(0, 120) : null;
+
+  const { verified, orderId } = await _checkVerifiedPurchase(userId, productId);
+
+  // Upsert-like : si l'utilisateur a deja review ce produit, on met a jour.
+  const { data: existing } = await supabase
+    .from('product_reviews')
+    .select('id')
+    .eq('product_id', productId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (existing?.id) {
+    const { error } = await supabase
+      .from('product_reviews')
+      .update({
+        rating: r,
+        title: titleText,
+        body: bodyText,
+        photos,
+        verified_purchase: verified,
+        order_id: orderId,
+        status: 'published',
+      })
+      .eq('id', existing.id);
+    if (error) { console.warn('[createReview:update]', error.message); return false; }
+    return true;
+  }
+
+  const { error } = await supabase.from('product_reviews').insert({
+    user_id: userId,
+    product_id: productId,
+    order_id: orderId,
+    rating: r,
+    title: titleText,
+    body: bodyText,
+    photos,
+    verified_purchase: verified,
+    status: 'published',
   });
-  if (error) { console.error('uploadReviewPhoto error:', error); return null; }
+  if (error) { console.warn('[createReview:insert]', error.message); return false; }
+  return true;
+}
+
+// Upload d'une photo : le bucket exige que le fichier soit
+// prefixe par `${auth.uid()}/…` (policy owner_insert).
+// Formats : jpg / jpeg / png / webp uniquement, max 5 MB.
+const ALLOWED_MIME = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+export async function uploadReviewPhoto(file, userId) {
+  if (!file) return null;
+  if (!userId) {
+    // Recupere le user courant si non fourni
+    const { data: { session } } = await supabase.auth.getSession();
+    userId = session?.user?.id;
+    if (!userId) { console.warn('[uploadReviewPhoto] not authenticated'); return null; }
+  }
+
+  if (file.size > MAX_FILE_SIZE) {
+    console.warn('[uploadReviewPhoto] file too large:', file.size);
+    return null;
+  }
+  const type = (file.type || '').toLowerCase();
+  if (!ALLOWED_MIME.includes(type)) {
+    console.warn('[uploadReviewPhoto] mime not allowed:', type);
+    return null;
+  }
+
+  const compressed = await compressImage(file, 1200, 0.82);
+  const ext = type === 'image/png' ? 'png' : type === 'image/webp' ? 'webp' : 'jpg';
+  const fileName = `${userId}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+  const { error } = await supabase.storage
+    .from('review-photos')
+    .upload(fileName, compressed, {
+      contentType: type === 'image/png' ? 'image/png' : type === 'image/webp' ? 'image/webp' : 'image/jpeg',
+      upsert: false,
+    });
+  if (error) { console.error('[uploadReviewPhoto]', error.message); return null; }
+
   const { data } = supabase.storage.from('review-photos').getPublicUrl(fileName);
-  return data.publicUrl;
+  const url = data?.publicUrl || null;
+  return isSafeReviewPhotoUrl(url) ? url : null;
 }
 
 export async function markReviewHelpful(reviewId) {
-  // PERF : RPC atomique (1 query au lieu de SELECT + UPDATE)
-  // + race-safe si 2 users tapent "utile" en simultané.
+  if (!reviewId) return;
   try {
     const { error } = await supabase.rpc('increment_review_helpful', { review_id: reviewId });
     if (!error) return;
   } catch { /* fallback */ }
 
-  // Fallback si RPC pas encore déployée
-  const { data } = await supabase.from('reviews').select('helpful_count').eq('id', reviewId).single();
+  const { data } = await supabase.from('product_reviews').select('helpful_count').eq('id', reviewId).single();
   if (data) {
-    await supabase.from('reviews').update({ helpful_count: (data.helpful_count || 0) + 1 }).eq('id', reviewId);
+    await supabase.from('product_reviews')
+      .update({ helpful_count: (data.helpful_count || 0) + 1 })
+      .eq('id', reviewId);
   }
 }
 
-export async function reportReview(reviewId) {
-  await supabase.from('reviews').update({ reported: true }).eq('id', reviewId);
+export async function reportReview(reviewId, reason = 'flagged_by_user') {
+  if (!reviewId) return;
+  await supabase.from('product_reviews')
+    .update({ status: 'flagged', flagged_reason: reason })
+    .eq('id', reviewId);
 }
 
 export async function getReviewStats(productId) {
   const reviews = await getProductReviews(productId);
   if (reviews.length === 0) return { avg: 0, total: 0, distribution: [0, 0, 0, 0, 0] };
-  const sum = reviews.reduce((s, r) => s + r.rating, 0);
+  const sum = reviews.reduce((s, r) => s + (r.rating || 0), 0);
   const avg = sum / reviews.length;
   const distribution = [0, 0, 0, 0, 0];
-  reviews.forEach(r => { if (r.rating >= 1 && r.rating <= 5) distribution[r.rating - 1]++; });
+  reviews.forEach((r) => {
+    if (r.rating >= 1 && r.rating <= 5) distribution[r.rating - 1]++;
+  });
   return { avg, total: reviews.length, distribution };
 }
 
-export async function respondToReview(reviewId, response) {
-  return supabase.from('reviews').update({
-    pharmacy_response: response,
-    pharmacy_responded_at: new Date().toISOString(),
-  }).eq('id', reviewId);
+export async function respondToReview(_reviewId, _response) {
+  // NOOP : la reponse pharmacie n'est pas dans product_reviews.
+  // Conserve pour compat API : on ignore silencieusement.
+  return { data: null, error: null };
 }

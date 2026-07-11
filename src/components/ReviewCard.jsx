@@ -43,7 +43,7 @@ const timeAgo = (iso) => {
   return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
-export default function ReviewCard({ review, onHelpful }) {
+export default function ReviewCard({ review, onHelpful, onPhotoClick }) {
   const [voted, setVoted] = useState(null); // 'up' | 'down' | null
   const [helpfulCount, setHelpfulCount] = useState(Number(review?.helpful_count) || 0);
 
@@ -100,9 +100,15 @@ export default function ReviewCard({ review, onHelpful }) {
       {photos.length > 0 && (
         <div className="rev-card-photos">
           {photos.slice(0, 4).map((src, i) => (
-            <div key={i} className="rev-card-photo">
+            <button
+              key={i}
+              type="button"
+              className="rev-card-photo"
+              onClick={() => onPhotoClick?.(photos, i)}
+              aria-label={`Voir photo ${i + 1} de l'avis`}
+            >
               <img src={src} alt="" loading="lazy" />
-            </div>
+            </button>
           ))}
         </div>
       )}
