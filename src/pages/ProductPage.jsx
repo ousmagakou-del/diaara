@@ -1220,6 +1220,28 @@ export default function ProductPage() {
                 </button>
               )}
 
+              {/* AR Try-on scaffold : maquillage seulement (categorie + tags + name) */}
+              {(() => {
+                const cat = String(product?.category_name || product?.category || '').toLowerCase();
+                const tags = Array.isArray(product?.tags) ? product.tags.map((t) => String(t).toLowerCase()) : [];
+                const name = String(product?.name || '').toLowerCase();
+                const keywords = ['rouge', 'teint', 'fond', 'blush', 'ombre', 'mascara', 'gloss'];
+                const isMakeup = cat.includes('maquillage')
+                  || tags.some((t) => keywords.some((k) => t.includes(k)))
+                  || keywords.some((k) => name.includes(k));
+                if (!isMakeup || !product?.id) return null;
+                return (
+                  <button
+                    type="button"
+                    className="pp-btn-buy-now"
+                    onClick={() => navigate({ name: 'ar_tryon', params: { productId: product.id } })}
+                    style={{ background: '#F1F5F3', color: '#0F5132', border: '1px solid #C6D5CD' }}
+                  >
+                    Essayer virtuellement (bientot)
+                  </button>
+                );
+              })()}
+
               {/* CTA Conseil WhatsApp (aligne native l.454-473) */}
               <button
                 type="button"

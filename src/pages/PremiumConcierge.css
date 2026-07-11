@@ -1,0 +1,361 @@
+/* ════════════════════════════════════════════════════════════════════
+   PremiumConcierge.css — Personal Shopper Premium (route /premium/concierge)
+   Prefixe : pcc-
+   ════════════════════════════════════════════════════════════════════ */
+
+.pcc-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px 20px 96px;
+  color: #0F1F14;
+}
+
+.pcc-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0 16px;
+}
+.pcc-topbar__title {
+  font-weight: 700;
+  font-size: 15px;
+  color: #0F1F14;
+}
+.pcc-topbar__spacer { width: 70px; }
+
+.pcc-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 0;
+  color: #0F5132;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 999px;
+}
+.pcc-back:hover { background: rgba(15,81,50,0.08); }
+
+.pcc-loading {
+  padding: 60px 20px;
+  text-align: center;
+  color: #4B5B52;
+}
+
+/* ─── HERO marketing ─────────────────────────────────────────────── */
+.pcc-hero {
+  background: linear-gradient(135deg, #0F5132 0%, #14683F 55%, #1F8B4C 100%);
+  color: #fff;
+  border-radius: 24px;
+  padding: 40px 28px 36px;
+  margin-bottom: 28px;
+  box-shadow: 0 24px 60px -30px rgba(15, 81, 50, 0.55);
+}
+.pcc-hero__eyebrow {
+  display: inline-block;
+  background: rgba(255,255,255,0.16);
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #FFE9AA;
+  margin-bottom: 16px;
+}
+.pcc-hero__title {
+  font-size: 36px;
+  line-height: 1.08;
+  font-weight: 800;
+  margin: 0 0 14px;
+  letter-spacing: -0.6px;
+}
+.pcc-hero__lead {
+  font-size: 16px;
+  line-height: 1.55;
+  color: rgba(255,255,255,0.92);
+  margin: 0 0 22px;
+  max-width: 60ch;
+}
+.pcc-hero__priceRow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.pcc-hero__price {
+  font-size: 34px;
+  font-weight: 800;
+  color: #FFE9AA;
+}
+.pcc-hero__priceUnit {
+  color: rgba(255,255,255,0.85);
+  font-weight: 600;
+}
+.pcc-hero__note {
+  margin: 12px 0 0;
+  color: rgba(255,255,255,0.75);
+  font-size: 13px;
+}
+
+.pcc-cta {
+  background: #FFE9AA;
+  color: #0F1F14;
+  border: 0;
+  padding: 14px 22px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 15px;
+  cursor: pointer;
+  box-shadow: 0 12px 28px -12px rgba(255, 214, 100, 0.65);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.pcc-cta:hover:not(:disabled) { transform: translateY(-1px); }
+.pcc-cta:disabled { opacity: 0.6; cursor: not-allowed; }
+.pcc-cta--wide {
+  width: 100%;
+  padding: 15px 22px;
+}
+
+/* ─── Sections generales ─────────────────────────────────────────── */
+.pcc-section__title {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 16px;
+  color: #0F1F14;
+  letter-spacing: -0.2px;
+}
+
+.pcc-perks {
+  background: #F6F9F7;
+  border-radius: 20px;
+  padding: 24px 24px 20px;
+  margin-bottom: 24px;
+}
+.pcc-perks__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+.pcc-perk {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 0 rgba(15,31,20,0.04);
+  color: #1B3626;
+  font-weight: 500;
+}
+.pcc-perk__check {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: #0F5132;
+  color: #FFE9AA;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pcc-how {
+  margin: 12px 0 28px;
+}
+.pcc-how__steps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 16px;
+}
+.pcc-how__steps > li {
+  display: flex;
+  gap: 16px;
+  background: #fff;
+  border: 1px solid #E7EEEA;
+  border-radius: 18px;
+  padding: 18px 20px;
+}
+.pcc-how__step {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: #0F5132;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.pcc-how__steps h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  color: #0F1F14;
+}
+.pcc-how__steps p {
+  margin: 0;
+  color: #4B5B52;
+  font-size: 14px;
+}
+
+.pcc-cta-final {
+  margin-top: 8px;
+}
+
+/* ─── Dashboard abonne ───────────────────────────────────────────── */
+.pcc-dash__hero {
+  background: linear-gradient(135deg, #0F5132 0%, #1F8B4C 100%);
+  color: #fff;
+  border-radius: 20px;
+  padding: 30px 26px 26px;
+  margin-bottom: 20px;
+}
+.pcc-dash__title {
+  font-size: 26px;
+  font-weight: 800;
+  margin: 12px 0 10px;
+  letter-spacing: -0.4px;
+}
+.pcc-dash__lead {
+  margin: 0;
+  color: rgba(255,255,255,0.9);
+  font-size: 14px;
+}
+.pcc-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+.pcc-badge--active {
+  background: rgba(255,233,170,0.24);
+  color: #FFE9AA;
+}
+
+.pcc-card {
+  background: #fff;
+  border: 1px solid #E7EEEA;
+  border-radius: 18px;
+  padding: 22px 22px 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 0 rgba(15,31,20,0.04);
+}
+
+.pcc-pharm {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.pcc-pharm__avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  background: #0F5132;
+  color: #FFE9AA;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 18px;
+}
+.pcc-pharm__name { font-weight: 700; color: #0F1F14; }
+.pcc-pharm__meta { color: #4B5B52; font-size: 13px; margin-top: 2px; }
+.pcc-pharm__phone {
+  display: inline-block;
+  margin-top: 8px;
+  color: #0F5132;
+  font-weight: 600;
+  text-decoration: none;
+}
+.pcc-pharm__phone:hover { text-decoration: underline; }
+
+.pcc-form {
+  display: grid;
+  gap: 14px;
+}
+.pcc-label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  color: #4B5B52;
+  font-weight: 600;
+}
+.pcc-input {
+  border: 1px solid #D8E2DC;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-family: inherit;
+  background: #fff;
+  color: #0F1F14;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+.pcc-input:focus { border-color: #0F5132; }
+.pcc-input--textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.pcc-empty {
+  color: #4B5B52;
+  font-size: 14px;
+  padding: 6px 0;
+}
+
+.pcc-req-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+.pcc-req {
+  border: 1px solid #E7EEEA;
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: #F9FBFA;
+}
+.pcc-req__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.pcc-req__badge {
+  font-size: 11px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.pcc-req__badge--open { background: #FEF3C7; color: #92590E; }
+.pcc-req__badge--answered { background: #D1FAE5; color: #065F46; }
+.pcc-req__date { color: #4B5B52; font-size: 12px; }
+.pcc-req__msg { margin: 0; color: #1B3626; font-size: 14px; }
+.pcc-req__answer {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-left: 3px solid #0F5132;
+  background: #fff;
+  border-radius: 8px;
+  color: #1B3626;
+  font-size: 14px;
+}
+
+@media (max-width: 640px) {
+  .pcc-hero__title { font-size: 28px; }
+  .pcc-hero__price { font-size: 28px; }
+  .pcc-dash__title { font-size: 22px; }
+  .pcc-page { padding: 12px 14px 96px; }
+}

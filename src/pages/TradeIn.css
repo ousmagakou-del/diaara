@@ -1,0 +1,239 @@
+/* ════════════════════════════════════════════════════════════════════
+   TradeIn.css — Rachat cosmetiques (route /trade-in)
+   Prefixe : ti-
+   ════════════════════════════════════════════════════════════════════ */
+
+.ti-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px 20px 96px;
+  color: #0F1F14;
+}
+
+.ti-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0 16px;
+}
+.ti-topbar__title {
+  font-weight: 700;
+  font-size: 15px;
+}
+.ti-topbar__spacer { width: 70px; }
+.ti-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 0;
+  color: #0F5132;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 999px;
+}
+.ti-back:hover { background: rgba(15,81,50,0.08); }
+
+.ti-hero {
+  background: linear-gradient(135deg, #14683F 0%, #1F8B4C 100%);
+  color: #fff;
+  border-radius: 24px;
+  padding: 34px 26px 30px;
+  margin-bottom: 24px;
+  box-shadow: 0 20px 46px -28px rgba(15, 81, 50, 0.55);
+}
+.ti-hero__eyebrow {
+  display: inline-block;
+  background: rgba(255,255,255,0.16);
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #FFE9AA;
+  margin-bottom: 14px;
+}
+.ti-hero__title {
+  font-size: 32px;
+  line-height: 1.1;
+  font-weight: 800;
+  margin: 0 0 12px;
+  letter-spacing: -0.4px;
+}
+.ti-hero__lead {
+  font-size: 15px;
+  line-height: 1.55;
+  color: rgba(255,255,255,0.92);
+  margin: 0 0 16px;
+  max-width: 60ch;
+}
+.ti-hero__perks {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.ti-hero__perks li {
+  background: rgba(255,255,255,0.14);
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.ti-card {
+  background: #fff;
+  border: 1px solid #E7EEEA;
+  border-radius: 18px;
+  padding: 22px 22px 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 0 rgba(15,31,20,0.04);
+}
+.ti-section__title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 14px;
+  letter-spacing: -0.2px;
+}
+
+.ti-form {
+  display: grid;
+  gap: 16px;
+}
+.ti-item {
+  border: 1px solid #E7EEEA;
+  background: #F9FBFA;
+  border-radius: 14px;
+  padding: 14px;
+}
+.ti-item__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.ti-item__count {
+  font-weight: 700;
+  color: #0F1F14;
+  font-size: 13px;
+}
+.ti-item__remove {
+  background: transparent;
+  border: 0;
+  color: #DC2626;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 13px;
+}
+.ti-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.ti-label {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  color: #4B5B52;
+  font-weight: 600;
+}
+.ti-label--full {
+  grid-column: 1 / -1;
+}
+.ti-input {
+  border: 1px solid #D8E2DC;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  background: #fff;
+  color: #0F1F14;
+  outline: none;
+}
+.ti-input:focus { border-color: #0F5132; }
+
+.ti-add {
+  background: transparent;
+  border: 1px dashed #0F5132;
+  color: #0F5132;
+  padding: 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 14px;
+}
+.ti-pickup h3 {
+  margin: 0 0 10px;
+  font-size: 14px;
+  color: #0F1F14;
+  font-weight: 700;
+}
+.ti-cta {
+  background: #0F5132;
+  color: #fff;
+  border: 0;
+  padding: 14px 20px;
+  border-radius: 999px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 12px 24px -12px rgba(15, 81, 50, 0.45);
+}
+.ti-cta:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.ti-empty {
+  color: #4B5B52;
+  font-size: 14px;
+  padding: 6px 0;
+}
+.ti-history {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+.ti-history__row {
+  border: 1px solid #E7EEEA;
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: #F9FBFA;
+}
+.ti-history__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.ti-history__badge {
+  font-size: 11px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.ti-history__date {
+  color: #4B5B52;
+  font-size: 12px;
+}
+.ti-history__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  color: #1B3626;
+  font-size: 13px;
+}
+.ti-history__credit {
+  color: #065F46;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .ti-hero__title { font-size: 26px; }
+  .ti-page { padding: 12px 14px 96px; }
+  .ti-grid { grid-template-columns: 1fr; }
+}

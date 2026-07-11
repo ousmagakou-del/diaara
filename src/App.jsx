@@ -83,6 +83,9 @@ const BlogCategory       = lazy(() => import('./pages/BlogCategory'));
 const MerchantOnboarding = lazy(() => import('./pages/MerchantOnboarding'));
 const CorporateApply     = lazy(() => import('./pages/CorporateApply'));
 const CorporateDashboard = lazy(() => import('./pages/CorporateDashboard'));
+const PremiumConcierge   = lazy(() => import('./pages/PremiumConcierge'));
+const TradeIn            = lazy(() => import('./pages/TradeIn'));
+const ARTryOn            = lazy(() => import('./pages/ARTryOn'));
 
 // ════════════════════════════════════════════════════════════════
 //  FIX juin 2026 #8 — LazyFallback FULL SCREEN (CAUSE RACINE BLANCHE)
@@ -152,6 +155,9 @@ function routeToPath(route) {
     case 'blog': return '/blog';
     case 'blog_article': return `/blog/${params.slug}`;
     case 'blog_category': return `/blog/category/${params.slug}`;
+    case 'premium_concierge': return '/premium/concierge';
+    case 'trade_in': return '/trade-in';
+    case 'ar_tryon': return `/ar/${params.productId}`;
     case 'search': {
       const sp = new URLSearchParams();
       if (params.q) sp.set('q', params.q);
@@ -189,6 +195,11 @@ function pathToRoute(pathname, search = '') {
   if (parts[0] === 'order' && parts[1]) return { name: 'order_tracking', params: { orderId: parts[1] } };
   if (parts[0] === 'scan' && parts[1] === 'result' && parts[2]) return { name: 'scan_result', params: { scanId: parts[2] } };
   if (parts[0] === 'payment' && parts[1]) return { name: 'payment', params: { orderId: parts[1] } };
+
+  // ─── Scaffolds : Concierge / Trade-In / AR try-on ───
+  if (parts[0] === 'premium' && parts[1] === 'concierge') return { name: 'premium_concierge', params: {} };
+  if (parts[0] === 'trade-in') return { name: 'trade_in', params: {} };
+  if (parts[0] === 'ar' && parts[1]) return { name: 'ar_tryon', params: { productId: parts[1] } };
 
   // ─── Blog SEO (/blog, /blog/:slug, /blog/category/:slug) ───
   if (parts[0] === 'blog') {
@@ -762,6 +773,12 @@ function ClientApp() {
       const path = target.split('?')[0].replace(/^\//, '');
       if (path.startsWith('product/')) {
         newRoute = { name: 'product', params: { id: path.split('/')[1] } };
+      } else if (path.startsWith('ar/')) {
+        newRoute = { name: 'ar_tryon', params: { productId: path.split('/')[1] } };
+      } else if (path === 'trade-in') {
+        newRoute = { name: 'trade_in', params: {} };
+      } else if (path === 'premium/concierge') {
+        newRoute = { name: 'premium_concierge', params: {} };
       } else {
         // Map exhaustif : couvre TOUTES les routes du switch principal
         // (sinon route inconnue → fallback home silencieux, gros source de bugs)
@@ -1047,6 +1064,9 @@ function ClientApp() {
     case 'loyalty': page = <Loyalty />; break;
     case 'referral': page = <Referral />; break;
     case 'subscriptions': page = <Suspense fallback={<LazyFallback />}><Subscriptions /></Suspense>; break;
+    case 'premium_concierge': page = <Suspense fallback={<LazyFallback />}><PremiumConcierge /></Suspense>; break;
+    case 'trade_in': page = <Suspense fallback={<LazyFallback />}><TradeIn /></Suspense>; break;
+    case 'ar_tryon': page = <Suspense fallback={<LazyFallback />}><ARTryOn /></Suspense>; break;
     // notifications = vraie liste (Notifications.jsx)
     // notif_settings = paramètres push/email (NotifSettings.jsx)
     case 'notifications': page = <Notifications />; break;

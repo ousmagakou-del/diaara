@@ -30,3 +30,5 @@ export * from './supabase/alerts';
 export * from './supabase/qa';
 export * from './supabase/blog';
 export * from './supabase/subscriptions';
+export * from './supabase/concierge';
+export * from './supabase/tradeIn';
