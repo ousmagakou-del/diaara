@@ -17,6 +17,7 @@ export * from './supabase/pharmacies';
 export * from './supabase/orders';
 export * from './supabase/addresses';
 export * from './supabase/favorites';
+export * from './supabase/wishlists';
 export * from './supabase/whatsapp';
 export * from './supabase/storage';
 export * from './supabase/scans';

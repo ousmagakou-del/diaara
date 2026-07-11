@@ -1,294 +1,309 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNav } from '../App';
-import { toggleFavorite } from '../lib/supabase';
-import { useMyFavorites, QUERY_KEYS } from '../lib/queries';
-import { useQueryClient } from '@tanstack/react-query';
+import {
+  listMyWishlists,
+  createWishlist,
+  renameWishlist,
+  deleteWishlist,
+  getWishlistItems,
+  removeItemFromWishlist,
+  setWishlistPublic,
+  buildWishlistShareUrl,
+  buildWhatsappShare,
+} from '../lib/supabase';
 import { haptic } from '../lib/haptic';
 import { ProductTile } from '../components/tiles';
 import TabBar from '../components/TabBar';
 import './Favorites.css';
 
-const SORT_OPTIONS = [
-  { id: 'recent', label: 'Plus récents', icon: '' },
-  { id: 'name',   label: 'Nom A → Z',    icon: '' },
-  { id: 'price_asc',  label: 'Prix croissant',  icon: '↑' },
-  { id: 'price_desc', label: 'Prix décroissant', icon: '↓' },
-  { id: 'pharmacy',   label: 'Par pharmacie', icon: '' },
-];
-
-const TABS = [
-  { id: 'products',   label: 'Produits',   icon: '' },
-  { id: 'pharmacies', label: 'Pharmacies', icon: '' },
-  { id: 'brands',     label: 'Marques',    icon: '' },
-];
+// ═══════════════════════════════════════════════════════════════
+// YARAM — Mes listes (wishlists multi-listes + partage)
+// ═══════════════════════════════════════════════════════════════
+// - Chaque wishlist devient un tab ("Mes favoris" par défaut).
+// - Tab "+" pour créer une nouvelle liste.
+// - Actions par liste : share, rename, delete, toggle public.
+// - Bouton "Ajouter tout au panier".
+// ═══════════════════════════════════════════════════════════════
 
 export default function Favorites() {
   const { navigate } = useNav();
-  // ─── TanStack Query : cold start INSTANT depuis IndexedDB ───
-  // 2e ouverture : la liste des favoris s'affiche immédiatement (vue précédemment),
-  // pendant que le re-fetch silencieux tourne en arrière-plan.
-  // FIX juin 2026 : placeholderData côté hook → l'UI reste peuplée au remount
-  // (navigation back depuis Product detail) au lieu d'afficher le skeleton figé.
-  const { data: favorites = [], isLoading, refetch } = useMyFavorites();
-  const loading = isLoading && !favorites.length;
-  const qc = useQueryClient();
-  // Helper : optimistic remove côté cache (pas de re-fetch attendu après remove)
-  const removeFromCache = (productId) => {
-    qc.setQueryData(QUERY_KEYS.favorites('me'), (old) =>
-      Array.isArray(old) ? old.filter(p => p.id !== productId) : old
-    );
-  };
-  const removeManyFromCache = (productIds) => {
-    const set = new Set(productIds);
-    qc.setQueryData(QUERY_KEYS.favorites('me'), (old) =>
-      Array.isArray(old) ? old.filter(p => !set.has(p.id)) : old
-    );
-  };
 
-  const [tab, setTab] = useState('products');
-  const [sort, setSort] = useState('recent');
-  const [sortOpen, setSortOpen] = useState(false);
-  const [selectMode, setSelectMode] = useState(false);
-  const [selected, setSelected] = useState(new Set());
+  const [wishlists, setWishlists] = useState([]);
+  const [activeId, setActiveId] = useState(null);
+  const [items, setItems] = useState([]);
+  const [loadingLists, setLoadingLists] = useState(true);
+  const [loadingItems, setLoadingItems] = useState(false);
   const [toast, setToast] = useState('');
-  const longPressTimer = useRef(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameName, setRenameName] = useState('');
+  const [renameDesc, setRenameDesc] = useState('');
+  const [createOpen, setCreateOpen] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newDesc, setNewDesc] = useState('');
+
+  const activeList = useMemo(
+    () => wishlists.find(w => w.id === activeId) || null,
+    [wishlists, activeId],
+  );
 
   const showToast = (text) => {
     setToast(text);
     setTimeout(() => setToast(''), 2500);
   };
 
-  // PRESERVE : tri en mémoire
-  const sortedProducts = useMemo(() => {
-    const arr = [...favorites];
-    switch (sort) {
-      case 'name':       arr.sort((a, b) => (a.name || '').localeCompare(b.name || '')); break;
-      case 'price_asc':  arr.sort((a, b) => (a.price || 0) - (b.price || 0)); break;
-      case 'price_desc': arr.sort((a, b) => (b.price || 0) - (a.price || 0)); break;
-      case 'pharmacy':   arr.sort((a, b) => (a.brand || '').localeCompare(b.brand || '')); break;
-      default: break;
+  const reloadLists = useCallback(async () => {
+    setLoadingLists(true);
+    try {
+      const lists = await listMyWishlists();
+      setWishlists(lists);
+      setActiveId(prev => {
+        if (prev && lists.some(l => l.id === prev)) return prev;
+        const def = lists.find(l => l.is_default) || lists[0];
+        return def?.id || null;
+      });
+    } catch (e) {
+      console.warn('[favorites] listMyWishlists:', e?.message);
+    } finally {
+      setLoadingLists(false);
     }
-    return arr;
-  }, [favorites, sort]);
+  }, []);
 
-  // Cards pharmacies & marques dérivées depuis les favoris produits
-  const pharmacies = useMemo(() => {
-    const map = new Map();
-    favorites.forEach(p => {
-      const key = p.pharmacy_id || p.brand || 'autre';
-      if (!map.has(key)) {
-        map.set(key, {
-          id: key,
-          name: p.pharmacy_name || p.brand || 'Pharmacie',
-          distance: p.distance_km || (1 + Math.random() * 6).toFixed(1),
-          count: 1,
+  useEffect(() => { reloadLists(); }, [reloadLists]);
+
+  const reloadItems = useCallback(async (id) => {
+    if (!id) { setItems([]); return; }
+    setLoadingItems(true);
+    try {
+      const rows = await getWishlistItems(id);
+      setItems(rows);
+    } catch (e) {
+      console.warn('[favorites] getWishlistItems:', e?.message);
+      setItems([]);
+    } finally {
+      setLoadingItems(false);
+    }
+  }, []);
+
+  useEffect(() => { reloadItems(activeId); }, [activeId, reloadItems]);
+
+  // ─── Actions ─────────────────────────────────────────────────────
+  const handleCreate = async () => {
+    if (!newName.trim()) return;
+    try {
+      const res = await createWishlist(newName.trim(), newDesc.trim());
+      haptic('medium');
+      showToast('Liste créée');
+      setCreateOpen(false);
+      setNewName('');
+      setNewDesc('');
+      await reloadLists();
+      if (res?.id) setActiveId(res.id);
+    } catch (e) {
+      showToast('Erreur création');
+    }
+  };
+
+  const handleRename = async () => {
+    if (!activeList || !renameName.trim()) return;
+    try {
+      await renameWishlist(activeList.id, renameName.trim(), renameDesc.trim());
+      haptic('light');
+      showToast('Renommée');
+      setRenameOpen(false);
+      await reloadLists();
+    } catch (e) { showToast('Erreur'); }
+  };
+
+  const handleDelete = async () => {
+    if (!activeList) return;
+    if (activeList.is_default) {
+      showToast('Impossible de supprimer la liste par défaut');
+      return;
+    }
+    if (!window.confirm(`Supprimer "${activeList.name}" ?`)) return;
+    try {
+      await deleteWishlist(activeList.id);
+      haptic('heavy');
+      showToast('Liste supprimée');
+      setMenuOpen(false);
+      setActiveId(null);
+      await reloadLists();
+    } catch (e) { showToast('Erreur'); }
+  };
+
+  const handleTogglePublic = async () => {
+    if (!activeList) return;
+    try {
+      await setWishlistPublic(activeList.id, !activeList.is_public);
+      haptic('light');
+      showToast(activeList.is_public ? 'Liste privée' : 'Liste publique');
+      await reloadLists();
+    } catch (e) { showToast('Erreur'); }
+  };
+
+  const handleShare = async () => {
+    if (!activeList) return;
+    if (!activeList.is_public) {
+      const ok = window.confirm(
+        `"${activeList.name}" est privée. La rendre publique pour partager ?`,
+      );
+      if (!ok) return;
+      try {
+        await setWishlistPublic(activeList.id, true);
+        await reloadLists();
+      } catch (e) { showToast('Erreur'); return; }
+    }
+    const url = buildWishlistShareUrl(activeList.slug);
+    // Copie URL + ouvre WhatsApp
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: activeList.name,
+          text: `Regarde ma liste "${activeList.name}" sur YARAM`,
+          url,
         });
-      } else {
-        map.get(key).count++;
+        showToast('Partagée !');
+        return;
       }
-    });
-    return Array.from(map.values());
-  }, [favorites]);
+    } catch { /* fall through */ }
+    try {
+      await navigator.clipboard?.writeText(url);
+      showToast('Lien copié');
+    } catch {}
+    // Ouvre WhatsApp Web/App
+    try {
+      window.open(buildWhatsappShare(activeList.slug, activeList.name), '_blank');
+    } catch {}
+  };
 
-  const brands = useMemo(() => {
-    const map = new Map();
-    favorites.forEach(p => {
-      const key = p.brand || 'Sans marque';
-      if (!map.has(key)) {
-        map.set(key, { id: key, name: key, count: 1 });
-      } else {
-        map.get(key).count++;
-      }
-    });
-    return Array.from(map.values());
-  }, [favorites]);
+  const handleRemoveItem = async (productId) => {
+    if (!activeList) return;
+    try {
+      await removeItemFromWishlist(activeList.id, productId);
+      setItems(prev => prev.filter(p => p.id !== productId));
+      haptic('medium');
+      showToast('Retiré');
+    } catch (e) { showToast('Erreur'); }
+  };
 
-  // ── Sélection multiple ──
-  const enterSelect = (id) => {
+  const handleAddAllToCart = () => {
+    if (!items.length) return;
     haptic('medium');
-    setSelectMode(true);
-    setSelected(new Set([id]));
-  };
-  const toggleSelect = (id) => {
-    setSelected(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-  const exitSelect = () => {
-    setSelectMode(false);
-    setSelected(new Set());
-  };
-
-  const handleLongPressStart = (id) => {
-    longPressTimer.current = setTimeout(() => enterSelect(id), 550);
-  };
-  const handleLongPressEnd = () => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-  };
-
-  // Bulk delete
-  const bulkDelete = async () => {
-    const ids = Array.from(selected);
-    haptic('heavy');
-    for (const id of ids) {
-      try { await toggleFavorite(id); } catch {}
-    }
-    removeManyFromCache(ids);
-    showToast(`${ids.length} favori${ids.length > 1 ? 's' : ''} retiré${ids.length > 1 ? 's' : ''}`);
-    exitSelect();
-  };
-
-  // Bulk add to cart (stocke local + redirect)
-  const bulkAddToCart = () => {
-    haptic('medium');
-    const ids = Array.from(selected);
     try {
       const cart = JSON.parse(localStorage.getItem('yaram_cart') || '[]');
-      ids.forEach(id => {
-        const p = favorites.find(f => f.id === id);
-        if (p) cart.push({ id: p.id, name: p.name, brand: p.brand, price: p.price, img: p.img, qty: 1 });
+      items.forEach(p => {
+        cart.push({ id: p.id, name: p.name, brand: p.brand, price: p.price, img: p.img, qty: 1 });
       });
       localStorage.setItem('yaram_cart', JSON.stringify(cart));
     } catch {}
-    showToast(`${ids.length} produit${ids.length > 1 ? 's' : ''} ajouté${ids.length > 1 ? 's' : ''} au panier`);
-    exitSelect();
-    setTimeout(() => navigate('/cart'), 600);
+    showToast(`${items.length} produit${items.length > 1 ? 's' : ''} ajouté${items.length > 1 ? 's' : ''}`);
+    setTimeout(() => navigate('/cart'), 500);
   };
 
-  // ── SwipeRow inline component ──
-  const SwipeCell = ({ product, index }) => {
-    const [dx, setDx] = useState(0);
-    const startX = useRef(0);
-    const moved = useRef(false);
-
-    const onTouchStart = (e) => {
-      startX.current = e.touches[0].clientX;
-      moved.current = false;
-      handleLongPressStart(product.id);
-    };
-    const onTouchMove = (e) => {
-      const d = e.touches[0].clientX - startX.current;
-      if (Math.abs(d) > 6) { moved.current = true; handleLongPressEnd(); }
-      if (d < 0) setDx(Math.max(d, -120));
-    };
-    const onTouchEnd = async () => {
-      handleLongPressEnd();
-      if (dx < -80) {
-        haptic('medium');
-        try { await toggleFavorite(product.id); } catch {}
-        removeFromCache(product.id);
-        showToast('Favori retiré');
-      } else {
-        setDx(0);
-      }
-    };
-
-    const onClick = (e) => {
-      if (selectMode) {
-        e.preventDefault();
-        e.stopPropagation();
-        toggleSelect(product.id);
-      }
-    };
-
-    return (
-      <div
-        className={`yfav-cell ${selectMode ? 'selectable' : ''} ${selected.has(product.id) ? 'selected' : ''}`}
-        style={{ animationDelay: `${Math.min(index * 35, 600)}ms` }}
-      >
-        <div className="yfav-swipe-wrap">
-          <div className="yfav-swipe-bg">Retirer </div>
-          <div
-            className="yfav-swipe-content"
-            style={{ transform: `translateX(${dx}px)` }}
-            onTouchStart={onTouchStart}
-            onTouchMove={onTouchMove}
-            onTouchEnd={onTouchEnd}
-            onClickCapture={onClick}
-          >
-            <ProductTile product={product} />
-            {selectMode && (
-              <div className="yfav-checkbox">{selected.has(product.id) ? '✓' : ''}</div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
+  const openRename = () => {
+    if (!activeList) return;
+    setRenameName(activeList.name || '');
+    setRenameDesc(activeList.description || '');
+    setRenameOpen(true);
+    setMenuOpen(false);
   };
 
-  const currentCount = tab === 'products' ? favorites.length : tab === 'pharmacies' ? pharmacies.length : brands.length;
+  // ─── Render ──────────────────────────────────────────────────────
+  const currentCount = items.length;
 
   return (
     <div className="yfav-screen page-anim">
-      {/* HEADER GLASS */}
       <header className="yfav-header">
-        <button className="yfav-back" onClick={() => selectMode ? exitSelect() : navigate(-1)} aria-label="Retour">
+        <button className="yfav-back" onClick={() => navigate(-1)} aria-label="Retour">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
-            {selectMode ? (
-              <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>
-            ) : (
-              <><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></>
-            )}
+            <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
           </svg>
         </button>
         <div className="yfav-title-wrap">
-          <h1 className="yfav-title">{selectMode ? `${selected.size} sélectionné${selected.size > 1 ? 's' : ''}` : 'Mes favoris'}</h1>
-          {!selectMode && (
-            <p className="yfav-sub">{currentCount} {tab === 'products' ? 'produit' : tab === 'pharmacies' ? 'pharmacie' : 'marque'}{currentCount > 1 ? 's' : ''} sauvé{currentCount > 1 ? 's' : ''}</p>
-          )}
+          <h1 className="yfav-title">Mes listes</h1>
+          <p className="yfav-sub">
+            {wishlists.length} liste{wishlists.length > 1 ? 's' : ''}
+          </p>
         </div>
-        {!selectMode && (
-          <button className="yfav-sort-btn" onClick={() => setSortOpen(true)} aria-label="Trier">
+        {activeList && (
+          <button className="yfav-sort-btn" onClick={() => setMenuOpen(true)} aria-label="Options">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
-              <line x1="21" y1="6" x2="3" y2="6"/><line x1="17" y1="12" x2="3" y2="12"/><line x1="13" y1="18" x2="3" y2="18"/>
+              <circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/>
             </svg>
-            Trier
+            Options
           </button>
         )}
       </header>
 
-      {/* Lien Alertes prix (calque native) */}
-      {!selectMode && (
+      {/* Tabs wishlists */}
+      <div className="yfav-tabs">
+        {wishlists.map(w => (
+          <button
+            key={w.id}
+            className={`yfav-tab ${activeId === w.id ? 'active' : ''}`}
+            onClick={() => { haptic('light'); setActiveId(w.id); }}
+          >
+            <span>{w.name}</span>
+            <span className="yfav-tab-count">{w.item_count ?? 0}</span>
+          </button>
+        ))}
         <button
-          className="yfav-alerts-link"
-          onClick={() => navigate('/price-alerts')}
+          className="yfav-tab"
+          onClick={() => setCreateOpen(true)}
+          aria-label="Créer une nouvelle liste"
+          style={{ paddingInline: 14 }}
         >
-          <span>Voir mes alertes prix</span>
-          <span aria-hidden>→</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" width="14" height="14">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          <span>Nouvelle</span>
         </button>
-      )}
+      </div>
 
-      {/* TABS */}
-      {!selectMode && (
-        <div className="yfav-tabs">
-          {TABS.map(t => {
-            const count = t.id === 'products' ? favorites.length : t.id === 'pharmacies' ? pharmacies.length : brands.length;
-            return (
-              <button
-                key={t.id}
-                className={`yfav-tab ${tab === t.id ? 'active' : ''}`}
-                onClick={() => { haptic('light'); setTab(t.id); }}
-              >
-                <span>{t.icon}</span>
-                <span>{t.label}</span>
-                <span className="yfav-tab-count">{count}</span>
-              </button>
-            );
-          })}
+      {/* Barre actions liste active */}
+      {activeList && (
+        <div style={{
+          display: 'flex', gap: 8, padding: '4px 14px 8px', flexWrap: 'wrap',
+        }}>
+          <button
+            className="yfav-sort-btn"
+            onClick={handleShare}
+            style={{ background: '#1F8B4C', color: 'white' }}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" width="14" height="14">
+              <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+              <line x1="8.6" y1="10.5" x2="15.4" y2="6.5"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/>
+            </svg>
+            Partager
+          </button>
+          <button className="yfav-sort-btn" onClick={handleTogglePublic}>
+            {activeList.is_public ? 'Public' : 'Privé'}
+          </button>
+          {items.length > 0 && (
+            <button
+              className="yfav-sort-btn"
+              onClick={handleAddAllToCart}
+              style={{ background: '#1A1A1A', color: 'white' }}
+            >
+              Ajouter tout au panier
+            </button>
+          )}
         </div>
       )}
 
-      {/* SCROLL */}
       <div className="yfav-scroll">
-        {loading ? (
+        {loadingLists || loadingItems ? (
           <div className="yfav-skel-grid">
             {Array.from({ length: 6 }).map((_, i) => <div key={i} className="yfav-skel" />)}
+          </div>
+        ) : !activeList ? (
+          <div className="yfav-empty">
+            <h3 className="yfav-empty-title">Aucune liste</h3>
+            <p className="yfav-empty-sub">Crée une liste pour commencer à sauvegarder tes produits préférés.</p>
+            <button className="yfav-empty-cta" onClick={() => setCreateOpen(true)}>
+              Créer une liste
+            </button>
           </div>
         ) : currentCount === 0 ? (
           <div className="yfav-empty">
@@ -297,89 +312,130 @@ export default function Favorites() {
                 <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
               </svg>
             </div>
-            <h3 className="yfav-empty-title">Aucun favori encore</h3>
-            <p className="yfav-empty-sub">Tape le cœur sur tes produits préférés pour les retrouver ici.</p>
-            <button className="yfav-empty-cta" onClick={() => navigate('/')}>
+            <h3 className="yfav-empty-title">Liste vide</h3>
+            <p className="yfav-empty-sub">Tape le cœur sur tes produits préférés pour les ajouter à cette liste.</p>
+            <button className="yfav-empty-cta" onClick={() => navigate('/shop')}>
               Explorer la boutique
             </button>
           </div>
-        ) : tab === 'products' ? (
-          <div className="yfav-grid">
-            {sortedProducts.map((p, i) => <SwipeCell key={p.id} product={p} index={i} />)}
-          </div>
-        ) : tab === 'pharmacies' ? (
-          <div className="yfav-pharma-list">
-            {pharmacies.map((ph, i) => (
-              <div
-                key={ph.id}
-                className="yfav-pharma-card yfav-cell"
-                style={{ animationDelay: `${i * 50}ms` }}
-                onClick={() => navigate(`/pharmacy/${ph.id}`)}
-              >
-                <div className="yfav-pharma-logo"></div>
-                <div className="yfav-pharma-info">
-                  <h3 className="yfav-pharma-name">{ph.name}</h3>
-                  <div className="yfav-pharma-meta">
-                    <span> {ph.distance} km</span>
-                    <span className="dot" />
-                    <span>{ph.count} produit{ph.count > 1 ? 's' : ''}</span>
-                  </div>
-                </div>
-                <svg className="yfav-pharma-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" width="18" height="18">
-                  <polyline points="9 18 15 12 9 6"/>
-                </svg>
-              </div>
-            ))}
-          </div>
         ) : (
-          <div className="yfav-brand-grid">
-            {brands.map((b, i) => (
+          <div className="yfav-grid">
+            {items.map((p, i) => (
               <div
-                key={b.id}
-                className="yfav-brand-card yfav-cell"
-                style={{ animationDelay: `${i * 50}ms` }}
-                onClick={() => navigate(`/brand/${encodeURIComponent(b.name)}`)}
+                key={p.id}
+                className="yfav-cell"
+                style={{ animationDelay: `${Math.min(i * 35, 600)}ms`, position: 'relative' }}
               >
-                <div className="yfav-brand-logo">{(b.name || '?').charAt(0).toUpperCase()}</div>
-                <h3 className="yfav-brand-name">{b.name}</h3>
-                <p className="yfav-brand-count">{b.count} produit{b.count > 1 ? 's' : ''}</p>
+                <ProductTile product={p} />
+                <button
+                  onClick={() => handleRemoveItem(p.id)}
+                  aria-label="Retirer"
+                  style={{
+                    position: 'absolute', top: 8, right: 8,
+                    width: 28, height: 28, borderRadius: 999,
+                    background: 'rgba(255,255,255,0.92)', border: 'none',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.15)', cursor: 'pointer',
+                    zIndex: 5,
+                  }}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#F8463A" strokeWidth="2.4" width="14" height="14">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
               </div>
             ))}
           </div>
         )}
       </div>
 
-      {/* BULK BAR */}
-      {selectMode && selected.size > 0 && (
-        <div className="yfav-bulk-bar">
-          <span className="yfav-bulk-count">{selected.size} sélectionné{selected.size > 1 ? 's' : ''}</span>
-          <button className="yfav-bulk-btn danger" onClick={bulkDelete}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14H7L5 6"/></svg>
-            Supprimer
-          </button>
-          <button className="yfav-bulk-btn primary" onClick={bulkAddToCart}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" width="14" height="14"><circle cx="9" cy="21" r="1.5"/><circle cx="20" cy="21" r="1.5"/><path d="M1 1h4l2.7 13.4a2 2 0 002 1.6h9.7a2 2 0 002-1.6L23 6H6"/></svg>
-            Au panier
-          </button>
+      {/* Menu options */}
+      {menuOpen && activeList && (
+        <div className="yfav-modal-backdrop" onClick={() => setMenuOpen(false)}>
+          <div className="yfav-modal" onClick={e => e.stopPropagation()}>
+            <div className="yfav-modal-handle" />
+            <h3 className="yfav-modal-title">{activeList.name}</h3>
+            <button className="yfav-modal-option" onClick={() => { handleShare(); setMenuOpen(false); }}>
+              <span>Partager</span>
+            </button>
+            <button className="yfav-modal-option" onClick={openRename}>
+              <span>Renommer</span>
+            </button>
+            <button className="yfav-modal-option" onClick={() => { handleTogglePublic(); }}>
+              <span>{activeList.is_public ? 'Rendre privée' : 'Rendre publique'}</span>
+            </button>
+            {!activeList.is_default && (
+              <button className="yfav-modal-option" onClick={handleDelete} style={{ color: '#F8463A' }}>
+                <span>Supprimer</span>
+              </button>
+            )}
+          </div>
         </div>
       )}
 
-      {/* MODAL SORT */}
-      {sortOpen && (
-        <div className="yfav-modal-backdrop" onClick={() => setSortOpen(false)}>
-          <div className="yfav-modal" onClick={(e) => e.stopPropagation()}>
+      {/* Modal création */}
+      {createOpen && (
+        <div className="yfav-modal-backdrop" onClick={() => setCreateOpen(false)}>
+          <div className="yfav-modal" onClick={e => e.stopPropagation()}>
             <div className="yfav-modal-handle" />
-            <h3 className="yfav-modal-title">Trier par</h3>
-            {SORT_OPTIONS.map(opt => (
-              <button
-                key={opt.id}
-                className={`yfav-modal-option ${sort === opt.id ? 'active' : ''}`}
-                onClick={() => { haptic('light'); setSort(opt.id); setSortOpen(false); }}
-              >
-                <span><span style={{ marginRight: 10 }}>{opt.icon}</span>{opt.label}</span>
-                {sort === opt.id && <span className="check">✓</span>}
-              </button>
-            ))}
+            <h3 className="yfav-modal-title">Nouvelle liste</h3>
+            <input
+              autoFocus
+              className="yfav-input"
+              placeholder="Nom (ex. Cadeaux, Soins visage...)"
+              value={newName}
+              onChange={e => setNewName(e.target.value)}
+              style={inputStyle}
+            />
+            <textarea
+              className="yfav-input"
+              placeholder="Description (optionnel)"
+              value={newDesc}
+              onChange={e => setNewDesc(e.target.value)}
+              rows={3}
+              style={{ ...inputStyle, resize: 'vertical', marginTop: 10 }}
+            />
+            <button
+              className="yfav-empty-cta"
+              onClick={handleCreate}
+              disabled={!newName.trim()}
+              style={{ width: '100%', marginTop: 14, opacity: newName.trim() ? 1 : 0.5 }}
+            >
+              Créer
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal rename */}
+      {renameOpen && activeList && (
+        <div className="yfav-modal-backdrop" onClick={() => setRenameOpen(false)}>
+          <div className="yfav-modal" onClick={e => e.stopPropagation()}>
+            <div className="yfav-modal-handle" />
+            <h3 className="yfav-modal-title">Renommer</h3>
+            <input
+              autoFocus
+              className="yfav-input"
+              value={renameName}
+              onChange={e => setRenameName(e.target.value)}
+              style={inputStyle}
+            />
+            <textarea
+              className="yfav-input"
+              placeholder="Description"
+              value={renameDesc}
+              onChange={e => setRenameDesc(e.target.value)}
+              rows={3}
+              style={{ ...inputStyle, resize: 'vertical', marginTop: 10 }}
+            />
+            <button
+              className="yfav-empty-cta"
+              onClick={handleRename}
+              disabled={!renameName.trim()}
+              style={{ width: '100%', marginTop: 14, opacity: renameName.trim() ? 1 : 0.5 }}
+            >
+              Enregistrer
+            </button>
           </div>
         </div>
       )}
@@ -390,3 +446,16 @@ export default function Favorites() {
     </div>
   );
 }
+
+const inputStyle = {
+  width: '100%',
+  boxSizing: 'border-box',
+  padding: '12px 14px',
+  fontSize: 14,
+  border: '1px solid #EDEDEB',
+  borderRadius: 12,
+  fontFamily: 'inherit',
+  background: '#F8F8F6',
+  outline: 'none',
+  color: '#1A1A1A',
+};

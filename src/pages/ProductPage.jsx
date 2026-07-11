@@ -15,21 +15,30 @@
 // - Stock notifs: "Plus que N", "Rupture prevue"
 // ════════════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNav } from '../App';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useNav, useUser } from '../App';
 import SiteLayout from '../components/SiteLayout';
 import ImageZoom from '../components/ImageZoom';
 import Accordion from '../components/Accordion';
 import Stepper from '../components/Stepper';
 import ReviewCard from '../components/ReviewCard';
+import WishlistPicker from '../components/WishlistPicker';
 import {
   getAllProducts,
   getAllPharmacies,
   getProductReviews,
+  createReview,
+  uploadReviewPhoto,
+  isSafeReviewPhotoUrl,
 } from '../lib/supabase';
 import { addToCart } from '../lib/cart';
 import { getWhatsAppNumber } from '../lib/utils';
 import './ProductPage.css';
+
+// ─── Reviews form constants ───────────────────────────────────────
+const REVIEW_MAX_PHOTOS = 5;
+const REVIEW_MAX_FILE_MB = 5;
+const REVIEW_ALLOWED_MIME = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
 // ─── Data helpers ─────────────────────────────────────────────────
 async function getProductById(id) {
@@ -247,6 +256,7 @@ function CompositionList({ text }) {
 // ═══════════════════════════════════════════════════════════════════
 export default function ProductPage() {
   const { navigate, route } = useNav();
+  const { user } = useUser();
   const id = route?.params?.id || route?.id;
 
   // Data
@@ -270,8 +280,23 @@ export default function ProductPage() {
   const [reviewFilter, setReviewFilter] = useState({ rating: 0, withPhoto: false });
   const [reviewLimit, setReviewLimit] = useState(4);
 
+  // Reviews form + lightbox
+  const [showForm, setShowForm] = useState(false);
+  const [formRating, setFormRating] = useState(5);
+  const [formTitle, setFormTitle] = useState('');
+  const [formBody, setFormBody] = useState('');
+  const [formPhotos, setFormPhotos] = useState([]);
+  const [formUploading, setFormUploading] = useState(false);
+  const [formSubmitting, setFormSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [lightbox, setLightbox] = useState(null); // { photos: [], index: n }
+  const formFileRef = useRef(null);
+
   // Bundle "souvent achete ensemble"
   const [bundleSel, setBundleSel] = useState(new Set());
+
+  // Wishlist picker (multi-listes + partage)
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   // ─── Load data ────────────────────────────────────────────────
   useEffect(() => {
@@ -391,6 +416,137 @@ export default function ProductPage() {
       });
     }
   }, [product]);
+
+  // ─── Reviews handlers ─────────────────────────────────────────
+  const refreshReviews = useCallback(async () => {
+    if (!id) return;
+    try {
+      const r = await getProductReviews(id);
+      setReviews(Array.isArray(r) ? r : []);
+    } catch (e) {
+      console.warn('[refreshReviews]', e?.message);
+    }
+  }, [id]);
+
+  const resetForm = useCallback(() => {
+    setShowForm(false);
+    setFormRating(5);
+    setFormTitle('');
+    setFormBody('');
+    setFormPhotos([]);
+    setFormError('');
+  }, []);
+
+  const handleOpenForm = useCallback(() => {
+    if (!user) {
+      setFormError('Connecte-toi pour publier un avis.');
+      navigate('login');
+      return;
+    }
+    setFormError('');
+    setShowForm(true);
+    setTimeout(() => {
+      const el = document.getElementById('pp-review-form');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 40);
+  }, [user, navigate]);
+
+  const handleFormFileChange = useCallback(async (e) => {
+    const files = Array.from(e.target?.files || []);
+    e.target.value = '';
+    if (files.length === 0) return;
+    if (!user) { setFormError('Connecte-toi pour ajouter des photos.'); return; }
+
+    const remaining = REVIEW_MAX_PHOTOS - formPhotos.length;
+    if (remaining <= 0) {
+      setFormError(`Maximum ${REVIEW_MAX_PHOTOS} photos.`);
+      return;
+    }
+    const toUpload = files.slice(0, remaining);
+
+    setFormUploading(true);
+    setFormError('');
+    try {
+      for (const f of toUpload) {
+        if (!REVIEW_ALLOWED_MIME.includes((f.type || '').toLowerCase())) {
+          setFormError('Formats acceptes : JPG, PNG, WEBP.');
+          continue;
+        }
+        if (f.size > REVIEW_MAX_FILE_MB * 1024 * 1024) {
+          setFormError(`Chaque photo doit peser moins de ${REVIEW_MAX_FILE_MB} Mo.`);
+          continue;
+        }
+        const url = await uploadReviewPhoto(f, user.id);
+        if (url && isSafeReviewPhotoUrl(url)) {
+          setFormPhotos((prev) => [...prev, url]);
+        } else {
+          setFormError('Une photo n a pas pu etre uploadee. Reessaie.');
+        }
+      }
+    } finally {
+      setFormUploading(false);
+    }
+  }, [user, formPhotos.length]);
+
+  const handleFormRemovePhoto = useCallback((idx) => {
+    setFormPhotos((prev) => prev.filter((_, i) => i !== idx));
+  }, []);
+
+  const handleFormSubmit = useCallback(async (e) => {
+    e?.preventDefault?.();
+    if (!user || !product) return;
+    if (formRating < 1 || formRating > 5) { setFormError('Choisis une note entre 1 et 5 etoiles.'); return; }
+    if (!formBody.trim() || formBody.trim().length < 5) { setFormError('Ecris au moins quelques mots.'); return; }
+
+    setFormSubmitting(true);
+    setFormError('');
+    try {
+      const ok = await createReview({
+        productId: product.id,
+        userId: user.id,
+        rating: formRating,
+        title: formTitle.trim(),
+        body: formBody.trim(),
+        photos: formPhotos,
+      });
+      if (!ok) {
+        setFormError('Publication impossible. Reessaie.');
+      } else {
+        await refreshReviews();
+        resetForm();
+        setToast('Merci pour ton avis');
+        setTimeout(() => setToast(null), 2200);
+      }
+    } catch (err) {
+      setFormError(err?.message || 'Erreur pendant la publication.');
+    } finally {
+      setFormSubmitting(false);
+    }
+  }, [user, product, formRating, formTitle, formBody, formPhotos, refreshReviews, resetForm]);
+
+  const openLightbox = useCallback((photos, index) => {
+    const safe = (Array.isArray(photos) ? photos : []).filter(isSafeReviewPhotoUrl);
+    if (safe.length === 0) return;
+    setLightbox({ photos: safe, index: Math.max(0, Math.min(index, safe.length - 1)) });
+  }, []);
+
+  const closeLightbox = useCallback(() => setLightbox(null), []);
+
+  // Keyboard nav for lightbox
+  useEffect(() => {
+    if (!lightbox) return;
+    const onKey = (e) => {
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowRight') {
+        setLightbox((lb) => lb ? ({ ...lb, index: (lb.index + 1) % lb.photos.length }) : lb);
+      }
+      if (e.key === 'ArrowLeft') {
+        setLightbox((lb) => lb ? ({ ...lb, index: (lb.index - 1 + lb.photos.length) % lb.photos.length }) : lb);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [lightbox, closeLightbox]);
 
   // ─── Handlers ─────────────────────────────────────────────────
   const buildCartPayload = useCallback((p, ph, q) => ({
@@ -723,6 +879,15 @@ export default function ProductPage() {
                 Acheter maintenant
               </button>
 
+              <button
+                type="button"
+                className="pp-btn-buy-now"
+                onClick={() => setPickerOpen(true)}
+                style={{ background: '#F4F4F2', color: '#1A1A1A' }}
+              >
+                Ajouter à une liste
+              </button>
+
               {/* CTA Conseil WhatsApp (aligne native l.454-473) */}
               <button
                 type="button"
@@ -871,7 +1036,129 @@ export default function ProductPage() {
 
         {/* ─── REVIEWS ─── */}
         <section id="pp-reviews" className="pp-section pp-section--reviews">
-          <h2 className="pp-h2">Avis clients</h2>
+          <div className="pp-reviews-head">
+            <h2 className="pp-h2">Avis clients</h2>
+            {product && !showForm && (
+              <button
+                type="button"
+                className="pp-btn-primary pp-btn-sm pp-reviews-cta"
+                onClick={handleOpenForm}
+              >
+                Ecrire un avis
+              </button>
+            )}
+          </div>
+
+          {showForm && product && (
+            <form id="pp-review-form" className="pp-review-form" onSubmit={handleFormSubmit}>
+              <div className="pp-rf-title-row">
+                <h3 className="pp-rf-title">Ton avis sur {product.name}</h3>
+                <button type="button" className="pp-rf-close" onClick={resetForm} aria-label="Fermer">
+                  x
+                </button>
+              </div>
+
+              <label className="pp-rf-label">Ta note</label>
+              <div className="pp-rf-stars" role="radiogroup" aria-label="Note sur 5">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    className={i <= formRating ? 'pp-rf-star is-on' : 'pp-rf-star'}
+                    onClick={() => setFormRating(i)}
+                    role="radio"
+                    aria-checked={i === formRating}
+                    aria-label={`${i} etoile${i > 1 ? 's' : ''}`}
+                  >
+                    <Icon.Star size={26} filled={i <= formRating} />
+                  </button>
+                ))}
+              </div>
+
+              <label className="pp-rf-label" htmlFor="pp-rf-title-input">Titre (optionnel)</label>
+              <input
+                id="pp-rf-title-input"
+                className="pp-rf-input"
+                type="text"
+                value={formTitle}
+                onChange={(e) => setFormTitle(e.target.value.slice(0, 120))}
+                placeholder="Ex : Tres efficace"
+                maxLength={120}
+                autoComplete="off"
+              />
+
+              <label className="pp-rf-label" htmlFor="pp-rf-body-input">Ton experience *</label>
+              <textarea
+                id="pp-rf-body-input"
+                className="pp-rf-textarea"
+                value={formBody}
+                onChange={(e) => setFormBody(e.target.value.slice(0, 1000))}
+                placeholder="Qu as-tu pense de ce produit ? Texture, efficacite, parfum..."
+                rows={4}
+                maxLength={1000}
+              />
+              <div className="pp-rf-counter">{formBody.length}/1000</div>
+
+              <label className="pp-rf-label">
+                Photos (max {REVIEW_MAX_PHOTOS}, JPG/PNG/WEBP, {REVIEW_MAX_FILE_MB} Mo max)
+              </label>
+              <div className="pp-rf-photos">
+                {formPhotos.map((url, i) => (
+                  <div key={url + i} className="pp-rf-photo">
+                    <img src={url} alt="" loading="lazy" />
+                    <button
+                      type="button"
+                      className="pp-rf-photo-rm"
+                      onClick={() => handleFormRemovePhoto(i)}
+                      aria-label="Retirer cette photo"
+                    >
+                      x
+                    </button>
+                  </div>
+                ))}
+                {formPhotos.length < REVIEW_MAX_PHOTOS && (
+                  <button
+                    type="button"
+                    className="pp-rf-photo-add"
+                    onClick={() => formFileRef.current?.click()}
+                    disabled={formUploading}
+                    aria-label="Ajouter une photo"
+                  >
+                    {formUploading ? '...' : '+'}
+                  </button>
+                )}
+                <input
+                  ref={formFileRef}
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  multiple
+                  onChange={handleFormFileChange}
+                  style={{ display: 'none' }}
+                />
+              </div>
+
+              {formError && <div className="pp-rf-error" role="alert">{formError}</div>}
+
+              <div className="pp-rf-actions">
+                <button
+                  type="button"
+                  className="pp-btn-outline"
+                  onClick={resetForm}
+                  disabled={formSubmitting}
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="pp-btn-primary"
+                  disabled={formSubmitting || formUploading}
+                >
+                  {formSubmitting ? 'Publication...' : 'Publier mon avis'}
+                </button>
+              </div>
+            </form>
+          )}
+
           {reviewsLoading ? (
             <div className="pp-reviews-grid">
               <Sk w="100%" h={140} r={16} />
@@ -934,7 +1221,11 @@ export default function ProductPage() {
 
               <div className="pp-reviews-list">
                 {filteredReviews.slice(0, reviewLimit).map((r) => (
-                  <ReviewCard key={r.id || `${r.author_name}-${r.created_at}`} review={r} />
+                  <ReviewCard
+                    key={r.id || `${r.author_name}-${r.created_at}`}
+                    review={r}
+                    onPhotoClick={openLightbox}
+                  />
                 ))}
                 {filteredReviews.length === 0 && (
                   <div className="pp-empty pp-empty--soft">
@@ -1051,6 +1342,69 @@ export default function ProductPage() {
           </div>
         )}
       </div>
+
+      <WishlistPicker
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        productId={product?.id}
+        onAdded={(wl) => setToast(`Ajouté à "${wl.name}"`)}
+      />
+
+      {lightbox && lightbox.photos?.length > 0 && (
+        <div
+          className="pp-lightbox"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Photo de l avis"
+          onClick={closeLightbox}
+        >
+          <button
+            type="button"
+            className="pp-lightbox-close"
+            onClick={closeLightbox}
+            aria-label="Fermer"
+          >
+            x
+          </button>
+          {lightbox.photos.length > 1 && (
+            <button
+              type="button"
+              className="pp-lightbox-nav pp-lightbox-prev"
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightbox((lb) => lb ? ({ ...lb, index: (lb.index - 1 + lb.photos.length) % lb.photos.length }) : lb);
+              }}
+              aria-label="Photo precedente"
+            >
+              <Icon.ChevL size={26} />
+            </button>
+          )}
+          <img
+            src={lightbox.photos[lightbox.index]}
+            alt=""
+            className="pp-lightbox-img"
+            onClick={(e) => e.stopPropagation()}
+          />
+          {lightbox.photos.length > 1 && (
+            <button
+              type="button"
+              className="pp-lightbox-nav pp-lightbox-next"
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightbox((lb) => lb ? ({ ...lb, index: (lb.index + 1) % lb.photos.length }) : lb);
+              }}
+              aria-label="Photo suivante"
+            >
+              <Icon.ChevR size={26} />
+            </button>
+          )}
+          {lightbox.photos.length > 1 && (
+            <div className="pp-lightbox-counter">
+              {lightbox.index + 1} / {lightbox.photos.length}
+            </div>
+          )}
+        </div>
+      )}
     </SiteLayout>
   );
 }

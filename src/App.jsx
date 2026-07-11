@@ -73,6 +73,7 @@ const Newsletter      = lazy(() => import('./pages/Newsletter'));
 const PartnerApplication = lazy(() => import('./pages/PartnerApplication'));
 const DriverApplication  = lazy(() => import('./pages/DriverApplication'));
 const BrandsPage         = lazy(() => import('./pages/BrandsPage'));
+const WishlistShared     = lazy(() => import('./pages/WishlistShared'));
 
 // ════════════════════════════════════════════════════════════════
 //  FIX juin 2026 #8 — LazyFallback FULL SCREEN (CAUSE RACINE BLANCHE)
@@ -126,6 +127,7 @@ function routeToPath(route) {
   switch (route.name) {
     case 'home': return '/shop';  // alias historique vers shop
     case 'shop': return '/shop';
+    case 'wishlist_shared': return `/wishlist/${params.slug}`;
     case 'product': return `/product/${params.id}`;
     case 'brand': return `/brand/${params.id}`;
     case 'brand_detail': return `/brand/${params.id}`;
@@ -156,6 +158,7 @@ function pathToRoute(pathname, search = '') {
 
   const parts = path.split('/');
 
+  if (parts[0] === 'wishlist' && parts[1]) return { name: 'wishlist_shared', params: { slug: parts[1] } };
   if (parts[0] === 'product' && parts[1]) return { name: 'product', params: { id: parts[1] } };
   if (parts[0] === 'brand' && parts[1]) return { name: 'brand', params: { id: parts[1] } };
   if (parts[0] === 'sign' && parts[1]) return { name: 'sign', params: { token: parts[1] } };
@@ -866,6 +869,24 @@ function ClientApp() {
   // ─── ROUTES PUBLIQUES (avant gates auth/skin_type) ───
   // Ces routes doivent fonctionner SANS être connecté à YARAM.
   // Ex : /sign/:token → pharmacien qui signe un contrat, il n'a pas de compte client.
+  // Ex : /wishlist/:slug → liste publique partagée (WhatsApp, etc.), pas d'auth.
+  if (route.name === 'wishlist_shared') {
+    return (
+      <NavContext.Provider value={{ navigate, goBack, route }}>
+        <UserContext.Provider value={{ user, refreshUser }}>
+          <div className="app-shell app-shell--site">
+            <ErrorBoundary key="wishlist-shared-eb">
+              <Suspense fallback={<LazyFallback />}>
+                <WishlistShared slug={route.params?.slug} />
+              </Suspense>
+            </ErrorBoundary>
+          </div>
+          <Toaster />
+        </UserContext.Provider>
+      </NavContext.Provider>
+    );
+  }
+
   if (route.name === 'sign') {
     return (
       <NavContext.Provider value={{ navigate, goBack, route }}>
