@@ -2,7 +2,7 @@
 // YARAM — Edge function : send-email (Resend wrapper)
 // ════════════════════════════════════════════════════════
 //
-// 2 modes d'appel :
+// 3 modes d'appel :
 //
 // 1. RAW : body = { to, subject, html, replyTo? }
 //    → envoie directement via Resend, sans rendre de template.
@@ -12,10 +12,16 @@
 //    → résout le destinataire côté serveur (users_profile.email pour la cliente,
 //      pharmacies.notification_email pour pharmacyNewOrder), rend le template
 //      avec les données de la commande, puis envoie via Resend.
-//    Utilisé par src/lib/emails.js#sendOrderEmail.
+//    Après envoi réussi, écrit dans public.order_email_log pour idempotence
+//    (partagée entre les triggers Postgres et les appels directs admin/RN).
 //
-// Templates supportés : welcome | orderConfirmed | orderShipped | orderDelivered
-//                       | pharmacyNewOrder
+// 3. TEMPLATE_RAW : body = { to, template_raw, params }
+//    → rend un template serveur qui n'est pas lié à une order (ex: referralUsed,
+//      cartAbandoned) avec les params fournis puis envoie via Resend.
+//
+// Templates ORDER : welcome | orderConfirmed | orderShipped | orderDelivered
+//                  | pharmacyNewOrder | paymentVerified | orderStatusUpdate
+// Templates RAW   : referralUsed | cartAbandoned
 //
 // SECRETS Supabase requis :
 //   - RESEND_API_KEY
@@ -111,7 +117,7 @@ type OrderRow = {
 
 const Templates: Record<
   string,
-  (p: { firstName?: string; pharmacyName?: string; order?: OrderRow; statusLabel?: string; newStatus?: string }) => { subject: string; html: string }
+  (p: { firstName?: string; pharmacyName?: string; order?: OrderRow; statusLabel?: string; newStatus?: string; params?: Record<string, unknown> }) => { subject: string; html: string }
 > = {
   welcome: ({ firstName }) => ({
     subject: `Bienvenue sur YARAM, ${firstName} 💚`,
@@ -242,6 +248,60 @@ const Templates: Record<
     };
   },
 
+  referralUsed: ({ firstName, params }: any) => {
+    const points = Number(params?.points || 500);
+    const orderId = String(params?.orderId || "");
+    return {
+      subject: `Ton filleul vient de commander sur YARAM`,
+      html: layout({
+        title: "Ton filleul a commande",
+        preheader: `Ton filleul ${firstName} vient de passer sa premiere commande.`,
+        body: `
+          <h1 style="margin:0 0 16px;font-size:22px;font-weight:800;color:${BRAND_GREEN};">Bonne nouvelle</h1>
+          <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#444;">Ton filleul <strong>${firstName}</strong> vient de passer sa premiere commande sur YARAM.</p>
+          <div style="background:#EBF7EF;border-left:3px solid ${BRAND_GREEN};padding:16px;border-radius:8px;margin:20px 0;">
+            <div style="font-size:11px;font-weight:700;color:${BRAND_GREEN};letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">Recompense de parrainage</div>
+            <div style="font-size:24px;font-weight:800;color:#1A1A1A;">+ ${points} points</div>
+            <div style="font-size:12px;color:#6B6B6B;margin-top:4px;">Credites sur ton compte fidelite YARAM.</div>
+          </div>
+          ${orderId ? `<p style="margin:0 0 16px;font-size:12px;color:#888;">Reference commande : ${orderId}</p>` : ""}
+          <div style="margin:24px 0;">${btn("Voir mes points", `${APP_URL}/loyalty`)}</div>
+        `,
+      }),
+    };
+  },
+
+  cartAbandoned: ({ firstName, params }: any) => {
+    const items: Array<{ name?: string; qty?: number; price?: number }> = Array.isArray(params?.items) ? params.items : [];
+    const totalEstime = params?.totalEstime;
+    const list = items.slice(0, 5).map((it) => {
+      const name = (it?.name || "Produit").toString();
+      const qty = Number(it?.qty || 1);
+      const price = Number(it?.price || 0);
+      return `<tr>
+        <td style="padding:8px 0;font-size:14px;color:#1A1A1A;">${name} <span style="color:#888;">x${qty}</span></td>
+        <td style="padding:8px 0;font-size:14px;color:#444;text-align:right;">${fcfa(price * qty)}</td>
+      </tr>`;
+    }).join("");
+    return {
+      subject: `Ton panier YARAM t attend`,
+      html: layout({
+        title: "Ton panier YARAM t attend",
+        preheader: "Termine ta commande en 1 clic",
+        body: `
+          <h1 style="margin:0 0 16px;font-size:22px;font-weight:800;color:${BRAND_GREEN};">${firstName}, ton panier t attend</h1>
+          <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#444;">Tu as laisse quelques produits dans ton panier. On les garde au chaud pour toi.</p>
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#F9FAFB;border-radius:10px;padding:8px 16px;margin:16px 0;">
+            ${list || `<tr><td style="padding:8px 0;font-size:14px;color:#666;">Tes produits selectionnes</td></tr>`}
+            ${totalEstime != null ? `<tr><td colspan="2" style="border-top:1px solid #E5E7EB;padding-top:10px;margin-top:8px;font-size:14px;color:#1A1A1A;font-weight:700;">Total estime : <span style="color:${BRAND_GREEN};">${fcfa(totalEstime)}</span></td></tr>` : ""}
+          </table>
+          <div style="margin:24px 0;">${btn("Reprendre mon panier", `${APP_URL}/cart`)}</div>
+          <p style="margin:16px 0 0;font-size:12px;color:#888;">Livraison rapide partout a Dakar. Paiement securise Wave, Orange Money, PayTech ou a la livraison.</p>
+        `,
+      }),
+    };
+  },
+
   pharmacyNewOrder: ({ pharmacyName, order }) => ({
     subject: `Nouvelle commande YARAM #${order!.id}`,
     html: layout({
@@ -314,6 +374,19 @@ serve(async (req) => {
     return json({ success: false, error: "invalid_json" }, 400);
   }
 
+  // ─── Mode 3 : TEMPLATE_RAW (rendu serveur sans order) ───
+  if (typeof body.to === "string" && typeof body.template_raw === "string") {
+    const template = body.template_raw as string;
+    const builder = Templates[template];
+    if (!builder) return json({ success: false, error: `unknown_template_raw:${template}` }, 400);
+    const params = (body.params && typeof body.params === "object") ? body.params as Record<string, unknown> : {};
+    const firstName = typeof params.firstName === "string" ? (params.firstName as string) : "toi";
+    const { subject, html } = builder({ firstName, params });
+    const result = await resendSend({ to: body.to as string, subject, html });
+    console.log(`[send-email] template_raw=${template} success=${result.success}`);
+    return json(result);
+  }
+
   // ─── Mode 2 : ORDER (résolution destinataire côté serveur) ───
   if (typeof body.order_id === "string" && typeof body.template === "string") {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
@@ -326,6 +399,27 @@ serve(async (req) => {
     const template = body.template as string;
     const builder = Templates[template];
     if (!builder) return json({ success: false, error: `unknown_template:${template}` }, 400);
+
+    // Canonical idempotency key : orderStatusUpdate+delivered = orderDelivered
+    const extraParams0 = (body.params && typeof body.params === "object") ? body.params as Record<string, unknown> : {};
+    const canonicalKey = (template === "orderStatusUpdate" && extraParams0.newStatus === "delivered")
+      ? "orderDelivered"
+      : template;
+
+    // Idempotence : si un envoi delivered (trigger Postgres OU admin manual)
+    // a deja logue, on ne renvoie pas.
+    if (canonicalKey === "orderDelivered") {
+      const { data: existing } = await admin
+        .from("order_email_log")
+        .select("order_id")
+        .eq("order_id", body.order_id)
+        .eq("template", "orderDelivered")
+        .maybeSingle();
+      if (existing) {
+        console.log(`[send-email] skip duplicate orderDelivered order=${body.order_id}`);
+        return json({ success: true, skipped: true });
+      }
+    }
 
     const { data: order, error: orderErr } = await admin
       .from("orders")
@@ -363,16 +457,28 @@ serve(async (req) => {
       return json({ success: false, error: "no_recipient" }, 200);
     }
 
-    const extraParams = (body.params && typeof body.params === "object") ? body.params as Record<string, unknown> : {};
+    const extraParams = extraParams0;
     const { subject, html } = builder({
       firstName,
       pharmacyName,
       order: order as OrderRow,
       statusLabel: typeof extraParams.statusLabel === "string" ? extraParams.statusLabel : undefined,
       newStatus: typeof extraParams.newStatus === "string" ? extraParams.newStatus : undefined,
+      params: extraParams,
     });
     const result = await resendSend({ to, subject, html });
     console.log(`[send-email] template=${template} order=${order.id} success=${result.success}`);
+
+    // Auto-log dans order_email_log (idempotence delivered-family)
+    if (result.success && canonicalKey === "orderDelivered") {
+      try {
+        await admin
+          .from("order_email_log")
+          .upsert({ order_id: order.id, template: "orderDelivered" }, { onConflict: "order_id,template" });
+      } catch (e) {
+        console.warn(`[send-email] order_email_log upsert failed: ${(e as Error)?.message}`);
+      }
+    }
     return json(result);
   }
 
