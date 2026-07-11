@@ -8,9 +8,24 @@ import {
   adminConfirmPayment,
   adminRejectPayment,
 } from '../lib/adminApi';
+import { getAdminSession } from '../lib/adminAuth';
 import { confirmDialog, toast } from '../lib/toast';
 import { pushOrderStatus } from '../lib/pushAdmin';
 import { sendOrderConfirmation, sendPaymentVerified, sendOrderStatusUpdate } from '../lib/emails';
+
+// ─── FLOW IMPORT (commandes is_preorder=true) ───────────────────────────
+// Un flow parallele au flow standard, dedie aux commandes d'import
+// international (~10-15j). L'admin fait avancer manuellement chaque
+// etape depuis le drawer detail. Sequence :
+//   paid -> awaiting_supplier -> in_transit_intl -> arrived_local
+//        -> awaiting_balance -> ready -> shipped -> delivered
+// A chaque transition on : (1) audit `order_import_status_change`,
+// (2) push OneSignal, (3) email Resend (templates importSupplierOrdered,
+// importInTransit, importArrivedDakar, importBalanceReminder). A partir
+// du moment ou la cliente a paye le solde (bouton "Forcer marquer solde
+// paye", superadmin only) on rebascule sur le flow normal (ready ->
+// shipped -> delivered) gere par les boutons standards + livreur.
+// ────────────────────────────────────────────────────────────────────────
 
 // ─── Fire-and-forget helper ──────────────────────────────────────────
 // Toutes les notifs admin (email + push) doivent etre best-effort. Si
@@ -54,7 +69,23 @@ const STATUS_LABELS = {
   cancelled:         { label: 'Annulée',              color: 'bad',       emoji: '❌' },
   refused:           { label: 'Refusée',              color: 'bad',       emoji: '🚫' },
   disputed:          { label: 'Litige',               color: 'bad',       emoji: '⚠️' },
+  // ─── Statuts flow IMPORT (uniquement pour is_preorder=true) ───
+  awaiting_supplier: { label: 'Cmd fournisseur',      color: 'medium',    emoji: '📦' },
+  in_transit_intl:   { label: 'Transit intl',         color: 'medium',    emoji: '✈️' },
+  arrived_local:     { label: 'Arrivé Dakar',         color: 'good',      emoji: '🛬' },
+  awaiting_balance:  { label: 'Attente solde',        color: 'medium',    emoji: '💳' },
 };
+
+// Statuts qui appartiennent au flow import "en cours" (avant retour au
+// flow normal ready/shipped/delivered). Utilise pour le filtre header et
+// le badge "Import en cours".
+const IMPORT_FLOW_STATUSES = new Set([
+  'paid',
+  'awaiting_supplier',
+  'in_transit_intl',
+  'arrived_local',
+  'awaiting_balance',
+]);
 
 const PAGE_SIZE = 50;
 
@@ -162,7 +193,10 @@ export default function OrdersSection() {
       // Phase 2 RLS : on passe par la RPC admin_list_orders (token requis,
       // SECURITY DEFINER cote DB). Le filtre 'active' est applique cote client
       // pour rester sur le seul parametre p_status que la RPC accepte.
-      const status = (filter === 'all' || filter === 'active') ? null : filter;
+      // Idem pour 'imports_active' qui est un filtre compose (is_preorder
+      // + status IN import_flow) qu'on applique cote client.
+      const isCompoundFilter = (filter === 'all' || filter === 'active' || filter === 'imports_active');
+      const status = isCompoundFilter ? null : filter;
       const { data, count, error } = await adminListOrders({
         limit:  PAGE_SIZE,
         offset: page * PAGE_SIZE,
@@ -182,6 +216,12 @@ export default function OrdersSection() {
       if (filter === 'active') {
         const closed = new Set(['delivered', 'cancelled', 'refused', 'disputed']);
         rows = rows.filter(o => !closed.has(o.status));
+      }
+      if (filter === 'imports_active') {
+        // Isole les commandes d'import encore en cours (avant retour au
+        // flow normal ready/shipped). Filtre client-side : le RPC ne
+        // supporte pas de compound filter (is_preorder + status IN ...).
+        rows = rows.filter(o => o.is_preorder === true && IMPORT_FLOW_STATUSES.has(o.status));
       }
 
       // Tab "À vérifier" : on trie en FIFO sur client_marked_paid_at (les plus
@@ -239,6 +279,38 @@ export default function OrdersSection() {
     // EMAIL : update status (paid/preparing/shipped/delivered/awaiting_confirm).
     // Resend = idempotent côté template; si user n'a pas d'email, no_recipient.
     safeFire(`email:${next}`, () => sendOrderStatusUpdate(order.id, next));
+    refresh();
+  };
+
+  // ─── Flow IMPORT : transition manuelle admin ─────────────────────────
+  // Utilise pour les 4 transitions du flow d'import (paid -> awaiting_supplier,
+  // awaiting_supplier -> in_transit_intl, in_transit_intl -> arrived_local,
+  // arrived_local -> awaiting_balance) ainsi que pour le "Forcer solde paye"
+  // (awaiting_balance -> ready) superadmin only. Chaque call trace un
+  // `order_import_status_change` avec before/after + envoie push/email.
+  const advanceImport = async (order, nextStatus) => {
+    if (!order?.id || !nextStatus) return;
+
+    await adminLogAction({
+      action:     'order_import_status_change',
+      targetType: 'order',
+      targetId:   order.id,
+      before:     { status: order.status, total: order.total, is_preorder: order.is_preorder },
+      after:      { status: nextStatus, total: order.total },
+    }).catch(() => { /* audit best-effort */ });
+
+    const { error } = await adminUpdateOrder(order.id, { status: nextStatus });
+    if (error) {
+      toast.error('Echec transition import : ' + (error.message || ''));
+      refresh();
+      return;
+    }
+    toast.success('Statut import mis a jour');
+    // Push + email best-effort. sendOrderStatusUpdate dispatch vers les
+    // templates importSupplierOrdered / importInTransit / importArrivedDakar /
+    // importBalanceReminder (ajoutes cote send-email edge function).
+    safeFire(`push:${nextStatus}`, () => pushOrderStatus({ ...order, status: nextStatus }));
+    safeFire(`email:${nextStatus}`, () => sendOrderStatusUpdate(order.id, nextStatus));
     refresh();
   };
 
@@ -446,6 +518,7 @@ export default function OrdersSection() {
         {[
           { id: 'all', label: 'Toutes' },
           { id: 'active', label: 'En cours' },
+          { id: 'imports_active', label: '✈️ Imports en cours' },
           { id: 'pending_payment', label: '⏳ Paiement' },
           { id: 'paid', label: '✅ Payées' },
           { id: 'preparing', label: '📦 Prépa' },
@@ -498,6 +571,22 @@ export default function OrdersSection() {
                     <code>{o.id}</code>
                     <span className={`adm-badge ${s?.color}`}>{s?.emoji}</span>
                   </div>
+                  {o.is_preorder === true && (
+                    <div style={{
+                      display: 'inline-block',
+                      marginTop: 4,
+                      background: '#EEF3FE',
+                      color: '#2A4DA6',
+                      border: '1px solid #C7D6F0',
+                      borderRadius: 6,
+                      padding: '2px 8px',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      letterSpacing: 0.2,
+                    }}>
+                      Import 10-15j
+                    </div>
+                  )}
                   <div className="adm-list-name">{o.address?.name || 'Anonyme'}</div>
                   {isAwaitingVerif && (
                     <div style={{
@@ -557,7 +646,9 @@ export default function OrdersSection() {
           ) : (
             <OrderDetail
               order={selected}
+              isSuperAdmin={getAdminSession()?.role === 'super_admin'}
               onAdvance={() => advance(selected)}
+              onAdvanceImport={(next) => advanceImport(selected, next)}
               onCancel={() => cancel(selected)}
               onConfirmPayment={() => confirmPayment(selected)}
               onRejectPayment={() => rejectPayment(selected)}
@@ -569,7 +660,7 @@ export default function OrdersSection() {
   );
 }
 
-function OrderDetail({ order, onAdvance, onCancel, onConfirmPayment, onRejectPayment }) {
+function OrderDetail({ order, isSuperAdmin, onAdvance, onAdvanceImport, onCancel, onConfirmPayment, onRejectPayment }) {
   const s = STATUS_LABELS[order.status];
   const flowIdx = STATUS_FLOW.indexOf(order.status);
   // canAdvance vrai SEULEMENT si le statut est dans le flow ET n'est pas le dernier.
@@ -577,6 +668,10 @@ function OrderDetail({ order, onAdvance, onCancel, onConfirmPayment, onRejectPay
   const canAdvance = flowIdx >= 0 && flowIdx < STATUS_FLOW.length - 1;
   const nextStatus = canAdvance ? STATUS_LABELS[STATUS_FLOW[flowIdx + 1]] : null;
   const isAwaitingVerif = order.status === 'awaiting_verification';
+  // Une commande import n'affiche les boutons "flow normal" qu'a partir de
+  // 'ready' (apres solde paye). Avant ca, on route sur les boutons import.
+  const isImportOrder = order.is_preorder === true;
+  const isInImportFlow = isImportOrder && IMPORT_FLOW_STATUSES.has(order.status);
   const verifSla = isAwaitingVerif ? slaLevel(order.client_marked_paid_at) : null;
   // Taux commission dynamique depuis settings (fallback 8%)
   const rate = getCachedSetting('commission', 8) / 100;
@@ -587,6 +682,22 @@ function OrderDetail({ order, onAdvance, onCancel, onConfirmPayment, onRejectPay
       <div className="adm-detail-head">
         <div>
           <code>{order.id}</code>
+          {isImportOrder && (
+            <span style={{
+              display: 'inline-block',
+              marginLeft: 8,
+              background: '#EEF3FE',
+              color: '#2A4DA6',
+              border: '1px solid #C7D6F0',
+              borderRadius: 6,
+              padding: '2px 8px',
+              fontSize: 11,
+              fontWeight: 700,
+              verticalAlign: 'middle',
+            }}>
+              Import 10-15j
+            </span>
+          )}
           <div className="adm-detail-date">{new Date(order.created_at).toLocaleString('fr-FR')}</div>
         </div>
         <span className={`adm-badge ${s?.color}`}>{s?.emoji} {s?.label}</span>
@@ -682,7 +793,73 @@ function OrderDetail({ order, onAdvance, onCancel, onConfirmPayment, onRejectPay
             </button>
           </>
         )}
-        {!isAwaitingVerif && canAdvance && (
+
+        {/* ─── FLOW IMPORT : boutons dedies pour is_preorder=true ────────
+            On remplace le bouton "avancer" standard tant que la commande
+            est dans le flow import. A partir de ready/shipped, on retombe
+            sur les boutons normaux via isInImportFlow=false. */}
+        {!isAwaitingVerif && isInImportFlow && (
+          <>
+            {order.status === 'paid' && (
+              <button className="adm-btn-pri" onClick={() => onAdvanceImport('awaiting_supplier')}>
+                Marquer commande fournisseur
+              </button>
+            )}
+            {order.status === 'awaiting_supplier' && (
+              <button className="adm-btn-pri" onClick={() => onAdvanceImport('in_transit_intl')}>
+                Marquer en transit international
+              </button>
+            )}
+            {order.status === 'in_transit_intl' && (
+              <button className="adm-btn-pri" onClick={() => onAdvanceImport('arrived_local')}>
+                Marquer arrive a Dakar
+              </button>
+            )}
+            {order.status === 'arrived_local' && (
+              <button className="adm-btn-pri" onClick={() => onAdvanceImport('awaiting_balance')}>
+                Envoyer relance solde
+              </button>
+            )}
+            {order.status === 'awaiting_balance' && (
+              <>
+                <div style={{
+                  padding: '12px 14px',
+                  background: '#FFF4E5',
+                  border: '1px solid #FFD9A6',
+                  borderRadius: 10,
+                  fontSize: 13,
+                  color: '#8A5A00',
+                  fontWeight: 600,
+                }}>
+                  En attente paiement solde par la cliente. Une fois le solde
+                  reglé, la commande passera automatiquement en preparation.
+                </div>
+                {isSuperAdmin && (
+                  <button
+                    className="adm-btn-sec"
+                    onClick={async () => {
+                      const ok = await confirmDialog(
+                        'Forcer le passage en "Prete a livrer" (solde marque paye) ?',
+                        { confirmLabel: 'Forcer', danger: false }
+                      );
+                      if (!ok) return;
+                      onAdvanceImport('ready');
+                    }}
+                    style={{ marginTop: 8 }}
+                    title="Superadmin : bascule vers le flow normal (ready -> shipped -> delivered)"
+                  >
+                    Forcer marquer solde paye
+                  </button>
+                )}
+              </>
+            )}
+          </>
+        )}
+
+        {/* Flow normal : uniquement quand pas en awaiting_verif et pas en
+            flow import. Une commande import qui a atteint ready/shipped
+            passe ici et hérite du bouton "Passer a ..." standard. */}
+        {!isAwaitingVerif && !isInImportFlow && canAdvance && (
           <button className="adm-btn-pri" onClick={onAdvance}>
             ⚡ Passer à {nextStatus.emoji} {nextStatus.label}
           </button>

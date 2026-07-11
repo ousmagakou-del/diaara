@@ -464,9 +464,30 @@ export async function sendOrderConfirmation(orderId, userId = null) {
 /**
  * Envoie un update de statut commande.
  * Si livreur affecté (status shipped/in_delivery), récupère son nom/tel.
+ *
+ * Cas spécial FLOW IMPORT (is_preorder=true, statuts awaiting_supplier /
+ * in_transit_intl / arrived_local / awaiting_balance) : on route vers les
+ * templates dédiés `importSupplierOrdered`, `importInTransit`,
+ * `importArrivedDakar`, `importBalanceReminder` qui sont gérés par
+ * `supabase/functions/send-email/index.ts` (mode order_id + template).
+ * Ces templates injectent le contexte import (fournisseur, tracking, ETA,
+ * solde restant) que le template générique orderStatusUpdate ne connaît pas.
  */
+const IMPORT_STATUS_TO_TEMPLATE = {
+  awaiting_supplier: 'importSupplierOrdered',
+  in_transit_intl:   'importInTransit',
+  arrived_local:     'importArrivedDakar',
+  awaiting_balance:  'importBalanceReminder',
+};
+
 export async function sendOrderStatusUpdate(orderId, newStatus) {
   if (!orderId || !newStatus) return { success: false, error: 'orderId + newStatus requis' };
+
+  // Route dédiée import → edge function resout email + rend template.
+  if (IMPORT_STATUS_TO_TEMPLATE[newStatus]) {
+    return sendOrderEmail(orderId, IMPORT_STATUS_TO_TEMPLATE[newStatus]);
+  }
+
   const { order, profile } = await fetchOrderForEmail(orderId);
   if (!order) return { success: false, error: 'order_not_found' };
 
