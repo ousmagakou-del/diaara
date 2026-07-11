@@ -11,15 +11,25 @@
 }
 
 /* ───────────────────────── HEADER ───────────────────────── */
+/* Fond translucide + blur par defaut (style Uber Eats / Sephora) :
+   laisse voir le hero derriere quand on est en haut, box-shadow subtil
+   au scroll pour marquer la separation. Le mode transparent (option
+   au-dessus d une video sombre) reste disponible via la prop
+   transparentHeader mais n est plus utilise sur Landing depuis juillet 2026
+   (image hero peau claire rendait le logo/nav blanc invisibles). */
 .site-header {
   position: sticky; top: 0;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   z-index: 100;
-  border-bottom: 1px solid #F0F0EE;
-  transition: box-shadow 0.2s, background 0.2s;
+  border-bottom: 1px solid rgba(240, 240, 238, 0.6);
+  transition: box-shadow 0.2s, background 0.2s, border-color 0.2s;
 }
 .site-header--transparent {
   background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   border-bottom-color: transparent;
 }
 /* En mode transparent (au dessus d une video sombre / hero), on force les
@@ -33,10 +43,9 @@
   filter: brightness(0) invert(1);
 }
 .site-header--scrolled {
-  background: rgba(255,255,255,0.95);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 1px 10px rgba(0,0,0,0.04);
+  background: rgba(255, 255, 255, 0.96);
+  border-bottom-color: #F0F0EE;
+  box-shadow: 0 1px 10px rgba(0, 0, 0, 0.04);
 }
 .site-header-inner {
   max-width: 1440px; margin: 0 auto;

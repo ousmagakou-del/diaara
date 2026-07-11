@@ -46,7 +46,7 @@ export default function Landing() {
   };
 
   return (
-    <SiteLayout transparentHeader={true}>
+    <SiteLayout>
     <div className="lp-root">
 
       {/* ━━━ HERO ━━━ */}
