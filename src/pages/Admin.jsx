@@ -56,6 +56,7 @@ const SignaturesSection          = lazy(() => import('../admin/SignaturesSection
 const PartnerApplicationsSection = lazy(() => import('../admin/PartnerApplicationsSection'));
 const DriverApplicationsSection  = lazy(() => import('../admin/DriverApplicationsSection'));
 const OnboardingReviewSection    = lazy(() => import('../admin/OnboardingReviewSection'));
+const CorporateSection           = lazy(() => import('../admin/CorporateSection'));
 
 import './Admin.css';
 
@@ -125,6 +126,7 @@ const NAV = [
   { id: 'partner_apps', icon: '', label: 'Candidatures partenaires', badge: true, roles: ROLES_ALL_PLUS_COMMERCIAL },
   { id: 'driver_apps',  icon: '', label: 'Candidatures livreurs',   badge: true, roles: ROLES_ALL_PLUS_COMMERCIAL },
   { id: 'merchant_onboarding', icon: '', label: 'Onboarding partenaires', badge: true, roles: ROLES_ALL_PLUS_COMMERCIAL },
+  { id: 'corporate',           icon: '', label: 'Corporate B2B',           badge: true, roles: ROLES_ALL_PLUS_COMMERCIAL },
   { id: 'settings',    icon: '⚙️', label: 'Paramètres', roles: ['super_admin'] },
   { id: 'adminusers',  icon: '👥', label: 'Gestion admins', roles: ['super_admin'] },
   { id: 'adminlogs',   icon: '📜', label: 'Logs activité', roles: ['super_admin'] },
@@ -522,6 +524,7 @@ export default function Admin() {
           {section === 'partner_apps'         && <PartnerApplicationsSection />}
           {section === 'driver_apps'          && <DriverApplicationsSection />}
           {section === 'merchant_onboarding'  && <OnboardingReviewSection />}
+          {section === 'corporate'            && <CorporateSection />}
               </>
             );
           })()}

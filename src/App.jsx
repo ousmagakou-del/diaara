@@ -81,6 +81,8 @@ const BlogHome           = lazy(() => import('./pages/BlogHome'));
 const BlogArticle        = lazy(() => import('./pages/BlogArticle'));
 const BlogCategory       = lazy(() => import('./pages/BlogCategory'));
 const MerchantOnboarding = lazy(() => import('./pages/MerchantOnboarding'));
+const CorporateApply     = lazy(() => import('./pages/CorporateApply'));
+const CorporateDashboard = lazy(() => import('./pages/CorporateDashboard'));
 
 // ════════════════════════════════════════════════════════════════
 //  FIX juin 2026 #8 — LazyFallback FULL SCREEN (CAUSE RACINE BLANCHE)
@@ -145,6 +147,8 @@ function routeToPath(route) {
     case 'order_tracking': return `/order/${params.orderId}`;
     case 'scan_result': return `/scan/result/${params.scanId}`;
     case 'payment': return `/payment/${params.orderId}`;
+    case 'corporate': return '/corporate';
+    case 'corporate_dashboard': return '/corporate/dashboard';
     case 'blog': return '/blog';
     case 'blog_article': return `/blog/${params.slug}`;
     case 'blog_category': return `/blog/category/${params.slug}`;
@@ -171,6 +175,8 @@ function pathToRoute(pathname, search = '') {
 
   const parts = path.split('/');
 
+  if (parts[0] === 'corporate' && parts[1] === 'dashboard') return { name: 'corporate_dashboard', params: {} };
+  if (parts[0] === 'corporate') return { name: 'corporate', params: {} };
   if (parts[0] === 'wishlist' && parts[1]) return { name: 'wishlist_shared', params: { slug: parts[1] } };
   if (parts[0] === 'product' && parts[1]) return { name: 'product', params: { id: parts[1] } };
   if (parts[0] === 'bundle' && parts[1]) return { name: 'bundle', params: { slug: parts[1] } };
@@ -1056,6 +1062,8 @@ function ClientApp() {
     case 'brands': page = <Suspense fallback={<LazyFallback />}><BrandsPage /></Suspense>; break;
     case 'partner-application': page = <Suspense fallback={<LazyFallback />}><PartnerApplication /></Suspense>; break;
     case 'driver-application':  page = <Suspense fallback={<LazyFallback />}><DriverApplication /></Suspense>; break;
+    case 'corporate':           page = <Suspense fallback={<LazyFallback />}><CorporateApply /></Suspense>; break;
+    case 'corporate_dashboard': page = <Suspense fallback={<LazyFallback />}><CorporateDashboard /></Suspense>; break;
     // ─── Landing = home marketing (style Uber/DoorDash) ───
     case 'landing': page = <Landing />; break;
     // ─── Shop = nouvelle home e-commerce premium (DoorDash-style) ───

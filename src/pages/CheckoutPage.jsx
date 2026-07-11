@@ -173,8 +173,23 @@ export default function CheckoutPage() {
 
   // Filtre calque native : masque methodes non compatibles preorder si preorder.
   const visiblePayments = useMemo(
-    () => PAYMENTS.filter((p) => (isPreorder ? p.preorderOk : true)),
-    [isPreorder]
+    () => {
+      const base = PAYMENTS.filter((p) => (isPreorder ? p.preorderOk : true));
+      // Corporate B2B : ajout methode "Facture entreprise 30j" quand user rattache a un compte actif
+      if (corporate && !isPreorder) {
+        base.unshift({
+          id: 'corp_invoice',
+          name: 'Facture entreprise (paiement 30j)',
+          logoUrl: null,
+          sub: `Compte pro ${corporate.account.legal_name} · credit ${new Intl.NumberFormat('fr-FR').format(creditAvailable)} FCFA dispo`,
+          enabled: true,
+          preorderOk: false,
+        });
+      }
+      return base;
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isPreorder, corporate, creditAvailable]
   );
   const defaultPayment = useMemo(
     () => (visiblePayments.find((p) => p.enabled)?.id) || 'wave',
@@ -220,6 +235,22 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState(false);
+
+  // ─── Corporate account detection (bulk discount + invoice payment) ─────
+  const [corporate, setCorporate] = useState(null); // { account, balance_owed } quand actif
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await supabase.rpc('corporate_get_my_account');
+        if (cancelled) return;
+        if (data?.success && data.account && data.account.status === 'active') {
+          setCorporate({ account: data.account, balance_owed: data.balance_owed || 0 });
+        }
+      } catch { /* silent : compte pro optionnel */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   // ─── Load addresses ─────────────────────────────────────────────
   useEffect(() => {
@@ -310,8 +341,15 @@ export default function CheckoutPage() {
   );
   const loyaltyApplied = Math.min(loyaltyToUse, maxLoyaltyPoints);
 
+  // Corporate B2B : remise volume appliquee sur subtotal (hors imports)
+  const corporateDiscountPct = corporate && !hasImportedItem ? Number(corporate.account?.discount_pct || 0) : 0;
+  const corporateDiscount = Math.round(subtotal * corporateDiscountPct / 100);
+  const creditAvailable = corporate
+    ? Math.max(0, Number(corporate.account?.credit_limit_fcfa || 0) - Number(corporate.balance_owed || 0))
+    : 0;
+
   const beforeDiscounts = subtotal + deliveryFee + serviceFee;
-  const totalDiscounts = promoOff + Math.min(giftValue, subtotal) + loyaltyApplied;
+  const totalDiscounts = promoOff + Math.min(giftValue, subtotal) + loyaltyApplied + corporateDiscount;
   const total = Math.max(0, beforeDiscounts - totalDiscounts);
 
   // Preorder split (acompte 50 % / solde 50 %) — affiche dans le recap.
@@ -424,6 +462,12 @@ export default function CheckoutPage() {
     const nextErrors = {};
     if (!addressValid) nextErrors.address = 'Adresse invalide';
     if (!paymentValid) nextErrors.payment = 'Choisis un mode de paiement';
+    // Corporate : verifie ligne de credit avant validation
+    if (payment === 'corp_invoice' && corporate) {
+      if (total > creditAvailable) {
+        nextErrors.payment = `Credit insuffisant. Disponible : ${new Intl.NumberFormat('fr-FR').format(creditAvailable)} FCFA`;
+      }
+    }
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) {
       submitLockRef.current = false;
@@ -472,13 +516,27 @@ export default function CheckoutPage() {
         return;
       }
 
+      // Corporate B2B : facture 30j (paiement differe) — cree une entree corporate_invoices.
+      if (payment === 'corp_invoice' && corporate) {
+        try {
+          await supabase.rpc('corporate_create_invoice_for_order', {
+            p_order_id: String(created.id),
+            p_amount: total,
+          });
+        } catch (invErr) {
+          console.warn('[checkout] corporate invoice create failed:', invErr?.message);
+        }
+      }
+
       clearCart();
       clearProgress();
       setSuccess(true);
 
       const isCash = payment === 'cod';
+      const isCorpInvoice = payment === 'corp_invoice';
       setTimeout(() => {
-        if (isCash) navigate({ name: 'order_tracking', params: { orderId: created.id } });
+        // COD ou facture entreprise : pas de paiement en ligne, direct au tracking
+        if (isCash || isCorpInvoice) navigate({ name: 'order_tracking', params: { orderId: created.id } });
         else navigate({ name: 'payment', params: { orderId: created.id } });
       }, 1200);
     } catch (e) {
@@ -902,6 +960,12 @@ export default function CheckoutPage() {
                     <div className="ck-total-row ck-total-row--discount">
                       <span>Points fidelite</span>
                       <strong>-{formatPrice(loyaltyApplied)} FCFA</strong>
+                    </div>
+                  )}
+                  {corporateDiscount > 0 && (
+                    <div className="ck-total-row ck-total-row--discount">
+                      <span>Remise YARAM Pro ({corporateDiscountPct}%)</span>
+                      <strong>-{formatPrice(corporateDiscount)} FCFA</strong>
                     </div>
                   )}
                   <div className="ck-total-divider" />
