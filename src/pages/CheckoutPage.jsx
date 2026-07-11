@@ -423,41 +423,61 @@ export default function CheckoutPage() {
 
     setSubmitting(true);
 
-    const orderPayload = {
-      items, address: activeAddress, geoloc, deliveryMode, payment,
-      notes, subtotal, deliveryFee, serviceFee, promoCode, promoOff,
-      giftCode, giftValue, loyaltyPoints: loyaltyApplied, total,
-    };
+    // ─── Preorder : acompte 50% + solde 50% + date arrivee estimee ───
+    // Calque native (yaram-native/app/checkout.jsx#handleSubmit).
+    const deposit = isPreorder ? Math.round(total * 0.5) : 0;
+    const balance = isPreorder ? total - deposit : 0;
+    let expectedArrival = null;
+    if (isPreorder && importLeadDays > 0) {
+      const arrival = new Date();
+      arrival.setDate(arrival.getDate() + importLeadDays + 3);
+      expectedArrival = arrival.toISOString().split('T')[0];
+    }
 
     try {
-      // Best-effort call to a real RPC. Fallback : simulate success.
-      let orderId = null;
-      try {
-        const mod = await import('../lib/supabase');
-        const supabase = mod.supabase;
-        if (supabase && typeof supabase.rpc === 'function') {
-          const { data } = await supabase.rpc('client_place_order', { payload: orderPayload });
-          if (data && (data.id || data.order_id)) orderId = data.id || data.order_id;
-        }
-      } catch { /* silent */ }
+      // FIX juillet 2026 : la RPC `client_place_order` n existait pas en DB
+      // -> le web CheckoutPage simulait un succes sans creer la commande.
+      // Remplace par un INSERT direct via createOrder (lib/supabase/orders.js)
+      // qui supporte deja les champs preorder + tokens confirm + retry.
+      const ordersMod = await import('../lib/supabase/orders');
+      const created = await ordersMod.createOrder({
+        items,
+        address: activeAddress,
+        paymentMethod: payment,
+        subtotal,
+        shipping: deliveryFee,
+        total,
+        promoCode,
+        promoDiscount: (promoOff || 0) + (giftValue || 0) + (loyaltyApplied || 0),
+        isPreorder,
+        depositAmount: deposit,
+        balanceAmount: balance,
+        expectedArrivalDate: expectedArrival,
+      });
 
-      // Simule un delai pour feedback visuel si pas de RPC
-      await new Promise((r) => setTimeout(r, 900));
+      if (!created?.id) {
+        setSubmitting(false);
+        submitLockRef.current = false;
+        alert('Impossible de creer la commande. Reessaie ou contacte le support WhatsApp.');
+        return;
+      }
 
       clearCart();
       clearProgress();
       setSuccess(true);
       setStep('review');
 
-      // Redirect to tracking after brief confirmation
+      // Redirect to payment (Wave/OM/card) or tracking (COD) after confirmation
+      const isCash = payment === 'cod';
       setTimeout(() => {
-        if (orderId) navigate({ name: 'order_tracking', params: { orderId } });
-        else navigate('orders');
-      }, 1500);
-    } catch {
+        if (isCash) navigate({ name: 'order_tracking', params: { orderId: created.id } });
+        else navigate({ name: 'payment', params: { orderId: created.id } });
+      }, 1200);
+    } catch (e) {
+      console.error('[checkout] submit failed:', e?.message);
       submitLockRef.current = false;
       setSubmitting(false);
-      alert('Une erreur est survenue. Reessaie.');
+      alert('Une erreur est survenue : ' + (e?.message || 'inconnue') + '. Reessaie ou contacte le support.');
     }
   };
 
