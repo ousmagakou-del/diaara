@@ -789,6 +789,7 @@ function ClientApp() {
           auth: 'auth',
           'partner-application': 'partner-application',
           'driver-application': 'driver-application',
+          blog: 'blog',
         };
         const routeName = map[path];
         if (!routeName) {
@@ -917,6 +918,31 @@ function ClientApp() {
             <ErrorBoundary key="sign-eb">
               <Suspense fallback={<LazyFallback />}>
                 <SignPage />
+              </Suspense>
+            </ErrorBoundary>
+          </div>
+          <Toaster />
+        </UserContext.Provider>
+      </NavContext.Provider>
+    );
+  }
+
+  // ─── Blog SEO : route publique (bypass onboarding + skin quiz) ───
+  // Un lecteur qui arrive de Google sur /blog/xxx doit voir l article
+  // directement, sans onboarding forcé.
+  if (route.name === 'blog' || route.name === 'blog_article' || route.name === 'blog_category') {
+    const BlogPage = route.name === 'blog_article'
+      ? BlogArticle
+      : route.name === 'blog_category'
+        ? BlogCategory
+        : BlogHome;
+    return (
+      <NavContext.Provider value={{ navigate, goBack, route }}>
+        <UserContext.Provider value={{ user, refreshUser }}>
+          <div className="app-shell app-shell--site">
+            <ErrorBoundary key={`blog-${route.name}-eb`}>
+              <Suspense fallback={<LazyFallback />}>
+                <BlogPage />
               </Suspense>
             </ErrorBoundary>
           </div>

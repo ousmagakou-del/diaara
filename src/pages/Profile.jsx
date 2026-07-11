@@ -482,6 +482,10 @@ export default function Profile() {
                   sub="Bientôt fini · Recommander"
                   onClick={() => navigate({ name: 'reminders', params: {} })} />
                 <div className="prof2-sep" />
+                <MenuItem icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>} tint="rgba(31,139,76,0.10)" label="Mes abonnements"
+                  sub="Routines livrées automatiquement · -15%"
+                  onClick={() => navigate({ name: 'subscriptions', params: {} })} />
+                <div className="prof2-sep" />
                 <MenuItem icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>} tint="rgba(244,181,58,0.18)" label="Programme fidélité"
                   sub={`${loyaltyPoints.toLocaleString('fr-FR')} points · Voir mes récompenses`}
                   onClick={() => navigate({ name: 'loyalty', params: {} })} />

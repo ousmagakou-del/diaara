@@ -183,6 +183,25 @@ export default function BundlePage() {
               >
                 Ajouter le kit -{bundle.discount_pct || 10}% au panier
               </button>
+              <button
+                type="button"
+                className="bp-btn-block"
+                onClick={() => setSubscribeOpen(true)}
+                disabled={!items.length}
+                style={{
+                  marginTop: 8,
+                  background: '#0F5132',
+                  color: '#fff',
+                  border: 0,
+                  padding: '12px 16px',
+                  borderRadius: 12,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  width: '100%',
+                }}
+              >
+                S abonner et economiser {SUB_DISCOUNT_PCT}% · livraison recurrente
+              </button>
               <p className="bp-summary-note">
                 Livraison rapide au Senegal. Retour 14 jours.
               </p>
@@ -190,6 +209,22 @@ export default function BundlePage() {
           </aside>
         </div>
       </div>
+
+      {subscribeOpen && bundle && (
+        <SubscribeWizard
+          onClose={() => setSubscribeOpen(false)}
+          onSuccess={() => { setSubscribeOpen(false); showToast('Abonnement cree'); navigate('subscriptions'); }}
+          initialName={`Routine ${bundle.title}`.slice(0, 60)}
+          initialItems={items.map((it) => ({
+            id: it.id,
+            name: it.name,
+            price: Number(it.price || 0),
+            qty: 1,
+            img: it.image_url || it.img || null,
+            brand: it.brand || null,
+          }))}
+        />
+      )}
     </SiteLayout>
   );
 }

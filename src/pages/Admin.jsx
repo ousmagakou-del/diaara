@@ -37,6 +37,7 @@ const NewsletterSection          = lazy(() => import('../admin/NewsletterSection
 const IntlRequestsSection        = lazy(() => import('../admin/IntlRequestsSection'));
 // ─── Nouvelles sections (juin 2026) ────────────────────────────────────────
 const ArticlesSection            = lazy(() => import('../admin/ArticlesSection'));
+const BlogSection                = lazy(() => import('../admin/BlogSection'));
 const RoutinesSection            = lazy(() => import('../admin/RoutinesSection'));
 const BundlesSection             = lazy(() => import('../admin/BundlesSection'));
 const SubscriptionsSection       = lazy(() => import('../admin/SubscriptionsSection'));
@@ -95,6 +96,7 @@ const NAV = [
   { id: 'banners',     icon: '🎨', label: 'Bannières', roles: ROLES_ALL },
   { id: 'stories',     icon: '📸', label: 'Stories', roles: ROLES_ALL },
   { id: 'articles',    icon: '📝', label: 'Articles', roles: ROLES_ALL },
+  { id: 'blog',        icon: '📰', label: 'Blog SEO', roles: ROLES_ALL },
   { id: 'routines',    icon: '🧴', label: 'Routines beauté', roles: ROLES_ALL },
   { id: 'bundles',     icon: '📦', label: 'Bundles / Kits', roles: ROLES_ALL },
   { id: 'categories',  icon: '📂', label: 'Catégories', roles: ROLES_ALL },
@@ -497,6 +499,7 @@ export default function Admin() {
           {section === 'adminlogs'     && <AdminLogsSection />}
           {/* ─── Nouvelles sections (juin 2026) ─────────────────────────── */}
           {section === 'articles'             && <ArticlesSection />}
+          {section === 'blog'                 && <BlogSection />}
           {section === 'routines'             && <RoutinesSection />}
           {section === 'bundles'              && <BundlesSection />}
           {section === 'subscriptions'        && <SubscriptionsSection />}

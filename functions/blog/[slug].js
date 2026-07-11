@@ -13,7 +13,7 @@
 // - WhatsApp / Facebook affichent la vraie preview d article (titre + cover).
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { sbFetch, escapeHtml, isBotUA, buildMetaTags, injectMetaTags } from '../_lib.js';
+import { sbFetch, isBotUA, buildMetaTags, injectMetaTags } from '../_lib.js';
 
 async function serveSpa(request, env) {
   const indexResponse = await env.ASSETS.fetch(new URL('/', request.url));
@@ -140,5 +140,3 @@ export async function onRequest(context) {
   }
 }
 
-// Suppress lint on unused import (kept for parity with product/[id].js)
-export const _unused = escapeHtml;
