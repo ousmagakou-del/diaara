@@ -316,6 +316,26 @@ export async function adminConfirmPayment(orderId, note) {
   return data || { success: false, error: 'empty_response' };
 }
 
+// ─── Confirm paiement du SOLDE (import) ─────────────────────────────
+// Wrapper autour de admin_confirm_balance_payment. Distinct de
+// adminConfirmPayment : cible uniquement les commandes import ou le client
+// a paye les 50% restants (status=awaiting_verification + balance_paid_at
+// set) et transitionne directement vers 'ready' (skip preparing car le colis
+// est deja arrive et pret pour la livraison finale).
+export async function adminConfirmBalancePayment(orderId, note) {
+  const token = readSessionToken();
+  if (!token) return { success: false, error: 'session_required' };
+
+  const { data, error } = await supabase.rpc('admin_confirm_balance_payment', {
+    p_admin_token: token,
+    p_order_id:    orderId,
+    p_note:        note || null,
+  });
+
+  if (error) return { success: false, error: error.message || 'rpc_error' };
+  return data || { success: false, error: 'empty_response' };
+}
+
 export async function adminRejectPayment(orderId, reason) {
   const token = readSessionToken();
   if (!token) return { success: false, error: 'session_required' };

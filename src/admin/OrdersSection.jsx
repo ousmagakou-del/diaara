@@ -6,6 +6,7 @@ import {
   adminSearchOrders,
   adminLogAction,
   adminConfirmPayment,
+  adminConfirmBalancePayment,
   adminRejectPayment,
 } from '../lib/adminApi';
 import { getAdminSession } from '../lib/adminAuth';
@@ -344,6 +345,17 @@ export default function OrdersSection() {
   // on se contente d'auditer avant, afficher un toast et refresh.
 
   const confirmPayment = async (order) => {
+    // ─── FLOW IMPORT : distinguer paiement du SOLDE ───
+    // Une commande import passe par 2 verifications de paiement :
+    //   1. Acompte (50%) : status='awaiting_verification' apres depot Wave/OM.
+    //   2. Solde (50%)   : idem, mais avec balance_paid_at set (via client_mark_balance_paid).
+    // Le cas #2 saute la case 'paid'/'preparing' et va directement en 'ready'
+    // (le colis est deja arrive a Dakar, il suffit de programmer la livraison).
+    const isBalanceVerification = order.is_preorder && order.balance_paid_at;
+    if (isBalanceVerification) {
+      return confirmBalancePayment(order);
+    }
+
     const note = window.prompt(
       'Note de vérification (optionnel)\nEx: "Wave ref ABC123", "OM transaction du 14:32"',
       ''
@@ -381,6 +393,47 @@ export default function OrdersSection() {
     safeFire('email:payment_verified', () => sendPaymentVerified(order.id));
 
     // La RPC a déjà push à la cliente, on enchaîne juste sur refresh + count.
+    refresh();
+    refreshVerifCount();
+  };
+
+  // ─── Confirm paiement du SOLDE (import) ────────────────────────────────
+  // Distinct de confirmPayment : cible uniquement les commandes import ou le
+  // client a paye les 50% restants. Transitionne awaiting_verification -> ready
+  // (skip preparing car le colis est deja arrive et pret pour la livraison).
+  const confirmBalancePayment = async (order) => {
+    const note = window.prompt(
+      'Note (optionnel) — Verification du SOLDE (50% restant)\nEx: "Wave ref XYZ", "OM du 15:22"',
+      ''
+    );
+    if (note === null) return;
+
+    await adminLogAction({
+      action:     'confirm_balance_payment',
+      targetType: 'order',
+      targetId:   order.id,
+      before:     { status: order.status, balance_paid_at: order.balance_paid_at },
+      after:      { status: 'ready', note },
+    }).catch(() => { /* best-effort */ });
+
+    const res = await adminConfirmBalancePayment(order.id, note);
+    if (!res.success) {
+      if (res.error === 'session_required') {
+        toast.error('Session admin expiree — reconnexion requise');
+      } else if (res.error === 'not_a_preorder') {
+        toast.error('Cette commande n est pas un import');
+      } else if (res.error === 'balance_not_paid_by_client') {
+        toast.error('La cliente n a pas encore paye le solde');
+      } else {
+        toast.error('Echec confirmation solde : ' + (res.error || 'erreur inconnue'));
+      }
+      return;
+    }
+    toast.success('Solde valide — commande prete pour livraison');
+
+    // Email dedie : "Ton solde est valide, ta commande sera livree bientot"
+    safeFire('email:balance_verified', () => sendOrderStatusUpdate(order.id, 'ready'));
+
     refresh();
     refreshVerifCount();
   };
@@ -714,12 +767,14 @@ function OrderDetail({ order, isSuperAdmin, onAdvance, onAdvanceImport, onCancel
               : '4px solid #FFB74D',
           }}
         >
-          <h3>💰 Paiement à vérifier</h3>
+          <h3>{order.is_preorder && order.balance_paid_at ? '💰 SOLDE à vérifier (50% restant)' : '💰 Paiement à vérifier'}</h3>
           <p style={{ margin: '4px 0' }}>
-            La cliente a déclaré avoir payé <strong>{formatWaitSince(order.client_marked_paid_at)}</strong>.
+            {order.is_preorder && order.balance_paid_at
+              ? <>La cliente a paye le SOLDE <strong>{formatWaitSince(order.balance_paid_at)}</strong>. Verifie et valide pour lancer la livraison finale.</>
+              : <>La cliente a déclaré avoir payé <strong>{formatWaitSince(order.client_marked_paid_at)}</strong>.</>}
           </p>
           <p style={{ margin: '4px 0', fontSize: 13, color: '#6B6B6B' }}>
-            Méthode : <strong>{order.payment_method}</strong> · Montant attendu : <strong>{order.total?.toLocaleString('fr-FR')} FCFA</strong>
+            Méthode : <strong>{order.payment_method}</strong> · Montant attendu : <strong>{(order.is_preorder && order.balance_paid_at ? (order.balance_amount || Math.round((order.total || 0) / 2)) : order.total)?.toLocaleString('fr-FR')} FCFA</strong>
           </p>
           <p style={{ margin: '4px 0', fontSize: 13, color: '#6B6B6B' }}>
             Vérifie sur ton app Wave/OM/PayTech que le virement est bien arrivé puis confirme ou rejette.
@@ -769,7 +824,9 @@ function OrderDetail({ order, isSuperAdmin, onAdvance, onAdvanceImport, onCancel
         {isAwaitingVerif && (
           <>
             {/* Action principale : valider le virement reçu. Gros bouton vert,
-                en haut de la liste pour ne pas se tromper. */}
+                en haut de la liste pour ne pas se tromper.
+                Libelle adapte si SOLDE (import) : "Confirmer paiement SOLDE"
+                appelle admin_confirm_balance_payment -> ready (skip preparing). */}
             <button
               className="adm-btn-pri"
               onClick={onConfirmPayment}
@@ -781,9 +838,12 @@ function OrderDetail({ order, isSuperAdmin, onAdvance, onAdvanceImport, onCancel
                 padding: '14px 18px',
               }}
             >
-              ✅ Confirmer paiement reçu
+              {order.is_preorder && order.balance_paid_at
+                ? '✅ Confirmer paiement SOLDE (import)'
+                : '✅ Confirmer paiement reçu'}
             </button>
-            {/* Rejet : repasse en pending_payment, la cliente peut réessayer. */}
+            {/* Rejet : repasse en pending_payment (initial) ou awaiting_balance
+                (solde), la cliente peut réessayer. */}
             <button
               className="adm-btn-danger"
               onClick={onRejectPayment}
