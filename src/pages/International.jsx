@@ -381,7 +381,7 @@ export default function International() {
             </div>
             <div className="intlp-hero-badge">
               <span className="intlp-hero-badge-icon"></span>
-              <strong>15 jours max</strong>
+              <strong>10-15 jours</strong>
             </div>
             <div className="intlp-hero-badge">
               <span className="intlp-hero-badge-icon"></span>
@@ -471,7 +471,7 @@ export default function International() {
           <div className="intlp-section-eyebrow">DÉJÀ EN STOCK</div>
           <h2 className="intlp-section-title">Produits disponibles</h2>
           <p className="intlp-section-sub">
-            Importés sous 15 jours ou déjà arrivés à Dakar
+            Importés sous 10-15 jours ou déjà arrivés à Dakar
           </p>
         </div>
         {intlProductsLoading ? (
