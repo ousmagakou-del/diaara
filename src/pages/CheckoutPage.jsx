@@ -45,11 +45,13 @@ const DELIVERY_MODES = [
 // Le produit doit d abord etre importe (2-3 semaines), puis livre a Dakar.
 // Les modes today/express/standard sont masques dans ce cas — sinon promesse
 // mensongere de livraison en 30 min pour un produit qui arrive dans 3 semaines.
-function buildImportDeliveryMode(leadDays) {
+function buildImportDeliveryMode(/* leadDays */) {
+  // Libelle fixe 10-15 jours max (pas de variation selon lead_time_days du produit).
+  // Le user veut ce plafond fixe pour ne pas promettre plus long que necessaire.
   return {
     id: 'import',
     name: 'Import YARAM',
-    time: `${leadDays}-${leadDays + 7} jours`,
+    time: '10-15 jours',
     price: 1500,
     desc: 'Import international puis livraison Dakar',
   };

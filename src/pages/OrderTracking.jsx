@@ -8,8 +8,17 @@ import { formatArrivalDate } from '../lib/preorder';
 import SignedImage from '../components/SignedImage';
 import './OrderTracking.css';
 
-// Statuts autorisant l'annulation cote client
+// Statuts autorisant l'annulation cote client (commandes locales)
 const CANCELLABLE_STATUSES = new Set(['pending', 'pending_payment', 'confirmed', 'paid']);
+// Statuts autorisant l annulation d une commande import (preorder) : tant que
+// l admin n a pas expedie, le client peut annuler et se faire rembourser l acompte.
+const PREORDER_CANCELLABLE_STATUSES = new Set([
+  'paid',
+  'awaiting_supplier',
+  'in_transit_intl',
+  'arrived_local',
+  'awaiting_balance',
+]);
 // Statuts terminaux ou trop avances pour un signalement de type dispute
 const REPORTABLE_FALLBACK_WA = 'contactez-nous';
 
@@ -344,7 +353,31 @@ export default function OrderTracking({ orderId }) {
   const driverPhoneClean = tracking?.delivery_person_phone?.replace(/\D/g, '');
 
   // ─── Actions client (annuler / signaler) ───
-  const canCancel = order && CANCELLABLE_STATUSES.has(order.status);
+  const canCancel = order && !isPreorderOrder && CANCELLABLE_STATUSES.has(order.status);
+  // Preorder : le client peut annuler tant que l admin n a pas expedie.
+  const canCancelPreorder = order && isPreorderOrder && PREORDER_CANCELLABLE_STATUSES.has(order.status);
+
+  const handleCancelPreorder = async () => {
+    if (!order) return;
+    const ok = await confirmDialog(
+      'Es-tu sur ? Ton acompte sera rembourse sous 5 jours ouvrables sur le meme moyen de paiement.',
+      { confirmLabel: 'Annuler ma commande', cancelLabel: 'Retour', danger: true }
+    );
+    if (!ok) return;
+    try {
+      const { data, error } = await supabase.rpc('client_cancel_preorder', { p_order_id: order.id });
+      if (error) throw error;
+      if (data && data.success === false) {
+        throw new Error(data.error || 'cancel_failed');
+      }
+      toast.success('Commande annulee. Ton acompte sera rembourse sous 5 jours ouvrables.');
+      refresh(false);
+    } catch (e) {
+      console.warn('[OrderTracking] cancel preorder failed:', e?.message);
+      toast.error('Impossible d annuler pour le moment. Contacte-nous WhatsApp.');
+    }
+  };
+
   const handleCancelOrder = async () => {
     if (!order) return;
     const ok = await confirmDialog(
@@ -711,6 +744,20 @@ export default function OrderTracking({ orderId }) {
                 Annuler la commande
               </button>
             )}
+            {canCancelPreorder && (
+              <button
+                type="button"
+                className="track-action-btn track-action-danger"
+                onClick={handleCancelPreorder}
+              >
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="15" y1="9" x2="9" y2="15"/>
+                  <line x1="9" y1="9" x2="15" y2="15"/>
+                </svg>
+                Annuler ma commande
+              </button>
+            )}
             <button
               type="button"
               className="track-action-btn track-action-ghost"
@@ -811,10 +858,17 @@ function BottomCTA({ order, onRate, navigate }) {
   const isAwaitingBalance = order.status === 'awaiting_balance';
 
   if (isAwaitingBalance) {
+    const balanceAmount = Number(order.balance_amount || 0);
+    const balanceLabel = balanceAmount > 0
+      ? `Payer le solde (${balanceAmount.toLocaleString('fr-FR')} FCFA)`
+      : 'Payer le solde';
     return (
       <div className="track-bottom">
-        <button className="track-cta track-cta-warn" onClick={() => navigate('/checkout?balance=' + order.id)}>
-           Régler le solde
+        <button
+          className="track-cta track-cta-warn"
+          onClick={() => navigate({ name: 'payment', params: { orderId: order.id, mode: 'balance' } })}
+        >
+          {balanceLabel}
         </button>
       </div>
     );

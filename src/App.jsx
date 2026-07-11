@@ -928,7 +928,7 @@ function ClientApp() {
     case 'brand': page = <BrandPage />; break;
     case 'brand_detail': page = <BrandPage />; break;
     case 'sign': page = <SignPage />; break;
-    case 'payment': page = <Payment orderId={route.params.orderId} />; break;
+    case 'payment': page = <Payment orderId={route.params.orderId} mode={route.params.mode} />; break;
     case 'order_tracking': page = <OrderTracking orderId={route.params.orderId} />; break;
     case 'orders': page = <Orders />; break;
     case 'profile': page = <Profile />; break;

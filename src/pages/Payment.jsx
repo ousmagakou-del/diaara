@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNav, useUser } from '../App';
 import { supabase, updateOrderStatus } from '../lib/supabase';
 import { sendEmail, sendOrderEmail, sendOrderConfirmation, sendPaymentReceived } from '../lib/emails';
@@ -39,7 +39,7 @@ const OM_LOGO   = 'https://qxhhnrnworwrnwmqekmb.supabase.co/storage/v1/object/pu
 // → ouvre directement l'app Wave avec le montant prefilé.
 const WAVE_MERCHANT_ID = 'M_sn_1n3_7fYSI-Io';
 
-export default function Payment({ orderId }) {
+export default function Payment({ orderId, mode }) {
   const { navigate } = useNav();
   const { user } = useUser();
   const [order, setOrder] = useState(null);
@@ -48,6 +48,17 @@ export default function Payment({ orderId }) {
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(null); // 'number' | 'amount' | 'ref'
   const [creatingPayTech, setCreatingPayTech] = useState(false);
+
+  // ─── Mode balance : le client paye les 50% restants d une commande import
+  // deja arrivee a Dakar. On lit d abord la prop, puis en fallback le query
+  // param `?mode=balance` (permet un deep-link direct) ───
+  const isBalanceMode = useMemo(() => {
+    if (mode === 'balance') return true;
+    try {
+      const sp = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+      return sp.get('mode') === 'balance';
+    } catch { return false; }
+  }, [mode]);
 
   useEffect(() => {
     let cancelled = false;
@@ -89,8 +100,16 @@ export default function Payment({ orderId }) {
       toast.error('Attends une seconde, la commande charge encore…');
       return;
     }
-    // ─── GUARD : order deja avancee → navigate direct (cas refresh apres click) ───
-    if (order.status && !['pending_payment', 'pending'].includes(order.status)) {
+    // ─── GUARD : order deja avancee ───
+    // Cas paiement initial : si l order n est plus pending_payment/pending -> deja confirme.
+    // Cas balance : si l order n est plus awaiting_balance -> solde deja regle ou deja verifie.
+    if (isBalanceMode) {
+      if (order.status && order.status !== 'awaiting_balance') {
+        toast.success('Solde deja regle — on te redirige vers le suivi');
+        navigate({ name: 'order_tracking', params: { orderId } });
+        return;
+      }
+    } else if (order.status && !['pending_payment', 'pending'].includes(order.status)) {
       toast.success('Paiement deja confirme — on te redirige vers le suivi');
       navigate({ name: 'order_tracking', params: { orderId } });
       return;
@@ -130,10 +149,27 @@ export default function Payment({ orderId }) {
       // "J'ai payé" → si on flippait direct en 'paid', il aurait la livraison.
       // Pour COD (cash livraison), on garde le flux actuel : pas de paiement
       // amont à vérifier, on passe en 'paid' (sera vérifié à la livraison).
-      const targetStatus = order?.payment_method === 'cod' ? 'paid' : 'awaiting_verification';
+      // ─── MODE BALANCE ───
+      // Import 50% deja verse a la commande, le user regle le solde a l arrivee.
+      // On appelle une RPC dediee qui verifie que status='awaiting_balance' et
+      // bascule vers 'awaiting_verification' avec balance_paid_at=now(). L admin
+      // valide ensuite -> 'ready' -> 'shipped'.
+      const targetStatus = isBalanceMode
+        ? 'awaiting_verification'
+        : (order?.payment_method === 'cod' ? 'paid' : 'awaiting_verification');
 
       const callWithTimeout = () => {
-        const p = updateOrderStatus(orderId, targetStatus);
+        const p = isBalanceMode
+          ? supabase
+              .rpc('client_mark_balance_paid', { p_order_id: orderId })
+              .then(({ data, error }) => {
+                if (error) return { error };
+                if (data && data.success === false) {
+                  return { error: { message: data.error || 'balance_payment_failed' } };
+                }
+                return { data };
+              })
+          : updateOrderStatus(orderId, targetStatus);
         const t = new Promise((_, reject) =>
           setTimeout(() => reject(new Error('timeout')), UPDATE_TIMEOUT_MS)
         );
@@ -162,8 +198,14 @@ export default function Payment({ orderId }) {
         // status reel cote serveur avant de claim "echec". ───
         try {
           const { data: refreshed } = await supabase.rpc('client_get_order_by_id', { p_order_id: orderId });
-          if (refreshed && refreshed.status && !['pending_payment', 'pending'].includes(refreshed.status)) {
-            // Le serveur a bien mis a jour, c'est juste le reseau qui rame. On continue.
+          // Balance : succes si status != 'awaiting_balance' apres la RPC.
+          // Paiement initial : succes si status quitte pending_payment/pending.
+          const serverAdvanced = refreshed?.status && (
+            isBalanceMode
+              ? refreshed.status !== 'awaiting_balance'
+              : !['pending_payment', 'pending'].includes(refreshed.status)
+          );
+          if (serverAdvanced) {
             console.info('[Payment] timeout side, but server already updated to', refreshed.status);
             result = { data: { success: true, new_status: refreshed.status } };
             lastErr = null;
@@ -188,10 +230,10 @@ export default function Payment({ orderId }) {
         if (msg.includes('not_authenticated')) {
           throw new Error('Ta session a expire. Reconnecte-toi et reessaie.');
         }
-        if (msg.includes('order_not_pending')) {
+        if (msg.includes('order_not_pending') || msg.includes('not_awaiting_balance')) {
           // Cas le plus frequent du "plante" : 2e clic du user, l'order est
           // deja passee en awaiting_verification → on redirige proprement.
-          toast.success('Paiement deja enregistre, redirection…');
+          toast.success(isBalanceMode ? 'Solde deja enregistre, redirection…' : 'Paiement deja enregistre, redirection…');
           navigate({ name: 'order_tracking', params: { orderId } });
           return;
         }
@@ -206,9 +248,11 @@ export default function Payment({ orderId }) {
 
       // ─── 2. Navigation immédiate vers le tracking ───
       toast.success(
-        targetStatus === 'awaiting_verification'
-          ? 'Merci ! On vérifie ton paiement, livraison déclenchée dès confirmation.'
-          : 'Paiement confirmé'
+        isBalanceMode
+          ? 'Merci ! On verifie ton solde, expedition declenchee des confirmation.'
+          : (targetStatus === 'awaiting_verification'
+              ? 'Merci ! On vérifie ton paiement, livraison déclenchée dès confirmation.'
+              : 'Paiement confirmé')
       );
       // ─── ANALYTICS : payment_succeeded (status 'paid' COD ou awaiting_verification autres) ───
       try {
@@ -223,9 +267,14 @@ export default function Payment({ orderId }) {
       navigate({ name: 'order_tracking', params: { orderId } });
 
       // ─── 3. Notifs post-paiement FIRE-AND-FORGET ───
-      runPostPaidNotifications({ orderId, order, user }).catch(e => {
-        console.warn('[Payment] post-paid notifs swallowed error:', e?.message);
-      });
+      // En mode balance : pas d envoi de "nouvelle commande" au pharmacien
+      // (deja fait au moment de l acompte). L admin recevra la notif via son
+      // dashboard (order en awaiting_verification avec balance_paid_at set).
+      if (!isBalanceMode) {
+        runPostPaidNotifications({ orderId, order, user }).catch(e => {
+          console.warn('[Payment] post-paid notifs swallowed error:', e?.message);
+        });
+      }
     } catch (e) {
       console.error('[Payment] handlePay error:', e);
       // ─── ANALYTICS : payment_failed ───
@@ -322,9 +371,12 @@ export default function Payment({ orderId }) {
     try {
       // Pour preorder : on charge SEULEMENT l'acompte (50%) maintenant,
       // pas le total. Le solde sera demandé à l'arrivée de l'import.
-      const chargeAmount = order.is_preorder && order.deposit_amount
-        ? Number(order.deposit_amount)
-        : Number(order.total);
+      // Mode balance : on charge le solde 50%.
+      const chargeAmount = isBalanceMode
+        ? Number(order.balance_amount || 0)
+        : (order.is_preorder && order.deposit_amount
+            ? Number(order.deposit_amount)
+            : Number(order.total));
 
       const { data, error: fnErr } = await supabase.functions.invoke('paytech-create-payment', {
         body: {
@@ -428,7 +480,11 @@ export default function Payment({ orderId }) {
 
   const yaramNumberDisplay = getWhatsAppDisplay();     // "+221 77 760 89 83"
   const yaramNumberRaw     = getWhatsAppNumber();       // "221777608983"
-  const amountStr          = Number(order.total || 0).toLocaleString('fr-FR');
+  // Mode balance : on facture uniquement le solde (50% restant). Sinon total.
+  const rawAmount          = isBalanceMode
+    ? Number(order.balance_amount || 0)
+    : Number(order.total || 0);
+  const amountStr          = rawAmount.toLocaleString('fr-FR');
   // ─── Methodes alignees sur l app native : wave / cod / om uniquement ───
   const isWave             = order.payment_method === 'wave';
   const isOM               = order.payment_method === 'om';
@@ -447,7 +503,7 @@ export default function Payment({ orderId }) {
 
   return (
     <div className="pay-screen page-anim">
-      <BackHeader title="Paiement" onBack={() => navigate('/orders')} />
+      <BackHeader title={isBalanceMode ? 'Paiement du solde' : 'Paiement'} onBack={() => navigate('/orders')} />
       <div className="pay-content">
         <div className="pay-grid">
           {/* ═══════════════ LEFT : méthode + instructions ═══════════════ */}
@@ -474,9 +530,14 @@ export default function Payment({ orderId }) {
           )}
         </div>
 
-        <h1>Confirme le paiement</h1>
+        <h1>{isBalanceMode ? 'Paiement du solde' : 'Confirme le paiement'}</h1>
         <div className="pay-order-id">Commande {order.id}</div>
         <div className="pay-amount">{amountStr} <small>FCFA</small></div>
+        {isBalanceMode && (
+          <div className="pay-order-id" style={{ marginTop: 4 }}>
+            Solde 50% de ta commande import
+          </div>
+        )}
 
         {/* ─── WAVE : carte verte avec action bouton + copy ─── */}
         {isWave && (
@@ -491,7 +552,7 @@ export default function Payment({ orderId }) {
 
             <div className="pay-row" style={{ marginTop: 14 }}>
               <span className="pay-label"> Montant</span>
-              <button className="pay-copy-btn" onClick={() => copyToClipboard(String(order.total), 'amount')}>
+              <button className="pay-copy-btn" onClick={() => copyToClipboard(String(rawAmount), 'amount')}>
                 {copied === 'amount' ? '✓ Copié' : 'Copier'}
               </button>
             </div>
@@ -507,7 +568,7 @@ export default function Payment({ orderId }) {
 
             {/* Action principale : ouvrir Wave directement */}
             <a
-              href={`https://pay.wave.com/m/${WAVE_MERCHANT_ID}/c/sn?amount=${order.total}`}
+              href={`https://pay.wave.com/m/${WAVE_MERCHANT_ID}/c/sn?amount=${rawAmount}`}
               target="_blank"
               rel="noopener noreferrer"
               className="pay-action-wave"
@@ -527,10 +588,10 @@ export default function Payment({ orderId }) {
               <span>Compose le code suivant sur ton téléphone</span>
             </div>
             <a
-              href={`tel:%23144%2A8%2A1%2A${order.total}%23`}
+              href={`tel:%23144%2A8%2A1%2A${rawAmount}%23`}
               className="pay-ussd-btn"
             >
-              <span style={{ fontSize: 18 }}>#144*8*1*{order.total}#</span>
+              <span style={{ fontSize: 18 }}>#144*8*1*{rawAmount}#</span>
               <span style={{ fontSize: 12, opacity: 0.85, marginTop: 2 }}>Tap pour composer →</span>
             </a>
 
@@ -574,7 +635,7 @@ export default function Payment({ orderId }) {
           disabled={paying}
           style={{ marginTop: 14 }}
         >
-          {paying ? 'Confirmation…' : isCOD ? "C'est noté →" : "J'ai payé →"}
+          {paying ? 'Confirmation…' : isBalanceMode ? "J'ai regle le solde →" : isCOD ? "C'est noté →" : "J'ai payé →"}
         </button>
 
         {/* ─── Lien support WhatsApp ─── */}
@@ -634,10 +695,20 @@ export default function Payment({ orderId }) {
                   </div>
                 )}
                 <div className="pay-summary-row pay-summary-grand">
-                  <span>{isPreorder && depositAmount > 0 ? 'Acompte à payer' : 'Total à payer'}</span>
+                  <span>
+                    {isBalanceMode
+                      ? 'Solde a payer'
+                      : (isPreorder && depositAmount > 0 ? 'Acompte à payer' : 'Total à payer')}
+                  </span>
                   <strong>{amountStr} FCFA</strong>
                 </div>
-                {isPreorder && depositAmount > 0 && Number(order.total) !== depositAmount && (
+                {isBalanceMode && Number(order.deposit_amount) > 0 && (
+                  <div className="pay-summary-row pay-summary-note">
+                    <span>Acompte deja verse</span>
+                    <strong>{Number(order.deposit_amount).toLocaleString('fr-FR')} FCFA</strong>
+                  </div>
+                )}
+                {!isBalanceMode && isPreorder && depositAmount > 0 && Number(order.total) !== depositAmount && (
                   <div className="pay-summary-row pay-summary-note">
                     <span>Solde restant (à l'arrivée)</span>
                     <strong>{(Number(order.total) - depositAmount).toLocaleString('fr-FR')} FCFA</strong>
@@ -662,7 +733,7 @@ export default function Payment({ orderId }) {
       <div className="pay-mobile-bar">
         <div className="pay-mobile-bar-info">
           <span className="pay-mobile-bar-label">
-            {isPreorder && depositAmount > 0 ? 'Acompte' : 'Total'}
+            {isBalanceMode ? 'Solde' : (isPreorder && depositAmount > 0 ? 'Acompte' : 'Total')}
           </span>
           <span className="pay-mobile-bar-total">{amountStr} FCFA</span>
         </div>
@@ -671,7 +742,7 @@ export default function Payment({ orderId }) {
           onClick={handlePay}
           disabled={paying}
         >
-          {paying ? 'Confirmation…' : isCOD ? "C'est noté →" : "J'ai payé →"}
+          {paying ? 'Confirmation…' : isBalanceMode ? "J'ai regle le solde →" : isCOD ? "C'est noté →" : "J'ai payé →"}
         </button>
       </div>
     </div>
