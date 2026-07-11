@@ -972,3 +972,344 @@
   outline-offset: 3px;
   border-radius: var(--y-rad-md);
 }
+
+/* ═══════════════════════════════════════════════
+ * DASHBOARD PREMIUM
+ * KPI + chart + top sellers + stock alerts + benchmark
+ * ═══════════════════════════════════════════════ */
+.phar-dashboard-premium {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.phar-kpi-unit {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--y-n-500);
+}
+.phar-kpi-highlight {
+  background: linear-gradient(135deg, var(--y-brand) 0%, var(--y-brand-dark) 100%);
+  color: white;
+  border-color: transparent;
+}
+.phar-kpi-highlight .phar-kpi-label,
+.phar-kpi-highlight .phar-kpi-value,
+.phar-kpi-highlight .phar-kpi-meta,
+.phar-kpi-highlight .phar-kpi-unit {
+  color: white;
+}
+.phar-kpi-highlight .phar-kpi-label { opacity: 0.85; }
+.phar-kpi-highlight .phar-kpi-meta { opacity: 0.85; }
+.phar-kpi-highlight .phar-kpi-unit { opacity: 0.8; }
+
+.phar-card {
+  background: white;
+  border: 1px solid var(--y-n-200);
+  border-radius: var(--y-rad-xl);
+  padding: 18px;
+}
+.phar-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.phar-card-head h3 {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--y-n-900);
+  margin: 0;
+}
+.phar-card-sub {
+  font-size: 11px;
+  color: var(--y-n-500);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.phar-chart-card { padding: 18px 20px 12px; }
+.phar-chart-svg {
+  width: 100%;
+  height: 240px;
+  display: block;
+}
+.phar-chart-empty {
+  padding: 32px 12px;
+  text-align: center;
+  color: var(--y-n-500);
+  font-size: 13px;
+}
+
+.phar-empty-inline {
+  padding: 22px 12px;
+  text-align: center;
+  color: var(--y-n-500);
+  font-size: 13px;
+}
+
+.phar-two-col {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 900px) {
+  .phar-two-col { grid-template-columns: 1fr; }
+}
+
+/* Top Sellers */
+.phar-top-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.phar-top-list li {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--y-n-200);
+  border-radius: var(--y-rad-md);
+  background: var(--y-n-100);
+}
+.phar-top-rank {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--y-brand);
+  color: white;
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.phar-top-info { display: flex; flex-direction: column; }
+.phar-top-info strong { font-size: 13px; color: var(--y-n-900); font-weight: 700; }
+.phar-top-info span { font-size: 11px; color: var(--y-n-600); }
+.phar-top-rev {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--y-n-900);
+  white-space: nowrap;
+}
+
+/* Benchmark */
+.phar-benchmark-card { display: flex; flex-direction: column; gap: 12px; }
+.phar-bench-hero {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--y-n-100);
+  border-radius: var(--y-rad-md);
+}
+.phar-bench-badge {
+  padding: 8px 12px;
+  border-radius: var(--y-rad-md);
+  font-size: 18px;
+  font-weight: 800;
+  color: white;
+  white-space: nowrap;
+}
+.phar-bench-badge.positive { background: var(--y-success, #16a34a); }
+.phar-bench-badge.negative { background: var(--y-danger, #dc2626); }
+.phar-bench-hero p { font-size: 12px; color: var(--y-n-700); margin: 0; }
+.phar-bench-neutral { font-size: 12px; color: var(--y-n-500); }
+.phar-bench-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.phar-bench-rows > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--y-n-50, #fafafa);
+  border-radius: var(--y-rad-sm, 6px);
+  font-size: 12px;
+}
+.phar-bench-rows span { color: var(--y-n-600); }
+.phar-bench-rows strong { color: var(--y-n-900); font-weight: 700; }
+.phar-bench-rank {
+  padding: 12px;
+  background: linear-gradient(135deg, var(--y-brand) 0%, var(--y-brand-dark) 100%);
+  color: white;
+  border-radius: var(--y-rad-md);
+  text-align: center;
+}
+.phar-bench-rank strong { font-size: 18px; font-weight: 800; display: block; }
+.phar-bench-rank span { font-size: 11px; opacity: 0.85; }
+
+/* Stock alerts */
+.phar-alert-list, .phar-reorder-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.phar-alert-row, .phar-reorder-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--y-n-200);
+  border-left: 3px solid var(--y-n-300);
+  border-radius: var(--y-rad-md);
+  background: white;
+}
+.phar-alert-row.phar-alert-out_of_stock,
+.phar-reorder-row.phar-reorder-out_of_stock {
+  border-left-color: var(--y-danger, #dc2626);
+  background: linear-gradient(90deg, rgba(220,38,38,0.05) 0%, white 60%);
+}
+.phar-alert-row.phar-alert-low_stock,
+.phar-reorder-row.phar-reorder-urgent {
+  border-left-color: #f59e0b;
+  background: linear-gradient(90deg, rgba(245,158,11,0.05) 0%, white 60%);
+}
+.phar-reorder-row.phar-reorder-soon { border-left-color: #3b82f6; }
+.phar-reorder-row.phar-reorder-ok   { border-left-color: var(--y-brand); }
+
+.phar-alert-info, .phar-reorder-info { flex: 1; display: flex; flex-direction: column; }
+.phar-alert-info strong, .phar-reorder-info strong {
+  font-size: 13px;
+  color: var(--y-n-900);
+  font-weight: 700;
+}
+.phar-alert-info span, .phar-reorder-info span {
+  font-size: 11px;
+  color: var(--y-n-600);
+}
+.phar-alert-side, .phar-reorder-side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.phar-reorder-qty {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--y-n-900);
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--y-n-100);
+  white-space: nowrap;
+}
+
+.phar-badge {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: white;
+  white-space: nowrap;
+}
+.phar-badge-out_of_stock { background: var(--y-danger, #dc2626); }
+.phar-badge-low_stock    { background: #f59e0b; }
+
+.phar-btn-ghost-sm {
+  padding: 6px 10px;
+  border-radius: var(--y-rad-md);
+  border: 1px solid var(--y-n-300);
+  background: white;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--y-n-800);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.phar-btn-ghost-sm:hover { border-color: var(--y-brand); color: var(--y-brand); }
+
+.phar-btn-ghost {
+  padding: 10px 14px;
+  border-radius: var(--y-rad-md);
+  border: 1px solid var(--y-n-300);
+  background: white;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--y-n-800);
+  cursor: pointer;
+}
+.phar-btn-primary {
+  padding: 10px 14px;
+  border-radius: var(--y-rad-md);
+  border: none;
+  background: var(--y-brand);
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.phar-btn-primary:hover { background: var(--y-brand-dark); }
+
+/* Modal reorder */
+.phar-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+  padding: 20px;
+}
+.phar-modal {
+  background: white;
+  border-radius: var(--y-rad-xl);
+  padding: 22px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 20px 60px rgba(15,23,42,0.25);
+}
+.phar-modal h3 { font-size: 16px; font-weight: 800; margin: 0 0 4px; color: var(--y-n-900); }
+.phar-modal-sub { font-size: 13px; color: var(--y-n-600); margin: 0 0 14px; }
+.phar-modal-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--y-n-100);
+  border-radius: var(--y-rad-sm, 6px);
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+.phar-modal-row strong { color: var(--y-n-900); }
+.phar-modal-label {
+  display: block;
+  margin: 12px 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--y-n-700);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.phar-modal-input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--y-n-300);
+  border-radius: var(--y-rad-md);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--y-n-900);
+}
+.phar-modal-hint {
+  font-size: 11px;
+  color: var(--y-n-500);
+  margin-top: 8px;
+}
+.phar-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+}

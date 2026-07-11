@@ -194,3 +194,51 @@ export async function getPharmacyStats(pharmacyId) {
     activeProductsCount: products?.length || 0,
   };
 }
+
+// ═══════════════════════════════════════════════
+// DASHBOARD PREMIUM — KPI / TOP SELLERS / STOCK / BENCHMARK
+// (5 RPCs SECURITY DEFINER : voir migration pharmacy_dashboard_analytics)
+// ═══════════════════════════════════════════════
+
+export async function getPharmacyDashboardKpi() {
+  const token = getPharmaToken();
+  if (!token) return null;
+  const { data, error } = await supabase.rpc('pharmacy_dashboard_kpi', { p_pharma_token: token });
+  if (error) { console.warn('[pharmacy_dashboard_kpi]', error.message); return null; }
+  return data || null;
+}
+
+export async function getPharmacyTopSellers(periodDays = 30) {
+  const token = getPharmaToken();
+  if (!token) return [];
+  const { data, error } = await supabase.rpc('pharmacy_top_sellers', {
+    p_pharma_token: token,
+    p_period_days: periodDays,
+  });
+  if (error) { console.warn('[pharmacy_top_sellers]', error.message); return []; }
+  return data || [];
+}
+
+export async function getPharmacyStockAlerts() {
+  const token = getPharmaToken();
+  if (!token) return [];
+  const { data, error } = await supabase.rpc('pharmacy_stock_alerts', { p_pharma_token: token });
+  if (error) { console.warn('[pharmacy_stock_alerts]', error.message); return []; }
+  return data || [];
+}
+
+export async function getPharmacyReorderSuggestions() {
+  const token = getPharmaToken();
+  if (!token) return [];
+  const { data, error } = await supabase.rpc('pharmacy_reorder_suggestions', { p_pharma_token: token });
+  if (error) { console.warn('[pharmacy_reorder_suggestions]', error.message); return []; }
+  return data || [];
+}
+
+export async function getPharmacyBenchmark() {
+  const token = getPharmaToken();
+  if (!token) return null;
+  const { data, error } = await supabase.rpc('pharmacy_benchmark', { p_pharma_token: token });
+  if (error) { console.warn('[pharmacy_benchmark]', error.message); return null; }
+  return data || null;
+}
