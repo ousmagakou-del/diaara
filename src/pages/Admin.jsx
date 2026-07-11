@@ -42,6 +42,7 @@ const RoutinesSection            = lazy(() => import('../admin/RoutinesSection')
 const BundlesSection             = lazy(() => import('../admin/BundlesSection'));
 const SubscriptionsSection       = lazy(() => import('../admin/SubscriptionsSection'));
 const SupportSection             = lazy(() => import('../admin/SupportSection'));
+const SupportChatSection         = lazy(() => import('../admin/SupportChatSection'));
 const ProductReviewsSection      = lazy(() => import('../admin/ProductReviewsSection'));
 const CounterfeitSection         = lazy(() => import('../admin/CounterfeitSection'));
 const VerifyRequestsSection      = lazy(() => import('../admin/VerifyRequestsSection'));
@@ -54,6 +55,7 @@ const RgpdExportsSection         = lazy(() => import('../admin/RgpdExportsSectio
 const SignaturesSection          = lazy(() => import('../admin/SignaturesSection'));
 const PartnerApplicationsSection = lazy(() => import('../admin/PartnerApplicationsSection'));
 const DriverApplicationsSection  = lazy(() => import('../admin/DriverApplicationsSection'));
+const OnboardingReviewSection    = lazy(() => import('../admin/OnboardingReviewSection'));
 
 import './Admin.css';
 
@@ -110,6 +112,7 @@ const NAV = [
   { id: 'counterfeit', icon: '🚨', label: 'Contrefaçons', badge: true, roles: ROLES_ALL },
   { id: 'users',       icon: '👥', label: 'Utilisatrices', roles: ROLES_ALL_PLUS_COMMERCIAL },
   { id: 'support',     icon: '🆘', label: 'Tickets support', badge: true, roles: ROLES_ALL },
+  { id: 'support_chat',icon: '', label: 'Chat live in-app', badge: true, roles: ROLES_ALL },
   { id: 'verify',      icon: '🔍', label: 'Vérifications Tier 3', roles: ROLES_ALL },
   { id: 'rgpd',        icon: '📥', label: 'Demandes RGPD', badge: true, roles: ROLES_ALL },
   { id: 'deliveries',  icon: '🛵', label: 'Livraisons', roles: ROLES_ALL },
@@ -121,6 +124,7 @@ const NAV = [
   { id: 'signatures',  icon: '', label: 'Signatures contrats', roles: ROLES_ALL_PLUS_COMMERCIAL },
   { id: 'partner_apps', icon: '', label: 'Candidatures partenaires', badge: true, roles: ROLES_ALL_PLUS_COMMERCIAL },
   { id: 'driver_apps',  icon: '', label: 'Candidatures livreurs',   badge: true, roles: ROLES_ALL_PLUS_COMMERCIAL },
+  { id: 'merchant_onboarding', icon: '', label: 'Onboarding partenaires', badge: true, roles: ROLES_ALL_PLUS_COMMERCIAL },
   { id: 'settings',    icon: '⚙️', label: 'Paramètres', roles: ['super_admin'] },
   { id: 'adminusers',  icon: '👥', label: 'Gestion admins', roles: ['super_admin'] },
   { id: 'adminlogs',   icon: '📜', label: 'Logs activité', roles: ['super_admin'] },
@@ -504,6 +508,7 @@ export default function Admin() {
           {section === 'bundles'              && <BundlesSection />}
           {section === 'subscriptions'        && <SubscriptionsSection />}
           {section === 'support'              && <SupportSection />}
+          {section === 'support_chat'         && <SupportChatSection />}
           {section === 'product_reviews'      && <ProductReviewsSection />}
           {section === 'qa_moderation'        && <QAModerationSection />}
           {section === 'counterfeit'          && <CounterfeitSection />}
@@ -516,6 +521,7 @@ export default function Admin() {
           {section === 'signatures'           && <SignaturesSection />}
           {section === 'partner_apps'         && <PartnerApplicationsSection />}
           {section === 'driver_apps'          && <DriverApplicationsSection />}
+          {section === 'merchant_onboarding'  && <OnboardingReviewSection />}
               </>
             );
           })()}

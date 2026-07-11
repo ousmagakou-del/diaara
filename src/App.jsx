@@ -17,6 +17,7 @@ import OpenInAppBanner from './components/OpenInAppBanner';
 // import WhatsAppButton from './components/WhatsAppButton';
 import Toaster from './components/Toaster';
 import InterstitialPromo from './components/InterstitialPromo';
+const SupportChatWidget = lazy(() => import('./components/SupportChatWidget'));
 import { getNextPromo, computeUserStats } from './lib/promos';
 import NetworkStatus from './components/NetworkStatus';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -79,6 +80,7 @@ const Subscriptions      = lazy(() => import('./pages/Subscriptions'));
 const BlogHome           = lazy(() => import('./pages/BlogHome'));
 const BlogArticle        = lazy(() => import('./pages/BlogArticle'));
 const BlogCategory       = lazy(() => import('./pages/BlogCategory'));
+const MerchantOnboarding = lazy(() => import('./pages/MerchantOnboarding'));
 
 // ════════════════════════════════════════════════════════════════
 //  FIX juin 2026 #8 — LazyFallback FULL SCREEN (CAUSE RACINE BLANCHE)
@@ -139,6 +141,7 @@ function routeToPath(route) {
     case 'brand': return `/brand/${params.id}`;
     case 'brand_detail': return `/brand/${params.id}`;
     case 'pharmacy_detail': return `/pharmacy/${params.id}`;
+    case 'merchant_onboarding': return `/merchant/onboarding/${params.applicationId}`;
     case 'order_tracking': return `/order/${params.orderId}`;
     case 'scan_result': return `/scan/result/${params.scanId}`;
     case 'payment': return `/payment/${params.orderId}`;
@@ -173,6 +176,9 @@ function pathToRoute(pathname, search = '') {
   if (parts[0] === 'bundle' && parts[1]) return { name: 'bundle', params: { slug: parts[1] } };
   if (parts[0] === 'brand' && parts[1]) return { name: 'brand', params: { id: parts[1] } };
   if (parts[0] === 'sign' && parts[1]) return { name: 'sign', params: { token: parts[1] } };
+  if (parts[0] === 'merchant' && parts[1] === 'onboarding' && parts[2]) {
+    return { name: 'merchant_onboarding', params: { applicationId: parts[2] } };
+  }
   if (parts[0] === 'pharmacy' && parts[1]) return { name: 'pharmacy_detail', params: { id: parts[1] } };
   if (parts[0] === 'order' && parts[1]) return { name: 'order_tracking', params: { orderId: parts[1] } };
   if (parts[0] === 'scan' && parts[1] === 'result' && parts[2]) return { name: 'scan_result', params: { scanId: parts[2] } };
@@ -927,6 +933,25 @@ function ClientApp() {
     );
   }
 
+  // ─── Route publique merchant onboarding (bypass auth gate) ─────
+  // Pharmacie qui suit son onboarding sans compte YARAM.
+  if (route.name === 'merchant_onboarding') {
+    return (
+      <NavContext.Provider value={{ navigate, goBack, route }}>
+        <UserContext.Provider value={{ user, refreshUser }}>
+          <div className="app-shell app-shell--site">
+            <ErrorBoundary key="merchant-onboarding-eb">
+              <Suspense fallback={<LazyFallback />}>
+                <MerchantOnboarding applicationId={route.params?.applicationId} />
+              </Suspense>
+            </ErrorBoundary>
+          </div>
+          <Toaster />
+        </UserContext.Provider>
+      </NavContext.Provider>
+    );
+  }
+
   // ─── Blog SEO : route publique (bypass onboarding + skin quiz) ───
   // Un lecteur qui arrive de Google sur /blog/xxx doit voir l article
   // directement, sans onboarding forcé.
@@ -1085,6 +1110,7 @@ function ClientApp() {
         </div>
         <NetworkStatus />
         <Toaster />
+        <Suspense fallback={null}><SupportChatWidget /></Suspense>
         {activePromo && (
           <InterstitialPromo
             promo={activePromo}
