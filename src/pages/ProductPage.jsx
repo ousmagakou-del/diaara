@@ -30,6 +30,17 @@ import {
   createReview,
   uploadReviewPhoto,
   isSafeReviewPhotoUrl,
+  getFrequentlyBoughtWith,
+  getBundlesContainingProduct,
+  subscribePriceDrop,
+  unsubscribePriceDrop,
+  subscribeRestock,
+  unsubscribeRestock,
+  getAlertSubscriptions,
+  getProductQuestions,
+  askProductQuestion,
+  answerProductQuestion,
+  voteOnQA,
 } from '../lib/supabase';
 import { addToCart } from '../lib/cart';
 import { getWhatsAppNumber } from '../lib/utils';
@@ -152,6 +163,12 @@ const Icon = {
   Info: ({ size = 14 }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+    </svg>
+  ),
+  Bell: ({ size = 16, filled = false }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
+      <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
     </svg>
   ),
 };
@@ -295,8 +312,44 @@ export default function ProductPage() {
   // Bundle "souvent achete ensemble"
   const [bundleSel, setBundleSel] = useState(new Set());
 
+  // Cross-sell + bundles pre-composes contenant ce produit
+  const [fbwProducts, setFbwProducts] = useState([]);
+  const [containingBundles, setContainingBundles] = useState([]);
+
   // Wishlist picker (multi-listes + partage)
   const [pickerOpen, setPickerOpen] = useState(false);
+
+  // Push intelligentes : price drop + restock
+  const [alertSubs, setAlertSubs] = useState({
+    priceDropSubscribed: false,
+    priceDropThreshold: 10,
+    restockSubscribed: false,
+  });
+  const [priceDropModalOpen, setPriceDropModalOpen] = useState(false);
+  const [pendingThreshold, setPendingThreshold] = useState(10);
+  const [alertBusy, setAlertBusy] = useState(false);
+
+  // ─── Q&A publique ─────────────────────────────────────────────
+  const [qaList, setQaList] = useState([]);
+  const [qaLoading, setQaLoading] = useState(true);
+  const [qaAskOpen, setQaAskOpen] = useState(false);
+  const [qaAskText, setQaAskText] = useState('');
+  const [qaAskBusy, setQaAskBusy] = useState(false);
+  const [qaAskError, setQaAskError] = useState('');
+  const [qaAnsOpenId, setQaAnsOpenId] = useState(null);
+  const [qaAnsText, setQaAnsText] = useState('');
+  const [qaAnsBusy, setQaAnsBusy] = useState(false);
+  const [qaExpandedIds, setQaExpandedIds] = useState(new Set());
+
+  const refreshQA = useCallback(async () => {
+    if (!id) return;
+    try {
+      const list = await getProductQuestions(id, 20);
+      setQaList(Array.isArray(list) ? list : []);
+    } catch (e) {
+      console.warn('[refreshQA]', e?.message);
+    }
+  }, [id]);
 
   // ─── Load data ────────────────────────────────────────────────
   useEffect(() => {
@@ -310,7 +363,27 @@ export default function ProductPage() {
     setQty(1);
     setReviewLimit(4);
     setBundleSel(new Set());
+    setFbwProducts([]);
+    setContainingBundles([]);
+    setQaLoading(true);
+    setQaList([]);
+    setQaExpandedIds(new Set());
     window.scrollTo(0, 0);
+
+    // Q&A (non-bloquant)
+    getProductQuestions(id, 20)
+      .then((list) => { setQaList(Array.isArray(list) ? list : []); })
+      .catch(() => {})
+      .finally(() => { setQaLoading(false); });
+
+    // Cross-sell + bundles pre-composes (non-bloquant, independant de la meta produit)
+    Promise.all([
+      getFrequentlyBoughtWith(id, 6).catch(() => []),
+      getBundlesContainingProduct(id).catch(() => []),
+    ]).then(([fbw, bundles]) => {
+      setFbwProducts(Array.isArray(fbw) ? fbw : []);
+      setContainingBundles(Array.isArray(bundles) ? bundles : []);
+    }).catch(() => {});
 
     Promise.allSettled([
       getProductById(id),
@@ -343,6 +416,151 @@ export default function ProductPage() {
       setRelatedLoading(false);
     });
   }, [id]);
+
+  // ─── Alert subscriptions (price drop + restock) ───────────────
+  useEffect(() => {
+    let cancelled = false;
+    if (!id) return () => { cancelled = true; };
+    if (!user?.id) {
+      setAlertSubs({ priceDropSubscribed: false, priceDropThreshold: 10, restockSubscribed: false });
+      return () => { cancelled = true; };
+    }
+    (async () => {
+      try {
+        const subs = await getAlertSubscriptions(id);
+        if (!cancelled) setAlertSubs(subs);
+      } catch (e) {
+        console.warn('[alertSubs]', e?.message);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [id, user?.id]);
+
+  const handleSubscribeRestock = useCallback(async () => {
+    if (!id) return;
+    if (!user) {
+      navigate('login');
+      return;
+    }
+    setAlertBusy(true);
+    try {
+      if (alertSubs.restockSubscribed) {
+        const r = await unsubscribeRestock(id);
+        if (r?.ok) setAlertSubs((s) => ({ ...s, restockSubscribed: false }));
+      } else {
+        const r = await subscribeRestock(id);
+        if (r?.ok) setAlertSubs((s) => ({ ...s, restockSubscribed: true }));
+      }
+    } finally {
+      setAlertBusy(false);
+    }
+  }, [id, user, alertSubs.restockSubscribed, navigate]);
+
+  const openPriceDropModal = useCallback(() => {
+    if (!user) {
+      navigate('login');
+      return;
+    }
+    setPendingThreshold(alertSubs.priceDropThreshold || 10);
+    setPriceDropModalOpen(true);
+  }, [user, alertSubs.priceDropThreshold, navigate]);
+
+  const handleConfirmPriceDrop = useCallback(async () => {
+    if (!id) return;
+    setAlertBusy(true);
+    try {
+      const r = await subscribePriceDrop(id, pendingThreshold);
+      if (r?.ok) {
+        setAlertSubs((s) => ({ ...s, priceDropSubscribed: true, priceDropThreshold: pendingThreshold }));
+        setPriceDropModalOpen(false);
+      }
+    } finally {
+      setAlertBusy(false);
+    }
+  }, [id, pendingThreshold]);
+
+  const handleUnsubscribePriceDrop = useCallback(async () => {
+    if (!id) return;
+    setAlertBusy(true);
+    try {
+      const r = await unsubscribePriceDrop(id);
+      if (r?.ok) {
+        setAlertSubs((s) => ({ ...s, priceDropSubscribed: false }));
+        setPriceDropModalOpen(false);
+      }
+    } finally {
+      setAlertBusy(false);
+    }
+  }, [id]);
+
+  // ─── Q&A handlers ─────────────────────────────────────────────
+  const handleAskQuestion = useCallback(async () => {
+    if (!user) { navigate('login'); return; }
+    setQaAskError('');
+    const q = qaAskText.trim();
+    if (q.length < 5) { setQaAskError('Ta question doit faire au moins 5 caracteres.'); return; }
+    setQaAskBusy(true);
+    try {
+      const r = await askProductQuestion(id, q);
+      if (r?.ok) {
+        setQaAskText('');
+        setQaAskOpen(false);
+        await refreshQA();
+      } else {
+        setQaAskError(r?.error || 'Impossible d envoyer la question.');
+      }
+    } finally {
+      setQaAskBusy(false);
+    }
+  }, [id, user, qaAskText, navigate, refreshQA]);
+
+  const handleAnswerQuestion = useCallback(async (questionId) => {
+    if (!user) { navigate('login'); return; }
+    const a = qaAnsText.trim();
+    if (a.length < 3) return;
+    setQaAnsBusy(true);
+    try {
+      const r = await answerProductQuestion(questionId, a);
+      if (r?.ok) {
+        setQaAnsText('');
+        setQaAnsOpenId(null);
+        await refreshQA();
+      }
+    } finally {
+      setQaAnsBusy(false);
+    }
+  }, [user, qaAnsText, navigate, refreshQA]);
+
+  const handleQAVote = useCallback(async (targetType, targetId, voteType) => {
+    if (!user) { navigate('login'); return; }
+    // Optimistic update
+    setQaList((prev) => prev.map((q) => {
+      if (targetType === 'question' && q.id === targetId) {
+        return { ...q, helpful_votes: (Number(q.helpful_votes) || 0) + (voteType === 'helpful' ? 1 : 0) };
+      }
+      if (targetType === 'answer') {
+        const answers = (q.answers || []).map((a) =>
+          a.id === targetId ? { ...a, helpful_votes: (Number(a.helpful_votes) || 0) + (voteType === 'helpful' ? 1 : 0) } : a
+        );
+        return { ...q, answers };
+      }
+      return q;
+    }));
+    try {
+      await voteOnQA(targetType, targetId, voteType);
+      await refreshQA();
+    } catch (e) {
+      console.warn('[handleQAVote]', e?.message);
+    }
+  }, [user, navigate, refreshQA]);
+
+  const toggleQaExpanded = useCallback((qId) => {
+    setQaExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(qId)) next.delete(qId); else next.add(qId);
+      return next;
+    });
+  }, []);
 
   // ─── Gallery images ───────────────────────────────────────────
   const images = useMemo(() => {
@@ -846,6 +1064,57 @@ export default function ProductPage() {
                 </div>
               )}
 
+              {/* Restock alert : visible uniquement si stock=0 */}
+              {stockState?.cls === 'out' && (
+                <button
+                  type="button"
+                  className="pp-btn-buy-now"
+                  onClick={handleSubscribeRestock}
+                  disabled={alertBusy}
+                  style={{
+                    background: alertSubs.restockSubscribed ? '#1F8B4C' : '#111',
+                    color: '#fff',
+                    marginTop: 8,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                  }}
+                >
+                  <Icon.Bell size={16} filled={alertSubs.restockSubscribed} />
+                  <span>
+                    {alertSubs.restockSubscribed
+                      ? 'Alerte activee - on te previent'
+                      : 'Prevenez-moi quand disponible'}
+                  </span>
+                </button>
+              )}
+
+              {/* Bell : alerte baisse de prix — dispo sur toute fiche */}
+              <button
+                type="button"
+                className="pp-btn-buy-now"
+                onClick={openPriceDropModal}
+                disabled={alertBusy}
+                style={{
+                  background: alertSubs.priceDropSubscribed ? '#EAF6EE' : '#F4F4F2',
+                  color: '#1A1A1A',
+                  border: alertSubs.priceDropSubscribed ? '1px solid #1F8B4C' : '1px solid transparent',
+                  marginTop: 8,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                }}
+              >
+                <Icon.Bell size={16} filled={alertSubs.priceDropSubscribed} />
+                <span>
+                  {alertSubs.priceDropSubscribed
+                    ? `Alerte prix -${alertSubs.priceDropThreshold}% active`
+                    : 'Alerte baisse de prix'}
+                </span>
+              </button>
+
               {/* Quantity */}
               <div className="pp-qty-row">
                 <label className="pp-qty-label">Quantite</label>
@@ -993,6 +1262,83 @@ export default function ProductPage() {
             <Accordion items={accordionItems} defaultOpen="description" />
           )}
         </section>
+
+        {/* ─── SOUVENT ACHETE AVEC (cross-sell) ─── */}
+        {fbwProducts.length > 0 && (
+          <section className="pp-section pp-section--fbw">
+            <div className="pp-fbw-head">
+              <h2 className="pp-h2">Souvent achete avec</h2>
+              <button
+                type="button"
+                className="pp-btn-outline pp-btn-sm"
+                onClick={() => {
+                  const pharmacy = pharmacies?.[0] || { id: 'default', name: 'YARAM' };
+                  fbwProducts.forEach((p) => {
+                    addToCart(buildCartPayload(p, pharmacy, 1));
+                  });
+                  showToast('Ajoutes au panier');
+                }}
+              >
+                Tout ajouter au panier
+              </button>
+            </div>
+            <div className="pp-fbw-grid">
+              {fbwProducts.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  className="pp-fbw-card"
+                  onClick={() => navigate('productPage', { id: p.id })}
+                >
+                  <div className="pp-fbw-img">
+                    <img
+                      src={p.image_url || p.img || ''}
+                      alt={p.name}
+                      loading="lazy"
+                      onError={(e) => { e.currentTarget.style.opacity = 0.2; }}
+                    />
+                  </div>
+                  <div className="pp-fbw-body">
+                    <div className="pp-fbw-brand">{p.brand || ''}</div>
+                    <div className="pp-fbw-name">{p.name}</div>
+                    <div className="pp-fbw-price">{formatPrice(p.price)}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ─── FAIT PARTIE DE CES ROUTINES (bundles pre-composes) ─── */}
+        {containingBundles.length > 0 && (
+          <section className="pp-section pp-section--routines">
+            <h2 className="pp-h2">Fait partie de ces routines</h2>
+            <div className="pp-routines-grid">
+              {containingBundles.map((b) => (
+                <button
+                  key={b.id}
+                  type="button"
+                  className="pp-routine-card"
+                  onClick={() => navigate('bundle', { slug: b.slug })}
+                >
+                  {b.cover_url && (
+                    <div className="pp-routine-cover">
+                      <img src={b.cover_url} alt={b.title} loading="lazy" />
+                    </div>
+                  )}
+                  <div className="pp-routine-body">
+                    <span className="pp-routine-badge">-{b.discount_pct || 10}%</span>
+                    <div className="pp-routine-title">{b.title}</div>
+                    {b.description && (
+                      <div className="pp-routine-desc">{b.description}</div>
+                    )}
+                    <span className="pp-routine-cta">Voir la routine complete →</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* ─── PHARMACIES ─── */}
         <section id="pp-pharmacies" className="pp-section">
@@ -1245,6 +1591,218 @@ export default function ProductPage() {
           )}
         </section>
 
+        {/* ─── QUESTIONS ET REPONSES ─── */}
+        <section id="pp-qa" className="pp-section pp-section--qa">
+          <div className="pp-qa-head">
+            <div>
+              <h2 className="pp-h2">Questions et reponses</h2>
+              <p className="pp-qa-sub">Pose une question, la communaute et nos pharmaciens partenaires te repondent.</p>
+            </div>
+            <button
+              type="button"
+              className="pp-btn-primary pp-btn-sm"
+              onClick={() => { setQaAskError(''); setQaAskOpen(true); }}
+            >
+              Poser une question
+            </button>
+          </div>
+
+          {qaLoading ? (
+            <div className="pp-qa-list">
+              {[1,2,3].map((i) => (
+                <div key={i} className="pp-qa-item pp-qa-item--sk">
+                  <Sk w="70%" h={18} />
+                  <div style={{ height: 8 }} />
+                  <Sk w="45%" h={12} />
+                </div>
+              ))}
+            </div>
+          ) : qaList.length === 0 ? (
+            <div className="pp-qa-empty">
+              <p>Aucune question pour l instant. Sois le premier a poser une question.</p>
+            </div>
+          ) : (
+            <div className="pp-qa-list">
+              {qaList.map((q) => {
+                const expanded = qaExpandedIds.has(q.id);
+                const answers = Array.isArray(q.answers) ? q.answers : [];
+                return (
+                  <article key={q.id} className="pp-qa-item">
+                    <button
+                      type="button"
+                      className="pp-qa-q-row"
+                      onClick={() => toggleQaExpanded(q.id)}
+                      aria-expanded={expanded}
+                    >
+                      <div className="pp-qa-q-body">
+                        <div className="pp-qa-q-label">Q</div>
+                        <div className="pp-qa-q-text">
+                          <p className="pp-qa-question">{q.question}</p>
+                          <div className="pp-qa-q-meta">
+                            <span>{q.user_name || 'Anonyme'}</span>
+                            <span aria-hidden="true">·</span>
+                            <span>{new Date(q.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                            <span aria-hidden="true">·</span>
+                            <span>{q.answer_count || 0} reponse{(q.answer_count || 0) > 1 ? 's' : ''}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className={`pp-qa-chev ${expanded ? 'pp-qa-chev--open' : ''}`}>
+                        <Icon.ChevR size={16} />
+                      </div>
+                    </button>
+
+                    {expanded && (
+                      <div className="pp-qa-expand">
+                        <div className="pp-qa-actions">
+                          <button
+                            type="button"
+                            className="pp-qa-vote"
+                            onClick={() => handleQAVote('question', q.id, 'helpful')}
+                            aria-label="Marquer utile"
+                          >
+                            <Icon.Check size={14} /> Utile ({q.helpful_votes || 0})
+                          </button>
+                          <button
+                            type="button"
+                            className="pp-qa-vote pp-qa-vote--neg"
+                            onClick={() => handleQAVote('question', q.id, 'not_helpful')}
+                          >
+                            Pas utile
+                          </button>
+                          <button
+                            type="button"
+                            className="pp-qa-reply-btn"
+                            onClick={() => { setQaAnsOpenId(qaAnsOpenId === q.id ? null : q.id); setQaAnsText(''); }}
+                          >
+                            Repondre
+                          </button>
+                        </div>
+
+                        {qaAnsOpenId === q.id && (
+                          <div className="pp-qa-reply-form">
+                            <textarea
+                              className="pp-qa-textarea"
+                              placeholder="Ecris ta reponse..."
+                              value={qaAnsText}
+                              onChange={(e) => setQaAnsText(e.target.value)}
+                              rows={3}
+                              maxLength={1000}
+                            />
+                            <div className="pp-qa-reply-actions">
+                              <button
+                                type="button"
+                                className="pp-btn-ghost pp-btn-sm"
+                                onClick={() => { setQaAnsOpenId(null); setQaAnsText(''); }}
+                                disabled={qaAnsBusy}
+                              >
+                                Annuler
+                              </button>
+                              <button
+                                type="button"
+                                className="pp-btn-primary pp-btn-sm"
+                                onClick={() => handleAnswerQuestion(q.id)}
+                                disabled={qaAnsBusy || qaAnsText.trim().length < 3}
+                              >
+                                {qaAnsBusy ? 'Envoi...' : 'Publier'}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {answers.length === 0 ? (
+                          <p className="pp-qa-noansw">Aucune reponse pour l instant. Sois le premier a repondre.</p>
+                        ) : (
+                          <div className="pp-qa-answers">
+                            {answers.map((a) => (
+                              <div key={a.id} className="pp-qa-answer">
+                                <div className="pp-qa-a-label">R</div>
+                                <div className="pp-qa-a-body">
+                                  <div className="pp-qa-a-head">
+                                    <span className="pp-qa-a-user">{a.user_name || 'Anonyme'}</span>
+                                    {a.is_pharmacist && (
+                                      <span className="pp-qa-badge pp-qa-badge--pharma">Pharmacien</span>
+                                    )}
+                                    {a.is_yaram_team && !a.is_pharmacist && (
+                                      <span className="pp-qa-badge pp-qa-badge--yaram">Equipe YARAM</span>
+                                    )}
+                                    <span className="pp-qa-a-date">{new Date(a.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
+                                  </div>
+                                  <p className="pp-qa-a-text">{a.answer}</p>
+                                  <div className="pp-qa-a-actions">
+                                    <button
+                                      type="button"
+                                      className="pp-qa-vote pp-qa-vote--sm"
+                                      onClick={() => handleQAVote('answer', a.id, 'helpful')}
+                                    >
+                                      <Icon.Check size={12} /> Utile ({a.helpful_votes || 0})
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="pp-qa-vote pp-qa-vote--sm pp-qa-vote--neg"
+                                      onClick={() => handleQAVote('answer', a.id, 'not_helpful')}
+                                    >
+                                      Pas utile
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        {/* Modal poser question */}
+        {qaAskOpen && (
+          <div className="pp-modal-backdrop" onClick={() => setQaAskOpen(false)}>
+            <div className="pp-modal pp-qa-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+              <div className="pp-modal-head">
+                <h3>Poser une question</h3>
+                <button type="button" className="pp-modal-close" onClick={() => setQaAskOpen(false)} aria-label="Fermer">×</button>
+              </div>
+              <div className="pp-modal-body">
+                <p className="pp-qa-hint">Sois clair et precis. Les meilleures reponses viennent de questions bien formulees.</p>
+                <textarea
+                  className="pp-qa-textarea"
+                  placeholder="Ex : ce serum est-il compatible avec une peau sensible ?"
+                  value={qaAskText}
+                  onChange={(e) => setQaAskText(e.target.value)}
+                  rows={5}
+                  maxLength={500}
+                  autoFocus
+                />
+                <div className="pp-qa-count">{qaAskText.length} / 500</div>
+                {qaAskError && <p className="pp-qa-error">{qaAskError}</p>}
+              </div>
+              <div className="pp-modal-foot">
+                <button
+                  type="button"
+                  className="pp-btn-ghost"
+                  onClick={() => setQaAskOpen(false)}
+                  disabled={qaAskBusy}
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  className="pp-btn-primary"
+                  onClick={handleAskQuestion}
+                  disabled={qaAskBusy || qaAskText.trim().length < 5}
+                >
+                  {qaAskBusy ? 'Envoi...' : 'Publier la question'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ─── PRODUITS SIMILAIRES ─── */}
         <section className="pp-section pp-section--related">
           <h2 className="pp-h2">Produits similaires</h2>
@@ -1349,6 +1907,97 @@ export default function ProductPage() {
         productId={product?.id}
         onAdded={(wl) => setToast(`Ajouté à "${wl.name}"`)}
       />
+
+      {/* ─── Modal : choix threshold alerte baisse de prix ─── */}
+      {priceDropModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Alerte baisse de prix"
+          onClick={() => setPriceDropModalOpen(false)}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 1000, padding: 16,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#fff', borderRadius: 20, padding: 24,
+              width: '100%', maxWidth: 420, boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+            }}
+          >
+            <h3 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>
+              Alerte baisse de prix
+            </h3>
+            <p style={{ margin: '8px 0 20px', color: '#555', fontSize: 14 }}>
+              Recois une notification des que le prix baisse d au moins :
+            </p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 20 }}>
+              {[5, 10, 20].map((pct) => (
+                <button
+                  key={pct}
+                  type="button"
+                  onClick={() => setPendingThreshold(pct)}
+                  style={{
+                    padding: '14px 8px',
+                    borderRadius: 12,
+                    border: pendingThreshold === pct ? '2px solid #1F8B4C' : '1px solid #DDD',
+                    background: pendingThreshold === pct ? '#EAF6EE' : '#FFF',
+                    fontWeight: 700,
+                    fontSize: 16,
+                    cursor: 'pointer',
+                  }}
+                >
+                  -{pct}%
+                </button>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, flexDirection: 'column' }}>
+              <button
+                type="button"
+                onClick={handleConfirmPriceDrop}
+                disabled={alertBusy}
+                style={{
+                  padding: '14px 16px', borderRadius: 12,
+                  background: '#111', color: '#fff', border: 'none',
+                  fontSize: 16, fontWeight: 700, cursor: 'pointer',
+                }}
+              >
+                {alertSubs.priceDropSubscribed ? 'Mettre a jour l alerte' : 'Activer l alerte'}
+              </button>
+              {alertSubs.priceDropSubscribed && (
+                <button
+                  type="button"
+                  onClick={handleUnsubscribePriceDrop}
+                  disabled={alertBusy}
+                  style={{
+                    padding: '12px 16px', borderRadius: 12,
+                    background: '#F4F4F2', color: '#B00020', border: 'none',
+                    fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                  }}
+                >
+                  Retirer l alerte
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setPriceDropModalOpen(false)}
+                style={{
+                  padding: '10px 16px', borderRadius: 12,
+                  background: 'transparent', color: '#555', border: 'none',
+                  fontSize: 14, cursor: 'pointer',
+                }}
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {lightbox && lightbox.photos?.length > 0 && (
         <div

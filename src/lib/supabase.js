@@ -25,3 +25,4 @@ export * from './supabase/banners';
 export * from './supabase/loyalty';
 export * from './supabase/promos';
 export * from './supabase/notifications';
+export * from './supabase/alerts';
