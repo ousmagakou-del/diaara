@@ -11,6 +11,7 @@ import { useNav } from '../App';
 import { getAllBrands, getAllPharmacies } from '../lib/supabase';
 import SiteLayout from '../components/SiteLayout';
 import HeroVideo from '../components/HeroVideo';
+import { useLanguage } from '../lib/i18n';
 import './Landing.css';
 
 const APP_STORE_URL = 'https://apps.apple.com/app/yaram/id6771017009';
@@ -26,6 +27,7 @@ function detectPlatform() {
 
 export default function Landing() {
   const { navigate } = useNav();
+  const { t, lang } = useLanguage();
   const [platform] = useState(detectPlatform);
   const [brands, setBrands] = useState([]);
   const [pharmacies, setPharmacies] = useState([]);
@@ -34,6 +36,21 @@ export default function Landing() {
     getAllBrands().then((b) => setBrands((b || []).slice(0, 12))).catch(() => {});
     getAllPharmacies().then((p) => setPharmacies((p || []).slice(0, 6))).catch(() => {});
   }, []);
+
+  // ─── SEO : dynamic og:locale sync avec la langue ───────────────
+  useEffect(() => {
+    try {
+      const localeMap = { fr: 'fr_FR', en: 'en_US' };
+      const locale = localeMap[lang] || 'fr_FR';
+      let m = document.querySelector('meta[property="og:locale"]');
+      if (!m) {
+        m = document.createElement('meta');
+        m.setAttribute('property', 'og:locale');
+        document.head.appendChild(m);
+      }
+      m.setAttribute('content', locale);
+    } catch { /* noop */ }
+  }, [lang]);
 
   const goToShop = () => navigate('shop');
   const downloadApp = () => {
@@ -65,42 +82,42 @@ export default function Landing() {
         <div className="lp-hero-inner">
           <div className="lp-hero-content">
             <h1 className="lp-hero-title">
-              La beauté du Sénégal,
+              {t('landing.hero.title.line1', 'La beauté du Sénégal,')}
               <br/>
-              <span className="lp-hero-accent">livrée chez toi.</span>
+              <span className="lp-hero-accent">{t('landing.hero.title.line2', 'livrée chez toi.')}</span>
             </h1>
             <p className="lp-hero-sub">
-              Plus de 5 000 produits cosmétiques et soins authentiques, sélectionnés par nos pharmaciens partenaires.
+              {t('landing.hero.sub', 'Plus de 5 000 produits cosmétiques et soins authentiques, sélectionnés par nos pharmaciens partenaires.')}
             </p>
             <div className="lp-hero-cta">
               <button className="lp-btn-primary lp-btn-lg" onClick={downloadApp}>
-                Télécharger l'app
+                {t('landing.hero.cta.download', "Télécharger l'app")}
               </button>
               <button className="lp-btn-ghost lp-btn-lg" onClick={goToShop}>
-                Explorer le catalogue
+                {t('landing.hero.cta.explore', 'Explorer le catalogue')}
               </button>
             </div>
             <div className="lp-hero-trust">
               <div className="lp-trust-item">
                 <strong>4.9/5</strong>
-                <span>App Store</span>
+                <span>{t('landing.hero.trust.appstore', 'App Store')}</span>
               </div>
               <div className="lp-trust-divider"></div>
               <div className="lp-trust-item">
                 <strong>5 000+</strong>
-                <span>Produits</span>
+                <span>{t('landing.hero.trust.products', 'Produits')}</span>
               </div>
               <div className="lp-trust-divider"></div>
               <div className="lp-trust-item">
                 <strong>20+</strong>
-                <span>Pharmacies</span>
+                <span>{t('landing.hero.trust.pharmacies', 'Pharmacies')}</span>
               </div>
             </div>
           </div>
           {/* Marques iconiques en strip visuelle sous le hero */}
           {brands.length > 0 && (
             <div className="lp-hero-brand-strip">
-              <span className="lp-strip-label">Nos marques partenaires</span>
+              <span className="lp-strip-label">{t('landing.hero.brands.label', 'Nos marques partenaires')}</span>
               <div className="lp-strip-row">
                 {brands.slice(0, 8).map((b) => (
                   <button
@@ -120,8 +137,8 @@ export default function Landing() {
 
       {/* ━━━ COMMENT ÇA MARCHE ━━━ */}
       <section className="lp-section lp-how">
-        <h2 className="lp-section-title">Une expérience pensée pour toi</h2>
-        <p className="lp-section-sub">Du catalogue à ta porte, tout est conçu pour te simplifier la vie.</p>
+        <h2 className="lp-section-title">{t('landing.how.title', 'Une expérience pensée pour toi')}</h2>
+        <p className="lp-section-sub">{t('landing.how.sub', 'Du catalogue à ta porte, tout est conçu pour te simplifier la vie.')}</p>
         <div className="lp-steps">
           <div className="lp-step">
             <div className="lp-step-num">1</div>
@@ -133,8 +150,8 @@ export default function Landing() {
                 <path d="M16 10a4 4 0 0 1-8 0"/>
               </svg>
             </div>
-            <h3>Tu choisis</h3>
-            <p>Plus de 5 000 produits beauté, soins et bien-être triés sur le volet par nos pharmaciens.</p>
+            <h3>{t('landing.how.step1.title', 'Tu choisis')}</h3>
+            <p>{t('landing.how.step1.body', 'Plus de 5 000 produits beauté, soins et bien-être triés sur le volet par nos pharmaciens.')}</p>
           </div>
           <div className="lp-step">
             <div className="lp-step-num">2</div>
@@ -146,8 +163,8 @@ export default function Landing() {
                 <path d="m15.5 15.5 5 5"/>
               </svg>
             </div>
-            <h3>On prépare</h3>
-            <p>Une pharmacie partenaire prépare ta commande avec des produits authentiques garantis.</p>
+            <h3>{t('landing.how.step2.title', 'On prépare')}</h3>
+            <p>{t('landing.how.step2.body', 'Une pharmacie partenaire prépare ta commande avec des produits authentiques garantis.')}</p>
           </div>
           <div className="lp-step">
             <div className="lp-step-num">3</div>
@@ -160,16 +177,16 @@ export default function Landing() {
                 <circle cx="20" cy="21" r="1"/>
               </svg>
             </div>
-            <h3>Tu reçois</h3>
-            <p>Livraison à domicile partout à Dakar, avec un suivi en temps réel sur l'app.</p>
+            <h3>{t('landing.how.step3.title', 'Tu reçois')}</h3>
+            <p>{t('landing.how.step3.body', "Livraison à domicile partout à Dakar, avec un suivi en temps réel sur l'app.")}</p>
           </div>
         </div>
       </section>
 
       {/* ━━━ MARQUES PARTENAIRES ━━━ */}
       <section className="lp-section lp-brands">
-        <h2 className="lp-section-title">Les plus grandes marques</h2>
-        <p className="lp-section-sub">Bioderma, La Roche-Posay, Caudalie, Vichy, Avène, Embryolisse et bien d'autres — toutes officielles, toutes garanties.</p>
+        <h2 className="lp-section-title">{t('landing.brands.title', 'Les plus grandes marques')}</h2>
+        <p className="lp-section-sub">{t('landing.brands.sub', "Bioderma, La Roche-Posay, Caudalie, Vichy, Avène, Embryolisse et bien d'autres — toutes officielles, toutes garanties.")}</p>
         {brands.length > 0 && (
           <div className="lp-brands-grid">
             {brands.map((b) => (
@@ -180,7 +197,7 @@ export default function Landing() {
           </div>
         )}
         <div className="lp-section-cta">
-          <button className="lp-btn-ghost" onClick={() => navigate('brands')}>Voir toutes les marques →</button>
+          <button className="lp-btn-ghost" onClick={() => navigate('brands')}>{t('landing.brands.seeAll', 'Voir toutes les marques')} →</button>
         </div>
       </section>
 
@@ -188,8 +205,8 @@ export default function Landing() {
       <section className="lp-section lp-app">
         <div className="lp-app-inner">
           <div className="lp-app-content">
-            <div className="lp-app-badge">L'expérience complète</div>
-            <h2>L'app YARAM, le meilleur de la beauté à portée de main</h2>
+            <div className="lp-app-badge">{t('landing.app.badge', "L'expérience complète")}</div>
+            <h2>{t('landing.app.title', "L'app YARAM, le meilleur de la beauté à portée de main")}</h2>
             <ul className="lp-app-features">
               <li>Scanner peau et reçois des conseils personnalisés</li>
               <li>Programme fidélité YARAM+ et avantages exclusifs</li>
@@ -225,8 +242,8 @@ export default function Landing() {
       <section className="lp-section lp-partner" id="lp-partner">
         <div className="lp-partner-inner">
           <div className="lp-partner-content">
-            <span className="lp-section-eyebrow">POUR LES PHARMACIES</span>
-            <h2>Booste tes ventes avec YARAM</h2>
+            <span className="lp-section-eyebrow">{t('landing.partner.eyebrow', 'POUR LES PHARMACIES')}</span>
+            <h2>{t('landing.partner.title', 'Booste tes ventes avec YARAM')}</h2>
             <p>Rejoins le réseau YARAM et multiplie ton chiffre d'affaires. On t'apporte une nouvelle clientèle digitale qui découvre tes produits sans bouger de chez elle.</p>
             <ul className="lp-partner-perks">
               <li>✓ Aucun investissement initial</li>
@@ -235,7 +252,7 @@ export default function Landing() {
               <li>✓ Paiement sous 48h</li>
             </ul>
             <button className="lp-btn-primary" onClick={() => navigate('partner-application')}>
-              Devenir pharmacie partenaire
+              {t('landing.partner.cta', 'Devenir pharmacie partenaire')}
             </button>
           </div>
           <div className="lp-partner-stats">
@@ -259,8 +276,8 @@ export default function Landing() {
       <section className="lp-section lp-driver" id="lp-driver">
         <div className="lp-driver-inner">
           <div className="lp-driver-content">
-            <span className="lp-section-eyebrow">POUR LES LIVREURS</span>
-            <h2>Gagne ta journée avec YARAM</h2>
+            <span className="lp-section-eyebrow">{t('landing.driver.eyebrow', 'POUR LES LIVREURS')}</span>
+            <h2>{t('landing.driver.title', 'Gagne ta journée avec YARAM')}</h2>
             <p>Rejoins notre équipe de livreurs et choisis tes horaires. Bonus selon performance, paiements sous 24h, et une app dédiée pour gérer tes courses comme un pro.</p>
             <ul className="lp-driver-perks">
               <li>Moto, voiture ou vélo accepté</li>
@@ -269,7 +286,7 @@ export default function Landing() {
               <li>Zones de livraison de ton choix</li>
             </ul>
             <button className="lp-btn-primary" onClick={() => navigate('driver-application')}>
-              Devenir livreur YARAM
+              {t('landing.driver.cta', 'Devenir livreur YARAM')}
             </button>
           </div>
           <div className="lp-driver-visual">

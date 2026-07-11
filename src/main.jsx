@@ -16,6 +16,10 @@ import { isNativeApp } from './lib/platform'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import { focusManager, onlineManager } from '@tanstack/react-query'
 import { queryClient, queryPersister } from './lib/queryClient'
+import { initI18n } from './lib/i18n'
+
+// ─── Init i18n tres tot (avant meme le render) : set <html lang> ───
+initI18n();
 
 // ════════════════════════════════════════════════════════════════
 // FIX juin 2026 : Anti-page-blanche défensif au niveau window

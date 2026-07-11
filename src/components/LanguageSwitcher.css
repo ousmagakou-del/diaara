@@ -1,0 +1,90 @@
+/* ═════════════ LanguageSwitcher ═════════════ */
+
+.lang-switcher {
+  position: relative;
+  display: inline-flex;
+  margin-left: 8px;
+}
+
+.lang-switcher__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.1));
+  background: var(--surface, #fff);
+  color: var(--text, #111);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.lang-switcher__trigger:hover {
+  background: var(--surface-hover, rgba(0, 0, 0, 0.04));
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+.lang-switcher__code {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.lang-switcher__menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 160px;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+  z-index: 200;
+}
+
+.lang-switcher__option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text, #111);
+  font-size: 13px;
+  text-align: left;
+}
+
+.lang-switcher__option:hover {
+  background: var(--surface-hover, rgba(0, 0, 0, 0.04));
+}
+
+.lang-switcher__option.is-active {
+  background: var(--surface-hover, rgba(31, 139, 76, 0.08));
+  color: var(--brand, #1F8B4C);
+}
+
+.lang-switcher__opt-code {
+  font-weight: 700;
+  font-size: 12px;
+  min-width: 24px;
+}
+
+.lang-switcher__opt-name {
+  flex: 1;
+  font-weight: 500;
+}
+
+/* Hide on very small screens to avoid header crowding — switcher stays
+   in the mobile menu drawer via SiteLayout markup if needed. */
+@media (max-width: 480px) {
+  .lang-switcher__trigger { padding: 5px 8px; font-size: 11px; }
+  .lang-switcher__code { font-size: 11px; }
+}

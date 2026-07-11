@@ -36,6 +36,7 @@ import { getFeaturedBundles } from '../lib/supabase';
 import SiteLayout from '../components/SiteLayout';
 import { ProductTile, BrandTile } from '../components/tiles';
 import { SkeletonProductCard, SkeletonBrandCard } from '../components/Skeleton';
+import { useLanguage } from '../lib/i18n';
 import './ShopHome.css';
 
 // ─── Utils ─────────────────────────────────────────────────────────
@@ -286,6 +287,7 @@ function CouponBanner({ onCopy, onDismiss }) {
 export default function ShopHome() {
   const { navigate } = useNav();
   const { user } = useUser() || { user: null };
+  const { t: tr } = useLanguage();
 
   const { data: productsRaw = [], isLoading: prodLoading } = useProducts();
   const { data: brandsRaw = [], isLoading: brandsLoading } = useBrands();
@@ -480,10 +482,10 @@ export default function ShopHome() {
         {/* 2. MARQUES (calque native) ──────────────────────────────── */}
         <section className="yhome-section yhome-section--bg">
           <SectionHead
-            title="Marques"
-            subtitle="Selection dermato reconnue par nos pharmaciens"
+            title={tr('shop.brands.title', 'Marques')}
+            subtitle={tr('shop.brands.sub', 'Selection dermato reconnue par nos pharmaciens')}
             onSeeAll={() => navigate('brands')}
-            seeAllLabel="Voir toutes les marques"
+            seeAllLabel={tr('shop.brands.seeAll', 'Voir toutes les marques')}
           />
           <BrandGrid brands={featuredBrands} loading={loading} count={8} />
         </section>
@@ -492,8 +494,8 @@ export default function ShopHome() {
         {(categoriesRaw.length > 0 || catLoading) && (
           <section className="yhome-section">
             <SectionHead
-              title="Categories"
-              subtitle="Parcourir par univers"
+              title={tr('shop.categories.title', 'Categories')}
+              subtitle={tr('shop.categories.sub', 'Parcourir par univers')}
               onSeeAll={() => navigate('categories')}
             />
             <CategoryGrid
@@ -552,8 +554,8 @@ export default function ShopHome() {
         {(pourToi.length > 0 || loading) && (
           <section className="yhome-section">
             <SectionHead
-              title={`Pour toi${userName ? `, ${userName}` : ''}`}
-              subtitle="Selection personnalisee sur votre profil et vos favoris"
+              title={`${tr('shop.forYou.title', 'Pour toi')}${userName ? `, ${userName}` : ''}`}
+              subtitle={tr('shop.forYou.sub', 'Selection personnalisee sur votre profil et vos favoris')}
               onSeeAll={() => goSearch({ tri: 'rating' })}
             />
             <ProductGrid
@@ -569,8 +571,8 @@ export default function ShopHome() {
         {trending.length > 0 && (
           <section className="yhome-section yhome-section--bg">
             <SectionHead
-              title="Tendances cette semaine"
-              subtitle="Les plus vus et achetes ces 7 derniers jours"
+              title={tr('shop.trending.title', 'Tendances cette semaine')}
+              subtitle={tr('shop.trending.sub', 'Les plus vus et achetes ces 7 derniers jours')}
               onSeeAll={() => goSearch({ tri: 'popularity' })}
             />
             <ProductRail
@@ -585,8 +587,8 @@ export default function ShopHome() {
         {/* 7. NOUVEAUTES (calque native "Nouveautes") ──────────────── */}
         <section className="yhome-section">
           <SectionHead
-            title="Nouveautes"
-            subtitle="Les dernieres references ajoutees au catalogue"
+            title={tr('shop.new.title', 'Nouveautes')}
+            subtitle={tr('shop.new.sub', 'Les dernieres references ajoutees au catalogue')}
             onSeeAll={() => goSearch({ tri: 'newest' })}
           />
           <ProductRail
@@ -601,8 +603,8 @@ export default function ShopHome() {
         {deals.length > 0 && (
           <section className="yhome-section yhome-section--deals">
             <SectionHead
-              title="Bons plans"
-              subtitle="Meilleures reductions du moment"
+              title={tr('shop.deals.title', 'Bons plans')}
+              subtitle={tr('shop.deals.sub', 'Meilleures reductions du moment')}
               onSeeAll={() => goSearch({ promo: '1', tri: 'discount' })}
             />
             <ProductGrid
@@ -617,8 +619,8 @@ export default function ShopHome() {
         {/* 9. BEST-SELLERS DAKAR (calque native) ──────────────────── */}
         <section className="yhome-section yhome-section--bg">
           <SectionHead
-            title="Best-sellers Dakar"
-            subtitle="Ce que Dakar achete cette semaine"
+            title={tr('shop.bestSellers.title', 'Best-sellers Dakar')}
+            subtitle={tr('shop.bestSellers.sub', 'Ce que Dakar achete cette semaine')}
             onSeeAll={() => goSearch({ tri: 'popularity' })}
           />
           <ProductGrid
@@ -633,8 +635,8 @@ export default function ShopHome() {
         {(recoPourVous.length > 0 || loading) && (
           <section className="yhome-section">
             <SectionHead
-              title="Recommande pour vous"
-              subtitle="Selection basee sur votre profil"
+              title={tr('shop.reco.title', 'Recommande pour vous')}
+              subtitle={tr('shop.reco.sub', 'Selection basee sur votre profil')}
               onSeeAll={() => goSearch({ tri: 'rating' })}
             />
             <ProductGrid
@@ -650,8 +652,8 @@ export default function ShopHome() {
         {finDeStock.length > 0 && (
           <section className="yhome-section">
             <SectionHead
-              title="Fin de stock"
-              subtitle="Derniers exemplaires disponibles"
+              title={tr('shop.lowStock.title', 'Fin de stock')}
+              subtitle={tr('shop.lowStock.sub', 'Derniers exemplaires disponibles')}
               onSeeAll={() => goSearch({ tri: 'newest' })}
             />
             <ProductRail
@@ -667,7 +669,7 @@ export default function ShopHome() {
         {productsRaw.length > 0 && (
           <section className="yhome-section">
             <SectionHead
-              title="Tous les produits"
+              title={tr('shop.all.title', 'Tous les produits')}
               subtitle={`${productsRaw.length} produit${productsRaw.length > 1 ? 's' : ''} disponible${productsRaw.length > 1 ? 's' : ''}`}
               onSeeAll={() => goSearch()}
             />
