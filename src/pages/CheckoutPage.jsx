@@ -1,25 +1,30 @@
 // ════════════════════════════════════════════════════════════════════
-// CheckoutPage — Multi-etape world-class checkout (Phase C)
+// CheckoutPage — Single page checkout Uber Eats / Stripe style
 // ════════════════════════════════════════════════════════════════════
-// Etapes : Adresse -> Livraison -> Paiement -> Confirmation
-// - Progress bar top
-// - Address: existing or new (guest ok) + coordonnees (leaflet reserve
-//   pour geoloc si dispo dans le browser via navigator.geolocation)
-// - Delivery: standard / express / today (par pharmacie si applicable)
-// - Payment: aligne exactement sur l app native
-//     Wave (actif) - Cash a la livraison (actif, hors preorder) -
-//     Orange Money (bientot, non selectionnable)
-//   + promo + gift card + loyalty
-// - Recap cascade complet
-// - sessionStorage yaram-checkout-progress
-// - Double submit block
-// - Redirect vers /orders (tracking) apres succes
+// Refactor UX Marshall (juillet 2026) : on retire les 3 etapes
+// (Adresse -> Livraison -> Paiement -> Confirmation) au profit d une
+// page unique scrollable avec recap sticky a droite (desktop) ou en
+// haut (mobile) + CTA principal "Commander" toujours visible.
+//
+// Motivation : le flow 3-etapes multipliait les clics "Continuer" pour
+// une friction inutile (paniers courts, users mobile). Le pattern
+// single-page :
+//   - reduit le nb de taps
+//   - garde tout le contexte visible (total + articles) pendant le fill
+//   - focus sur le CTA final (disable + hint quand donnee manquante)
+//
+// Toutes les regles metier restent en place :
+//   - detection isPreorder / hasImportedItem (masque today/express/standard,
+//     force le mode "import", masque COD)
+//   - split acompte 50 % / solde 50 % dans le recap si preorder
+//   - filtre payment methods (COD hors preorder)
+//   - promo, cheque cadeau MySargal, points fidelite
+//   - createOrder(...) inchange
 // ════════════════════════════════════════════════════════════════════
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNav, useUser } from '../App';
 import SiteLayout from '../components/SiteLayout';
-import ProgressBar from '../components/ProgressBar';
 import { getCart, clearCart } from '../lib/cart';
 import { getMyAddresses } from '../lib/supabase';
 import { formatPrice } from '../lib/utils';
@@ -27,13 +32,6 @@ import './CheckoutPage.css';
 
 // ─── Constants ────────────────────────────────────────────────────
 const PROGRESS_KEY = 'yaram-checkout-progress';
-
-const STEPS = [
-  { id: 'address',  label: 'Adresse' },
-  { id: 'delivery', label: 'Livraison' },
-  { id: 'payment',  label: 'Paiement' },
-  { id: 'review',   label: 'Confirmation' },
-];
 
 const DELIVERY_MODES = [
   { id: 'today',    name: 'Aujourd hui',  time: 'Livre avant 20h', price: 3500, desc: 'Meme jour, Dakar uniquement' },
@@ -47,7 +45,6 @@ const DELIVERY_MODES = [
 // mensongere de livraison en 30 min pour un produit qui arrive dans 3 semaines.
 function buildImportDeliveryMode(/* leadDays */) {
   // Libelle fixe 10-15 jours max (pas de variation selon lead_time_days du produit).
-  // Le user veut ce plafond fixe pour ne pas promettre plus long que necessaire.
   return {
     id: 'import',
     name: 'Import YARAM',
@@ -58,8 +55,6 @@ function buildImportDeliveryMode(/* leadDays */) {
 }
 
 // ─── Payment methods — CALQUE EXACT app native (yaram-native/app/checkout.jsx)
-// Wave (actif), Cash a la livraison (actif hors preorder), Orange Money (bientot).
-// Pas de PayTech, Free Money, ni carte bancaire tant que le native ne les propose pas.
 const WAVE_LOGO = 'https://qxhhnrnworwrnwmqekmb.supabase.co/storage/v1/object/public/banner-images/logo-wave.jpg';
 const OM_LOGO   = 'https://qxhhnrnworwrnwmqekmb.supabase.co/storage/v1/object/public/banner-images/logo-orange.png';
 
@@ -84,6 +79,8 @@ const Icon = {
   gift: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>),
   loyalty: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>),
   target: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>),
+  info: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>),
+  plane: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>),
 };
 
 function PayLogo({ method }) {
@@ -94,7 +91,6 @@ function PayLogo({ method }) {
       </span>
     );
   }
-  // Fallback COD : rond neutre + petit pictogramme cash (SVG inline, pas d emoji).
   return (
     <span className="ck-pay-logo ck-pay-logo--fallback" aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -132,14 +128,11 @@ export default function CheckoutPage() {
   // ─── Persisted state (session) ──────────────────────────────────
   const persisted = useMemo(() => loadProgress() || {}, []);
 
-  // ─── Step ───────────────────────────────────────────────────────
-  const [step, setStep] = useState(persisted.step || 'address');
-
   // ─── Addresses ──────────────────────────────────────────────────
   const [addresses, setAddresses] = useState([]);
   const [selectedAddrId, setSelectedAddrId] = useState(persisted.selectedAddrId || null);
-  const [addrLoading, setAddrLoading] = useState(true);
-  const [addrError, setAddrError] = useState(false);
+  const [, setAddrLoading] = useState(true);
+  const [, setAddrError] = useState(false);
   const [geoloc, setGeoloc] = useState(persisted.geoloc || null);
 
   // Guest / new address form
@@ -150,9 +143,6 @@ export default function CheckoutPage() {
   const [deliveryMode, setDeliveryMode] = useState(persisted.deliveryMode || 'standard');
 
   // ─── Detection Import / Preorder ────────────────────────────────
-  // Un cart contient au moins un produit is_imported=true -> tout le cart
-  // bascule en mode import. Impossible de mixer produits locaux + import
-  // dans le meme flow de livraison (delais incompatibles).
   const hasImportedItem = useMemo(
     () => items.some((it) => it.is_imported === true),
     [items]
@@ -193,7 +183,6 @@ export default function CheckoutPage() {
   const initialPayment = (() => {
     const candidate = persisted.payment;
     const found = candidate && PAYMENTS.find((p) => p.id === candidate);
-    // Ecarte les persisted qui ne sont plus proposees (paytech, free, card...).
     if (!found || !found.enabled) return defaultPayment;
     if (isPreorder && !found.preorderOk) return defaultPayment;
     return candidate;
@@ -254,10 +243,10 @@ export default function CheckoutPage() {
   // ─── Persist progress to sessionStorage ─────────────────────────
   useEffect(() => {
     saveProgress({
-      step, selectedAddrId, guestAddr, useNewAddress, deliveryMode, payment,
+      selectedAddrId, guestAddr, useNewAddress, deliveryMode, payment,
       notes, promoCode, promoOff, giftCode, giftValue, loyaltyToUse, geoloc,
     });
-  }, [step, selectedAddrId, guestAddr, useNewAddress, deliveryMode, payment,
+  }, [selectedAddrId, guestAddr, useNewAddress, deliveryMode, payment,
       notes, promoCode, promoOff, giftCode, giftValue, loyaltyToUse, geoloc]);
 
   // ─── Empty cart guard ───────────────────────────────────────────
@@ -293,6 +282,10 @@ export default function CheckoutPage() {
   const totalDiscounts = promoOff + Math.min(giftValue, subtotal) + loyaltyApplied;
   const total = Math.max(0, beforeDiscounts - totalDiscounts);
 
+  // Preorder split (acompte 50 % / solde 50 %) — affiche dans le recap.
+  const preorderDeposit = isPreorder ? Math.round(total * 0.5) : 0;
+  const preorderBalance = isPreorder ? total - preorderDeposit : 0;
+
   const selectedAddr = useMemo(
     () => addresses.find((a) => a.id === selectedAddrId) || null,
     [addresses, selectedAddrId]
@@ -309,6 +302,20 @@ export default function CheckoutPage() {
     activeAddress.street && activeAddress.street.trim().length > 3 &&
     activeAddress.city && activeAddress.city.trim().length > 1 &&
     activeAddress.phone && activeAddress.phone.trim().length >= 8;
+
+  const paymentValid = (() => {
+    const chosen = PAYMENTS.find((p) => p.id === payment);
+    return !!chosen && chosen.enabled && (!isPreorder || chosen.preorderOk);
+  })();
+
+  const canConfirm = addressValid && paymentValid && !submitting && !success;
+
+  // Message d aide au CTA — pointe la premiere donnee manquante.
+  const missingHint = (() => {
+    if (!addressValid) return 'Ajoute une adresse de livraison valide';
+    if (!paymentValid) return 'Choisis un mode de paiement';
+    return null;
+  })();
 
   // ─── Promo / Gift card validation ───────────────────────────────
   const applyPromo = useCallback(() => {
@@ -350,7 +357,6 @@ export default function CheckoutPage() {
     const code = giftCode.trim().toUpperCase();
     if (!code) { setGiftValue(0); setGiftMsg(''); return; }
     setGiftChecking(true); setGiftMsg('');
-    // Best-effort call to RPC public_check_gift_card if exposed. Fallback: mock.
     try {
       const mod = await import('../lib/supabase');
       const supabase = mod.supabase;
@@ -363,7 +369,6 @@ export default function CheckoutPage() {
           setGiftChecking(false);
           return;
         }
-        // Fallback silent : mock validation
       }
     } catch { /* RPC absent */ }
     // Mock table
@@ -379,36 +384,6 @@ export default function CheckoutPage() {
     setGiftChecking(false);
   }, [giftCode, subtotal]);
 
-  // ─── Step navigation guards ─────────────────────────────────────
-  const canGoNext = () => {
-    if (step === 'address') return addressValid;
-    if (step === 'delivery') return !!currentDelivery;
-    if (step === 'payment') {
-      const chosen = PAYMENTS.find((p) => p.id === payment);
-      return !!chosen && chosen.enabled;
-    }
-    return true;
-  };
-  const goNext = () => {
-    const idx = STEPS.findIndex((s) => s.id === step);
-    if (idx < STEPS.length - 1 && canGoNext()) {
-      setStep(STEPS[idx + 1].id);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
-  const goPrev = () => {
-    const idx = STEPS.findIndex((s) => s.id === step);
-    if (idx > 0) {
-      setStep(STEPS[idx - 1].id);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
-  const jumpToStep = (id) => {
-    const idx = STEPS.findIndex((s) => s.id === id);
-    const curIdx = STEPS.findIndex((s) => s.id === step);
-    if (idx <= curIdx) setStep(id);
-  };
-
   // ─── Submit ─────────────────────────────────────────────────────
   const handleConfirm = async () => {
     if (submitLockRef.current || submitting) return;
@@ -416,19 +391,24 @@ export default function CheckoutPage() {
 
     const nextErrors = {};
     if (!addressValid) nextErrors.address = 'Adresse invalide';
-    if (!payment) nextErrors.payment = 'Choisis un mode de paiement';
+    if (!paymentValid) nextErrors.payment = 'Choisis un mode de paiement';
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) {
       submitLockRef.current = false;
+      // Scroll vers l element manquant.
+      const anchor = !addressValid ? 'ck-anchor-address' : 'ck-anchor-payment';
+      const el = document.getElementById(anchor);
+      if (el && typeof el.scrollIntoView === 'function') {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
       return;
     }
 
     setSubmitting(true);
 
-    // ─── Preorder : acompte 50% + solde 50% + date arrivee estimee ───
-    // Calque native (yaram-native/app/checkout.jsx#handleSubmit).
-    const deposit = isPreorder ? Math.round(total * 0.5) : 0;
-    const balance = isPreorder ? total - deposit : 0;
+    // Preorder : acompte 50 % + solde 50 % + date arrivee estimee.
+    const deposit = preorderDeposit;
+    const balance = preorderBalance;
     let expectedArrival = null;
     if (isPreorder && importLeadDays > 0) {
       const arrival = new Date();
@@ -437,10 +417,6 @@ export default function CheckoutPage() {
     }
 
     try {
-      // FIX juillet 2026 : la RPC `client_place_order` n existait pas en DB
-      // -> le web CheckoutPage simulait un succes sans creer la commande.
-      // Remplace par un INSERT direct via createOrder (lib/supabase/orders.js)
-      // qui supporte deja les champs preorder + tokens confirm + retry.
       const ordersMod = await import('../lib/supabase/orders');
       const created = await ordersMod.createOrder({
         items,
@@ -467,9 +443,7 @@ export default function CheckoutPage() {
       clearCart();
       clearProgress();
       setSuccess(true);
-      setStep('review');
 
-      // Redirect to payment (Wave/OM/card) or tracking (COD) after confirmation
       const isCash = payment === 'cod';
       setTimeout(() => {
         if (isCash) navigate({ name: 'order_tracking', params: { orderId: created.id } });
@@ -483,18 +457,18 @@ export default function CheckoutPage() {
     }
   };
 
-  // ─── Rendering per step ─────────────────────────────────────────
+  // ─── Rendering ──────────────────────────────────────────────────
   const previewItems = items.slice(0, 3);
   const extraCount = Math.max(0, items.length - previewItems.length);
 
   return (
     <SiteLayout hideFooter={true}>
-      <div className="checkout-page checkout-page--v2">
+      <div className="checkout-page checkout-page--single">
         {/* Header */}
         <header className="ck-header">
-          <button className="ck-back" onClick={() => step === 'address' ? navigate('cart') : goPrev()} aria-label="Retour">
+          <button className="ck-back" onClick={() => navigate('cart')} aria-label="Retour au panier">
             {Icon.back}
-            <span>{step === 'address' ? 'Retour au panier' : 'Etape precedente'}</span>
+            <span>Retour au panier</span>
           </button>
           <div className="ck-header-titles">
             <h1 className="ck-title">Finaliser ma commande</h1>
@@ -504,24 +478,39 @@ export default function CheckoutPage() {
           </div>
         </header>
 
-        {/* Progress bar */}
-        <div className="ck-progress-wrap">
-          <ProgressBar
-            steps={STEPS}
-            current={step}
-            onStepClick={jumpToStep}
-          />
-        </div>
+        {success ? (
+          <div className="ck-success-wrap">
+            <div className="ck-card ck-section">
+              <div className="ck-success">
+                <div className="ck-success-icon">{Icon.check}</div>
+                <h3>Merci pour ta commande !</h3>
+                <p>Redirection vers le suivi de commande…</p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="ck-grid ck-grid--v2 ck-grid--single">
+            <div className="ck-left">
+              {/* Bandeau Import (preorder) — informe sur le delai 10-15j. */}
+              {isPreorder && (
+                <div className="ck-import-banner" role="note">
+                  <span className="ck-import-icon">{Icon.plane}</span>
+                  <div className="ck-import-copy">
+                    <strong>Commande Import YARAM</strong>
+                    <p>
+                      Ton panier contient un produit importe. Delai estime <b>10-15 jours</b> avant
+                      livraison a Dakar. Un acompte de 50 % est demande maintenant, le solde a la reception.
+                    </p>
+                  </div>
+                </div>
+              )}
 
-        {/* Grid */}
-        <div className="ck-grid ck-grid--v2">
-          <div className="ck-left">
-            {/* ═══ STEP 1 : ADDRESS ═══ */}
-            {step === 'address' && (
-              <section className="ck-card ck-section">
+              {/* ═══ ADRESSE ═══ */}
+              <section id="ck-anchor-address" className={`ck-card ck-section ${errors.address ? 'ck-section--error' : ''}`}>
                 <div className="ck-section-head">
                   <span className="ck-section-icon">{Icon.pin}</span>
                   <h2 className="ck-section-title">Adresse de livraison</h2>
+                  {addressValid && <span className="ck-section-ok" aria-hidden>{Icon.check}</span>}
                 </div>
 
                 <div className="ck-section-body">
@@ -622,10 +611,8 @@ export default function CheckoutPage() {
                   {errors.address && <span className="ck-err">{errors.address}</span>}
                 </div>
               </section>
-            )}
 
-            {/* ═══ STEP 2 : DELIVERY ═══ */}
-            {step === 'delivery' && (
+              {/* ═══ LIVRAISON ═══ */}
               <section className="ck-card ck-section">
                 <div className="ck-section-head">
                   <span className="ck-section-icon">{Icon.scooter}</span>
@@ -643,7 +630,7 @@ export default function CheckoutPage() {
                           onClick={() => setDeliveryMode(m.id)}
                         >
                           <div className="ck-radio-dot">{active && <span />}</div>
-                          <div className="ck-radio-icon">{Icon.scooter}</div>
+                          <div className="ck-radio-icon">{m.id === 'import' ? Icon.plane : Icon.scooter}</div>
                           <div className="ck-radio-body">
                             <div className="ck-radio-head">
                               <strong>{m.name}</strong>
@@ -673,56 +660,62 @@ export default function CheckoutPage() {
                   </div>
                 </div>
               </section>
-            )}
 
-            {/* ═══ STEP 3 : PAYMENT ═══ */}
-            {step === 'payment' && (
-              <>
-                <section className="ck-card ck-section">
-                  <div className="ck-section-head">
-                    <span className="ck-section-icon">{Icon.card}</span>
-                    <h2 className="ck-section-title">Methode de paiement</h2>
-                  </div>
-                  <div className="ck-section-body">
-                    <div className="ck-pay-list">
-                      {visiblePayments.map((p) => {
-                        const active = payment === p.id;
-                        const disabled = !p.enabled;
-                        return (
-                          <button
-                            key={p.id}
-                            type="button"
-                            className={`ck-radio-card ck-pay-card ${active ? 'active' : ''} ${disabled ? 'is-disabled' : ''}`}
-                            onClick={() => { if (!disabled) setPayment(p.id); }}
-                            aria-disabled={disabled}
-                            disabled={disabled}
-                          >
-                            <div className="ck-radio-dot">{active && <span />}</div>
-                            <PayLogo method={p} />
-                            <div className="ck-radio-body">
-                              <div className="ck-pay-name-row">
-                                <strong>{p.name}</strong>
-                                {disabled && <span className="ck-pay-badge">Bientot</span>}
-                              </div>
-                              <span className="ck-radio-sub-line">{p.sub}</span>
+              {/* ═══ PAIEMENT ═══ */}
+              <section id="ck-anchor-payment" className={`ck-card ck-section ${errors.payment ? 'ck-section--error' : ''}`}>
+                <div className="ck-section-head">
+                  <span className="ck-section-icon">{Icon.card}</span>
+                  <h2 className="ck-section-title">Methode de paiement</h2>
+                  {paymentValid && <span className="ck-section-ok" aria-hidden>{Icon.check}</span>}
+                </div>
+                <div className="ck-section-body">
+                  <div className="ck-pay-list">
+                    {visiblePayments.map((p) => {
+                      const active = payment === p.id;
+                      const disabled = !p.enabled;
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          className={`ck-radio-card ck-pay-card ${active ? 'active' : ''} ${disabled ? 'is-disabled' : ''}`}
+                          onClick={() => { if (!disabled) setPayment(p.id); }}
+                          aria-disabled={disabled}
+                          disabled={disabled}
+                        >
+                          <div className="ck-radio-dot">{active && <span />}</div>
+                          <PayLogo method={p} />
+                          <div className="ck-radio-body">
+                            <div className="ck-pay-name-row">
+                              <strong>{p.name}</strong>
+                              {disabled && <span className="ck-pay-badge">Bientot</span>}
                             </div>
-                            {active && !disabled && (
-                              <div className="ck-check-mark" aria-hidden>{Icon.check}</div>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
+                            <span className="ck-radio-sub-line">{p.sub}</span>
+                          </div>
+                          {active && !disabled && (
+                            <div className="ck-check-mark" aria-hidden>{Icon.check}</div>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
-                </section>
+                  {errors.payment && <span className="ck-err">{errors.payment}</span>}
+                </div>
+              </section>
 
-                {/* Codes promo */}
-                <section className="ck-card ck-section">
-                  <div className="ck-section-head">
-                    <span className="ck-section-icon">{Icon.tag}</span>
-                    <h2 className="ck-section-title">Code promo</h2>
-                  </div>
-                  <div className="ck-section-body">
+              {/* ═══ CODES & FIDELITE (optionnel) ═══ */}
+              <section className="ck-card ck-section ck-section--optional">
+                <div className="ck-section-head">
+                  <span className="ck-section-icon">{Icon.tag}</span>
+                  <h2 className="ck-section-title">Codes & fidelite</h2>
+                  <span className="ck-optional">optionnel</span>
+                </div>
+                <div className="ck-section-body ck-optional-body">
+                  {/* Code promo */}
+                  <div className="ck-mini-block">
+                    <div className="ck-mini-block-head">
+                      <span className="ck-section-icon-sm">{Icon.tag}</span>
+                      <span>Code promo</span>
+                    </div>
                     <div className="ck-inline-row">
                       <input
                         className="ck-inline-input"
@@ -739,15 +732,13 @@ export default function CheckoutPage() {
                       </div>
                     )}
                   </div>
-                </section>
 
-                {/* Cheque cadeau MySargal */}
-                <section className="ck-card ck-section">
-                  <div className="ck-section-head">
-                    <span className="ck-section-icon">{Icon.gift}</span>
-                    <h2 className="ck-section-title">Cheque cadeau MySargal</h2>
-                  </div>
-                  <div className="ck-section-body">
+                  {/* Cheque cadeau MySargal */}
+                  <div className="ck-mini-block">
+                    <div className="ck-mini-block-head">
+                      <span className="ck-section-icon-sm">{Icon.gift}</span>
+                      <span>Cheque cadeau MySargal</span>
+                    </div>
                     <div className="ck-inline-row">
                       <input
                         className="ck-inline-input"
@@ -766,16 +757,14 @@ export default function CheckoutPage() {
                       </div>
                     )}
                   </div>
-                </section>
 
-                {/* Points fidelite */}
-                {maxLoyaltyPoints > 0 && (
-                  <section className="ck-card ck-section">
-                    <div className="ck-section-head">
-                      <span className="ck-section-icon">{Icon.loyalty}</span>
-                      <h2 className="ck-section-title">Points fidelite</h2>
-                    </div>
-                    <div className="ck-section-body">
+                  {/* Points fidelite */}
+                  {maxLoyaltyPoints > 0 && (
+                    <div className="ck-mini-block">
+                      <div className="ck-mini-block-head">
+                        <span className="ck-section-icon-sm">{Icon.loyalty}</span>
+                        <span>Points fidelite</span>
+                      </div>
                       <p className="ck-muted">Tu peux utiliser jusqu a {formatPrice(maxLoyaltyPoints)} points sur cette commande.</p>
                       <div className="ck-loyalty-row">
                         <input
@@ -793,219 +782,166 @@ export default function CheckoutPage() {
                         </div>
                       </div>
                     </div>
-                  </section>
-                )}
-              </>
-            )}
-
-            {/* ═══ STEP 4 : REVIEW ═══ */}
-            {step === 'review' && (
-              <section className="ck-card ck-section">
-                <div className="ck-section-head">
-                  <span className="ck-section-icon">{Icon.check}</span>
-                  <h2 className="ck-section-title">
-                    {success ? 'Commande confirmee' : 'Confirmation'}
-                  </h2>
+                  )}
                 </div>
-
-                {success ? (
-                  <div className="ck-success">
-                    <div className="ck-success-icon">{Icon.check}</div>
-                    <h3>Merci pour ta commande !</h3>
-                    <p>Redirection vers le suivi de commande…</p>
-                  </div>
-                ) : (
-                  <div className="ck-review">
-                    <div className="ck-review-block">
-                      <div className="ck-review-label">Adresse</div>
-                      <div className="ck-review-value">
-                        <strong>{activeAddress.label || 'Adresse'}</strong>
-                        <div>{activeAddress.street}</div>
-                        <div>{activeAddress.city} · {activeAddress.phone}</div>
-                      </div>
-                      <button className="ck-link" onClick={() => setStep('address')}>Modifier</button>
-                    </div>
-                    <div className="ck-review-block">
-                      <div className="ck-review-label">Livraison</div>
-                      <div className="ck-review-value">
-                        <strong>{currentDelivery.name}</strong>
-                        <div>{currentDelivery.time} · {formatPrice(currentDelivery.price)} FCFA</div>
-                      </div>
-                      <button className="ck-link" onClick={() => setStep('delivery')}>Modifier</button>
-                    </div>
-                    <div className="ck-review-block">
-                      <div className="ck-review-label">Paiement</div>
-                      <div className="ck-review-value">
-                        <strong>{PAYMENTS.find((p) => p.id === payment)?.name}</strong>
-                      </div>
-                      <button className="ck-link" onClick={() => setStep('payment')}>Modifier</button>
-                    </div>
-                    {notes && (
-                      <div className="ck-review-block">
-                        <div className="ck-review-label">Notes</div>
-                        <div className="ck-review-value">{notes}</div>
-                      </div>
-                    )}
-
-                    <div className="ck-legal">
-                      En confirmant, tu acceptes nos{' '}
-                      <button type="button" className="ck-link" onClick={() => navigate('terms')}>CGV</button>
-                      {' '}et notre{' '}
-                      <button type="button" className="ck-link" onClick={() => navigate('privacy')}>politique de confidentialite</button>.
-                    </div>
-                  </div>
-                )}
               </section>
-            )}
 
-            {/* ─── Nav buttons ─── */}
-            {!success && (
-              <div className="ck-nav-btns">
-                {step !== 'address' && (
-                  <button className="ck-btn ck-btn-outline" onClick={goPrev} disabled={submitting}>
-                    Precedent
-                  </button>
-                )}
-                {step !== 'review' && (
-                  <button
-                    className="ck-btn ck-btn-primary"
-                    onClick={goNext}
-                    disabled={!canGoNext()}
-                  >
-                    Continuer
-                  </button>
-                )}
-                {step === 'review' && (
-                  <button
-                    className="ck-btn ck-btn-primary ck-btn-confirm"
-                    onClick={handleConfirm}
-                    disabled={submitting}
-                  >
-                    {submitting ? (
-                      <>
-                        <span className="ck-cta-spinner" />
-                        <span>Traitement…</span>
-                      </>
-                    ) : (
-                      <>Confirmer et payer {formatPrice(total)} FCFA</>
-                    )}
-                  </button>
-                )}
+              {/* Legal notice */}
+              <div className="ck-legal">
+                En confirmant, tu acceptes nos{' '}
+                <button type="button" className="ck-link" onClick={() => navigate('terms')}>CGV</button>
+                {' '}et notre{' '}
+                <button type="button" className="ck-link" onClick={() => navigate('privacy')}>politique de confidentialite</button>.
               </div>
-            )}
-          </div>
+            </div>
 
-          {/* ═══ SUMMARY (sticky) ═══ */}
-          <aside className="ck-right">
-            <div className="ck-summary ck-card">
-              <h2 className="ck-summary-title">Ta commande</h2>
+            {/* ═══ SUMMARY (sticky) ═══ */}
+            <aside className="ck-right">
+              <div className="ck-summary ck-card">
+                <h2 className="ck-summary-title">Ta commande</h2>
 
-              <div className="ck-mini-cart">
-                {previewItems.map((it, i) => (
-                  <div key={i} className="ck-mini-row">
-                    <div className="ck-mini-thumb">
-                      {it.img ? (
-                        <img src={it.img} alt={it.name} loading="lazy" />
-                      ) : (
-                        <span>—</span>
-                      )}
-                    </div>
-                    <div className="ck-mini-info">
-                      <div className="ck-mini-name">{it.name}</div>
-                      <div className="ck-mini-meta">
-                        x{it.qty} · {formatPrice(it.price)} FCFA
+                <div className="ck-mini-cart">
+                  {previewItems.map((it, i) => (
+                    <div key={i} className="ck-mini-row">
+                      <div className="ck-mini-thumb">
+                        {it.img ? (
+                          <img src={it.img} alt={it.name} loading="lazy" />
+                        ) : (
+                          <span>—</span>
+                        )}
+                      </div>
+                      <div className="ck-mini-info">
+                        <div className="ck-mini-name">{it.name}</div>
+                        <div className="ck-mini-meta">
+                          x{it.qty} · {formatPrice(it.price)} FCFA
+                        </div>
+                      </div>
+                      <div className="ck-mini-total">
+                        {formatPrice((Number(it.price) || 0) * (Number(it.qty) || 0))}
                       </div>
                     </div>
-                    <div className="ck-mini-total">
-                      {formatPrice((Number(it.price) || 0) * (Number(it.qty) || 0))}
+                  ))}
+                  {extraCount > 0 && (
+                    <div className="ck-mini-more">+ {extraCount} autre{extraCount > 1 ? 's' : ''}</div>
+                  )}
+                </div>
+
+                <div className="ck-totals">
+                  <div className="ck-total-row">
+                    <span>Sous-total</span>
+                    <strong>{formatPrice(subtotal)} FCFA</strong>
+                  </div>
+                  <div className="ck-total-row">
+                    <span>Livraison <span className="ck-mode-tag">{currentDelivery.name}</span></span>
+                    <strong>{formatPrice(deliveryFee)} FCFA</strong>
+                  </div>
+                  <div className="ck-total-row">
+                    <span>Frais de service</span>
+                    <strong>{formatPrice(serviceFee)} FCFA</strong>
+                  </div>
+                  {promoOff > 0 && (
+                    <div className="ck-total-row ck-total-row--discount">
+                      <span>Promo {promoCode}</span>
+                      <strong>-{formatPrice(promoOff)} FCFA</strong>
                     </div>
+                  )}
+                  {giftValue > 0 && (
+                    <div className="ck-total-row ck-total-row--discount">
+                      <span>Cheque cadeau</span>
+                      <strong>-{formatPrice(giftValue)} FCFA</strong>
+                    </div>
+                  )}
+                  {loyaltyApplied > 0 && (
+                    <div className="ck-total-row ck-total-row--discount">
+                      <span>Points fidelite</span>
+                      <strong>-{formatPrice(loyaltyApplied)} FCFA</strong>
+                    </div>
+                  )}
+                  <div className="ck-total-divider" />
+                  <div className="ck-total-row ck-total-final">
+                    <span>Total TTC</span>
+                    <strong>{formatPrice(total)} FCFA</strong>
                   </div>
-                ))}
-                {extraCount > 0 && (
-                  <div className="ck-mini-more">+ {extraCount} autre{extraCount > 1 ? 's' : ''}</div>
+
+                  {/* Preorder split — visible seulement si preorder */}
+                  {isPreorder && (
+                    <div className="ck-preorder-split">
+                      <div className="ck-total-row ck-preorder-row">
+                        <span>Acompte 50 % (maintenant)</span>
+                        <strong>{formatPrice(preorderDeposit)} FCFA</strong>
+                      </div>
+                      <div className="ck-total-row ck-preorder-row ck-preorder-row--balance">
+                        <span>Solde a la reception</span>
+                        <strong>{formatPrice(preorderBalance)} FCFA</strong>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* CTA principal — Uber Eats style */}
+                <button
+                  className="ck-btn ck-btn-primary ck-cta-main"
+                  onClick={handleConfirm}
+                  disabled={!canConfirm}
+                >
+                  {submitting ? (
+                    <>
+                      <span className="ck-cta-spinner" />
+                      <span>Traitement…</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Commander</span>
+                      <span className="ck-cta-price">{formatPrice(isPreorder ? preorderDeposit : total)} FCFA</span>
+                    </>
+                  )}
+                </button>
+                {missingHint && !submitting && (
+                  <div className="ck-cta-warn" role="status">
+                    <span className="ck-cta-warn-icon">{Icon.info}</span>
+                    <span>{missingHint}</span>
+                  </div>
                 )}
+
+                <div className="ck-trust">
+                  <div className="ck-trust-item">
+                    <span className="ck-trust-icon">{Icon.lock}</span>
+                    <span>Paiement securise</span>
+                  </div>
+                  <div className="ck-trust-item">
+                    <span className="ck-trust-icon">{Icon.shield}</span>
+                    <span>Authentique garanti</span>
+                  </div>
+                </div>
+
+                <button className="ck-back-link" onClick={() => navigate('cart')}>
+                  Retour au panier
+                </button>
               </div>
-
-              <div className="ck-totals">
-                <div className="ck-total-row">
-                  <span>Sous-total</span>
-                  <strong>{formatPrice(subtotal)} FCFA</strong>
-                </div>
-                <div className="ck-total-row">
-                  <span>Livraison <span className="ck-mode-tag">{currentDelivery.name}</span></span>
-                  <strong>{formatPrice(deliveryFee)} FCFA</strong>
-                </div>
-                <div className="ck-total-row">
-                  <span>Frais de service</span>
-                  <strong>{formatPrice(serviceFee)} FCFA</strong>
-                </div>
-                {promoOff > 0 && (
-                  <div className="ck-total-row ck-total-row--discount">
-                    <span>Promo {promoCode}</span>
-                    <strong>-{formatPrice(promoOff)} FCFA</strong>
-                  </div>
-                )}
-                {giftValue > 0 && (
-                  <div className="ck-total-row ck-total-row--discount">
-                    <span>Cheque cadeau</span>
-                    <strong>-{formatPrice(giftValue)} FCFA</strong>
-                  </div>
-                )}
-                {loyaltyApplied > 0 && (
-                  <div className="ck-total-row ck-total-row--discount">
-                    <span>Points fidelite</span>
-                    <strong>-{formatPrice(loyaltyApplied)} FCFA</strong>
-                  </div>
-                )}
-                <div className="ck-total-divider" />
-                <div className="ck-total-row ck-total-final">
-                  <span>Total TTC</span>
-                  <strong>{formatPrice(total)} FCFA</strong>
-                </div>
-              </div>
-
-              <div className="ck-trust">
-                <div className="ck-trust-item">
-                  <span className="ck-trust-icon">{Icon.lock}</span>
-                  <span>Paiement securise</span>
-                </div>
-                <div className="ck-trust-item">
-                  <span className="ck-trust-icon">{Icon.shield}</span>
-                  <span>Authentique garanti</span>
-                </div>
-              </div>
-
-              <button className="ck-back-link" onClick={() => navigate('cart')}>
-                Retour au panier
-              </button>
-            </div>
-          </aside>
-        </div>
-
-        {/* Sticky mobile bar */}
-        <div className="ck-mobile-bar">
-          <div className="ck-mobile-bar-info">
-            <span className="ck-mobile-bar-label">Total</span>
-            <strong className="ck-mobile-bar-total">{formatPrice(total)} FCFA</strong>
+            </aside>
           </div>
-          {step !== 'review' ? (
-            <button
-              className="ck-btn ck-btn-primary ck-mobile-bar-cta"
-              onClick={goNext}
-              disabled={!canGoNext()}
-            >
-              Continuer
-            </button>
-          ) : (
+        )}
+
+        {/* Sticky mobile bar — CTA principal sur mobile */}
+        {!success && (
+          <div className="ck-mobile-bar">
+            <div className="ck-mobile-bar-info">
+              <span className="ck-mobile-bar-label">
+                {isPreorder ? 'Acompte' : 'Total'}
+              </span>
+              <strong className="ck-mobile-bar-total">
+                {formatPrice(isPreorder ? preorderDeposit : total)} FCFA
+              </strong>
+            </div>
             <button
               className="ck-btn ck-btn-primary ck-mobile-bar-cta"
               onClick={handleConfirm}
-              disabled={submitting || success}
+              disabled={!canConfirm}
             >
-              {submitting ? 'Traitement…' : 'Payer'}
+              {submitting ? 'Traitement…' : 'Commander'}
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </SiteLayout>
   );
