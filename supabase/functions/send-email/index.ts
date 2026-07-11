@@ -21,6 +21,8 @@
 //
 // Templates ORDER : welcome | orderConfirmed | orderShipped | orderDelivered
 //                  | pharmacyNewOrder | paymentVerified | orderStatusUpdate
+//                  | importSupplierOrdered | importInTransit
+//                  | importArrivedDakar | importBalanceReminder
 // Templates RAW   : referralUsed | cartAbandoned
 //
 // SECRETS Supabase requis :
@@ -190,6 +192,109 @@ const Templates: Record<
       `,
     }),
   }),
+
+  // ─── Flow import (precommande internationale) ─────────────
+  // Etapes intermediaires envoyees automatiquement quand l admin
+  // fait progresser une commande is_preorder=true :
+  //   awaiting_supplier -> importSupplierOrdered
+  //   in_transit_intl   -> importInTransit
+  //   arrived_local     -> importArrivedDakar
+  //   awaiting_balance  -> importBalanceReminder
+  // Le trigger Postgres ne passe que { order_id, template }. Les
+  // params (expectedArrivalDate, balanceAmount) sont derives de la
+  // row orders quand possible, sinon fallback texte generique.
+
+  importSupplierOrdered: ({ firstName, order, params }) => {
+    const o = order!;
+    const eta = (params?.expectedArrivalDate as string | undefined) || "10 a 15 jours";
+    return {
+      subject: `Ta commande YARAM est lancee chez le fournisseur`,
+      html: layout({
+        title: "Commande lancee chez le fournisseur",
+        preheader: `Precommande #${o.id} — on vient de la passer chez notre fournisseur international.`,
+        body: `
+          <div style="font-size:11px;font-weight:700;color:#888;letter-spacing:0.18em;text-transform:uppercase;margin-bottom:6px;">Precommande #${o.id}</div>
+          <h1 style="margin:0 0 16px;font-size:22px;font-weight:800;color:${BRAND_GREEN};">Bonne nouvelle ${firstName}</h1>
+          <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#444;">On vient de passer commande de tes produits chez notre fournisseur international.</p>
+          <div style="background:#EBF7EF;border-left:3px solid ${BRAND_GREEN};padding:16px;border-radius:8px;margin:20px 0;">
+            <div style="font-size:11px;font-weight:700;color:${BRAND_GREEN};letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">Delai d arrivee estime a Dakar</div>
+            <div style="font-size:20px;font-weight:800;color:#1A1A1A;">${eta}</div>
+          </div>
+          <p style="margin:16px 0;font-size:14px;color:#444;">On te tient au courant a chaque etape.</p>
+          <div style="margin:24px 0;">${btn("Suivre ma precommande", `${APP_URL}/order/${o.id}`)}</div>
+        `,
+      }),
+    };
+  },
+
+  importInTransit: ({ firstName, order, params }) => {
+    const o = order!;
+    const eta = (params?.expectedArrivalDate as string | undefined) || "sous ~10 jours";
+    return {
+      subject: `Ton colis YARAM est en route vers Dakar`,
+      html: layout({
+        title: "Colis en transit vers Dakar",
+        preheader: `Precommande #${o.id} — en route vers nos entrepots Dakar.`,
+        body: `
+          <div style="font-size:11px;font-weight:700;color:#888;letter-spacing:0.18em;text-transform:uppercase;margin-bottom:6px;">Precommande #${o.id}</div>
+          <h1 style="margin:0 0 16px;font-size:22px;font-weight:800;color:${BRAND_GREEN};">${firstName}, ton colis est en route</h1>
+          <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#444;">Ton colis a quitte le fournisseur et est en transit international.</p>
+          <div style="background:#EBF7EF;border-left:3px solid ${BRAND_GREEN};padding:16px;border-radius:8px;margin:20px 0;">
+            <div style="font-size:11px;font-weight:700;color:${BRAND_GREEN};letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">Arrivee estimee a Dakar</div>
+            <div style="font-size:20px;font-weight:800;color:#1A1A1A;">${eta}</div>
+          </div>
+          <p style="margin:16px 0;font-size:14px;color:#444;">Prochaine etape : reception dans nos entrepots Dakar.</p>
+          <div style="margin:24px 0;">${btn("Suivre ma precommande", `${APP_URL}/order/${o.id}`)}</div>
+        `,
+      }),
+    };
+  },
+
+  importArrivedDakar: ({ firstName, order }) => {
+    const o = order!;
+    const balance = o.balance_amount || o.total / 2;
+    return {
+      subject: `Ton colis YARAM est arrive a Dakar`,
+      html: layout({
+        title: "Colis arrive a Dakar",
+        preheader: `Precommande #${o.id} — arrivee dans nos entrepots Dakar.`,
+        body: `
+          <div style="font-size:11px;font-weight:700;color:#888;letter-spacing:0.18em;text-transform:uppercase;margin-bottom:6px;">Precommande #${o.id}</div>
+          <h1 style="margin:0 0 16px;font-size:22px;font-weight:800;color:${BRAND_GREEN};">Excellente nouvelle ${firstName}</h1>
+          <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#444;">Ton colis vient d arriver a Dakar. On prepare tout pour la livraison finale.</p>
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#FFF5E6;border-left:3px solid ${BRAND_ORANGE};border-radius:10px;padding:16px;margin:18px 0;">
+            <tr><td style="font-size:11px;font-weight:700;color:${BRAND_ORANGE};letter-spacing:0.1em;text-transform:uppercase;padding-bottom:6px;">Solde a regler (50%)</td></tr>
+            <tr><td style="font-size:22px;font-weight:800;color:#1A1A1A;">${fcfa(balance)}</td></tr>
+            <tr><td style="font-size:13px;color:#6B6B6B;padding-top:6px;">Tu recevras dans quelques minutes un email pour regler le solde avant l envoi chez toi.</td></tr>
+          </table>
+          <div style="margin:24px 0;">${btn("Suivre ma precommande", `${APP_URL}/order/${o.id}`)}</div>
+        `,
+      }),
+    };
+  },
+
+  importBalanceReminder: ({ firstName, order }) => {
+    const o = order!;
+    const balance = o.balance_amount || o.total / 2;
+    return {
+      subject: `Solde a regler pour ton colis YARAM (dernier pas)`,
+      html: layout({
+        title: "Solde a regler",
+        preheader: `Precommande #${o.id} — il ne reste que le solde et on livre sous 24h.`,
+        body: `
+          <div style="font-size:11px;font-weight:700;color:#888;letter-spacing:0.18em;text-transform:uppercase;margin-bottom:6px;">Precommande #${o.id}</div>
+          <h1 style="margin:0 0 16px;font-size:22px;font-weight:800;color:${BRAND_GREEN};">${firstName}, ton colis est pret</h1>
+          <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#444;">Il ne reste qu a regler le solde (50% restant) et on l envoie chez toi sous 24h.</p>
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#FFF5E6;border-left:3px solid ${BRAND_ORANGE};border-radius:10px;padding:16px;margin:18px 0;">
+            <tr><td style="font-size:11px;font-weight:700;color:${BRAND_ORANGE};letter-spacing:0.1em;text-transform:uppercase;padding-bottom:6px;">Solde a regler</td></tr>
+            <tr><td style="font-size:24px;font-weight:800;color:${BRAND_ORANGE};">${fcfa(balance)}</td></tr>
+          </table>
+          <div style="margin:28px 0;">${btn("Payer le solde", `${APP_URL}/payment/${o.id}?mode=balance`)}</div>
+          <p style="margin:16px 0 0;font-size:12px;color:#888;">Paiement securise Wave, Orange Money, Free Money, PayTech ou carte bancaire.</p>
+        `,
+      }),
+    };
+  },
 
   paymentVerified: ({ firstName, order }) => {
     const o = order!;
