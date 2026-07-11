@@ -74,6 +74,7 @@ const PartnerApplication = lazy(() => import('./pages/PartnerApplication'));
 const DriverApplication  = lazy(() => import('./pages/DriverApplication'));
 const BrandsPage         = lazy(() => import('./pages/BrandsPage'));
 const WishlistShared     = lazy(() => import('./pages/WishlistShared'));
+const BundlePage         = lazy(() => import('./pages/BundlePage'));
 
 // ════════════════════════════════════════════════════════════════
 //  FIX juin 2026 #8 — LazyFallback FULL SCREEN (CAUSE RACINE BLANCHE)
@@ -129,6 +130,8 @@ function routeToPath(route) {
     case 'shop': return '/shop';
     case 'wishlist_shared': return `/wishlist/${params.slug}`;
     case 'product': return `/product/${params.id}`;
+    case 'productPage': return `/product/${params.id}`;
+    case 'bundle': return `/bundle/${params.slug}`;
     case 'brand': return `/brand/${params.id}`;
     case 'brand_detail': return `/brand/${params.id}`;
     case 'pharmacy_detail': return `/pharmacy/${params.id}`;
@@ -160,6 +163,7 @@ function pathToRoute(pathname, search = '') {
 
   if (parts[0] === 'wishlist' && parts[1]) return { name: 'wishlist_shared', params: { slug: parts[1] } };
   if (parts[0] === 'product' && parts[1]) return { name: 'product', params: { id: parts[1] } };
+  if (parts[0] === 'bundle' && parts[1]) return { name: 'bundle', params: { slug: parts[1] } };
   if (parts[0] === 'brand' && parts[1]) return { name: 'brand', params: { id: parts[1] } };
   if (parts[0] === 'sign' && parts[1]) return { name: 'sign', params: { token: parts[1] } };
   if (parts[0] === 'pharmacy' && parts[1]) return { name: 'pharmacy_detail', params: { id: parts[1] } };
@@ -948,6 +952,8 @@ function ClientApp() {
     case 'checkout_legacy': page = <Checkout items={route.params.items} paymentMethod={route.params.paymentMethod} />; break;
     case 'brand': page = <BrandPage />; break;
     case 'brand_detail': page = <BrandPage />; break;
+    case 'bundle': page = <Suspense fallback={<LazyFallback />}><BundlePage /></Suspense>; break;
+    case 'productPage': page = <ProductPage />; break;
     case 'sign': page = <SignPage />; break;
     case 'payment': page = <Payment orderId={route.params.orderId} mode={route.params.mode} />; break;
     case 'order_tracking': page = <OrderTracking orderId={route.params.orderId} />; break;

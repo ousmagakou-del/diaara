@@ -38,6 +38,7 @@ const IntlRequestsSection        = lazy(() => import('../admin/IntlRequestsSecti
 // ─── Nouvelles sections (juin 2026) ────────────────────────────────────────
 const ArticlesSection            = lazy(() => import('../admin/ArticlesSection'));
 const RoutinesSection            = lazy(() => import('../admin/RoutinesSection'));
+const BundlesSection             = lazy(() => import('../admin/BundlesSection'));
 const SubscriptionsSection       = lazy(() => import('../admin/SubscriptionsSection'));
 const SupportSection             = lazy(() => import('../admin/SupportSection'));
 const ProductReviewsSection      = lazy(() => import('../admin/ProductReviewsSection'));
@@ -45,6 +46,7 @@ const CounterfeitSection         = lazy(() => import('../admin/CounterfeitSectio
 const VerifyRequestsSection      = lazy(() => import('../admin/VerifyRequestsSection'));
 const InventorySection           = lazy(() => import('../admin/InventorySection'));
 const RestockAlertsSection       = lazy(() => import('../admin/RestockAlertsSection'));
+const QAModerationSection        = lazy(() => import('../admin/QAModerationSection'));
 const PharmacistSessionsSection  = lazy(() => import('../admin/PharmacistSessionsSection'));
 const DistributorsSection        = lazy(() => import('../admin/DistributorsSection'));
 const RgpdExportsSection         = lazy(() => import('../admin/RgpdExportsSection'));
@@ -94,6 +96,7 @@ const NAV = [
   { id: 'stories',     icon: '📸', label: 'Stories', roles: ROLES_ALL },
   { id: 'articles',    icon: '📝', label: 'Articles', roles: ROLES_ALL },
   { id: 'routines',    icon: '🧴', label: 'Routines beauté', roles: ROLES_ALL },
+  { id: 'bundles',     icon: '📦', label: 'Bundles / Kits', roles: ROLES_ALL },
   { id: 'categories',  icon: '📂', label: 'Catégories', roles: ROLES_ALL },
   { id: 'promos',      icon: '🎁', label: 'Codes promo', roles: ROLES_ALL },
   { id: 'marketing',   icon: '📣', label: 'Marketing', roles: ROLES_ALL },
@@ -101,6 +104,7 @@ const NAV = [
   { id: 'splash',      icon: '✨', label: 'Splash Promos', roles: ROLES_ALL },
   { id: 'reviews',     icon: '⭐', label: 'Modération avis', roles: ROLES_ALL },
   { id: 'product_reviews', icon: '⭐', label: 'Modération avis produits', roles: ROLES_ALL },
+  { id: 'qa_moderation', icon: '❓', label: 'Modération Q&A', roles: ROLES_ALL },
   { id: 'counterfeit', icon: '🚨', label: 'Contrefaçons', badge: true, roles: ROLES_ALL },
   { id: 'users',       icon: '👥', label: 'Utilisatrices', roles: ROLES_ALL_PLUS_COMMERCIAL },
   { id: 'support',     icon: '🆘', label: 'Tickets support', badge: true, roles: ROLES_ALL },
@@ -494,9 +498,11 @@ export default function Admin() {
           {/* ─── Nouvelles sections (juin 2026) ─────────────────────────── */}
           {section === 'articles'             && <ArticlesSection />}
           {section === 'routines'             && <RoutinesSection />}
+          {section === 'bundles'              && <BundlesSection />}
           {section === 'subscriptions'        && <SubscriptionsSection />}
           {section === 'support'              && <SupportSection />}
           {section === 'product_reviews'      && <ProductReviewsSection />}
+          {section === 'qa_moderation'        && <QAModerationSection />}
           {section === 'counterfeit'          && <CounterfeitSection />}
           {section === 'verify'               && <VerifyRequestsSection />}
           {section === 'inventory'            && <InventorySection />}

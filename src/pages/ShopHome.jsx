@@ -22,7 +22,7 @@
 //  13. B2B — Devenir partenaire / livreur
 // ════════════════════════════════════════════════════════════════════
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useNav, useUser } from '../App';
 import {
   useProducts,
@@ -32,6 +32,7 @@ import {
   usePharmacies,
   useMyFavorites,
 } from '../lib/queries';
+import { getFeaturedBundles } from '../lib/supabase';
 import SiteLayout from '../components/SiteLayout';
 import { ProductTile, BrandTile } from '../components/tiles';
 import { SkeletonProductCard, SkeletonBrandCard } from '../components/Skeleton';
@@ -296,6 +297,16 @@ export default function ShopHome() {
 
   const [couponDismissed, setCouponDismissed] = useState(false);
 
+  // ─── Bundles featured (routines completes -X%) ────────────────
+  const [featuredBundles, setFeaturedBundles] = useState([]);
+  useEffect(() => {
+    let cancelled = false;
+    getFeaturedBundles().then((list) => {
+      if (!cancelled) setFeaturedBundles(Array.isArray(list) ? list : []);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
   const loading =
     (prodLoading && productsRaw.length === 0) ||
     (brandsLoading && brandsRaw.length === 0);
@@ -489,6 +500,41 @@ export default function ShopHome() {
               categories={categoriesRaw}
               onPick={(slug) => goSearch({ category: slug })}
             />
+          </section>
+        )}
+
+        {/* 3.5 ROUTINES COMPLETES (bundles featured -X%) ──────────── */}
+        {featuredBundles.length > 0 && (
+          <section className="yhome-section yhome-section--bundles">
+            <SectionHead
+              title="Routines completes"
+              subtitle="Kits pre-composes par nos pharmaciens avec remise pack"
+            />
+            <div className="yhome-bundles-grid">
+              {featuredBundles.map((b) => (
+                <button
+                  key={b.id}
+                  type="button"
+                  className="yhome-bundle-card"
+                  onClick={() => navigate('bundle', { slug: b.slug })}
+                >
+                  <div className="yhome-bundle-badge">-{b.discount_pct || 10}%</div>
+                  {b.cover_url && (
+                    <div className="yhome-bundle-cover">
+                      <img src={b.cover_url} alt={b.title} loading="lazy" />
+                    </div>
+                  )}
+                  <div className="yhome-bundle-body">
+                    <span className="yhome-bundle-tag">Kit routine</span>
+                    <div className="yhome-bundle-title">{b.title}</div>
+                    {b.description && (
+                      <div className="yhome-bundle-desc">{b.description}</div>
+                    )}
+                    <span className="yhome-bundle-cta">Voir le kit →</span>
+                  </div>
+                </button>
+              ))}
+            </div>
           </section>
         )}
 

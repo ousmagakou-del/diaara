@@ -30,6 +30,7 @@ function sanitizeCartItems(raw) {
       is_imported: !!it.is_imported,
       lead_time_days: Number(it.lead_time_days) || 1,
       origin_country: it.origin_country || 'SN',
+      is_bundle_deal: it.is_bundle_deal || null,
     }));
 }
 
@@ -85,12 +86,14 @@ export function getCartCount() {
 }
 
 // Ajoute un produit au panier pour une pharmacie donnée
-export function addToCart({ product, pharmacy, qty = 1 }) {
+// options : { is_bundle_deal: { slug, title, discount_pct } } pour marquer un item ajoute via un bundle
+export function addToCart({ product, pharmacy, qty = 1, is_bundle_deal = null }) {
   if (!product || !pharmacy) return { success: false, error: 'Produit ou pharmacie manquant' };
   const cart = getCart();
   const exists = cart.find(c => c.productId === product.id && c.pharmacyId === pharmacy.id);
   if (exists) {
     exists.qty += qty;
+    if (is_bundle_deal) exists.is_bundle_deal = is_bundle_deal;
   } else {
     cart.push({
       productId: product.id,
@@ -105,6 +108,7 @@ export function addToCart({ product, pharmacy, qty = 1 }) {
       is_imported: product.is_imported || false,
       lead_time_days: product.lead_time_days || 1,
       origin_country: product.origin_country || 'SN',
+      is_bundle_deal: is_bundle_deal || null,
     });
   }
   setCart(cart);

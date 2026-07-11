@@ -23,7 +23,7 @@
 //                  | pharmacyNewOrder | paymentVerified | orderStatusUpdate
 //                  | importSupplierOrdered | importInTransit
 //                  | importArrivedDakar | importBalanceReminder
-// Templates RAW   : referralUsed | cartAbandoned
+// Templates RAW   : referralUsed | cartAbandoned | qaAnswerReceived
 //
 // SECRETS Supabase requis :
 //   - RESEND_API_KEY
@@ -402,6 +402,42 @@ const Templates: Record<
           </table>
           <div style="margin:24px 0;">${btn("Reprendre mon panier", `${APP_URL}/cart`)}</div>
           <p style="margin:16px 0 0;font-size:12px;color:#888;">Livraison rapide partout a Dakar. Paiement securise Wave, Orange Money, PayTech ou a la livraison.</p>
+        `,
+      }),
+    };
+  },
+
+  qaAnswerReceived: ({ firstName, params }: any) => {
+    const productName = String(params?.productName || "un produit");
+    const productId = String(params?.productId || "");
+    const answerAuthor = String(params?.answerAuthor || "Un membre de la communaute");
+    const badge = params?.isPharmacist ? "Pharmacien" : (params?.isYaramTeam ? "Equipe YARAM" : "");
+    const questionExcerpt = String(params?.questionExcerpt || "");
+    const answerExcerpt = String(params?.answerExcerpt || "");
+    const badgeHtml = badge
+      ? `<div style="display:inline-block;background:${params?.isPharmacist ? "#EBF7EF" : "#EFF6FF"};color:${params?.isPharmacist ? BRAND_GREEN : "#1D4ED8"};font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:4px 10px;border-radius:999px;margin-bottom:8px;">${badge}</div>`
+      : "";
+    const productUrl = productId ? `${APP_URL}/product/${productId}` : APP_URL;
+    return {
+      subject: `Nouvelle reponse a ta question sur ${productName}`,
+      html: layout({
+        title: "Reponse recue",
+        preheader: `${answerAuthor} a repondu a ta question sur ${productName}.`,
+        body: `
+          <div style="font-size:11px;font-weight:700;color:#888;letter-spacing:0.18em;text-transform:uppercase;margin-bottom:6px;">Questions et reponses</div>
+          <h1 style="margin:0 0 16px;font-size:22px;font-weight:800;color:${BRAND_GREEN};">${firstName}, quelqu un a repondu</h1>
+          <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#444;"><strong>${answerAuthor}</strong> vient de repondre a ta question sur <strong>${productName}</strong>.</p>
+          ${questionExcerpt ? `<div style="background:#F9FAFB;border-left:3px solid #D1D5DB;padding:14px 16px;border-radius:8px;margin:16px 0;">
+            <div style="font-size:11px;font-weight:700;color:#6B7280;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;">Ta question</div>
+            <div style="font-size:14px;color:#1A1A1A;line-height:1.5;">${questionExcerpt}</div>
+          </div>` : ""}
+          ${answerExcerpt ? `<div style="background:#EBF7EF;border-left:3px solid ${BRAND_GREEN};padding:14px 16px;border-radius:8px;margin:16px 0;">
+            ${badgeHtml}
+            <div style="font-size:11px;font-weight:700;color:${BRAND_GREEN};letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;">La reponse</div>
+            <div style="font-size:14px;color:#1A1A1A;line-height:1.5;">${answerExcerpt}</div>
+          </div>` : ""}
+          <div style="margin:24px 0;">${btn("Voir la reponse", productUrl)}</div>
+          <p style="margin:16px 0 0;font-size:12px;color:#888;">Tu peux voter utile / pas utile pour aider la communaute a trouver les meilleures reponses.</p>
         `,
       }),
     };
