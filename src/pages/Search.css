@@ -55,9 +55,15 @@
   flex-wrap: wrap;
 }
 
-.ysearch__query {
+/* Wrapper autour de l input + dropdown suggestions */
+.ysearch__query-wrap {
   flex: 1;
   min-width: 220px;
+  position: relative;
+}
+
+.ysearch__query {
+  width: 100%;
   display: flex;
   align-items: center;
   gap: var(--y-sp-2);
@@ -1341,4 +1347,120 @@
   .ysearch__ai-head-sub { display: none; }
   .ysearch__ai-toggle { width: 100%; justify-content: center; }
   .ysearch__ai-results { padding: var(--y-sp-3); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Auto-completion dropdown suggestions
+   ═══════════════════════════════════════════════════════════════════ */
+.ysearch__suggest {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  margin: 0;
+  padding: var(--y-sp-2);
+  list-style: none;
+  background: var(--y-n-0);
+  border: 1px solid var(--y-n-200);
+  border-radius: var(--y-rad-lg, 12px);
+  box-shadow: var(--y-shadow-lg, 0 12px 32px rgba(0, 0, 0, 0.12));
+  max-height: 340px;
+  overflow-y: auto;
+  animation: ysearch-suggest-in 140ms var(--y-ease-out);
+}
+
+@keyframes ysearch-suggest-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.ysearch__suggest-item {
+  display: flex;
+  align-items: center;
+  gap: var(--y-sp-3);
+  padding: 8px 10px;
+  border-radius: var(--y-rad-sm);
+  cursor: pointer;
+  transition: background var(--y-dur-fast) var(--y-ease-out);
+}
+
+.ysearch__suggest-item.is-active,
+.ysearch__suggest-item:hover {
+  background: var(--y-n-50);
+}
+
+.ysearch__suggest-kind {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--y-rad-pill);
+  font-size: 10px;
+  font-weight: var(--y-fw-black);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  min-width: 68px;
+  justify-content: center;
+}
+
+.ysearch__suggest-kind--marque {
+  background: var(--y-brand-softer);
+  color: var(--y-brand-dark);
+}
+
+.ysearch__suggest-kind--ingredient {
+  background: #FFF3E0;
+  color: #C25E00;
+}
+
+.ysearch__suggest-kind--produit {
+  background: var(--y-n-100);
+  color: var(--y-n-800);
+}
+
+.ysearch__suggest-label {
+  font-size: var(--y-fs-sm);
+  font-weight: var(--y-fw-semibold);
+  color: var(--y-n-900);
+  line-height: 1.3;
+  flex: 1;
+  min-width: 0;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Chips picker (utilise pour "Sans ingredients" et autres pastilles)
+   ═══════════════════════════════════════════════════════════════════ */
+.ysearch__chips-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--y-sp-2);
+}
+
+.ysearch__chip-pick {
+  padding: 8px 14px;
+  border: 1px solid var(--y-n-300);
+  background: var(--y-n-0);
+  color: var(--y-n-800);
+  font-family: inherit;
+  font-size: var(--y-fs-xs);
+  font-weight: var(--y-fw-semibold);
+  border-radius: var(--y-rad-pill);
+  cursor: pointer;
+  transition: background var(--y-dur-fast) var(--y-ease-out),
+              border-color var(--y-dur-fast) var(--y-ease-out),
+              color var(--y-dur-fast) var(--y-ease-out);
+}
+
+.ysearch__chip-pick:hover {
+  border-color: var(--y-brand);
+}
+
+.ysearch__chip-pick.is-on {
+  background: var(--y-brand);
+  border-color: var(--y-brand);
+  color: var(--y-n-0);
 }

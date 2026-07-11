@@ -91,6 +91,16 @@ const DEFAULT_INGREDIENTS = [
   'AHA', 'BHA', 'Ceramides', 'Karite', 'Aloe vera', 'SPF',
 ];
 
+// Ingredients a exclure ("sans") — allergenes / irritants frequents
+const EXCLUDE_INGREDIENTS = [
+  { id: 'paraben', label: 'Sans parabens', patterns: ['paraben'] },
+  { id: 'sulfate', label: 'Sans sulfates', patterns: ['sulfate', 'sls', 'sles'] },
+  { id: 'alcool', label: 'Sans alcool', patterns: ['alcohol', 'alcool denat'] },
+  { id: 'silicone', label: 'Sans silicones', patterns: ['dimethicone', 'siloxane', 'silicone'] },
+  { id: 'huile-min', label: 'Sans huile minerale', patterns: ['mineral oil', 'paraffinum', 'petrolatum'] },
+  { id: 'parfum', label: 'Sans parfum', patterns: ['parfum', 'fragrance'] },
+];
+
 // ─── Helpers URL params <-> etat ───────────────────────────────────
 function readParams() {
   if (typeof window === 'undefined') return {};
@@ -104,6 +114,7 @@ function readParams() {
     priceMax: Number(sp.get('prix_max') || sp.get('price_max') || 0) || 0,
     skinTypes: parseMulti(sp.get('peau') || sp.get('skin') || ''),
     ingredients: parseMulti(sp.get('ingredients') || ''),
+    excludeIngredients: parseMulti(sp.get('sans') || sp.get('exclude') || ''),
     ratingMin: Number(sp.get('note_min') || sp.get('rating_min') || 0) || 0,
     inStockOnly: sp.get('stock') === '1' || sp.get('in_stock') === '1',
     fastShip: sp.get('livraison') === '1' || sp.get('fast') === '1',
@@ -122,6 +133,7 @@ function writeParams(state, opts = {}) {
   if (state.priceMax) sp.set('prix_max', String(state.priceMax));
   if (state.skinTypes?.length) sp.set('peau', state.skinTypes.join(','));
   if (state.ingredients?.length) sp.set('ingredients', state.ingredients.join(','));
+  if (state.excludeIngredients?.length) sp.set('sans', state.excludeIngredients.join(','));
   if (state.ratingMin) sp.set('note_min', String(state.ratingMin));
   if (state.inStockOnly) sp.set('stock', '1');
   if (state.fastShip) sp.set('livraison', '1');
@@ -162,6 +174,20 @@ function productMatchesIngredients(p, ingredients) {
   return ingredients.every((i) => src.includes(i.toLowerCase()));
 }
 
+// "Sans" ingredients : verifie qu AUCUN pattern n apparait dans la source
+function productMatchesExcluded(p, excludedIds) {
+  if (!excludedIds?.length) return true;
+  const src = [p.inci, p.long_desc, p.reason]
+    .filter(Boolean).join(' ').toLowerCase();
+  // Si l INCI n est pas renseigne on ne peut pas garantir -> on rejette pour rester safe
+  if (!src.trim()) return false;
+  return excludedIds.every((id) => {
+    const conf = EXCLUDE_INGREDIENTS.find((x) => x.id === id);
+    if (!conf) return true;
+    return !conf.patterns.some((pat) => src.includes(pat.toLowerCase()));
+  });
+}
+
 function computeDiscountPct(p) {
   const price = Number(p?.price) || 0;
   const old = Number(p?.old_price || p?.list_price || 0);
@@ -192,6 +218,7 @@ export default function Search({ initialCategory, initialBrand }) {
   const [priceMax, setPriceMax] = useState(initial.priceMax);
   const [skinTypes, setSkinTypes] = useState(initial.skinTypes);
   const [ingredients, setIngredients] = useState(initial.ingredients);
+  const [excludeIngredients, setExcludeIngredients] = useState(initial.excludeIngredients);
   const [ratingMin, setRatingMin] = useState(initial.ratingMin);
   const [inStockOnly, setInStockOnly] = useState(initial.inStockOnly);
   const [fastShip, setFastShip] = useState(initial.fastShip);
@@ -200,6 +227,11 @@ export default function Search({ initialCategory, initialBrand }) {
 
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
   const [brandFilterQ, setBrandFilterQ] = useState('');
+
+  // Auto-completion suggestions dropdown
+  const [suggestOpen, setSuggestOpen] = useState(false);
+  const [suggestActive, setSuggestActive] = useState(-1);
+  const queryWrapRef = useRef(null);
 
   // ─── AI Search state (calque native AskAIButton -> ai-assistant edge fn) ───
   const [aiMode, setAiMode] = useState(false);
@@ -228,7 +260,7 @@ export default function Search({ initialCategory, initialBrand }) {
   // ─── Sync URL <-> state ──────────────────────────────────────
   const stateRef = useRef();
   stateRef.current = {
-    q: qDebounced, category, brands, priceMin, priceMax, skinTypes, ingredients,
+    q: qDebounced, category, brands, priceMin, priceMax, skinTypes, ingredients, excludeIngredients,
     ratingMin, inStockOnly, fastShip, promoOnly, sort,
   };
 
@@ -236,7 +268,7 @@ export default function Search({ initialCategory, initialBrand }) {
     // Debounce URL write pour eviter le spam d'entrees historiques
     const t = setTimeout(() => writeParams(stateRef.current, { replace: true }), 250);
     return () => clearTimeout(t);
-  }, [qDebounced, category, brands, priceMin, priceMax, skinTypes, ingredients, ratingMin, inStockOnly, fastShip, promoOnly, sort]);
+  }, [qDebounced, category, brands, priceMin, priceMax, skinTypes, ingredients, excludeIngredients, ratingMin, inStockOnly, fastShip, promoOnly, sort]);
 
   // Reagir aux changements de props initiales
   useEffect(() => { if (initialCategory) setCategory(initialCategory); }, [initialCategory]);
@@ -253,6 +285,7 @@ export default function Search({ initialCategory, initialBrand }) {
       setPriceMax(p.priceMax);
       setSkinTypes(p.skinTypes);
       setIngredients(p.ingredients);
+      setExcludeIngredients(p.excludeIngredients);
       setRatingMin(p.ratingMin);
       setInStockOnly(p.inStockOnly);
       setFastShip(p.fastShip);
@@ -296,13 +329,14 @@ export default function Search({ initialCategory, initialBrand }) {
     if (priceMax > 0) list = list.filter((p) => Number(p.price || 0) <= priceMax);
     if (skinTypes.length) list = list.filter((p) => productMatchesSkinType(p, skinTypes));
     if (ingredients.length) list = list.filter((p) => productMatchesIngredients(p, ingredients));
+    if (excludeIngredients.length) list = list.filter((p) => productMatchesExcluded(p, excludeIngredients));
     if (ratingMin > 0) list = list.filter((p) => Number(p.rating || 0) >= ratingMin);
     if (inStockOnly) list = list.filter((p) => p.active !== false && (p.stock === undefined || Number(p.stock) > 0));
     if (fastShip) list = list.filter((p) => !p.is_imported);
     if (promoOnly) list = list.filter((p) => productIsPromo(p));
 
     return list;
-  }, [products, qDebounced, category, brands, priceMin, priceMax, skinTypes, ingredients, ratingMin, inStockOnly, fastShip, promoOnly]);
+  }, [products, qDebounced, category, brands, priceMin, priceMax, skinTypes, ingredients, excludeIngredients, ratingMin, inStockOnly, fastShip, promoOnly]);
 
   // ─── Tri ──────────────────────────────────────────────────────
   const sorted = useMemo(() => {
@@ -372,6 +406,9 @@ export default function Search({ initialCategory, initialBrand }) {
   const toggleIngredient = useCallback((id) => {
     setIngredients((prev) => prev.includes(id) ? prev.filter((b) => b !== id) : [...prev, id]);
   }, []);
+  const toggleExcludeIngredient = useCallback((id) => {
+    setExcludeIngredients((prev) => prev.includes(id) ? prev.filter((b) => b !== id) : [...prev, id]);
+  }, []);
 
   const resetFilters = () => {
     setBrands([]);
@@ -379,6 +416,7 @@ export default function Search({ initialCategory, initialBrand }) {
     setPriceMax(0);
     setSkinTypes([]);
     setIngredients([]);
+    setExcludeIngredients([]);
     setRatingMin(0);
     setInStockOnly(false);
     setFastShip(false);
@@ -387,7 +425,7 @@ export default function Search({ initialCategory, initialBrand }) {
   };
 
   const activeFilterCount =
-    brands.length + skinTypes.length + ingredients.length +
+    brands.length + skinTypes.length + ingredients.length + excludeIngredients.length +
     (category ? 1 : 0) +
     (priceMin > 0 ? 1 : 0) +
     (priceMax > 0 ? 1 : 0) +
@@ -458,6 +496,80 @@ export default function Search({ initialCategory, initialBrand }) {
     return 'Sans limite';
   };
 
+  // ─── Auto-completion suggestions (brands + noms produits + ingredients) ───
+  const suggestions = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    if (term.length < 2) return [];
+    const bag = new Map(); // key -> {label, kind}
+    const push = (label, kind) => {
+      if (!label) return;
+      const key = `${kind}::${label.toLowerCase()}`;
+      if (bag.has(key)) return;
+      const lower = label.toLowerCase();
+      if (!lower.includes(term)) return;
+      // Score : prefixe > contient
+      const score = lower.startsWith(term) ? 2 : 1;
+      bag.set(key, { label, kind, score });
+    };
+    // Brands
+    (allBrands || []).forEach((b) => b?.name && push(b.name, 'marque'));
+    // Product names (uniques)
+    const seenNames = new Set();
+    (products || []).forEach((p) => {
+      const n = String(p?.name || '').trim();
+      if (!n || seenNames.has(n.toLowerCase())) return;
+      seenNames.add(n.toLowerCase());
+      push(n, 'produit');
+    });
+    // Ingredients extraits
+    (availableIngredients || []).forEach((i) => push(i, 'ingredient'));
+    // Default ingredients aussi
+    DEFAULT_INGREDIENTS.forEach((i) => push(i, 'ingredient'));
+    return Array.from(bag.values())
+      .sort((a, b) => b.score - a.score || a.label.length - b.label.length)
+      .slice(0, 8);
+  }, [q, allBrands, products, availableIngredients]);
+
+  // Ferme la dropdown quand on clique en dehors
+  useEffect(() => {
+    if (!suggestOpen) return;
+    const onDoc = (e) => {
+      if (queryWrapRef.current && !queryWrapRef.current.contains(e.target)) {
+        setSuggestOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [suggestOpen]);
+
+  const pickSuggestion = useCallback((s) => {
+    if (!s) return;
+    setQ(s.label);
+    setQDebounced(s.label);
+    setSuggestOpen(false);
+    setSuggestActive(-1);
+    // Si c est une marque connue, on peut aussi la selectionner
+    if (s.kind === 'marque') {
+      setBrands([s.label]);
+    }
+  }, []);
+
+  const handleQueryKeyDown = (e) => {
+    if (!suggestOpen || suggestions.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSuggestActive((i) => Math.min(suggestions.length - 1, i + 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSuggestActive((i) => Math.max(-1, i - 1));
+    } else if (e.key === 'Enter' && suggestActive >= 0) {
+      e.preventDefault();
+      pickSuggestion(suggestions[suggestActive]);
+    } else if (e.key === 'Escape') {
+      setSuggestOpen(false);
+    }
+  };
+
   // Landing state (calque native isLanding) — pas de query, pas de filtre
   const isLanding =
     !qDebounced.trim() &&
@@ -465,6 +577,7 @@ export default function Search({ initialCategory, initialBrand }) {
     brands.length === 0 &&
     skinTypes.length === 0 &&
     ingredients.length === 0 &&
+    excludeIngredients.length === 0 &&
     !ratingMin && !inStockOnly && !fastShip && !promoOnly &&
     !priceMin && !priceMax;
 
@@ -499,6 +612,7 @@ export default function Search({ initialCategory, initialBrand }) {
       skinTypes={skinTypes} toggleSkinType={toggleSkinType}
       ingredients={ingredients} toggleIngredient={toggleIngredient}
       availableIngredients={availableIngredients}
+      excludeIngredients={excludeIngredients} toggleExcludeIngredient={toggleExcludeIngredient}
       ratingMin={ratingMin} setRatingMin={setRatingMin}
       inStockOnly={inStockOnly} setInStockOnly={setInStockOnly}
       fastShip={fastShip} setFastShip={setFastShip}
@@ -526,26 +640,59 @@ export default function Search({ initialCategory, initialBrand }) {
             </div>
 
             <div className="ysearch__query-row">
-              <label className="ysearch__query">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18" aria-hidden>
-                  <circle cx="11" cy="11" r="8" />
-                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
-                <input
-                  type="search"
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  placeholder="Affiner : mot cle, marque, ingredient..."
-                  aria-label="Affiner la recherche"
-                />
-                {q && (
-                  <button type="button" className="ysearch__query-clear" onClick={() => setQ('')} aria-label="Effacer">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
-                      <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                  </button>
+              <div className="ysearch__query-wrap" ref={queryWrapRef}>
+                <label className="ysearch__query">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18" aria-hidden>
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                  <input
+                    type="search"
+                    value={q}
+                    onChange={(e) => { setQ(e.target.value); setSuggestOpen(true); setSuggestActive(-1); }}
+                    onFocus={() => setSuggestOpen(true)}
+                    onKeyDown={handleQueryKeyDown}
+                    placeholder="Affiner : mot cle, marque, ingredient..."
+                    aria-label="Affiner la recherche"
+                    aria-autocomplete="list"
+                    aria-expanded={suggestOpen && suggestions.length > 0}
+                    aria-controls="ysearch-suggest"
+                    role="combobox"
+                    autoComplete="off"
+                  />
+                  {q && (
+                    <button type="button" className="ysearch__query-clear" onClick={() => { setQ(''); setSuggestOpen(false); }} aria-label="Effacer">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
+                        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                  )}
+                </label>
+                {suggestOpen && suggestions.length > 0 && (
+                  <ul
+                    id="ysearch-suggest"
+                    className="ysearch__suggest"
+                    role="listbox"
+                    aria-label="Suggestions de recherche"
+                  >
+                    {suggestions.map((s, i) => (
+                      <li
+                        key={`${s.kind}-${s.label}`}
+                        role="option"
+                        aria-selected={i === suggestActive}
+                        className={`ysearch__suggest-item ${i === suggestActive ? 'is-active' : ''}`}
+                        onMouseDown={(e) => { e.preventDefault(); pickSuggestion(s); }}
+                        onMouseEnter={() => setSuggestActive(i)}
+                      >
+                        <span className={`ysearch__suggest-kind ysearch__suggest-kind--${s.kind}`}>
+                          {s.kind === 'marque' ? 'Marque' : s.kind === 'ingredient' ? 'Ingredient' : 'Produit'}
+                        </span>
+                        <span className="ysearch__suggest-label">{s.label}</span>
+                      </li>
+                    ))}
+                  </ul>
                 )}
-              </label>
+              </div>
 
               <div className="ysearch__sort-wrap">
                 <label className="ysearch__sort-label" htmlFor="ysearch-sort">Trier par</label>
@@ -718,6 +865,15 @@ export default function Search({ initialCategory, initialBrand }) {
                     <ChipCross />
                   </button>
                 ))}
+                {excludeIngredients.map((id) => {
+                  const label = EXCLUDE_INGREDIENTS.find((x) => x.id === id)?.label || id;
+                  return (
+                    <button key={`ex-${id}`} type="button" className="ysearch__chip" onClick={() => toggleExcludeIngredient(id)}>
+                      {label}
+                      <ChipCross />
+                    </button>
+                  );
+                })}
                 {ratingMin > 0 && (
                   <button type="button" className="ysearch__chip" onClick={() => setRatingMin(0)}>
                     Note ≥ {ratingMin}
@@ -945,6 +1101,7 @@ function FiltersContent({
   priceMin, setPriceMin, priceMax, setPriceMax,
   skinTypes, toggleSkinType,
   ingredients, toggleIngredient, availableIngredients,
+  excludeIngredients, toggleExcludeIngredient,
   ratingMin, setRatingMin,
   inStockOnly, setInStockOnly,
   fastShip, setFastShip,
@@ -1081,7 +1238,7 @@ function FiltersContent({
         </div>
       </FilterBlock>
 
-      <FilterBlock title="Ingredients">
+      <FilterBlock title="Ingredients (avec)">
         <div className="ysearch__grid-check">
           {availableIngredients.slice(0, 12).map((i) => (
             <CheckboxRow
@@ -1092,6 +1249,25 @@ function FiltersContent({
               onChange={() => toggleIngredient(i)}
             />
           ))}
+        </div>
+      </FilterBlock>
+
+      <FilterBlock title="Ingredients (sans)">
+        <div className="ysearch__chips-list">
+          {EXCLUDE_INGREDIENTS.map((x) => {
+            const on = excludeIngredients.includes(x.id);
+            return (
+              <button
+                key={x.id}
+                type="button"
+                className={`ysearch__chip-pick ${on ? 'is-on' : ''}`}
+                onClick={() => toggleExcludeIngredient(x.id)}
+                aria-pressed={on}
+              >
+                {x.label}
+              </button>
+            );
+          })}
         </div>
       </FilterBlock>
 
