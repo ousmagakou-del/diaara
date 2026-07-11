@@ -28,3 +28,5 @@ export * from './supabase/notifications';
 export * from './supabase/bundles';
 export * from './supabase/alerts';
 export * from './supabase/qa';
+export * from './supabase/blog';
+export * from './supabase/subscriptions';

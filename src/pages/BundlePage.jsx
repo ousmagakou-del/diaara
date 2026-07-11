@@ -5,9 +5,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNav } from '../App';
 import SiteLayout from '../components/SiteLayout';
-import { getBundleBySlug, getAllPharmacies } from '../lib/supabase';
+import { getBundleBySlug, getAllPharmacies, SUB_DISCOUNT_PCT } from '../lib/supabase';
 import { addToCart } from '../lib/cart';
+import SubscribeWizard from '../components/SubscribeWizard';
 import './BundlePage.css';
+import './Subscriptions.css';
 
 const formatPrice = (n) =>
   new Intl.NumberFormat('fr-FR').format(Math.round(Number(n) || 0)) + ' FCFA';
@@ -20,6 +22,7 @@ export default function BundlePage() {
   const [loading, setLoading] = useState(true);
   const [pharmacies, setPharmacies] = useState([]);
   const [toast, setToast] = useState(null);
+  const [subscribeOpen, setSubscribeOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;

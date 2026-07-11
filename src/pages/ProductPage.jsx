@@ -23,6 +23,9 @@ import Accordion from '../components/Accordion';
 import Stepper from '../components/Stepper';
 import ReviewCard from '../components/ReviewCard';
 import WishlistPicker from '../components/WishlistPicker';
+import SubscribeWizard from '../components/SubscribeWizard';
+import { SUB_DISCOUNT_PCT } from '../lib/supabase';
+import './Subscriptions.css';
 import {
   getAllProducts,
   getAllPharmacies,
@@ -276,6 +279,23 @@ export default function ProductPage() {
   const { user } = useUser();
   const id = route?.params?.id || route?.id;
 
+  // ─── Loyalty tier cashback preview (server-driven) ─────────────
+  const [tierCashbackPct, setTierCashbackPct] = useState(3);
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancel = false;
+    (async () => {
+      try {
+        const mod = await import('../lib/supabase');
+        const r = await mod.supabase.rpc('loyalty_get_my_tier');
+        if (!cancel && r?.data?.success) {
+          setTierCashbackPct(Number(r.data.tier_config?.cashback_pct || 3));
+        }
+      } catch {}
+    })();
+    return () => { cancel = true; };
+  }, [user?.id]);
+
   // Data
   const [product, setProduct] = useState(null);
   const [productLoading, setProductLoading] = useState(true);
@@ -292,6 +312,7 @@ export default function ProductPage() {
   const [qty, setQty] = useState(1);
   const [videoOpen, setVideoOpen] = useState(false);
   const [toast, setToast] = useState(null);
+  const [subscribeOpen, setSubscribeOpen] = useState(false);
 
   // Reviews UI
   const [reviewFilter, setReviewFilter] = useState({ rating: 0, withPhoto: false });
@@ -1140,6 +1161,36 @@ export default function ProductPage() {
                     : `Ajouter au panier · ${formatPrice(priceCurrent * qty)}`}
               </button>
 
+              {/* Loyalty cashback preview — hors imports */}
+              {!product?.is_imported && (
+                <div style={{
+                  marginTop: 8,
+                  padding: '8px 12px',
+                  borderRadius: 12,
+                  background: 'rgba(31,139,76,0.08)',
+                  border: '1px solid rgba(31,139,76,0.18)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: '#1A1A1A',
+                }}>
+                  <span style={{
+                    padding: '2px 8px', borderRadius: 999,
+                    background: 'var(--y-brand, #1F8B4C)', color: '#fff',
+                    fontSize: 10, fontWeight: 900,
+                  }}>{tierCashbackPct}%</span>
+                  <span>
+                    Tu gagneras{' '}
+                    <strong style={{ color: 'var(--y-brand, #1F8B4C)' }}>
+                      {formatPrice(Math.round(priceCurrent * qty * tierCashbackPct / 100))} pts
+                    </strong>{' '}
+                    fidelite avec cette commande
+                  </span>
+                </div>
+              )}
+
               <button
                 className="pp-btn-buy-now"
                 onClick={handleBuyNow}
@@ -1156,6 +1207,18 @@ export default function ProductPage() {
               >
                 Ajouter à une liste
               </button>
+
+              {/* Subscribe & Save : bloque pour produits import */}
+              {!product?.is_imported && (
+                <button
+                  type="button"
+                  className="pp-btn-buy-now"
+                  onClick={() => setSubscribeOpen(true)}
+                  style={{ background: '#0F5132', color: '#fff' }}
+                >
+                  S abonner et economiser {SUB_DISCOUNT_PCT}% · Livraison recurrente
+                </button>
+              )}
 
               {/* CTA Conseil WhatsApp (aligne native l.454-473) */}
               <button
@@ -1907,6 +1970,23 @@ export default function ProductPage() {
         productId={product?.id}
         onAdded={(wl) => setToast(`Ajouté à "${wl.name}"`)}
       />
+
+      {/* Subscribe & Save wizard */}
+      {subscribeOpen && product && (
+        <SubscribeWizard
+          onClose={() => setSubscribeOpen(false)}
+          onSuccess={() => { setSubscribeOpen(false); showToast('Abonnement cree'); navigate('subscriptions'); }}
+          initialName={`Routine ${product?.name || ''}`.slice(0, 60)}
+          initialItems={[{
+            id: product.id,
+            name: product.name,
+            price: Number(product.price || 0),
+            qty,
+            img: product.img || product.image_url || null,
+            brand: product.brand_name || product.brand || null,
+          }]}
+        />
+      )}
 
       {/* ─── Modal : choix threshold alerte baisse de prix ─── */}
       {priceDropModalOpen && (

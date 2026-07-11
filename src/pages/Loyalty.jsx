@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNav, useUser } from '../App';
 import { supabase } from '../lib/supabase';
 import { usePersistedData } from '../lib/usePersistedData';
@@ -6,44 +6,28 @@ import { haptic } from '../lib/haptic';
 import TabBar from '../components/TabBar';
 import './Loyalty.css';
 
-/* ─── Paliers (Bronze → Platine) — calque strict natif (yaram-native/app/loyalty.jsx) ─── */
-const TIERS = [
-  {
-    id: 'bronze',
-    name: 'Bronze',
-    icon: '',
-    min: 0,
-    next: 5000,
-    bg: 'linear-gradient(135deg, #C8956A 0%, #8C5A2C 100%)',
-    perks: ['Frais livraison standard', 'Newsletter exclusive'],
-  },
-  {
-    id: 'silver',
-    name: 'Argent',
-    icon: '',
-    min: 5000,
-    next: 20000,
-    bg: 'linear-gradient(135deg, #BBC5CB 0%, #6B7780 100%)',
-    perks: ['Livraison gratuite dès 20 000 FCFA', 'Accès anticipé aux nouveautés'],
-  },
-  {
-    id: 'gold',
-    name: 'Or',
-    icon: '',
-    min: 20000,
-    next: 50000,
-    bg: 'linear-gradient(135deg, #F6D365 0%, #BF9B25 100%)',
-    perks: ['Livraison toujours gratuite', '+10% de points par achat', 'Cadeaux surprise'],
-  },
-  {
-    id: 'platinum',
-    name: 'Platine',
-    icon: '',
-    min: 50000,
-    next: null,
-    bg: 'linear-gradient(135deg, #B4E0E8 0%, #4A90A8 100%)',
-    perks: ['Tous les avantages Or', 'Conciergerie VIP', 'Promotions privées'],
-  },
+/* ─── Paliers Bronze / Silver / Gold — server-driven (loyalty_tiers_config) ─── */
+/* Fallback si le fetch RPC echoue (offline / cold cache) */
+const TIER_STATIC_META = {
+  bronze: { name: 'Bronze', bg: 'linear-gradient(135deg, #C8956A 0%, #8C5A2C 100%)' },
+  silver: { name: 'Argent', bg: 'linear-gradient(135deg, #BBC5CB 0%, #6B7780 100%)' },
+  gold:   { name: 'Or',     bg: 'linear-gradient(135deg, #F6D365 0%, #BF9B25 100%)' },
+};
+
+/* Traduction perks token -> libelle FR pour affichage */
+const PERK_LABELS = {
+  basic_support:         'Support client standard',
+  free_delivery_25k:     'Livraison gratuite des 25 000 FCFA',
+  free_delivery_always:  'Livraison TOUJOURS gratuite',
+  early_access:          'Acces anticipe aux nouveautes',
+  concierge_whatsapp:    'Conciergerie WhatsApp VIP',
+  birthday_gift:         'Cadeau surprise anniversaire',
+};
+
+const TIERS_FALLBACK = [
+  { tier: 'bronze', min_points: 0,    cashback_pct: 3, free_delivery_from: 50000, perks: ['basic_support'],                                                     color: '#CD7F32' },
+  { tier: 'silver', min_points: 500,  cashback_pct: 5, free_delivery_from: 25000, perks: ['free_delivery_25k','birthday_gift'],                                 color: '#C0C0C0' },
+  { tier: 'gold',   min_points: 2000, cashback_pct: 8, free_delivery_from: 0,     perks: ['free_delivery_always','early_access','concierge_whatsapp','birthday_gift'], color: '#FFD700' },
 ];
 
 /* ─── Options d\'échange (calque strict natif) ─── */
@@ -54,13 +38,17 @@ const REDEEM_OPTIONS = [
   { points: 5000, value: 15000, label: '15 000 FCFA sur ta commande' },
 ];
 
-/* Détermine palier courant depuis totalEarned */
-function getTierFromTotal(total) {
-  let current = TIERS[0];
-  for (const t of TIERS) {
-    if (total >= t.min) current = t;
-  }
-  return current;
+/* Détermine palier courant depuis earned12m + config server */
+function getTierFromEarned(earned, tiers) {
+  const sorted = [...(tiers || [])].sort((a, b) => a.min_points - b.min_points);
+  let current = sorted[0];
+  for (const t of sorted) if (earned >= t.min_points) current = t;
+  return current || TIERS_FALLBACK[0];
+}
+
+function getNextTier(current, tiers) {
+  const sorted = [...(tiers || [])].sort((a, b) => a.min_points - b.min_points);
+  return sorted.find((t) => t.min_points > (current?.min_points || 0)) || null;
 }
 
 /* Hook counter animé */
@@ -109,14 +97,47 @@ export default function Loyalty() {
 
   const balance = user?.loyalty_points || 0;
   const totalEarned = user?.loyalty_total_earned || balance || 0;
-  const currentTier = getTierFromTotal(totalEarned);
   const animatedPoints = useCounter(balance);
   const equivFCFA = Math.floor(balance / 100) * 1000; // 100 pts = 1000 FCFA
   const fmt = (n) => Number(n || 0).toLocaleString('fr-FR');
 
-  /* Progression palier */
-  const tierProgressPct = currentTier.next
-    ? Math.min(100, ((totalEarned - currentTier.min) / (currentTier.next - currentTier.min)) * 100)
+  /* ─── Server-driven tier config + RPC snapshot ────────────────── */
+  const [tiersConfig, setTiersConfig] = useState(TIERS_FALLBACK);
+  const [tierInfo, setTierInfo] = useState(null); // { tier, cashback_pct, points_to_next_tier, next_tier, ... }
+  const [simulateAmount, setSimulateAmount] = useState(20000);
+
+  useEffect(() => {
+    let cancel = false;
+    (async () => {
+      try {
+        const [{ data: cfg }, rpcResp] = await Promise.all([
+          supabase.from('loyalty_tiers_config').select('*').order('min_points', { ascending: true }),
+          user?.id ? supabase.rpc('loyalty_get_my_tier') : Promise.resolve({ data: null }),
+        ]);
+        if (cancel) return;
+        if (Array.isArray(cfg) && cfg.length) setTiersConfig(cfg);
+        if (rpcResp?.data?.success) setTierInfo(rpcResp.data);
+      } catch { /* fallback */ }
+    })();
+    return () => { cancel = true; };
+  }, [user?.id]);
+
+  const earned12m = tierInfo?.earned_12m ?? totalEarned;
+  const currentTier = useMemo(() => {
+    const cfg = tierInfo?.tier_config;
+    if (cfg?.tier) return cfg;
+    return getTierFromEarned(earned12m, tiersConfig);
+  }, [tierInfo, tiersConfig, earned12m]);
+  const nextTier = useMemo(() => tierInfo?.next_tier_config || getNextTier(currentTier, tiersConfig), [tierInfo, currentTier, tiersConfig]);
+
+  const currentTierName = currentTier?.label || TIER_STATIC_META[currentTier?.tier]?.name || (currentTier?.tier?.charAt(0).toUpperCase() + currentTier?.tier?.slice(1)) || 'Bronze';
+  const currentTierBg = TIER_STATIC_META[currentTier?.tier]?.bg || `linear-gradient(135deg, ${currentTier?.color || '#1F8B4C'} 0%, #166B3A 100%)`;
+  const cashbackPct = Number(currentTier?.cashback_pct || 3);
+  const freeDeliveryFrom = currentTier?.free_delivery_from;
+
+  const pointsToNext = tierInfo?.points_to_next_tier ?? (nextTier ? Math.max(0, (nextTier.min_points || 0) - earned12m) : 0);
+  const tierProgressPct = nextTier
+    ? Math.min(100, ((earned12m - (currentTier?.min_points || 0)) / ((nextTier.min_points || 0) - (currentTier?.min_points || 0))) * 100)
     : 100;
 
   // animate progress fill on mount
@@ -125,10 +146,8 @@ export default function Loyalty() {
     return () => clearTimeout(t);
   }, [tierProgressPct]);
 
-  /* Prochain palier */
-  const nextTier = TIERS.find(t => t.min === currentTier.next);
-  const pointsToNext = currentTier.next ? Math.max(0, currentTier.next - totalEarned) : 0;
-  const fcfaToNextEquiv = pointsToNext * 10; // approximation 1 pt ≈ 10 FCFA d'avantage
+  /* Simulation : depense X FCFA -> gagne Y points */
+  const simulatedPoints = Math.round((Number(simulateAmount) || 0) * cashbackPct / 100);
 
   const showToast = (text) => {
     setToast(text);
@@ -193,15 +212,14 @@ export default function Loyalty() {
           <h1 className="yloy-header-title">Fidélité</h1>
         </header>
 
-        {/* HERO GRADIENT */}
-        <div className="yloy-hero">
+        {/* HERO GRADIENT — tier-colored */}
+        <div className="yloy-hero" style={{ backgroundImage: currentTierBg }}>
           <div className="yloy-hero-inner">
             <div className="yloy-hero-tier">
-              <span>{currentTier.icon}</span>
-              <span>Palier {currentTier.name}</span>
+              <span>Palier {currentTierName}</span>
             </div>
             <div className="yloy-hero-points">{fmt(animatedPoints)}</div>
-            <div className="yloy-hero-label">points fidélité</div>
+            <div className="yloy-hero-label">points fidelite</div>
             <div className="yloy-hero-equiv">
               <span>≈</span>
               <strong>{fmt(equivFCFA)} FCFA</strong>
@@ -211,7 +229,7 @@ export default function Loyalty() {
             {nextTier && (
               <div className="yloy-hero-progress">
                 <div className="yloy-hero-progress-label">
-                  <span>Plus que <strong>{fmt(pointsToNext)} pts</strong> pour {nextTier.name}</span>
+                  <span>Plus que <strong>{fmt(pointsToNext)} pts</strong> pour {(TIER_STATIC_META[nextTier.tier]?.name || nextTier.label || nextTier.tier)}</span>
                   <span><strong>{Math.round(progressPct)}%</strong></span>
                 </div>
                 <div className="yloy-hero-progress-bar">
@@ -222,7 +240,7 @@ export default function Loyalty() {
             {!nextTier && (
               <div className="yloy-hero-progress">
                 <div className="yloy-hero-progress-label">
-                  <span> Tu es au palier maximum, bravo !</span>
+                  <span>Tu es au palier maximum, bravo !</span>
                 </div>
                 <div className="yloy-hero-progress-bar">
                   <div className="yloy-hero-progress-fill" style={{ width: '100%' }} />
@@ -231,6 +249,81 @@ export default function Loyalty() {
             )}
           </div>
         </div>
+
+        {/* CASHBACK + PERKS card */}
+        <section className="yloy-section">
+          <div style={{
+            background: '#fff',
+            border: '1px solid #EFEFEC',
+            borderRadius: 18,
+            padding: 16,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12,
+            boxShadow: '0 4px 14px rgba(0,0,0,0.04)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: 12,
+                background: currentTierBg,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#fff', fontSize: 20, fontWeight: 900,
+              }}>{cashbackPct}%</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: '#1A1A1A' }}>
+                  Tu gagnes {cashbackPct}% cashback sur chaque commande
+                </div>
+                <div style={{ fontSize: 12, color: '#6B6B6B', marginTop: 2 }}>
+                  {typeof freeDeliveryFrom === 'number' && freeDeliveryFrom === 0
+                    ? 'Livraison TOUJOURS gratuite'
+                    : typeof freeDeliveryFrom === 'number'
+                      ? `Livraison gratuite des ${fmt(freeDeliveryFrom)} FCFA`
+                      : 'Frais de livraison standards'}
+                </div>
+              </div>
+            </div>
+
+            {/* Perks list */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {(Array.isArray(currentTier?.perks) ? currentTier.perks : []).map((p, i) => (
+                <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13, color: '#1A1A1A', fontWeight: 600 }}>
+                  <span style={{ color: 'var(--y-brand)', fontWeight: 900 }}>✓</span>
+                  <span>{PERK_LABELS[p] || String(p).replace(/_/g, ' ')}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Simulation */}
+            <div style={{ borderTop: '1px solid #F0F0EC', paddingTop: 10 }}>
+              <label style={{ fontSize: 11, fontWeight: 800, color: '#6B6B6B', letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                Simulation : depense X FCFA
+              </label>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 8 }}>
+                <input
+                  type="number"
+                  min={0}
+                  step={1000}
+                  value={simulateAmount}
+                  onChange={(e) => setSimulateAmount(e.target.value)}
+                  style={{
+                    flex: 1,
+                    padding: '10px 12px',
+                    borderRadius: 12,
+                    border: '1px solid #E5E5E1',
+                    fontSize: 15,
+                    fontWeight: 700,
+                    color: '#1A1A1A',
+                    background: '#FAFAF7',
+                    outline: 'none',
+                  }}
+                />
+                <div style={{ fontSize: 15, fontWeight: 900, color: 'var(--y-brand)' }}>
+                  = {fmt(simulatedPoints)} pts
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* COMMENT ÇA MARCHE — 3 cards horizontales */}
         <section className="yloy-section">
@@ -324,27 +417,33 @@ export default function Loyalty() {
         {/* PALIERS */}
         <section className="yloy-section">
           <h2 className="yloy-section-title">Mes paliers</h2>
-          <p className="yloy-section-sub">Plus tu commandes, plus tu débloques d'avantages.</p>
+          <p className="yloy-section-sub">Plus tu commandes, plus tu debloques d avantages.</p>
           <div className="yloy-tier-grid">
-            {TIERS.map(t => {
-              const isCurrent = t.id === currentTier.id;
+            {tiersConfig.map((t, idx) => {
+              const isCurrent = t.tier === currentTier?.tier;
+              const nextInList = tiersConfig[idx + 1];
+              const bg = TIER_STATIC_META[t.tier]?.bg || `linear-gradient(135deg, ${t.color || '#1F8B4C'} 0%, #166B3A 100%)`;
+              const displayName = t.label || TIER_STATIC_META[t.tier]?.name || t.tier;
               return (
-                <div key={t.id} className={`yloy-tier-card ${isCurrent ? 'current' : ''}`}>
-                  <div className="yloy-tier-icon-wrap" style={{ background: t.bg }}>
-                    <span>{t.icon}</span>
+                <div key={t.tier} className={`yloy-tier-card ${isCurrent ? 'current' : ''}`}>
+                  <div className="yloy-tier-icon-wrap" style={{ background: bg }}>
+                    <span style={{ fontWeight: 900, fontSize: 14 }}>{Number(t.cashback_pct)}%</span>
                   </div>
                   <div className="yloy-tier-info">
                     <div className="yloy-tier-name-row">
-                      <h3 className="yloy-tier-name">{t.name}</h3>
+                      <h3 className="yloy-tier-name">{displayName}</h3>
                       {isCurrent && <span className="yloy-tier-badge">Actuel</span>}
                     </div>
                     <p className="yloy-tier-req">
-                      {t.next
-                        ? `${fmt(t.min)} → ${fmt(t.next)} pts cumulés`
-                        : `${fmt(t.min)}+ pts cumulés`}
+                      {nextInList
+                        ? `${fmt(t.min_points)} → ${fmt(nextInList.min_points)} pts / 12 mois`
+                        : `${fmt(t.min_points)}+ pts / 12 mois`}
                     </p>
                     <ul className="yloy-tier-perks">
-                      {t.perks.map((p, i) => <li key={i}>{p}</li>)}
+                      <li>{Number(t.cashback_pct)}% cashback sur chaque commande</li>
+                      {(Array.isArray(t.perks) ? t.perks : []).map((p, i) => (
+                        <li key={i}>{PERK_LABELS[p] || String(p).replace(/_/g, ' ')}</li>
+                      ))}
                     </ul>
                   </div>
                 </div>

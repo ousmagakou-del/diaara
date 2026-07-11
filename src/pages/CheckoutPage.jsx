@@ -26,7 +26,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNav, useUser } from '../App';
 import SiteLayout from '../components/SiteLayout';
 import { getCart, clearCart } from '../lib/cart';
-import { getMyAddresses } from '../lib/supabase';
+import { getMyAddresses, supabase } from '../lib/supabase';
 import { formatPrice } from '../lib/utils';
 import './CheckoutPage.css';
 
@@ -202,6 +202,20 @@ export default function CheckoutPage() {
 
   const [loyaltyToUse, setLoyaltyToUse] = useState(persisted.loyaltyToUse || 0);
 
+  // ─── Loyalty tier snapshot (cashback + free delivery) ─────────────
+  const [tierSnapshot, setTierSnapshot] = useState(null); // { tier, tier_config:{cashback_pct, free_delivery_from} }
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancel = false;
+    supabase.rpc('loyalty_get_my_tier').then((r) => {
+      if (!cancel && r?.data?.success) setTierSnapshot(r.data);
+    }).catch(() => {});
+    return () => { cancel = true; };
+  }, [user?.id]);
+  const tierCashbackPct = Number(tierSnapshot?.tier_config?.cashback_pct || 3);
+  const tierFreeFrom    = tierSnapshot?.tier_config?.free_delivery_from;
+  const tierId          = tierSnapshot?.tier || user?.loyalty_tier || 'bronze';
+
   // ─── Submission ─────────────────────────────────────────────────
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
@@ -269,8 +283,26 @@ export default function CheckoutPage() {
   // ─── Totals cascade ─────────────────────────────────────────────
   const subtotal = items.reduce((s, it) => s + (Number(it.price) || 0) * (Number(it.qty) || 0), 0);
   const currentDelivery = availableDeliveryModes.find((m) => m.id === deliveryMode) || availableDeliveryModes[0];
-  const deliveryFee = currentDelivery.price;
+
+  // ─── Tier free delivery override ─────────────────────────────────
+  // Regle : ne s applique PAS aux imports (garde-fou fix precommande).
+  let deliveryFee = currentDelivery.price;
+  let freeDeliveryReason = null;
+  if (!hasImportedItem) {
+    if (tierId === 'gold') {
+      deliveryFee = 0;
+      freeDeliveryReason = 'gold_always';
+    } else if (typeof tierFreeFrom === 'number' && tierFreeFrom > 0 && subtotal >= tierFreeFrom) {
+      deliveryFee = 0;
+      freeDeliveryReason = 'tier_threshold';
+    }
+  }
+
   const serviceFee = Math.max(250, Math.round(subtotal * 0.05));
+
+  // Cashback preview : X% du (subtotal + livraison) hors imports
+  const cashbackEligibleAmount = hasImportedItem ? 0 : subtotal;
+  const cashbackPointsPreview = Math.round(cashbackEligibleAmount * tierCashbackPct / 100);
 
   const maxLoyaltyPoints = Math.min(
     Math.floor((user?.loyalty_points || 0)),
@@ -832,8 +864,23 @@ export default function CheckoutPage() {
                     <strong>{formatPrice(subtotal)} FCFA</strong>
                   </div>
                   <div className="ck-total-row">
-                    <span>Livraison <span className="ck-mode-tag">{currentDelivery.name}</span></span>
-                    <strong>{formatPrice(deliveryFee)} FCFA</strong>
+                    <span>
+                      Livraison <span className="ck-mode-tag">{currentDelivery.name}</span>
+                      {freeDeliveryReason && (
+                        <span style={{
+                          marginLeft: 6,
+                          fontSize: 10,
+                          padding: '2px 6px',
+                          borderRadius: 999,
+                          background: 'rgba(31,139,76,0.12)',
+                          color: 'var(--y-brand, #1F8B4C)',
+                          fontWeight: 800,
+                          textTransform: 'uppercase',
+                          letterSpacing: 0.4,
+                        }}>{freeDeliveryReason === 'gold_always' ? 'Gold offert' : 'Palier offert'}</span>
+                      )}
+                    </span>
+                    <strong>{deliveryFee === 0 ? 'GRATUIT' : `${formatPrice(deliveryFee)} FCFA`}</strong>
                   </div>
                   <div className="ck-total-row">
                     <span>Frais de service</span>
@@ -862,6 +909,30 @@ export default function CheckoutPage() {
                     <span>Total TTC</span>
                     <strong>{formatPrice(total)} FCFA</strong>
                   </div>
+
+                  {/* Loyalty cashback preview */}
+                  {cashbackPointsPreview > 0 && (
+                    <div style={{
+                      marginTop: 10,
+                      padding: '10px 12px',
+                      borderRadius: 12,
+                      background: 'linear-gradient(90deg, rgba(31,139,76,0.10) 0%, rgba(31,139,76,0.02) 100%)',
+                      border: '1px solid rgba(31,139,76,0.18)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                    }}>
+                      <div style={{
+                        width: 28, height: 28, borderRadius: 10,
+                        background: 'var(--y-brand, #1F8B4C)',
+                        color: '#fff', fontSize: 11, fontWeight: 900,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>{tierCashbackPct}%</div>
+                      <div style={{ flex: 1, fontSize: 12, color: '#1A1A1A', fontWeight: 700 }}>
+                        Tu gagneras <strong style={{ color: 'var(--y-brand, #1F8B4C)' }}>{formatPrice(cashbackPointsPreview)} pts</strong> avec cette commande
+                      </div>
+                    </div>
+                  )}
 
                   {/* Preorder split — visible seulement si preorder */}
                   {isPreorder && (

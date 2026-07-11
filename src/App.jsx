@@ -75,6 +75,10 @@ const DriverApplication  = lazy(() => import('./pages/DriverApplication'));
 const BrandsPage         = lazy(() => import('./pages/BrandsPage'));
 const WishlistShared     = lazy(() => import('./pages/WishlistShared'));
 const BundlePage         = lazy(() => import('./pages/BundlePage'));
+const Subscriptions      = lazy(() => import('./pages/Subscriptions'));
+const BlogHome           = lazy(() => import('./pages/BlogHome'));
+const BlogArticle        = lazy(() => import('./pages/BlogArticle'));
+const BlogCategory       = lazy(() => import('./pages/BlogCategory'));
 
 // ════════════════════════════════════════════════════════════════
 //  FIX juin 2026 #8 — LazyFallback FULL SCREEN (CAUSE RACINE BLANCHE)
@@ -138,6 +142,9 @@ function routeToPath(route) {
     case 'order_tracking': return `/order/${params.orderId}`;
     case 'scan_result': return `/scan/result/${params.scanId}`;
     case 'payment': return `/payment/${params.orderId}`;
+    case 'blog': return '/blog';
+    case 'blog_article': return `/blog/${params.slug}`;
+    case 'blog_category': return `/blog/category/${params.slug}`;
     case 'search': {
       const sp = new URLSearchParams();
       if (params.q) sp.set('q', params.q);
@@ -171,10 +178,19 @@ function pathToRoute(pathname, search = '') {
   if (parts[0] === 'scan' && parts[1] === 'result' && parts[2]) return { name: 'scan_result', params: { scanId: parts[2] } };
   if (parts[0] === 'payment' && parts[1]) return { name: 'payment', params: { orderId: parts[1] } };
 
+  // ─── Blog SEO (/blog, /blog/:slug, /blog/category/:slug) ───
+  if (parts[0] === 'blog') {
+    if (!parts[1]) return { name: 'blog', params: {} };
+    if (parts[1] === 'category' && parts[2]) {
+      return { name: 'blog_category', params: { slug: parts[2] } };
+    }
+    return { name: 'blog_article', params: { slug: parts[1] } };
+  }
+
   // ─── Shop (catalogue e-commerce complet) ───
   if (parts[0] === 'shop' || parts[0] === 'home') return { name: 'shop', params: {} };
 
-  const simpleRoutes = ['search', 'cart', 'checkout', 'orders', 'profile', 'pharmacies', 'scan', 'scan_history', 'addresses', 'favorites', 'payments', 'evolution', 'categories', 'quiz', 'loyalty', 'referral', 'notifications', 'notif_settings', 'promos', 'privacy', 'terms', 'mentions', 'delete_account', 'international', 'help', 'newsletter', 'brands', 'partner-application', 'driver-application'];
+  const simpleRoutes = ['search', 'cart', 'checkout', 'orders', 'profile', 'pharmacies', 'scan', 'scan_history', 'addresses', 'favorites', 'payments', 'evolution', 'categories', 'quiz', 'loyalty', 'referral', 'notifications', 'notif_settings', 'promos', 'privacy', 'terms', 'mentions', 'delete_account', 'international', 'help', 'newsletter', 'brands', 'partner-application', 'driver-application', 'subscriptions'];
   if (simpleRoutes.includes(parts[0])) {
     const params = {};
     if (parts[0] === 'search') {
@@ -761,6 +777,7 @@ function ClientApp() {
           promos: 'promos',
           loyalty: 'loyalty',
           referral: 'referral',
+          subscriptions: 'subscriptions',
           addresses: 'addresses',
           favorites: 'favorites',
           payments: 'payments',
@@ -972,6 +989,7 @@ function ClientApp() {
     case 'quiz': page = <SkinQuiz onComplete={refreshUser} />; break;
     case 'loyalty': page = <Loyalty />; break;
     case 'referral': page = <Referral />; break;
+    case 'subscriptions': page = <Suspense fallback={<LazyFallback />}><Subscriptions /></Suspense>; break;
     // notifications = vraie liste (Notifications.jsx)
     // notif_settings = paramètres push/email (NotifSettings.jsx)
     case 'notifications': page = <Notifications />; break;
