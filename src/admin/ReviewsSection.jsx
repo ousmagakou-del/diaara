@@ -12,15 +12,32 @@ export default function ReviewsSection() {
   const refresh = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('reviews')
-        .select('*, products(name, brand, img), users_profile!user_id(first_name, last_name)')
-        .order('created_at', { ascending: false });
+      // On passait par un select Postgrest avec join implicite users_profile
+      // qui echouait ("Could not find a relationship between 'reviews' and
+      // 'users_profile'"). On bascule sur admin_list_reviews qui fait les
+      // jointures explicites cote SQL et renvoie deja les champs formates
+      // (product_name, product_brand, user_first_name, ...).
+      const { data, error } = await supabase.rpc('admin_list_reviews', { p_filter: 'all' });
       if (error) {
         console.warn('[ReviewsSection] fetch error:', error.message);
         toast.error('Erreur chargement avis : ' + error.message);
       }
-      setReviews(data || []);
+      // Normalise le shape pour que le rendu existant (r.products?.name,
+      // r.users_profile?.first_name) continue de marcher sans refactor lourd.
+      const list = Array.isArray(data) ? data : [];
+      const normalized = list.map((r) => ({
+        ...r,
+        products: {
+          name: r.product_name,
+          brand: r.product_brand,
+          img: r.product_img,
+        },
+        users_profile: {
+          first_name: r.user_first_name,
+          last_name: r.user_last_name,
+        },
+      }));
+      setReviews(normalized);
     } finally {
       setLoading(false);
     }
