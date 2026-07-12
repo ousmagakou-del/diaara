@@ -103,6 +103,102 @@ function fcfa(n: number | string | null | undefined) {
 }
 
 // ─────────────────────────────────────────────────────────────────────
+// V2 LAYOUT + HELPERS (Papa Johns polish — used by orderConfirmed / Shipped / Delivered)
+// Palette :
+//   green    #1F8B4C   green_soft #E8F5E9   yellow #F4B53A
+//   text     #0F1419   muted     #6B6B6B    border #EEEEEE
+//   page bg  #FAFAF7   card bg   #FFFFFF
+// ─────────────────────────────────────────────────────────────────────
+const BRAND_GREEN_SOFT = "#E8F5E9";
+const ACCENT_YELLOW = "#F4B53A";
+const TEXT_DARK = "#0F1419";
+const TEXT_MUTED = "#6B6B6B";
+const BORDER_LIGHT = "#EEEEEE";
+const PAGE_BG = "#FAFAF7";
+const EMAIL_FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Inter,sans-serif";
+
+function layoutV2({ title, preheader, body }: { title: string; preheader?: string; body: string }) {
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="x-apple-disable-message-reformatting">
+<title>${title}</title>
+</head>
+<body style="margin:0;padding:0;background:${PAGE_BG};font-family:${EMAIL_FONT};color:${TEXT_DARK};">
+<div style="display:none;font-size:1px;color:${PAGE_BG};line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">${preheader || ""}</div>
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:${PAGE_BG};padding:32px 16px;">
+  <tr><td align="center">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width:600px;background:#FFFFFF;border-radius:20px;overflow:hidden;box-shadow:0 1px 3px rgba(15,20,25,0.04);">
+      <tr><td style="padding:40px 32px 8px;text-align:center;">
+        <div style="display:inline-block;font-family:${EMAIL_FONT};font-size:36px;font-weight:900;letter-spacing:-1px;color:${BRAND_GREEN};line-height:1;">YARAM</div>
+      </td></tr>
+      <tr><td style="padding:8px 32px 40px;">${body}</td></tr>
+      <tr><td style="padding:24px 32px 32px;border-top:1px solid ${BORDER_LIGHT};font-size:12px;color:${TEXT_MUTED};text-align:center;line-height:1.6;">
+        Besoin d aide ? Reponds a cet email ou ecris-nous sur WhatsApp
+        <a href="https://wa.me/221774388766" style="color:${BRAND_GREEN};text-decoration:none;font-weight:700;">${SUPPORT_WA}</a><br>
+        <a href="${APP_URL}/cgv" style="color:${BRAND_GREEN};text-decoration:none;">CGV</a>
+        &nbsp;&middot;&nbsp;
+        <a href="${APP_URL}/confidentialite" style="color:${BRAND_GREEN};text-decoration:none;">Confidentialite</a>
+        &nbsp;&middot;&nbsp;
+        <a href="mailto:${SUPPORT_EMAIL}" style="color:${BRAND_GREEN};text-decoration:none;">Support</a>
+        <div style="margin-top:12px;color:#BBBBBB;">&copy; ${new Date().getFullYear()} YARAM &middot; Beaute Senegal</div>
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>`;
+}
+
+function ctaLarge(label: string, href: string) {
+  return `<table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center"><tr>
+    <td style="background:${BRAND_GREEN};border-radius:999px;box-shadow:0 6px 18px rgba(31,139,76,0.28);">
+      <a href="${href}" style="display:inline-block;padding:16px 32px;color:#FFFFFF;font-weight:900;font-size:15px;letter-spacing:0.5px;text-decoration:none;text-transform:uppercase;font-family:${EMAIL_FONT};">${label}</a>
+    </td>
+  </tr></table>`;
+}
+
+function iconCircle(char: string) {
+  return `<table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center"><tr>
+    <td width="56" height="56" align="center" valign="middle" style="width:56px;height:56px;background:${BRAND_GREEN};border-radius:28px;text-align:center;vertical-align:middle;color:#FFFFFF;font-size:28px;font-weight:900;line-height:56px;font-family:${EMAIL_FONT};">${char}</td>
+  </tr></table>`;
+}
+
+function infoCascade(rows: Array<{ label: string; value: string }>) {
+  return rows.map((r, i) => `<tr>
+    <td style="padding:16px 20px;${i > 0 ? `border-top:1px solid ${BORDER_LIGHT};` : ""}">
+      <div style="font-size:11px;font-weight:700;color:${TEXT_MUTED};letter-spacing:0.14em;text-transform:uppercase;margin-bottom:4px;">${r.label}</div>
+      <div style="font-size:15px;font-weight:700;color:${TEXT_DARK};">${r.value}</div>
+    </td>
+  </tr>`).join("");
+}
+
+const LOYALTY_BANNER = `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:${BRAND_GREEN_SOFT};border-radius:14px;margin:28px 0 0;">
+  <tr><td style="padding:22px 24px;text-align:center;">
+    <div style="font-size:11px;font-weight:800;color:${BRAND_GREEN};letter-spacing:0.22em;text-transform:uppercase;margin-bottom:10px;">YARAM Rewards</div>
+    <div style="font-size:15px;font-weight:900;color:${TEXT_DARK};letter-spacing:0.14em;margin-bottom:10px;">COMMANDE &middot; UTILISE &middot; GAGNE &middot; RECOMMANDE</div>
+    <div style="font-size:13px;color:${TEXT_MUTED};line-height:1.55;">Gagne 1 point par 100 F depense. Chaque 100 points valent 500 F chez YARAM.</div>
+  </td></tr>
+</table>`;
+
+const PAYMENT_METHOD_LABEL: Record<string, string> = {
+  wave: "Wave",
+  om: "Orange Money",
+  orange_money: "Orange Money",
+  free_money: "Free Money",
+  paytech: "PayTech",
+  cb: "Carte bancaire",
+  cod: "Cash a la livraison",
+};
+
+function paymentLabel(method?: string) {
+  const m = (method || "").toLowerCase();
+  return PAYMENT_METHOD_LABEL[m] || (method ? method : "Mobile money");
+}
+
+// ─────────────────────────────────────────────────────────────────────
 // TEMPLATES SERVEUR (utilisés seulement en mode ORDER)
 // Pour le mode RAW le HTML est déjà rendu côté client.
 // ─────────────────────────────────────────────────────────────────────
@@ -143,55 +239,129 @@ const Templates: Record<
     const o = order!;
     const isPre = o.is_preorder === true;
     const leadDays = o.lead_time_days || 15;
-    const paymentBlock = isPre
-      ? `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#F0F7FF;border-left:3px solid #0066CC;border-radius:10px;padding:16px;margin:16px 0;">
-          <tr><td style="font-size:13px;color:#0066CC;font-weight:700;padding-bottom:8px;">💳 Acompte payé (50%)</td></tr>
-          <tr><td style="font-size:22px;font-weight:800;color:#0066CC;">${fcfa(o.deposit_amount || o.total / 2)}</td></tr>
-          <tr><td style="font-size:13px;color:#6B6B6B;padding:12px 0 6px;">Solde à la livraison (50%) : <strong>${fcfa(o.balance_amount || o.total / 2)}</strong></td></tr>
-        </table>`
-      : `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#F9FAFB;border-radius:10px;padding:16px;margin:16px 0;">
-          <tr><td style="font-size:13px;color:#6B6B6B;padding-bottom:8px;">Montant total</td></tr>
-          <tr><td style="font-size:24px;font-weight:800;color:${BRAND_GREEN};">${fcfa(o.total)}</td></tr>
-          <tr><td style="font-size:12px;color:#888;padding-top:4px;">Paiement : ${(o.payment_method || "").toUpperCase()}</td></tr>
-        </table>`;
+    const method = paymentLabel(o.payment_method);
+    const orderType = isPre ? `Import ${leadDays} jours` : "Livraison Dakar";
+    const readyTime = isPre ? `Sous ${leadDays} jours` : "30 - 45 min";
+    const readyLabel = isPre ? "Estimated Delivery" : "Estimated Ready Time";
+    const firstUpper = (firstName || "toi").toUpperCase();
+    const orderNum = `#${o.id}`;
+    const totalBlock = `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:0 0 20px;"><tr>
+      <td style="padding:16px 20px;background:${BRAND_GREEN_SOFT};border-radius:12px;">
+        <div style="font-size:11px;font-weight:700;color:${BRAND_GREEN};letter-spacing:0.14em;text-transform:uppercase;margin-bottom:4px;">${isPre ? "Acompte paye (50%)" : "Total commande"}</div>
+        <div style="font-size:20px;font-weight:900;color:${TEXT_DARK};">${fcfa(isPre ? (o.deposit_amount || o.total / 2) : o.total)}</div>
+        ${isPre ? `<div style="font-size:12px;color:${TEXT_MUTED};margin-top:6px;">Solde a la livraison : <strong style="color:${TEXT_DARK};">${fcfa(o.balance_amount || o.total / 2)}</strong></div>` : ""}
+      </td></tr></table>`;
     return {
-      subject: isPre ? `✈️ Précommande ${o.id} confirmée — livraison sous ${leadDays}j` : `Commande ${o.id} confirmée ✓`,
-      html: layout({
-        title: isPre ? "Précommande confirmée" : "Commande confirmée",
+      subject: isPre ? `Precommande ${orderNum} confirmee - livraison sous ${leadDays}j` : `Merci pour ta commande ${orderNum}`,
+      html: layoutV2({
+        title: isPre ? "Precommande confirmee" : "Commande confirmee",
+        preheader: isPre
+          ? `Precommande ${orderNum} confirmee. Arrivee estimee sous ${leadDays} jours.`
+          : `Commande ${orderNum} confirmee. Suis ta livraison avec YARAM Track.`,
         body: `
-          <h1 style="margin:0 0 16px;font-size:22px;font-weight:800;color:${BRAND_GREEN};">Merci ${firstName} 🎉</h1>
-          <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#444;">Ta commande <strong>${o.id}</strong> est confirmée.</p>
-          ${paymentBlock}
-          <div style="margin:24px 0;">${btn(isPre ? "Suivre ma précommande" : "Suivre ma commande", `${APP_URL}/order/${o.id}`)}</div>
+          <h1 style="margin:0 0 20px;font-size:32px;font-weight:900;letter-spacing:-0.5px;color:${TEXT_DARK};line-height:1.12;text-align:center;text-transform:uppercase;font-family:${EMAIL_FONT};">
+            Merci pour ta commande,<br>${firstUpper}
+          </h1>
+          <div style="margin:20px 0 14px;text-align:center;">${iconCircle("Y")}</div>
+          <p style="margin:0 0 28px;font-size:14px;color:${TEXT_MUTED};text-align:center;line-height:1.5;">Suis ta commande avec YARAM Track</p>
+          <div style="margin:0 0 32px;text-align:center;">${ctaLarge("Suivre maintenant", `${APP_URL}/order/${o.id}`)}</div>
+          <div style="text-align:center;margin:0 0 28px;">
+            <div style="font-size:11px;font-weight:800;color:${TEXT_MUTED};letter-spacing:0.22em;text-transform:uppercase;margin-bottom:8px;">${readyLabel}</div>
+            <div style="font-size:26px;font-weight:900;color:${TEXT_DARK};line-height:1.15;letter-spacing:-0.3px;">${readyTime}</div>
+          </div>
+          ${totalBlock}
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border:1px solid ${BORDER_LIGHT};border-radius:14px;margin:0 0 8px;">
+            ${infoCascade([
+              { label: "Order Type", value: orderType },
+              { label: "Order Number", value: orderNum },
+              { label: "Method of Payment", value: method },
+            ])}
+          </table>
+          ${LOYALTY_BANNER}
         `,
       }),
     };
   },
 
-  orderShipped: ({ firstName, order }) => ({
-    subject: `🛵 Commande ${order!.id} en route`,
-    html: layout({
-      title: "Commande en route",
-      body: `
-        <h1 style="margin:0 0 16px;font-size:22px;font-weight:800;color:${BRAND_GREEN};">${firstName}, le livreur arrive 🛵</h1>
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#444;">Ta commande <strong>${order!.id}</strong> vient de partir.</p>
-        <p style="margin:16px 0;font-size:14px;color:#444;">💵 Paiement à la livraison : <strong>${fcfa(order!.total)}</strong></p>
-        <div style="margin:24px 0;">${btn("Suivre en temps réel", `${APP_URL}/order/${order!.id}`)}</div>
-      `,
-    }),
-  }),
+  orderShipped: ({ firstName, order }) => {
+    const o = order!;
+    const method = paymentLabel(o.payment_method);
+    const firstUpper = (firstName || "toi").toUpperCase();
+    const orderNum = `#${o.id}`;
+    const isCod = (o.payment_method || "").toLowerCase() === "cod";
+    const codBlock = isCod
+      ? `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:0 0 20px;"><tr>
+          <td style="padding:16px 20px;background:#FFFDF5;border:1px solid ${ACCENT_YELLOW};border-radius:12px;">
+            <div style="font-size:11px;font-weight:700;color:#B98A18;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:4px;">A payer a la livraison</div>
+            <div style="font-size:20px;font-weight:900;color:${TEXT_DARK};">${fcfa(o.total)}</div>
+          </td></tr></table>`
+      : "";
+    return {
+      subject: `Ta commande ${orderNum} est en route`,
+      html: layoutV2({
+        title: "Ta commande est en route",
+        preheader: `Le livreur est en approche pour la commande ${orderNum}.`,
+        body: `
+          <h1 style="margin:0 0 20px;font-size:32px;font-weight:900;letter-spacing:-0.5px;color:${TEXT_DARK};line-height:1.12;text-align:center;text-transform:uppercase;font-family:${EMAIL_FONT};">
+            Ta commande est en route,<br>${firstUpper}
+          </h1>
+          <div style="margin:20px 0 14px;text-align:center;">${iconCircle("&rarr;")}</div>
+          <p style="margin:0 0 28px;font-size:14px;color:${TEXT_MUTED};text-align:center;line-height:1.5;">Ton livreur est en approche</p>
+          <div style="margin:0 0 32px;text-align:center;">${ctaLarge("Suivre le livreur", `${APP_URL}/order/${o.id}`)}</div>
+          <div style="text-align:center;margin:0 0 28px;">
+            <div style="font-size:11px;font-weight:800;color:${TEXT_MUTED};letter-spacing:0.22em;text-transform:uppercase;margin-bottom:8px;">Estimated Arrival</div>
+            <div style="font-size:26px;font-weight:900;color:${TEXT_DARK};line-height:1.15;letter-spacing:-0.3px;">10 - 20 min</div>
+          </div>
+          ${codBlock}
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border:1px solid ${BORDER_LIGHT};border-radius:14px;margin:0 0 8px;">
+            ${infoCascade([
+              { label: "Order Type", value: "Livraison Dakar" },
+              { label: "Order Number", value: orderNum },
+              { label: "Method of Payment", value: method },
+            ])}
+          </table>
+          ${LOYALTY_BANNER}
+        `,
+      }),
+    };
+  },
 
-  orderDelivered: ({ firstName, order }) => ({
-    subject: `Commande ${order!.id} livrée 💚`,
-    html: layout({
-      title: "Livrée !",
-      body: `
-        <h1 style="margin:0 0 16px;font-size:22px;font-weight:800;color:${BRAND_GREEN};">Bien reçu, ${firstName} 💚</h1>
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#444;">Ta commande <strong>${order!.id}</strong> a été livrée.</p>
-        <div style="margin:24px 0;">${btn("Noter ma livraison", `${APP_URL}/order/${order!.id}`)}</div>
-      `,
-    }),
-  }),
+  orderDelivered: ({ firstName, order }) => {
+    const o = order!;
+    const firstUpper = (firstName || "toi").toUpperCase();
+    const orderNum = `#${o.id}`;
+    return {
+      subject: `Commande ${orderNum} livree - merci ${firstName || "toi"}`,
+      html: layoutV2({
+        title: "Commande livree",
+        preheader: `Commande ${orderNum} livree. On espere que tout est parfait.`,
+        body: `
+          <h1 style="margin:0 0 20px;font-size:32px;font-weight:900;letter-spacing:-0.5px;color:${TEXT_DARK};line-height:1.12;text-align:center;text-transform:uppercase;font-family:${EMAIL_FONT};">
+            Commande livree,<br>merci ${firstUpper}
+          </h1>
+          <div style="margin:20px 0 14px;text-align:center;">${iconCircle("&check;")}</div>
+          <p style="margin:0 0 28px;font-size:14px;color:${TEXT_MUTED};text-align:center;line-height:1.5;">On espere que tout est parfait</p>
+          <div style="margin:0 0 32px;text-align:center;">${ctaLarge("Laisser un avis", `${APP_URL}/order/${o.id}?action=review`)}</div>
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border:1px solid ${BORDER_LIGHT};border-radius:14px;margin:0 0 24px;">
+            ${infoCascade([
+              { label: "Order Type", value: "Livraison Dakar" },
+              { label: "Order Number", value: orderNum },
+              { label: "Status", value: "Livree" },
+            ])}
+          </table>
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#FFFDF5;border:1px solid ${ACCENT_YELLOW};border-radius:14px;margin:0 0 8px;">
+            <tr><td style="padding:22px 24px;text-align:center;">
+              <div style="font-size:11px;font-weight:800;color:#B98A18;letter-spacing:0.22em;text-transform:uppercase;margin-bottom:8px;">Partager YARAM</div>
+              <div style="font-size:17px;font-weight:900;color:${TEXT_DARK};margin-bottom:6px;letter-spacing:-0.2px;">Repartager avec des amies ?</div>
+              <div style="font-size:13px;color:${TEXT_MUTED};line-height:1.55;margin-bottom:16px;">Partage YARAM avec 3 amies et gagne 1500 F de credit.</div>
+              <a href="${APP_URL}/parrainage" style="display:inline-block;padding:12px 26px;color:${BRAND_GREEN};font-weight:900;font-size:13px;text-decoration:none;background:#FFFFFF;border:2px solid ${BRAND_GREEN};border-radius:999px;letter-spacing:0.4px;text-transform:uppercase;font-family:${EMAIL_FONT};">Obtenir mon code</a>
+            </td></tr>
+          </table>
+          ${LOYALTY_BANNER}
+        `,
+      }),
+    };
+  },
 
   // ─── Flow import (precommande internationale) ─────────────
   // Etapes intermediaires envoyees automatiquement quand l admin
