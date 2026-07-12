@@ -1,6 +1,498 @@
 /* ═══════════════════════════════════════════════════════════
-   YARAM — OrderTracking (premium UX, inspiration Uber Eats)
+   YARAM — OrderTracking (Papa Track polish : hero map bg,
+   timeline horizontale, order confirmation accordion)
    ═══════════════════════════════════════════════════════════ */
+
+/* Design tokens locaux (fallback si tokens globaux absents) */
+.track-pj {
+  --yt-brand: #1F8B4C;
+  --yt-brand-soft: #E8F5E9;
+  --yt-accent: #F4B53A;
+  --yt-ink: #0F1419;
+  --yt-muted: #6B6B6B;
+  --yt-border: #EEEEEE;
+  --yt-bg: #FAFAF7;
+}
+
+/* ═══════════════ HERO Papa Track ═══════════════ */
+.yt-hero {
+  position: relative;
+  margin: -14px -14px 0;
+  padding: 0 0 8px;
+  isolation: isolate;
+}
+.yt-hero-map {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  overflow: hidden;
+  background: #E7F3EA;
+}
+.yt-hero-mapinner {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.yt-hero-mapfake { position: absolute; inset: 0; }
+.yt-hero-pattern { width: 100%; height: 100%; display: block; }
+.yt-hero-badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px 8px 12px;
+  border-radius: 999px;
+  background: #1F8B4C;
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  box-shadow: 0 8px 22px rgba(31, 139, 76, 0.35), 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+.yt-hero-badge-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #FFFFFF;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.35);
+  animation: yt-blink 1.6s ease-in-out infinite;
+}
+@keyframes yt-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+
+.yt-hero-card {
+  position: relative;
+  margin: -60px 14px 0;
+  background: #FFFFFF;
+  border-radius: 22px;
+  padding: 22px 20px 24px;
+  box-shadow: 0 12px 30px rgba(15, 20, 25, 0.08), 0 2px 6px rgba(15, 20, 25, 0.04);
+  z-index: 2;
+}
+.yt-hero-type {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  color: #1F8B4C;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.yt-hero-title {
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  color: #0F1419;
+  margin: 0 0 12px;
+  line-height: 1.15;
+}
+@media (min-width: 700px) {
+  .yt-hero-map { height: 260px; }
+  .yt-hero-card { margin: -80px 24px 0; padding: 28px 26px 30px; }
+  .yt-hero-title { font-size: 32px; }
+}
+.yt-hero-eta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: #F4F7F3;
+  color: #1F5B32;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+/* ═══════════════ Timeline horizontale ═══════════════ */
+.yt-timeline {
+  list-style: none;
+  padding: 12px 0 4px;
+  margin: 8px 0 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.yt-timeline::-webkit-scrollbar { display: none; }
+.yt-step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 62px;
+  padding: 0 4px;
+}
+.yt-bubble-wrap {
+  position: relative;
+  width: 56px; height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.yt-bubble {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFFFFF;
+  border: 2px solid #E8ECE8;
+  color: #9B9B9B;
+  transition: background 0.3s, border-color 0.3s, color 0.3s, transform 0.2s;
+}
+/* future */
+.yt-step-pending .yt-bubble { color: #9B9B9B; }
+/* done : cercle contour vert + icone verte + check bas droite */
+.yt-step-done .yt-bubble {
+  border-color: #1F8B4C;
+  color: #1F8B4C;
+  background: #FFFFFF;
+}
+.yt-check {
+  position: absolute;
+  bottom: -2px; right: -2px;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: #1F8B4C;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(31, 139, 76, 0.35);
+  animation: yt-check-pop 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.3);
+}
+@keyframes yt-check-pop {
+  from { transform: scale(0.4); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+/* active : cercle plein vert + glow subtile */
+.yt-step-active .yt-bubble {
+  background: #1F8B4C;
+  border-color: #1F8B4C;
+  color: #FFFFFF;
+  box-shadow: 0 6px 18px rgba(31, 139, 76, 0.35);
+  animation: yt-active-pulse 2s ease-in-out infinite;
+}
+.yt-glow {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px solid rgba(31, 139, 76, 0.35);
+  animation: yt-glow-ring 1.8s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes yt-active-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+@keyframes yt-glow-ring {
+  0% { transform: scale(0.9); opacity: 0.7; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+/* Rails de connexion horizontaux (gauche/droite de la bulle) */
+.yt-rail {
+  position: absolute;
+  top: 28px;               /* aligne au centre vertical de la bubble */
+  height: 2px;
+  background: #E8ECE8;
+  transition: background 0.4s;
+  z-index: 0;
+}
+.yt-rail-left  { left: 0;    right: calc(50% + 28px); }
+.yt-rail-right { left: calc(50% + 28px); right: 0; }
+.yt-rail-on { background: #1F8B4C; }
+
+.yt-label {
+  margin-top: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  text-align: center;
+  color: #6B6B6B;
+  line-height: 1.25;
+  max-width: 82px;
+}
+.yt-step-active .yt-label,
+.yt-step-done .yt-label {
+  color: #0F1419;
+}
+.yt-step-active .yt-label { color: #1F8B4C; }
+@media (min-width: 700px) {
+  .yt-timeline { padding: 20px 0 4px; }
+  .yt-label { font-size: 11px; }
+}
+
+/* ═══════════════ Store info section ═══════════════ */
+.yt-store { padding: 18px 18px 20px; }
+.yt-store-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.yt-store-caps {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: #1F8B4C;
+  margin-bottom: 4px;
+}
+.yt-store-name {
+  display: block;
+  font-size: 15px;
+  font-weight: 800;
+  color: #0F1419;
+  letter-spacing: -0.2px;
+  margin-bottom: 2px;
+}
+.yt-store-addr {
+  font-size: 13px;
+  color: #0F1419;
+  line-height: 1.4;
+  margin: 2px 0;
+}
+.yt-store-addr.muted { color: #6B6B6B; }
+.yt-store-phone {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1F8B4C;
+  text-decoration: none;
+}
+.yt-store-phone:hover { text-decoration: underline; }
+.yt-store-directions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #E8F5E9;
+  color: #1F5B32;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.yt-store-directions:hover { background: #D6EBD9; }
+.yt-store-divider {
+  height: 1px;
+  background: #EEEEEE;
+  margin: 14px 0 12px;
+}
+
+/* ═══════════════ Import preorder card ═══════════════ */
+.yt-import {
+  background: linear-gradient(160deg, #EAF3EA 0%, #F5FBF5 100%);
+  border: 1px solid rgba(31, 139, 76, 0.14);
+  box-shadow: none;
+}
+.yt-import-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 12px;
+}
+.yt-import-head strong { color: #1F5B32; font-size: 14px; font-weight: 800; }
+.yt-import-head span { color: #6B6B6B; font-size: 12px; font-weight: 600; }
+.yt-import-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(31, 139, 76, 0.12);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.yt-import-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #1F8B4C, #2FAE6A);
+  transition: width 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.yt-import-rows { display: flex; flex-direction: column; gap: 8px; }
+.yt-import-row {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 13px; color: #0F1419;
+}
+.yt-import-row strong.ok { color: #1F8B4C; font-weight: 800; }
+.yt-import-row strong.wait { color: #6B6B6B; font-weight: 700; }
+
+/* ═══════════════ Order confirmation accordion ═══════════════ */
+.yt-accordion { padding: 14px 16px; }
+.yt-accordion-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: transparent;
+  border: none;
+  padding: 4px 0;
+  cursor: pointer;
+  text-align: left;
+}
+.yt-accordion-caps {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  color: #6B6B6B;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+.yt-accordion-head strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 800;
+  color: #0F1419;
+  letter-spacing: -0.2px;
+}
+.yt-accordion-meta {
+  display: block;
+  font-size: 12px;
+  color: #6B6B6B;
+  margin-top: 2px;
+  font-weight: 600;
+}
+.yt-accordion-chevron {
+  transition: transform 0.25s ease;
+  color: #6B6B6B;
+  flex-shrink: 0;
+}
+.yt-accordion-chevron.open { transform: rotate(180deg); }
+.yt-accordion-body {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #EEEEEE;
+  animation: yt-accordion-in 0.28s ease-out;
+}
+@keyframes yt-accordion-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.yt-items { display: flex; flex-direction: column; gap: 12px; }
+.yt-item {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #F4F4F1;
+}
+.yt-item:last-child { border-bottom: 0; }
+.yt-item img,
+.yt-item-noimg {
+  width: 48px; height: 48px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: #F4F4F1;
+  flex-shrink: 0;
+}
+.yt-item-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.yt-item-info strong {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0F1419;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.yt-item-info span { font-size: 11px; color: #6B6B6B; font-weight: 600; }
+.yt-item-info small { font-size: 10px; font-weight: 700; color: #1F8B4C; }
+.yt-item-price {
+  font-size: 13px;
+  font-weight: 800;
+  color: #0F1419;
+  white-space: nowrap;
+}
+.yt-totals {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed #EEEEEE;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.yt-totals-row {
+  display: flex; justify-content: space-between;
+  font-size: 13px; color: #6B6B6B;
+}
+.yt-totals-row strong { color: #0F1419; font-weight: 700; }
+.yt-totals-grand {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid #EEEEEE;
+  font-size: 15px;
+}
+.yt-totals-grand span { color: #0F1419; font-weight: 700; }
+.yt-totals-grand strong { color: #1F8B4C; font-weight: 900; font-size: 16px; }
+.yt-payment {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #F4F7F3;
+  display: flex; flex-direction: column;
+}
+.yt-payment span { font-size: 11px; font-weight: 700; color: #6B6B6B; text-transform: uppercase; letter-spacing: 0.4px; }
+.yt-payment strong { font-size: 13px; font-weight: 800; color: #0F1419; margin-top: 2px; }
+.yt-payment small { font-size: 11px; color: #6B6B6B; margin-top: 2px; }
+
+/* ═══════════════ Rating recap ═══════════════ */
+.yt-rating-recap { text-align: left; }
+.yt-rating-stars {
+  display: inline-flex;
+  gap: 3px;
+  margin: 6px 0 8px;
+}
+.yt-rating-com {
+  font-size: 13px;
+  color: #6B6B6B;
+  font-style: italic;
+  margin: 0;
+}
+
+/* ═══════════════ Footer links (Customer Service + Terms) ═══════════════ */
+.yt-footlinks {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 4px 0;
+}
+.yt-footlink {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 6px;
+  border-bottom: 1px solid #EEEEEE;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0F1419;
+  text-decoration: none;
+}
+.yt-footlink:last-child { border-bottom: 0; }
+.yt-footlink:hover { color: #1F8B4C; }
+
+/* ═══════════════ Rider pin (Leaflet overlay) ═══════════════ */
+.yt-rider-pin {
+  background: #1F8B4C;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  border: 3px solid #FFFFFF;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  animation: yt-active-pulse 1.6s ease-in-out infinite;
+}
+
 
 .track-screen {
   min-height: 100vh;

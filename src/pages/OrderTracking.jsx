@@ -1,17 +1,22 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
-import { useNav } from '../App';
+import { useNav, useUser } from '../App';
 import { supabase } from '../lib/supabase';
 import { clientReportDispute } from '../lib/supabase';
 import { toast, confirmDialog } from '../lib/toast';
 import { formatPrice, safeFormatDate, safeNumber, YARAM_WHATSAPP } from '../lib/utils';
 import { formatArrivalDate } from '../lib/preorder';
 import SignedImage from '../components/SignedImage';
+import TrackingTimeline from '../components/TrackingTimeline';
+import {
+  IconBagCheck, IconPreparing, IconPackage,
+  IconScooter, IconPharmacy, IconHandDelivery,
+  IconPlane, IconArrival,
+} from '../components/TrackingIcons';
 import './OrderTracking.css';
 
-// Statuts autorisant l'annulation cote client (commandes locales)
+// Statuts autorisant l annulation cote client (commandes locales)
 const CANCELLABLE_STATUSES = new Set(['pending', 'pending_payment', 'confirmed', 'paid']);
-// Statuts autorisant l annulation d une commande import (preorder) : tant que
-// l admin n a pas expedie, le client peut annuler et se faire rembourser l acompte.
+// Statuts autorisant l annulation d une commande import (preorder)
 const PREORDER_CANCELLABLE_STATUSES = new Set([
   'paid',
   'awaiting_supplier',
@@ -19,115 +24,111 @@ const PREORDER_CANCELLABLE_STATUSES = new Set([
   'arrived_local',
   'awaiting_balance',
 ]);
-// Statuts terminaux ou trop avances pour un signalement de type dispute
-const REPORTABLE_FALLBACK_WA = 'contactez-nous';
 
-/* ───────────── Flows (étapes timeline) ───────────── */
-// Local : commande Dakar (J+1) — aligné 1:1 sur l'app native (5 étapes)
-const STEPS_LOCAL = [
-  { id: 'placed',    icon: '', label: 'Commande passée', sub: 'Reçue par YARAM' },
-  { id: 'paid',      icon: '', label: 'Confirmée',       sub: 'Paiement validé' },
-  { id: 'preparing', icon: '', label: 'En préparation',  sub: 'Pharmacie partenaire' },
-  { id: 'shipped',   icon: '', label: 'En livraison',    sub: 'Le livreur arrive' },
-  { id: 'delivered', icon: '', label: 'Livrée',          sub: 'Merci pour ta confiance' },
+/* ═══════════════════════════════════════════════════════════
+   Cache module-level pour retour navigation instantane.
+   ═══════════════════════════════════════════════════════════ */
+const _orderCache = new Map();
+const _trackingCache = new Map();
+
+/* ═══════════════════════════════════════════════════════════
+   Timelines : 5 etapes horizontales, style Papa Track.
+   Chaque etape a un icone SVG dedie + un label small caps.
+   ═══════════════════════════════════════════════════════════ */
+const STEPS_LOCAL = (isPickup) => [
+  { key: 'confirmed', label: 'Confirmee',           icon: IconBagCheck },
+  { key: 'preparing', label: 'Preparation',         icon: IconPreparing },
+  { key: 'ready',     label: 'Prete',               icon: IconPackage },
+  { key: 'transit',   label: isPickup ? 'Retrait dispo' : 'En livraison', icon: isPickup ? IconPharmacy : IconScooter },
+  { key: 'done',      label: isPickup ? 'Retiree'   : 'Livree',           icon: IconHandDelivery },
 ];
 
-// Preorder : import (15j)
-const STEPS_PREORDER = [
-  { id: 'paid',              icon: '', label: 'Acompte reçu',          sub: '50% versé' },
-  { id: 'awaiting_supplier', icon: '', label: 'Commande fournisseur',  sub: 'YARAM commande à l\'étranger' },
-  { id: 'in_transit_intl',   icon: '', label: 'En route vers Dakar',   sub: 'Transport international' },
-  { id: 'arrived_local',     icon: '', label: 'Arrivé à Dakar',        sub: 'Réception locale' },
-  { id: 'awaiting_balance',  icon: '', label: 'Solde à régler',        sub: '50% restant' },
-  { id: 'shipped',           icon: '', label: 'En livraison',          sub: 'Ton livreur arrive' },
-  { id: 'delivered',         icon: '', label: 'Livrée',                sub: 'Merci pour ta confiance' },
+const STEPS_IMPORT = [
+  { key: 'ordered',  label: 'Commandee',      icon: IconBagCheck },
+  { key: 'transit',  label: 'En transit',     icon: IconPlane },
+  { key: 'arrived',  label: 'Arrivee Dakar',  icon: IconArrival },
+  { key: 'ready',    label: 'Prete',          icon: IconPackage },
+  { key: 'done',     label: 'Livree',         icon: IconHandDelivery },
 ];
 
-/* ───────────── Hero (gros bloc en haut) ───────────── */
-function statusHero(status, isPreorder) {
-  // returns { tone, icon, title, subtitle } — libellés alignés sur l'app native
-  if (status === 'delivered') {
-    return { tone: 'success', icon: '', title: 'Livrée',                  subtitle: 'Merci pour ta confiance' };
-  }
-  if (status === 'shipped' || status === 'in_delivery') {
-    return { tone: 'route',   icon: '', title: 'En livraison',            subtitle: 'Le livreur arrive' };
-  }
-  if (status === 'preparing') {
-    return { tone: 'prep',    icon: '', title: 'En préparation',          subtitle: 'Pharmacie partenaire' };
-  }
-  if (status === 'awaiting_balance') {
-    return { tone: 'warn',    icon: '', title: 'Solde à régler',          subtitle: 'Ton import est arrivé — règle le solde' };
-  }
-  if (status === 'arrived_local') {
-    return { tone: 'route',   icon: '', title: 'Arrivé à Dakar',          subtitle: 'Bientôt prêt pour la livraison' };
-  }
-  if (status === 'in_transit_intl') {
-    return { tone: 'transit', icon: '', title: 'En route vers Dakar',     subtitle: 'Transport international en cours' };
-  }
-  if (status === 'awaiting_supplier') {
-    return { tone: 'prep',    icon: '', title: 'Commande fournisseur',    subtitle: 'YARAM commande chez le fournisseur' };
-  }
-  if (status === 'awaiting_verification') {
-    return { tone: 'warn',    icon: '', title: 'Vérification',            subtitle: 'On vérifie ton paiement' };
-  }
-  if (status === 'pending_payment' || status === 'pending') {
-    return { tone: 'warn',    icon: '', title: 'En attente de paiement',  subtitle: 'On attend la confirmation' };
-  }
-  if (status === 'paid' || status === 'confirmed') {
-    return { tone: 'prep',    icon: '', title: isPreorder ? 'Acompte reçu' : 'Confirmée', subtitle: isPreorder ? 'YARAM va lancer la commande' : 'Paiement validé' };
-  }
-  if (status === 'cancelled') {
-    return { tone: 'cancel',  icon: '', title: 'Commande annulée',        subtitle: 'Contacte le support si besoin' };
-  }
-  return { tone: 'prep', icon: '', title: 'En cours', subtitle: 'Mise à jour bientôt' };
+/* Type de commande -> badge small caps green */
+function orderTypeLabel(order) {
+  if (order.is_preorder) return 'IMPORT INTERNATIONAL';
+  if (order.pickup_at_pharmacy || order.delivery_mode === 'pickup') return 'RETRAIT PHARMACIE';
+  return 'LIVRAISON DAKAR';
 }
 
-// ════════════════════════════════════════════════════════════════
-// FIX juin 2026 #12 : cache module-level pour order + tracking.
-// Au remount avec le même orderId (back navigation, retour foreground),
-// on restitue immédiatement la dernière valeur connue → pas de
-// "Chargement du suivi..." pendant 1-3s. Refresh en arrière-plan.
-// ════════════════════════════════════════════════════════════════
-const _orderCache = new Map();    // key: orderId, value: order object
-const _trackingCache = new Map(); // key: orderId, value: tracking object
+/* Titre principal type Papa Track "A tout de suite, Ousmane!" */
+function heroTitle(status, firstName) {
+  const fn = (firstName || '').split(' ')[0] || 'toi';
+  if (status === 'delivered') return `Merci, ${fn} !`;
+  if (status === 'cancelled') return `Commande annulee, ${fn}`;
+  if (status === 'shipped' || status === 'in_delivery') return `A tout de suite, ${fn} !`;
+  if (status === 'awaiting_balance') return `Solde a regler, ${fn}`;
+  return `Bientot chez toi, ${fn} !`;
+}
 
-/* ───────────── ETA estimée ───────────── */
+/* ETA sous le titre (petite pill) */
 function computeETA(order, tracking) {
-  // Priorité 1 : ETA du tracking (livreur)
   if (tracking?.eta_at) {
     const d = new Date(tracking.eta_at);
     if (!isNaN(d.getTime())) {
       return `Livraison vers ${d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
     }
   }
-  // Priorité 2 : si shipped, on suppose ~30min
   if (order.status === 'shipped') {
     const d = new Date(Date.now() + 30 * 60 * 1000);
     return `Livraison vers ${d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
   }
-  // Priorité 3 : preorder arrival date
   if (order.is_preorder && order.expected_arrival_date) {
-    return `Arrivée prévue ${formatArrivalDate(order.expected_arrival_date)}`;
+    return `Arrivee prevue ${formatArrivalDate(order.expected_arrival_date)}`;
   }
-  // Local non shipped : J+1
   if (!order.is_preorder && (order.status === 'paid' || order.status === 'preparing')) {
     const d = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    return `Livraison estimée ${d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short' })}`;
+    return `Livraison estimee ${d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short' })}`;
   }
   return null;
 }
 
+/* Mapping status -> index d etape courante (0..N-1) */
+function computeCurrentIndex(order) {
+  if (order.is_preorder) {
+    // Import 5 etapes
+    if (order.status === 'delivered') return 4;
+    if (order.status === 'shipped' || order.status === 'in_delivery') return 4;
+    if (order.status === 'awaiting_balance' || order.status === 'arrived_local') return 3;
+    if (order.status === 'in_transit_intl') return 2;
+    if (order.status === 'awaiting_supplier') return 1;
+    return 0;
+  }
+  // Local 5 etapes
+  if (order.status === 'delivered') return 4;
+  if (order.status === 'shipped' || order.status === 'in_delivery') return 3;
+  if (order.status === 'preparing') return 2;
+  if (order.status === 'paid' || order.status === 'confirmed' || order.status === 'awaiting_verification') return 1;
+  if (order.status === 'pending_payment' || order.status === 'pending') return 0;
+  if (order.status === 'cancelled') {
+    if (order.delivered_at) return 4;
+    if (order.shipped_at || order.out_for_delivery_at) return 3;
+    if (order.prepared_at) return 2;
+    if (order.paid_at || order.payment_confirmed_at) return 1;
+    return 0;
+  }
+  return 0;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Composant principal
+   ═══════════════════════════════════════════════════════════ */
 export default function OrderTracking({ orderId }) {
   const { navigate } = useNav();
-  // FIX juin 2026 : on hydrate depuis le cache module-level si dispo.
-  // Évite l'écran "Chargement du suivi…" au retour navigation.
+  const { user } = useUser();
   const [order, setOrder] = useState(() => (orderId ? _orderCache.get(orderId) || null : null));
   const [tracking, setTracking] = useState(() => (orderId ? _trackingCache.get(orderId) || null : null));
   const [loadError, setLoadError] = useState(false);
-  // firstLoadDone=true si on a déjà des données en cache (pas besoin d'attendre)
   const [firstLoadDone, setFirstLoadDone] = useState(() => !!_orderCache.get(orderId));
   const [showRating, setShowRating] = useState(false);
-  const [itemsExpanded, setItemsExpanded] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const prevStatusRef = useRef(null);
   const mapContainerRef = useRef(null);
@@ -143,16 +144,12 @@ export default function OrderTracking({ orderId }) {
     let cancelled = false;
     setFirstLoadDone(false);
     setLoadError(false);
-
-    // Safety timeout 12s : libère l'UI si la RPC hang (réseau LTE Dakar fragile)
     const safety = setTimeout(() => {
       if (cancelled) return;
       setFirstLoadDone(true);
       setLoadError(true);
     }, 12000);
-
     refresh(true).finally(() => { if (!cancelled) clearTimeout(safety); });
-
     const sub = supabase
       .channel('order-tracking-tr-' + orderId)
       .on('postgres_changes',
@@ -169,10 +166,9 @@ export default function OrderTracking({ orderId }) {
       if (orderErr) console.warn('[OrderTracking] order RPC error:', orderErr.message);
       if (orderData) {
         setOrder(orderData);
-        _orderCache.set(orderId, orderData); // Cache pour retour navigation instantané
+        _orderCache.set(orderId, orderData);
       }
       else if (isFirst && !_orderCache.get(orderId)) setLoadError(true);
-
       const { data: trackingData } = await supabase.from('delivery_tracking').select('*').eq('order_id', orderId).maybeSingle();
       if (trackingData) {
         setTracking(trackingData);
@@ -186,7 +182,7 @@ export default function OrderTracking({ orderId }) {
     }
   };
 
-  // Trigger confettis quand on passe en 'delivered' en live
+  // Confetti quand on passe en delivered en live
   useEffect(() => {
     if (!order) return;
     if (prevStatusRef.current && prevStatusRef.current !== 'delivered' && order.status === 'delivered') {
@@ -196,7 +192,7 @@ export default function OrderTracking({ orderId }) {
     prevStatusRef.current = order.status;
   }, [order?.status]);
 
-  // Carte Leaflet
+  // Carte Leaflet en fond du header quand shipped
   useEffect(() => {
     if (!tracking?.current_lat || !mapContainerRef.current) return;
     if (!window.L) {
@@ -211,7 +207,6 @@ export default function OrderTracking({ orderId }) {
     } else {
       initMap();
     }
-
     function initMap() {
       const L = window.L;
       if (!L) return;
@@ -220,19 +215,25 @@ export default function OrderTracking({ orderId }) {
         mapRef.current.setView([tracking.current_lat, tracking.current_lng], 15);
         return;
       }
-      mapRef.current = L.map(mapContainerRef.current, { zoomControl: false, attributionControl: false }).setView([tracking.current_lat, tracking.current_lng], 15);
+      mapRef.current = L.map(mapContainerRef.current, {
+        zoomControl: false,
+        attributionControl: false,
+        dragging: false,
+        touchZoom: false,
+        scrollWheelZoom: false,
+        doubleClickZoom: false,
+      }).setView([tracking.current_lat, tracking.current_lng], 15);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap',
+        attribution: '',
       }).addTo(mapRef.current);
       const livreurIcon = L.divIcon({
-        html: '<div class="track-rider-pin"></div>',
+        html: '<div class="yt-rider-pin"></div>',
         className: '', iconSize: [44, 44], iconAnchor: [22, 22],
       });
       markerRef.current = L.marker([tracking.current_lat, tracking.current_lng], { icon: livreurIcon }).addTo(mapRef.current);
     }
   }, [tracking?.current_lat, tracking?.current_lng]);
 
-  // Pop-up notation auto après livraison
   useEffect(() => {
     if (order?.status === 'delivered' && !order?.delivery_rating) {
       const t = setTimeout(() => setShowRating(true), 2500);
@@ -240,26 +241,6 @@ export default function OrderTracking({ orderId }) {
     }
   }, [order?.status, order?.delivery_rating]);
 
-  // Rappel notation snackbar : si livree depuis 24h et pas encore notee,
-  // on montre une snackbar discrete "Note ta livraison" (dismiss + tap).
-  const [showRatingSnack, setShowRatingSnack] = useState(false);
-  useEffect(() => {
-    if (!order) return;
-    if (order.status !== 'delivered') return;
-    if (order.delivery_rating) return;
-    const dismissKey = `yaram_rated_snack_${orderId}`;
-    if (localStorage.getItem(dismissKey)) return;
-    const deliveredAt = order.delivered_at || tracking?.delivered_at;
-    if (!deliveredAt) return;
-    const dt = new Date(deliveredAt).getTime();
-    if (isNaN(dt)) return;
-    const hoursSince = (Date.now() - dt) / (1000 * 60 * 60);
-    if (hoursSince >= 24) {
-      setShowRatingSnack(true);
-    }
-  }, [order?.status, order?.delivery_rating, order?.delivered_at, tracking?.delivered_at, orderId]);
-
-  // Numéro de commande compact (#XXXX)
   const compactId = useMemo(() => {
     if (!order?.id) return '';
     const s = String(order.id);
@@ -267,8 +248,6 @@ export default function OrderTracking({ orderId }) {
   }, [order?.id]);
 
   if (!order) {
-    // Si le premier load a complété sans rapporter d'order → on bascule sur un
-    // état d'erreur (au lieu d'un spinner infini) avec bouton retry + retour.
     if (firstLoadDone) {
       return (
         <div className="track-screen page-anim">
@@ -278,23 +257,23 @@ export default function OrderTracking({ orderId }) {
             </p>
             {loadError && (
               <p style={{ fontSize: 13, color: '#8B8B8B', marginBottom: 20 }}>
-                Vérifie ta connexion puis réessaye.
+                Verifie ta connexion puis reessaye.
               </p>
             )}
             <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 20, flexWrap: 'wrap' }}>
               {loadError && (
                 <button
                   onClick={() => { setFirstLoadDone(false); setLoadError(false); refresh(true); }}
-                  style={{ padding: '10px 20px', background: '#1F8B4C', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}
+                  style={{ padding: '10px 20px', background: '#1F8B4C', color: 'white', border: 'none', borderRadius: 999, cursor: 'pointer', fontWeight: 700 }}
                 >
-                  Réessayer
+                  Reessayer
                 </button>
               )}
               <button
                 onClick={() => navigate('/orders')}
-                style={{ padding: '10px 20px', background: '#F4F4F2', color: '#222', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}
+                style={{ padding: '10px 20px', background: '#F4F4F2', color: '#222', border: 'none', borderRadius: 999, cursor: 'pointer', fontWeight: 700 }}
               >
-                ← Mes commandes
+                Mes commandes
               </button>
             </div>
           </div>
@@ -305,57 +284,65 @@ export default function OrderTracking({ orderId }) {
       <div className="track-screen page-anim">
         <div className="track-loading">
           <div className="track-loading-spinner" />
-          <p>Chargement du suivi…</p>
+          <p>Chargement du suivi...</p>
         </div>
       </div>
     );
   }
 
   const isPreorderOrder = order.is_preorder === true;
-  const STEPS = isPreorderOrder ? STEPS_PREORDER : STEPS_LOCAL;
-  // Aligné native : mapping status -> index dans STEPS_LOCAL (5 etapes)
-  const localIdx = (() => {
-    if (isPreorderOrder) return STEPS.findIndex(s => s.id === order.status);
-    if (order.status === 'delivered') return 4;
-    if (order.status === 'shipped' || order.status === 'in_delivery') return 3;
-    if (order.status === 'preparing') return 2;
-    if (order.status === 'paid' || order.status === 'confirmed' || order.status === 'awaiting_verification') return 1;
-    if (order.status === 'pending_payment' || order.status === 'pending') return 0;
-    if (order.status === 'cancelled') {
-      if (order.delivered_at) return 4;
-      if (order.shipped_at || order.out_for_delivery_at) return 3;
-      if (order.prepared_at) return 2;
-      if (order.paid_at || order.payment_confirmed_at) return 1;
-      return 0;
-    }
-    return 0;
-  })();
-  const currentStep = localIdx;
+  const isPickup = !isPreorderOrder && (order.pickup_at_pharmacy || order.delivery_mode === 'pickup');
+  const STEPS = isPreorderOrder ? STEPS_IMPORT : STEPS_LOCAL(isPickup);
+  const currentStep = computeCurrentIndex(order);
+  const isCancelled = order.status === 'cancelled';
+  const timelineSteps = STEPS.map((s, i) => ({
+    ...s,
+    status: isCancelled
+      ? (i <= currentStep ? 'done' : 'pending')
+      : (i < currentStep
+        ? 'done'
+        : i === currentStep
+        ? (order.status === 'delivered' ? 'done' : 'active')
+        : 'pending'),
+  }));
+
   const hasGPS = tracking?.current_lat && (order.status === 'shipped' || order.status === 'in_delivery');
   const lastUpdate = tracking?.last_update ? new Date(tracking.last_update) : null;
   const secondsAgo = lastUpdate ? Math.floor((Date.now() - lastUpdate.getTime()) / 1000) : null;
 
-  const hero = statusHero(order.status, isPreorderOrder);
   const eta = computeETA(order, tracking);
-  const paymentLabel =
-    order.payment_method === 'wave' ? 'Payé via Wave' :
-    order.payment_method === 'orange_money' ? 'Payé via Orange Money' :
-    order.payment_method === 'card' ? 'Payé par carte' :
-    order.payment_method === 'cod' ? 'Cash à la livraison' :
-    'Paiement enregistré';
+  const firstName = user?.first_name || order.address?.name?.split(' ')[0] || '';
+  const bigTitle = heroTitle(order.status, firstName);
+  const typeBadge = orderTypeLabel(order);
 
-  const paymentDone = order.status !== 'pending' && order.status !== 'pending_payment' && order.payment_method !== 'cod';
+  const paymentLabel =
+    order.payment_method === 'wave' ? 'Paye via Wave' :
+    order.payment_method === 'orange_money' ? 'Paye via Orange Money' :
+    order.payment_method === 'card' ? 'Paye par carte' :
+    order.payment_method === 'cod' ? 'Cash a la livraison' :
+    'Paiement enregistre';
 
   const helpHref = `https://wa.me/${YARAM_WHATSAPP}?text=${encodeURIComponent(
-    `Bonjour YARAM, j'ai besoin d'aide concernant ma commande ${compactId}.`
+    `Bonjour YARAM, j ai besoin d aide concernant ma commande ${compactId}.`
   )}`;
 
   const driverPhoneClean = tracking?.delivery_person_phone?.replace(/\D/g, '');
 
-  // ─── Actions client (annuler / signaler) ───
   const canCancel = order && !isPreorderOrder && CANCELLABLE_STATUSES.has(order.status);
-  // Preorder : le client peut annuler tant que l admin n a pas expedie.
   const canCancelPreorder = order && isPreorderOrder && PREORDER_CANCELLABLE_STATUSES.has(order.status);
+
+  // Info marchand (premiere pharmacie liee aux items)
+  const merchantName = order.items?.find(it => it.pharmacyName)?.pharmacyName || null;
+  const merchantAddress = order.pickup_address || null;
+  const merchantPhone = order.pickup_phone || null;
+
+  // Adresse pour Directions Google Maps (lien "Directions")
+  const directionsQuery = encodeURIComponent(
+    [order.address?.line, order.address?.neighborhood, order.address?.city].filter(Boolean).join(', ')
+  );
+  const directionsHref = directionsQuery
+    ? `https://www.google.com/maps/dir/?api=1&destination=${directionsQuery}`
+    : null;
 
   const handleCancelPreorder = async () => {
     if (!order) return;
@@ -367,9 +354,7 @@ export default function OrderTracking({ orderId }) {
     try {
       const { data, error } = await supabase.rpc('client_cancel_preorder', { p_order_id: order.id });
       if (error) throw error;
-      if (data && data.success === false) {
-        throw new Error(data.error || 'cancel_failed');
-      }
+      if (data && data.success === false) throw new Error(data.error || 'cancel_failed');
       toast.success('Commande annulee. Ton acompte sera rembourse sous 5 jours ouvrables.');
       refresh(false);
     } catch (e) {
@@ -381,12 +366,10 @@ export default function OrderTracking({ orderId }) {
   const handleCancelOrder = async () => {
     if (!order) return;
     const ok = await confirmDialog(
-      'Confirmer l\'annulation de cette commande ?',
+      'Confirmer l annulation de cette commande ?',
       { confirmLabel: 'Annuler la commande', cancelLabel: 'Retour', danger: true }
     );
     if (!ok) return;
-    // Tentative directe UPDATE sur orders (RLS decide). Si echec, on route
-    // vers WhatsApp support pour finaliser l'annulation cote humain.
     try {
       const { error } = await supabase
         .from('orders')
@@ -395,21 +378,17 @@ export default function OrderTracking({ orderId }) {
         .in('status', ['pending', 'pending_payment', 'confirmed', 'paid']);
       if (error) throw error;
       toast.success('Commande annulee');
-      // Rafraichit
       refresh(false);
     } catch (e) {
       console.warn('[OrderTracking] cancel failed, fallback WA:', e?.message);
-      toast.info('On finalise l\'annulation avec le support');
-      const msg = encodeURIComponent(
-        `Bonjour YARAM, je souhaite annuler ma commande ${compactId}.`
-      );
+      toast.info('On finalise l annulation avec le support');
+      const msg = encodeURIComponent(`Bonjour YARAM, je souhaite annuler ma commande ${compactId}.`);
       window.open(`https://wa.me/${YARAM_WHATSAPP}?text=${msg}`, '_blank');
     }
   };
 
   const handleReportIssue = async () => {
     if (!order) return;
-    // Livree : on peut declarer un litige via RPC. Sinon on route WA.
     if (order.status === 'delivered') {
       const reason = await (async () => {
         try {
@@ -426,24 +405,23 @@ export default function OrderTracking({ orderId }) {
         toast.success('Signalement envoye. On revient vers toi rapidement.');
       } catch (e) {
         console.warn('[OrderTracking] dispute failed:', e?.message);
-        toast.error('Impossible d\'envoyer. Contacte-nous sur WhatsApp.');
+        toast.error('Impossible d envoyer. Contacte-nous sur WhatsApp.');
       }
       return;
     }
-    // Statut non livre : direct WhatsApp support
     const msg = encodeURIComponent(
-      `Bonjour YARAM, j'ai un probleme sur ma commande ${compactId} (statut : ${order.status}).`
+      `Bonjour YARAM, j ai un probleme sur ma commande ${compactId} (statut : ${order.status}).`
     );
     window.open(`https://wa.me/${YARAM_WHATSAPP}?text=${msg}`, '_blank');
   };
 
   return (
-    <div className="track-screen page-anim">
-      {/* ═══ Header sticky glass ═══ */}
+    <div className="track-screen track-pj page-anim">
+      {/* ═══ Header sticky sobre ═══ */}
       <header className="track-top">
         <button className="track-top-btn" onClick={() => navigate('/orders')} aria-label="Retour">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+            <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
           </svg>
         </button>
         <div className="track-top-id">
@@ -451,364 +429,391 @@ export default function OrderTracking({ orderId }) {
           <strong className="track-top-id-num">{compactId}</strong>
         </div>
         <a className="track-top-help" href={helpHref} target="_blank" rel="noopener noreferrer">
-          <span className="track-top-help-dot">?</span>
           Aide
         </a>
       </header>
 
       <div className="track-scroll">
-       <div className="track-grid">
-        {/* ═══ Hero status premium ═══ */}
-        <section className={`track-hero track-col-main track-hero-${hero.tone}`}>
-          <div className="track-hero-iconwrap">
-            <div className="track-hero-pulse" aria-hidden="true" />
-            <div className="track-hero-icon">{hero.icon}</div>
-          </div>
-          <h1 className="track-hero-title">{hero.title}</h1>
-          <p className="track-hero-sub">{hero.subtitle}</p>
-          {eta && (
-            <div className="track-hero-eta">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/>
-              </svg>
-              <span>{eta}</span>
-            </div>
-          )}
-        </section>
-
-        {/* ═══ Timeline verticale premium ═══ */}
-        <section className="track-card track-col-main">
-          <h3 className="track-card-title">Suivi de ta commande</h3>
-          <ol className="track-tl">
-            {STEPS.map((s, i) => {
-              const isCancelledOrder = order.status === 'cancelled';
-              const isDone = !isCancelledOrder && (i < currentStep || (i === currentStep && order.status === 'delivered'));
-              const isCurrent = !isCancelledOrder && i === currentStep && order.status !== 'delivered';
-              const cls = isDone ? 'done' : isCurrent ? 'current' : 'future';
-              return (
-                <li key={s.id} className={`track-tl-step track-tl-${cls}`} style={{ animationDelay: `${i * 80}ms` }}>
-                  <div className="track-tl-rail">
-                    <div className="track-tl-bullet">
-                      {isDone && (
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="20 6 9 17 4 12"/>
-                        </svg>
-                      )}
-                      {isCurrent && <span className="track-tl-spin" />}
-                    </div>
-                    {i < STEPS.length - 1 && <div className="track-tl-line" />}
-                  </div>
-                  <div className="track-tl-body">
-                    <div className="track-tl-label">
-                      <span className="track-tl-emoji">{s.icon}</span>
-                      <span>{s.label}</span>
-                    </div>
-                    <div className="track-tl-sub">{s.sub}</div>
-                  </div>
-                </li>
-              );
-            })}
-          </ol>
-        </section>
-
-        {/* ═══ Preorder spécial (si import) ═══ */}
-        {isPreorderOrder && (
-          <section className="track-card track-import track-col-main">
-            <div className="track-import-head">
-              <span className="track-import-plane"></span>
-              <div>
-                <strong>Import en cours</strong>
-                <p>Délai estimé : 15 jours</p>
+        {/* ═══════════════════════════════════════════════════
+            HERO Papa-Track : map en fond + badge flottant + card
+            ═══════════════════════════════════════════════════ */}
+        <section className="yt-hero">
+          <div className="yt-hero-map" aria-hidden="true">
+            {hasGPS ? (
+              <div ref={mapContainerRef} className="yt-hero-mapinner" />
+            ) : (
+              <div className="yt-hero-mapfake">
+                {/* Fond degrade + pattern subtil pour donner l illusion d une carte */}
+                <svg className="yt-hero-pattern" viewBox="0 0 400 220" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+                  <defs>
+                    <linearGradient id="ytmap" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0" stopColor="#E7F3EA" />
+                      <stop offset="1" stopColor="#D5EBDD" />
+                    </linearGradient>
+                  </defs>
+                  <rect width="400" height="220" fill="url(#ytmap)" />
+                  <path d="M0 80 Q 100 40 200 90 T 400 80" stroke="#FFFFFF" strokeWidth="6" fill="none" opacity="0.7" />
+                  <path d="M0 140 Q 120 100 220 150 T 400 140" stroke="#FFFFFF" strokeWidth="4" fill="none" opacity="0.55" />
+                  <circle cx="80" cy="80" r="4" fill="#1F8B4C" />
+                  <circle cx="220" cy="90" r="4" fill="#1F8B4C" />
+                  <circle cx="330" cy="140" r="4" fill="#1F8B4C" />
+                </svg>
               </div>
+            )}
+            {/* Badge YARAM Track flottant */}
+            <div className="yt-hero-badge">
+              <span className="yt-hero-badge-dot" />
+              YARAM Track
             </div>
-            <div className="track-import-progress">
-              <div className="track-import-bar">
+          </div>
+
+          {/* Card blanche qui overlap la map */}
+          <div className="yt-hero-card">
+            <div className="yt-hero-type">{typeBadge}</div>
+            <h1 className="yt-hero-title">{bigTitle}</h1>
+            {eta && !isCancelled && (
+              <div className="yt-hero-eta">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="9" /><polyline points="12 7 12 12 15 14" />
+                </svg>
+                <span>{eta}</span>
+              </div>
+            )}
+
+            {/* Timeline HORIZONTALE Papa Track */}
+            <TrackingTimeline steps={timelineSteps} />
+          </div>
+        </section>
+
+        <div className="track-grid">
+          {/* ═══ Info marchand + Directions ═══ */}
+          {(merchantName || order.address) && (
+            <section className="track-card yt-store track-col-main">
+              <div className="yt-store-head">
+                <div>
+                  <div className="yt-store-caps">
+                    {isPreorderOrder ? 'FOURNISSEUR INTERNATIONAL' : (isPickup ? 'PHARMACIE DE RETRAIT' : 'PHARMACIE DEPART')}
+                  </div>
+                  <strong className="yt-store-name">{merchantName || 'Reseau YARAM'}</strong>
+                  {merchantAddress && <div className="yt-store-addr">{merchantAddress}</div>}
+                  {merchantPhone && (
+                    <a className="yt-store-phone" href={`tel:${merchantPhone.replace(/\s+/g, '')}`}>{merchantPhone}</a>
+                  )}
+                </div>
+                {directionsHref && !isPreorderOrder && (
+                  <a className="yt-store-directions" href={directionsHref} target="_blank" rel="noopener noreferrer">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="3 11 22 2 13 21 11 13 3 11" />
+                    </svg>
+                    Directions
+                  </a>
+                )}
+              </div>
+
+              <div className="yt-store-divider" />
+
+              <div className="yt-store-caps">LIVRAISON A</div>
+              <div className="yt-store-name">{order.address?.name}</div>
+              {order.address?.line && <div className="yt-store-addr">{order.address.line}</div>}
+              {(order.address?.neighborhood || order.address?.city) && (
+                <div className="yt-store-addr muted">
+                  {order.address?.neighborhood}{order.address?.neighborhood && order.address?.city ? ', ' : ''}{order.address?.city}
+                </div>
+              )}
+              {order.address?.phone && (
+                <a className="yt-store-phone" href={`tel:${order.address.phone.replace(/\s+/g, '')}`}>{order.address.phone}</a>
+              )}
+            </section>
+          )}
+
+          {/* ═══ Livreur GPS (si assigne + shipped) ═══ */}
+          {(tracking?.delivery_person_name || hasGPS) && (
+            <section className="track-card track-col-aside track-driver-card">
+              <h3 className="track-card-title">Ton livreur</h3>
+
+              {hasGPS && (
+                <div className="track-mapwrap">
+                  <div className="track-map" style={{ minHeight: 240, background: '#EAF3EA' }}>
+                    <div ref={mapContainerRef} style={{ width: '100%', height: '100%' }} />
+                  </div>
+                  <div className="track-map-overlay">
+                    <span className="live-dot" />
+                    <span>Position en direct</span>
+                  </div>
+                </div>
+              )}
+
+              {tracking?.delivery_person_name && (
+                <>
+                  <div className="track-driver">
+                    <div className="track-driver-avatar">
+                      {tracking.delivery_person_photo ? (
+                        <img src={tracking.delivery_person_photo} alt={tracking.delivery_person_name} loading="lazy" decoding="async" />
+                      ) : (
+                        <span>{(tracking.delivery_person_name || '?').charAt(0).toUpperCase()}</span>
+                      )}
+                    </div>
+                    <div className="track-driver-info">
+                      <small>Livreur YARAM</small>
+                      <strong>{tracking.delivery_person_name}</strong>
+                      {secondsAgo !== null && hasGPS && (
+                        <span className="track-driver-live">
+                          <span className="live-dot" />
+                          {secondsAgo < 60 ? `Position il y a ${secondsAgo}s` : `Il y a ${Math.floor(secondsAgo / 60)}min`}
+                        </span>
+                      )}
+                    </div>
+                    <div className="track-driver-actions">
+                      {driverPhoneClean && (
+                        <a className="track-driver-call" href={`tel:+${driverPhoneClean}`} aria-label="Appeler">
+                          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.33 1.85.57 2.81.7A2 2 0 0 1 22 16.92z" />
+                          </svg>
+                        </a>
+                      )}
+                      {driverPhoneClean && (
+                        <a className="track-driver-wa" href={`https://wa.me/${driverPhoneClean}`} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+                          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                            <path d="M20.52 3.48A11.93 11.93 0 0 0 12 0C5.37 0 0 5.37 0 12c0 2.11.55 4.18 1.6 6L0 24l6.21-1.63A11.94 11.94 0 0 0 12 24c6.63 0 12-5.37 12-12 0-3.2-1.25-6.21-3.48-8.52zM12 21.82c-1.79 0-3.55-.48-5.09-1.39l-.36-.21-3.69.97.99-3.59-.24-.37A9.78 9.78 0 0 1 2.18 12C2.18 6.57 6.57 2.18 12 2.18S21.82 6.57 21.82 12 17.43 21.82 12 21.82z" />
+                          </svg>
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                  {driverPhoneClean && (
+                    <a
+                      className="track-driver-pill"
+                      href={`https://wa.me/${driverPhoneClean}?text=${encodeURIComponent(`Bonjour, concernant ma commande ${compactId}...`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Contacter le livreur
+                    </a>
+                  )}
+                </>
+              )}
+            </section>
+          )}
+
+          {/* ═══ Preorder import : suivi paiement + arrivee ═══ */}
+          {isPreorderOrder && (
+            <section className="track-card yt-import track-col-main">
+              <div className="yt-import-head">
+                <strong>Import en cours</strong>
+                <span>Delai estime : 15 jours</span>
+              </div>
+              <div className="yt-import-bar">
                 <div
-                  className="track-import-fill"
+                  className="yt-import-fill"
                   style={{ width: `${Math.max(0, Math.min(100, ((currentStep + 1) / STEPS.length) * 100))}%` }}
                 />
               </div>
-              <div className="track-import-pct">
-                {Math.round(((currentStep + 1) / STEPS.length) * 100)}%
-              </div>
-            </div>
-            <div className="track-import-rows">
-              <div className="track-import-row">
-                <span> Acompte (50%)</span>
-                <strong className={order.deposit_paid_at ? 'ok' : 'pending'}>
-                  {formatPrice(order.deposit_amount || 0)} FCFA{order.deposit_paid_at && ' ✓'}
-                </strong>
-              </div>
-              <div className="track-import-row">
-                <span> Solde (50%)</span>
-                <strong className={order.balance_paid_at ? 'ok' : 'wait'}>
-                  {formatPrice(order.balance_amount || 0)} FCFA{order.balance_paid_at && ' ✓'}
-                </strong>
-              </div>
-              {order.expected_arrival_date && (
-                <div className="track-import-row">
-                  <span> Arrivée prévue</span>
-                  <strong>{formatArrivalDate(order.expected_arrival_date)}</strong>
+              <div className="yt-import-rows">
+                <div className="yt-import-row">
+                  <span>Acompte (50%)</span>
+                  <strong className={order.deposit_paid_at ? 'ok' : 'wait'}>
+                    {formatPrice(order.deposit_amount || 0)} FCFA
+                  </strong>
                 </div>
-              )}
-              {order.arrived_dakar_at && (
-                <div className="track-import-row">
-                  <span> Arrivé le</span>
-                  <strong className="ok">{safeFormatDate(order.arrived_dakar_at)}</strong>
+                <div className="yt-import-row">
+                  <span>Solde (50%)</span>
+                  <strong className={order.balance_paid_at ? 'ok' : 'wait'}>
+                    {formatPrice(order.balance_amount || 0)} FCFA
+                  </strong>
                 </div>
-              )}
-            </div>
-          </section>
-        )}
-
-        {/* ═══ Section Adresse (LEFT column desktop) ═══ */}
-        <section className="track-card track-col-main">
-          <h3 className="track-card-title"> Adresse de livraison</h3>
-          <div className="track-addr">
-            <strong>{order.address?.name}</strong>
-            <p>{order.address?.line}</p>
-            <p className="muted">{order.address?.neighborhood}{order.address?.neighborhood && order.address?.city ? ', ' : ''}{order.address?.city}</p>
-            {order.address?.phone && <p className="muted"> {order.address.phone}</p>}
-          </div>
-        </section>
-
-        {/* ═══ Section Livreur + Map (RIGHT column desktop, top on mobile) ═══ */}
-        {(tracking?.delivery_person_name || hasGPS) && (
-          <section className="track-card track-col-aside track-driver-card">
-            <h3 className="track-card-title"> Ton livreur</h3>
-
-            {hasGPS && (
-              <div className="track-mapwrap">
-                <div ref={mapContainerRef} className="track-map" />
-                <div className="track-map-overlay">
-                  <span className="live-dot" />
-                  <span>Position en direct</span>
-                </div>
-              </div>
-            )}
-
-            {tracking?.delivery_person_name && (
-              <>
-                <div className="track-driver">
-                  <div className="track-driver-avatar">
-                    {tracking.delivery_person_photo ? (
-                      <img src={tracking.delivery_person_photo} alt={tracking.delivery_person_name} loading="lazy" decoding="async" />
-                    ) : (
-                      <span>{(tracking.delivery_person_name || '?').charAt(0).toUpperCase()}</span>
-                    )}
+                {order.expected_arrival_date && (
+                  <div className="yt-import-row">
+                    <span>Arrivee prevue</span>
+                    <strong>{formatArrivalDate(order.expected_arrival_date)}</strong>
                   </div>
-                  <div className="track-driver-info">
-                    <small>Livreur YARAM</small>
-                    <strong>{tracking.delivery_person_name}</strong>
-                    {secondsAgo !== null && hasGPS && (
-                      <span className="track-driver-live">
-                        <span className="live-dot" />
-                        {secondsAgo < 60 ? `Position il y a ${secondsAgo}s` : `Il y a ${Math.floor(secondsAgo / 60)}min`}
-                      </span>
-                    )}
-                  </div>
-                  <div className="track-driver-actions">
-                    {driverPhoneClean && (
-                      <a className="track-driver-call" href={`tel:+${driverPhoneClean}`} aria-label="Appeler">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.33 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>
-                        </svg>
-                      </a>
-                    )}
-                    {driverPhoneClean && (
-                      <a className="track-driver-wa" href={`https://wa.me/${driverPhoneClean}`} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                          <path d="M20.52 3.48A11.93 11.93 0 0 0 12 0C5.37 0 0 5.37 0 12c0 2.11.55 4.18 1.6 6L0 24l6.21-1.63A11.94 11.94 0 0 0 12 24c6.63 0 12-5.37 12-12 0-3.2-1.25-6.21-3.48-8.52zM12 21.82c-1.79 0-3.55-.48-5.09-1.39l-.36-.21-3.69.97.99-3.59-.24-.37A9.78 9.78 0 0 1 2.18 12C2.18 6.57 6.57 2.18 12 2.18S21.82 6.57 21.82 12 17.43 21.82 12 21.82zm5.42-7.31c-.3-.15-1.76-.87-2.04-.97-.27-.1-.47-.15-.66.15-.2.3-.76.97-.93 1.17-.17.2-.34.22-.64.07-.3-.15-1.26-.47-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.34.45-.51.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.66-1.6-.91-2.18-.24-.58-.49-.5-.66-.51l-.56-.01c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48 0 1.46 1.07 2.87 1.22 3.07.15.2 2.1 3.21 5.08 4.5.71.31 1.27.49 1.7.63.71.23 1.36.2 1.87.12.57-.09 1.76-.72 2.01-1.41.25-.69.25-1.28.17-1.41-.07-.13-.27-.2-.57-.35z"/>
-                        </svg>
-                      </a>
-                    )}
-                  </div>
-                </div>
-
-                {/* "Contacter le livreur" pill button */}
-                {driverPhoneClean && (
-                  <a
-                    className="track-driver-pill"
-                    href={`https://wa.me/${driverPhoneClean}?text=${encodeURIComponent(`Bonjour, concernant ma commande ${compactId}…`)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
-                      <path d="M20.52 3.48A11.93 11.93 0 0 0 12 0C5.37 0 0 5.37 0 12c0 2.11.55 4.18 1.6 6L0 24l6.21-1.63A11.94 11.94 0 0 0 12 24c6.63 0 12-5.37 12-12 0-3.2-1.25-6.21-3.48-8.52z"/>
-                    </svg>
-                    Contacter le livreur
-                  </a>
                 )}
-              </>
-            )}
+                {order.arrived_dakar_at && (
+                  <div className="yt-import-row">
+                    <span>Arrive le</span>
+                    <strong className="ok">{safeFormatDate(order.arrived_dakar_at)}</strong>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
 
-            {/* Fallback ETA when no driver yet but map missing too */}
-            {!tracking?.delivery_person_name && !hasGPS && eta && (
-              <div className="track-driver-eta-only">
-                <div className="track-driver-eta-icon"></div>
-                <div>
-                  <small>Livraison</small>
-                  <strong>{eta}</strong>
+          {/* ═══ Preuve de livraison ═══ */}
+          {order.status === 'delivered' && tracking && (tracking.delivery_photo_url || tracking.delivery_signature || tracking.delivery_pin) && (
+            <section className="track-card track-col-main">
+              <h3 className="track-card-title">Preuve de livraison</h3>
+              {tracking.delivery_photo_url && (
+                <div className="track-proof-img">
+                  <SignedImage src={tracking.delivery_photo_url} alt="Preuve livraison" style={{ width: '100%', borderRadius: 12, maxHeight: 280, objectFit: 'cover' }} />
+                  <small>Photo du colis remis</small>
                 </div>
-              </div>
-            )}
-          </section>
-        )}
-
-        {/* ═══ Preuve de livraison (delivered) ═══ */}
-        {order.status === 'delivered' && tracking && (tracking.delivery_photo_url || tracking.delivery_signature || tracking.delivery_pin) && (
-          <section className="track-card track-col-main">
-            <h3 className="track-card-title"> Preuve de livraison</h3>
-            {tracking.delivery_photo_url && (
-              <div className="track-proof-img">
-                <SignedImage src={tracking.delivery_photo_url} alt="Preuve livraison" style={{ width: '100%', borderRadius: 12, maxHeight: 280, objectFit: 'cover' }} />
-                <small> Photo du colis remis</small>
-              </div>
-            )}
-            {tracking.delivery_signature && (
-              <div className="track-proof-sig">
-                <img src={tracking.delivery_signature} alt="Signature" loading="lazy" decoding="async" />
-                <small> Signature reçue</small>
-              </div>
-            )}
-            {tracking.delivery_pin && (
-              <p className="track-proof-pin">✓ Confirmée par code PIN <strong>{tracking.delivery_pin}</strong></p>
-            )}
-            {tracking.delivered_at && (
-              <p className="track-proof-time">Livré le {safeFormatDate(tracking.delivered_at, { type: 'datetime' })}</p>
-            )}
-          </section>
-        )}
-
-        {/* ═══ Notation existante ═══ */}
-        {order.delivery_rating && (
-          <section className="track-card track-rating-recap track-col-main">
-            <h3 className="track-card-title"> Ton avis</h3>
-            <div className="track-rating-stars">
-              {''.repeat(order.delivery_rating)}<span className="muted">{''.repeat(5 - order.delivery_rating)}</span>
-            </div>
-            {order.delivery_comment && <p className="track-rating-com">"{order.delivery_comment}"</p>}
-          </section>
-        )}
-
-        {/* ═══ Récap items (collapsible) ═══ */}
-        <section className="track-card track-col-main">
-          <button
-            type="button"
-            className="track-card-collapse"
-            onClick={() => setItemsExpanded(v => !v)}
-            aria-expanded={itemsExpanded}
-          >
-            <span className="track-card-title"> Récap commande</span>
-            <span className="track-card-meta">
-              {order.items?.length} article{order.items?.length > 1 ? 's' : ''}
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className={`track-chevron ${itemsExpanded ? 'open' : ''}`}>
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
-            </span>
-          </button>
-          <div className={`track-items ${itemsExpanded ? 'open' : ''}`}>
-            {order.items?.map((it, i) => (
-              <div key={`${it.id || it.name}-${i}`} className="track-item">
-                {it.img && <img src={it.img} alt="" loading="lazy" decoding="async" />}
-                <div className="track-item-info">
-                  <strong>{it.name}</strong>
-                  <span>{safeNumber(it.qty, 1)} × {safeNumber(it.price).toLocaleString('fr-FR')} FCFA</span>
-                  {it.pharmacyName && <small> {it.pharmacyName}</small>}
+              )}
+              {tracking.delivery_signature && (
+                <div className="track-proof-sig">
+                  <img src={tracking.delivery_signature} alt="Signature" loading="lazy" decoding="async" />
+                  <small>Signature recue</small>
                 </div>
-              </div>
-            ))}
-          </div>
-          <div className="track-totals">
-            <div className="track-totals-row"><span>Sous-total</span><strong>{order.subtotal?.toLocaleString('fr-FR')} FCFA</strong></div>
-            <div className="track-totals-row"><span>Livraison</span><strong>{order.shipping?.toLocaleString('fr-FR')} FCFA</strong></div>
-            <div className="track-totals-row track-totals-grand"><span>Total</span><strong>{order.total?.toLocaleString('fr-FR')} FCFA</strong></div>
-          </div>
-        </section>
+              )}
+              {tracking.delivery_pin && (
+                <p className="track-proof-pin">Confirmee par code PIN <strong>{tracking.delivery_pin}</strong></p>
+              )}
+              {tracking.delivered_at && (
+                <p className="track-proof-time">Livre le {safeFormatDate(tracking.delivered_at, { type: 'datetime' })}</p>
+              )}
+            </section>
+          )}
 
-        {/* ═══ Actions secondaires (annuler / signaler) ═══ */}
-        <section className="track-card track-actions track-col-main" aria-label="Actions">
-          <h3 className="track-card-title">Aide sur cette commande</h3>
-          <div className="track-actions-row">
-            {canCancel && (
-              <button
-                type="button"
-                className="track-action-btn track-action-danger"
-                onClick={handleCancelOrder}
-              >
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="15" y1="9" x2="9" y2="15"/>
-                  <line x1="9" y1="9" x2="15" y2="15"/>
-                </svg>
-                Annuler la commande
-              </button>
-            )}
-            {canCancelPreorder && (
-              <button
-                type="button"
-                className="track-action-btn track-action-danger"
-                onClick={handleCancelPreorder}
-              >
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="15" y1="9" x2="9" y2="15"/>
-                  <line x1="9" y1="9" x2="15" y2="15"/>
-                </svg>
-                Annuler ma commande
-              </button>
-            )}
+          {/* ═══ Order confirmation accordion (details commande) ═══ */}
+          <section className="track-card yt-accordion track-col-main">
             <button
               type="button"
-              className="track-action-btn track-action-ghost"
-              onClick={handleReportIssue}
+              className="yt-accordion-head"
+              onClick={() => setDetailsOpen(v => !v)}
+              aria-expanded={detailsOpen}
             >
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M12 9v4"/>
-                <path d="M12 17h.01"/>
-                <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <div>
+                <div className="yt-accordion-caps">CONFIRMATION</div>
+                <strong>Commande {compactId}</strong>
+                <span className="yt-accordion-meta">
+                  {order.items?.length} article{order.items?.length > 1 ? 's' : ''} · {formatPrice(order.total)} FCFA
+                </span>
+              </div>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className={`yt-accordion-chevron ${detailsOpen ? 'open' : ''}`}>
+                <polyline points="6 9 12 15 18 9" />
               </svg>
-              Signaler un probleme
             </button>
-            {order.status === 'delivered' && !order.delivery_rating && (
+
+            {detailsOpen && (
+              <div className="yt-accordion-body">
+                <div className="yt-items">
+                  {order.items?.map((it, i) => (
+                    <div key={`${it.id || it.name}-${i}`} className="yt-item">
+                      {it.img
+                        ? <img src={it.img} alt="" loading="lazy" decoding="async" />
+                        : <div className="yt-item-noimg" aria-hidden="true" />
+                      }
+                      <div className="yt-item-info">
+                        <strong>{it.name}</strong>
+                        <span>Qte {safeNumber(it.qty, 1)}</span>
+                        {it.pharmacyName && <small>{it.pharmacyName}</small>}
+                      </div>
+                      <div className="yt-item-price">
+                        {(safeNumber(it.price) * safeNumber(it.qty, 1)).toLocaleString('fr-FR')} FCFA
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="yt-totals">
+                  <div className="yt-totals-row"><span>Sous-total</span><strong>{order.subtotal?.toLocaleString('fr-FR')} FCFA</strong></div>
+                  <div className="yt-totals-row"><span>Livraison</span><strong>{order.shipping?.toLocaleString('fr-FR')} FCFA</strong></div>
+                  <div className="yt-totals-row yt-totals-grand"><span>Total</span><strong>{order.total?.toLocaleString('fr-FR')} FCFA</strong></div>
+                </div>
+                <div className="yt-payment">
+                  <span>Paiement</span>
+                  <strong>{paymentLabel}</strong>
+                  {order.paid_at && <small>{safeFormatDate(order.paid_at, { type: 'datetime' })}</small>}
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* ═══ Notation existante ═══ */}
+          {order.delivery_rating && (
+            <section className="track-card yt-rating-recap track-col-main">
+              <div className="yt-store-caps">TON AVIS</div>
+              <div className="yt-rating-stars">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <svg key={i} viewBox="0 0 24 24" width="18" height="18" fill={i < order.delivery_rating ? '#F4B53A' : 'none'} stroke="#F4B53A" strokeWidth="1.8">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                  </svg>
+                ))}
+              </div>
+              {order.delivery_comment && <p className="yt-rating-com">"{order.delivery_comment}"</p>}
+            </section>
+          )}
+
+          {/* ═══ Actions secondaires ═══ */}
+          <section className="track-card track-actions track-col-main" aria-label="Actions">
+            <h3 className="track-card-title">Aide sur cette commande</h3>
+            <div className="track-actions-row">
+              {canCancel && (
+                <button
+                  type="button"
+                  className="track-action-btn track-action-danger"
+                  onClick={handleCancelOrder}
+                >
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="15" y1="9" x2="9" y2="15" />
+                    <line x1="9" y1="9" x2="15" y2="15" />
+                  </svg>
+                  Annuler la commande
+                </button>
+              )}
+              {canCancelPreorder && (
+                <button
+                  type="button"
+                  className="track-action-btn track-action-danger"
+                  onClick={handleCancelPreorder}
+                >
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="15" y1="9" x2="9" y2="15" />
+                    <line x1="9" y1="9" x2="15" y2="15" />
+                  </svg>
+                  Annuler ma commande
+                </button>
+              )}
               <button
                 type="button"
-                className="track-action-btn track-action-star"
-                onClick={() => setShowRating(true)}
+                className="track-action-btn track-action-ghost"
+                onClick={handleReportIssue}
               >
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                  <path d="M12 9v4" />
+                  <path d="M12 17h.01" />
+                  <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
                 </svg>
-                Noter la livraison
+                Signaler un probleme
               </button>
-            )}
-          </div>
-        </section>
-
-        {/* ═══ Paiement ═══ */}
-        <section className="track-card track-pay track-col-main">
-          <h3 className="track-card-title">Paiement</h3>
-          <div className={`track-pay-badge ${paymentDone ? 'paid' : 'pending'}`}>
-            <span className="track-pay-icon" />
-            <div>
-              <strong>{paymentLabel}</strong>
-              {order.paid_at && <small>{safeFormatDate(order.paid_at, { type: 'datetime' })}</small>}
+              {order.status === 'delivered' && !order.delivery_rating && (
+                <button
+                  type="button"
+                  className="track-action-btn track-action-star"
+                  onClick={() => setShowRating(true)}
+                >
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                  </svg>
+                  Noter la livraison
+                </button>
+              )}
             </div>
-          </div>
-        </section>
+          </section>
 
-       </div>{/* /.track-grid */}
+          {/* ═══ Footer links Papa Track style ═══ */}
+          <section className="yt-footlinks track-col-main">
+            <a href={helpHref} target="_blank" rel="noopener noreferrer" className="yt-footlink">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="#25D366">
+                <path d="M20.52 3.48A11.93 11.93 0 0 0 12 0C5.37 0 0 5.37 0 12c0 2.11.55 4.18 1.6 6L0 24l6.21-1.63A11.94 11.94 0 0 0 12 24c6.63 0 12-5.37 12-12 0-3.2-1.25-6.21-3.48-8.52z" />
+              </svg>
+              Customer Service
+            </a>
+            <a href="/legal" onClick={(e) => { e.preventDefault(); navigate('/legal'); }} className="yt-footlink">
+              Conditions et confidentialite
+            </a>
+          </section>
+
+        </div>{/* /.track-grid */}
         <div style={{ height: 100 }} />
       </div>
 
-      {/* ═══ Bottom CTA ═══ */}
+      {/* Bottom CTA */}
       <BottomCTA
         order={order}
         onRate={() => setShowRating(true)}
         navigate={navigate}
       />
 
-      {/* ═══ Modal notation ═══ */}
       {showRating && (
         <RatingModal
           orderId={orderId}
@@ -817,35 +822,6 @@ export default function OrderTracking({ orderId }) {
         />
       )}
 
-      {/* ═══ Rappel notation 24h+ ═══ */}
-      {showRatingSnack && (
-        <div className="track-rating-snack" role="status">
-          <div className="track-rating-snack-body">
-            <strong>Comment s'est passee ta livraison ?</strong>
-            <span>Prends 10 secondes pour noter, ca aide toute la communaute.</span>
-          </div>
-          <button
-            type="button"
-            className="track-rating-snack-cta"
-            onClick={() => { setShowRatingSnack(false); setShowRating(true); }}
-          >Noter</button>
-          <button
-            type="button"
-            className="track-rating-snack-dismiss"
-            aria-label="Ignorer"
-            onClick={() => {
-              try { localStorage.setItem(`yaram_rated_snack_${orderId}`, '1'); } catch {}
-              setShowRatingSnack(false);
-            }}
-          >
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </button>
-        </div>
-      )}
-
-      {/* ═══ Confettis ═══ */}
       {showConfetti && <Confetti />}
     </div>
   );
@@ -880,10 +856,10 @@ function BottomCTA({ order, onRate, navigate }) {
           className="track-cta track-cta-pri"
           onClick={async () => {
             await supabase.rpc('client_confirm_delivery', { p_order_id: order.id });
-            toast.success('Livraison confirmée');
+            toast.success('Livraison confirmee');
           }}
         >
-           Confirmer la livraison
+          Confirmer la livraison
         </button>
       </div>
     );
@@ -892,7 +868,7 @@ function BottomCTA({ order, onRate, navigate }) {
     return (
       <div className="track-bottom">
         <button className="track-cta track-cta-star" onClick={onRate}>
-           Noter ma livraison
+          Noter ma livraison
         </button>
       </div>
     );
@@ -901,7 +877,7 @@ function BottomCTA({ order, onRate, navigate }) {
     return (
       <div className="track-bottom">
         <button className="track-cta track-cta-ghost" onClick={() => navigate('/shop')}>
-           Refaire cette commande
+          Refaire cette commande
         </button>
       </div>
     );
@@ -937,7 +913,7 @@ function RatingModal({ orderId, driverName, onClose }) {
 
   const submit = async () => {
     if (rating === 0) {
-      toast.error('Sélectionne au moins 1 étoile');
+      toast.error('Selectionne au moins 1 etoile');
       return;
     }
     setSaving(true);
@@ -953,22 +929,25 @@ function RatingModal({ orderId, driverName, onClose }) {
   return (
     <div className="liv-modal-overlay" onClick={onClose}>
       <div className="liv-modal" onClick={e => e.stopPropagation()}>
-        <h3 style={{ textAlign: 'center', fontSize: 22 }}> Note ta livraison</h3>
+        <h3 style={{ textAlign: 'center', fontSize: 22 }}>Note ta livraison</h3>
         <p style={{ textAlign: 'center', color: '#6B6B6B', fontSize: 13, marginBottom: 20 }}>
-          Comment s'est passé ton expérience{driverName ? ` avec ${driverName}` : ''} ?
+          Comment s est passe ton experience{driverName ? ` avec ${driverName}` : ''} ?
         </p>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 16 }}>
           {[1, 2, 3, 4, 5].map(n => (
             <button
               key={n}
               onClick={() => setRating(n)}
+              aria-label={`${n} etoile${n > 1 ? 's' : ''}`}
               style={{
                 background: 'transparent', border: 'none',
-                fontSize: 40, cursor: 'pointer',
-                color: n <= rating ? '#F4B53A' : '#DDD',
-                transition: 'transform 0.1s',
+                cursor: 'pointer', padding: 4,
               }}
-            ></button>
+            >
+              <svg viewBox="0 0 24 24" width="34" height="34" fill={n <= rating ? '#F4B53A' : 'none'} stroke="#F4B53A" strokeWidth="1.8">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </svg>
+            </button>
           ))}
         </div>
         <textarea
