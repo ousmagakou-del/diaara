@@ -198,22 +198,40 @@ export default function BundlesSection() {
   };
 
   return (
-    <div style={{ padding: 24 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
+    <div style={{ padding: 28, background: YARAM_BG, minHeight: '100vh' }}>
+      {/* Header premium avec compteur + CTAs */}
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+        marginBottom: 24, flexWrap: 'wrap', gap: 16,
+      }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: 22 }}>Bundles / Kits pre-composes</h2>
-          <p style={{ margin: '4px 0 0', color: '#666', fontSize: 13 }}>
-            Cree des routines completes avec remise pack. Les kits featured apparaissent sur la home.
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+            <span style={{ fontSize: 24 }}>📦</span>
+            <h2 style={{ margin: 0, fontSize: 24, fontWeight: 900, color: YARAM_TEXT, letterSpacing: -0.3 }}>
+              Bundles & Kits
+            </h2>
+          </div>
+          <p style={{ margin: '4px 0 0', color: YARAM_MUTED, fontSize: 13, maxWidth: 520, lineHeight: 1.5 }}>
+            Cree des routines pre-composees avec remise pack. Les kits <strong style={{ color: YARAM_GREEN }}>featured</strong> apparaissent dans la section &laquo;&nbsp;Routines completes&nbsp;&raquo; de la home YARAM.
           </p>
+          {bundles.length > 0 && (
+            <div style={{ display: 'flex', gap: 14, marginTop: 12, fontSize: 12, color: YARAM_MUTED, fontWeight: 600 }}>
+              <span>Total <strong style={{ color: YARAM_TEXT }}>{bundles.length}</strong></span>
+              <span style={{ opacity: 0.4 }}>·</span>
+              <span>Featured <strong style={{ color: YARAM_GREEN }}>{bundles.filter(b => b.featured).length}</strong></span>
+              <span style={{ opacity: 0.4 }}>·</span>
+              <span>Actifs <strong style={{ color: YARAM_TEXT }}>{bundles.filter(b => b.active).length}</strong></span>
+            </div>
+          )}
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 10 }}>
           <button
             type="button"
             onClick={handleRefreshCrossSell}
             disabled={refreshing}
-            style={btnGhost}
+            style={{ ...btnGhost, opacity: refreshing ? 0.5 : 1 }}
           >
-            {refreshing ? 'Refresh...' : 'Refresh cross-sell'}
+            {refreshing ? 'Rafraichissement...' : '🔄 Cross-sell'}
           </button>
           <button type="button" onClick={openCreate} style={btnPrimary}>
             + Nouveau bundle
@@ -233,33 +251,106 @@ export default function BundlesSection() {
       )}
 
       {loading ? (
-        <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>Chargement...</div>
+        <div style={{ padding: 60, textAlign: 'center', color: YARAM_MUTED, fontSize: 14 }}>Chargement…</div>
       ) : bundles.length === 0 ? (
-        <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>Aucun bundle. Crees ton premier kit.</div>
+        <div style={{
+          padding: 60, textAlign: 'center', background: '#fff',
+          border: `2px dashed ${YARAM_BORDER}`, borderRadius: 16,
+        }}>
+          <div style={{ fontSize: 44, marginBottom: 12, opacity: 0.3 }}>📦</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: YARAM_TEXT, marginBottom: 6 }}>
+            Aucun bundle pour l'instant
+          </div>
+          <p style={{ fontSize: 13, color: YARAM_MUTED, margin: '0 auto 16px', maxWidth: 360, lineHeight: 1.5 }}>
+            Cree ton premier kit pre-compose pour offrir a tes clientes une routine complete avec remise.
+          </p>
+          <button type="button" style={btnPrimary} onClick={openCreate}>
+            + Creer le premier bundle
+          </button>
+        </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 18 }}>
           {bundles.map((b) => (
-            <article key={b.id} style={cardStyle}>
-              {b.cover_url && (
-                <div style={{ height: 120, background: '#f6f6f6', borderRadius: 8, overflow: 'hidden', marginBottom: 10 }}>
+            <article
+              key={b.id}
+              style={{
+                ...cardStyle,
+                borderColor: b.featured ? YARAM_GREEN_SOFT : YARAM_BORDER,
+                opacity: b.active ? 1 : 0.6,
+              }}
+            >
+              {/* Cover avec badges superposes */}
+              <div style={{
+                height: 140, background: '#F4F4F2', borderRadius: 12, overflow: 'hidden',
+                marginBottom: 12, position: 'relative',
+              }}>
+                {b.cover_url ? (
                   <img src={b.cover_url} alt={b.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <div style={{
+                    height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: YARAM_MUTED, fontSize: 12, fontWeight: 600,
+                  }}>Pas d'image</div>
+                )}
+
+                {/* Badge remise en haut a gauche */}
+                <div style={{
+                  position: 'absolute', top: 10, left: 10,
+                  background: YARAM_YELLOW, color: '#4A2D0B',
+                  padding: '4px 10px', borderRadius: 999,
+                  fontSize: 11, fontWeight: 900, letterSpacing: 0.3,
+                  boxShadow: '0 2px 6px rgba(244,181,58,0.4)',
+                }}>
+                  -{b.discount_pct || 10}%
                 </div>
+
+                {/* Badge Featured en haut a droite */}
+                {b.featured && (
+                  <div style={{
+                    position: 'absolute', top: 10, right: 10,
+                    background: YARAM_GREEN, color: '#fff',
+                    padding: '4px 10px', borderRadius: 999,
+                    fontSize: 10, fontWeight: 900, letterSpacing: 0.5,
+                    textTransform: 'uppercase',
+                    boxShadow: '0 2px 6px rgba(31,139,76,0.4)',
+                  }}>
+                    ★ Featured
+                  </div>
+                )}
+
+                {/* Badge inactif */}
+                {!b.active && (
+                  <div style={{
+                    position: 'absolute', bottom: 10, right: 10,
+                    background: 'rgba(15,20,25,0.75)', color: '#fff',
+                    padding: '3px 10px', borderRadius: 999,
+                    fontSize: 10, fontWeight: 800, letterSpacing: 0.5,
+                  }}>
+                    INACTIF
+                  </div>
+                )}
+              </div>
+
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ fontSize: 15, fontWeight: 900, color: YARAM_TEXT, marginBottom: 4, letterSpacing: -0.2 }}>
+                  {b.title}
+                </div>
+                <div style={{ fontSize: 12, color: YARAM_MUTED, fontWeight: 600 }}>
+                  {b.items_count || 0} produit{(b.items_count || 0) > 1 ? 's' : ''} inclus
+                </div>
+              </div>
+
+              {b.description && (
+                <p style={{
+                  fontSize: 13, color: '#4B4B4B', margin: '4px 0 12px',
+                  lineHeight: 1.5, minHeight: 40,
+                }}>
+                  {b.description.slice(0, 110)}{b.description.length > 110 ? '…' : ''}
+                </p>
               )}
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
-                <strong style={{ fontSize: 15 }}>{b.title}</strong>
-                <span style={{
-                  background: '#7a5cff', color: '#fff',
-                  padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700,
-                }}>-{b.discount_pct || 10}%</span>
-              </div>
-              <div style={{ fontSize: 12, color: '#666', marginBottom: 8 }}>
-                {b.items_count || 0} produit{(b.items_count || 0) > 1 ? 's' : ''}
-                {b.featured && ' · Featured'}
-                {!b.active && ' · Inactif'}
-              </div>
-              {b.description && <p style={{ fontSize: 13, color: '#555', margin: '4px 0 10px', lineHeight: 1.4 }}>{b.description.slice(0, 120)}{b.description.length > 120 ? '…' : ''}</p>}
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button type="button" style={btnGhostSm} onClick={() => openEdit(b)}>Modifier</button>
+
+              <div style={{ display: 'flex', gap: 8, paddingTop: 8, borderTop: `1px solid ${YARAM_BORDER}` }}>
+                <button type="button" style={{ ...btnGhostSm, flex: 1 }} onClick={() => openEdit(b)}>Modifier</button>
                 <button type="button" style={btnDangerSm} onClick={() => handleDelete(b)}>Supprimer</button>
               </div>
             </article>
@@ -297,24 +388,65 @@ export default function BundlesSection() {
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div style={fieldRow}>
-                <label style={label}>Discount (%)</label>
+            {/* Image cover en pleine largeur + preview grand format */}
+            <div style={fieldRow}>
+              <label style={label}>Image de couverture (banner Home)</label>
+              <label style={{
+                display: 'flex', alignItems: 'center', gap: 14,
+                background: form.cover_url ? '#fff' : YARAM_GREEN_SOFT,
+                border: `2px dashed ${form.cover_url ? YARAM_BORDER : YARAM_GREEN}`,
+                borderRadius: 12, padding: 12, cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}>
+                {form.cover_url ? (
+                  <img
+                    src={form.cover_url}
+                    alt=""
+                    style={{ width: 140, height: 90, objectFit: 'cover', borderRadius: 8 }}
+                  />
+                ) : (
+                  <div style={{
+                    width: 140, height: 90, borderRadius: 8,
+                    background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: YARAM_GREEN, fontSize: 30, fontWeight: 900,
+                  }}>+</div>
+                )}
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: YARAM_TEXT, marginBottom: 4 }}>
+                    {form.cover_url ? 'Remplacer l\'image' : 'Clique pour uploader'}
+                  </div>
+                  <div style={{ fontSize: 11, color: YARAM_MUTED }}>
+                    {uploading ? 'Upload en cours…' : 'JPG / PNG · 800×500 recommande · 2 Mo max'}
+                  </div>
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={uploadCover}
+                  disabled={uploading}
+                  style={{ display: 'none' }}
+                />
+              </label>
+            </div>
+
+            <div style={fieldRow}>
+              <label style={label}>Reduction pack (%)</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <input
                   type="number"
                   min="0"
                   max="60"
                   value={form.discount_pct}
                   onChange={(e) => setForm({ ...form, discount_pct: e.target.value })}
-                  style={input}
+                  style={{ ...input, maxWidth: 140 }}
                 />
-              </div>
-              <div style={fieldRow}>
-                <label style={label}>Image de couverture</label>
-                <input type="file" accept="image/*" onChange={uploadCover} disabled={uploading} />
-                {form.cover_url && (
-                  <img src={form.cover_url} alt="" style={{ width: 90, height: 60, objectFit: 'cover', borderRadius: 6, marginTop: 6 }} />
-                )}
+                <div style={{
+                  padding: '10px 16px', background: YARAM_YELLOW,
+                  color: '#4A2D0B', borderRadius: 10,
+                  fontSize: 14, fontWeight: 900, letterSpacing: 0.3,
+                }}>
+                  -{form.discount_pct || 0}% affichee sur la card
+                </div>
               </div>
             </div>
 
@@ -346,14 +478,47 @@ export default function BundlesSection() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: 16, margin: '10px 0' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <input type="checkbox" checked={form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} />
-                Actif
+            {/* Toggles premium avec explications */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, margin: '16px 0' }}>
+              <label style={{
+                display: 'flex', alignItems: 'flex-start', gap: 12,
+                padding: 14, background: form.active ? YARAM_GREEN_SOFT : '#F4F4F2',
+                border: `1.5px solid ${form.active ? YARAM_GREEN : YARAM_BORDER}`,
+                borderRadius: 12, cursor: 'pointer', transition: 'all 0.15s ease',
+              }}>
+                <input
+                  type="checkbox"
+                  checked={form.active}
+                  onChange={(e) => setForm({ ...form, active: e.target.checked })}
+                  style={{ marginTop: 3, accentColor: YARAM_GREEN, transform: 'scale(1.2)' }}
+                />
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: YARAM_TEXT }}>Actif</div>
+                  <div style={{ fontSize: 11, color: YARAM_MUTED, marginTop: 2 }}>
+                    Visible dans le catalogue YARAM
+                  </div>
+                </div>
               </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <input type="checkbox" checked={form.featured} onChange={(e) => setForm({ ...form, featured: e.target.checked })} />
-                Featured (affiche sur home)
+              <label style={{
+                display: 'flex', alignItems: 'flex-start', gap: 12,
+                padding: 14, background: form.featured ? YARAM_GREEN_SOFT : '#F4F4F2',
+                border: `1.5px solid ${form.featured ? YARAM_GREEN : YARAM_BORDER}`,
+                borderRadius: 12, cursor: 'pointer', transition: 'all 0.15s ease',
+              }}>
+                <input
+                  type="checkbox"
+                  checked={form.featured}
+                  onChange={(e) => setForm({ ...form, featured: e.target.checked })}
+                  style={{ marginTop: 3, accentColor: YARAM_GREEN, transform: 'scale(1.2)' }}
+                />
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: YARAM_TEXT }}>
+                    ★ Featured
+                  </div>
+                  <div style={{ fontSize: 11, color: YARAM_MUTED, marginTop: 2 }}>
+                    Apparait sur la Home &laquo;&nbsp;Routines completes&nbsp;&raquo;
+                  </div>
+                </div>
               </label>
             </div>
 
@@ -412,18 +577,68 @@ export default function BundlesSection() {
   );
 }
 
-// ─── styles inline ────
-const btnPrimary = { background: '#7a5cff', color: '#fff', border: 'none', padding: '10px 16px', borderRadius: 8, fontWeight: 600, cursor: 'pointer' };
-const btnGhost = { background: '#fff', color: '#7a5cff', border: '1px solid #7a5cff', padding: '10px 16px', borderRadius: 8, fontWeight: 600, cursor: 'pointer' };
-const btnGhostSm = { background: '#fff', color: '#333', border: '1px solid #ddd', padding: '6px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' };
-const btnDangerSm = { background: '#fff', color: '#c00', border: '1px solid #fcc', padding: '6px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' };
-const btnClose = { background: 'none', border: 'none', fontSize: 26, cursor: 'pointer', color: '#999' };
-const btnRemove = { background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#c00' };
-const cardStyle = { background: '#fff', border: '1px solid #eee', borderRadius: 12, padding: 14 };
-const modalOverlay = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 };
-const modalBox = { background: '#fff', borderRadius: 14, padding: 24, maxWidth: 720, width: '100%', maxHeight: '90vh', overflow: 'auto' };
-const fieldRow = { marginBottom: 12 };
-const label = { display: 'block', fontSize: 12, fontWeight: 600, color: '#333', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 };
-const input = { width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' };
-const chipStyle = { background: '#f2f2f2', color: '#555', border: '1px solid transparent', padding: '5px 10px', borderRadius: 999, fontSize: 12, cursor: 'pointer' };
-const chipStyleActive = { background: '#7a5cff', color: '#fff', borderColor: '#7a5cff' };
+// ─── Charte YARAM (vert primary + jaune accent) ────
+const YARAM_GREEN = '#1F8B4C';
+const YARAM_GREEN_SOFT = '#E8F5E9';
+const YARAM_GREEN_DARK = '#166a3a';
+const YARAM_YELLOW = '#F4B53A';
+const YARAM_TEXT = '#0F1419';
+const YARAM_MUTED = '#6B6B6B';
+const YARAM_BORDER = '#EEEEEE';
+const YARAM_BG = '#FAFAF7';
+
+const btnPrimary = {
+  background: YARAM_GREEN, color: '#fff', border: 'none',
+  padding: '11px 20px', borderRadius: 10, fontWeight: 700, fontSize: 13,
+  cursor: 'pointer', letterSpacing: 0.2,
+  boxShadow: '0 4px 12px rgba(31,139,76,0.25)',
+  transition: 'transform 0.12s ease, box-shadow 0.12s ease',
+};
+const btnGhost = {
+  background: '#fff', color: YARAM_GREEN, border: `1.5px solid ${YARAM_GREEN}`,
+  padding: '10px 18px', borderRadius: 10, fontWeight: 700, fontSize: 13,
+  cursor: 'pointer', letterSpacing: 0.2,
+};
+const btnGhostSm = {
+  background: '#fff', color: YARAM_TEXT, border: '1px solid #E5E5E5',
+  padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+};
+const btnDangerSm = {
+  background: '#fff', color: '#D9342B', border: '1px solid #F5C1BD',
+  padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+};
+const btnClose = { background: 'none', border: 'none', fontSize: 28, cursor: 'pointer', color: '#9B9B9B', lineHeight: 1 };
+const btnRemove = { background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#D9342B' };
+const cardStyle = {
+  background: '#fff', border: `1px solid ${YARAM_BORDER}`, borderRadius: 16, padding: 16,
+  boxShadow: '0 2px 8px rgba(15, 20, 25, 0.04)',
+  transition: 'box-shadow 0.15s ease, transform 0.12s ease',
+};
+const modalOverlay = {
+  position: 'fixed', inset: 0, background: 'rgba(15, 20, 25, 0.55)',
+  display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20,
+  backdropFilter: 'blur(4px)',
+};
+const modalBox = {
+  background: '#fff', borderRadius: 20, padding: 32,
+  maxWidth: 820, width: '100%', maxHeight: '90vh', overflow: 'auto',
+  boxShadow: '0 24px 60px rgba(15, 20, 25, 0.25)',
+};
+const fieldRow = { marginBottom: 16 };
+const label = {
+  display: 'block', fontSize: 11, fontWeight: 800, color: YARAM_MUTED,
+  marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.6,
+};
+const input = {
+  width: '100%', padding: '11px 14px', border: `1.5px solid ${YARAM_BORDER}`,
+  borderRadius: 10, fontSize: 14, boxSizing: 'border-box', fontFamily: 'inherit',
+  outline: 'none', transition: 'border-color 0.15s ease',
+};
+const chipStyle = {
+  background: '#F4F4F2', color: YARAM_TEXT, border: '1px solid transparent',
+  padding: '6px 12px', borderRadius: 999, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+};
+const chipStyleActive = {
+  background: YARAM_GREEN, color: '#fff', borderColor: YARAM_GREEN,
+  boxShadow: '0 2px 6px rgba(31,139,76,0.3)',
+};
