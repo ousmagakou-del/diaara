@@ -16,7 +16,7 @@
 // Compat : iOS Safari + Chrome Android. Skip-waiting + clients.claim().
 // ════════════════════════════════════════════════
 
-const SW_BUILD = 'yaram-v27-2026-07-13-sign-passthrough';
+const SW_BUILD = 'yaram-v28-2026-07-13-admin-network-only';
 const C_PRECACHE = `${SW_BUILD}-precache`;
 const C_ASSETS   = `${SW_BUILD}-assets`;
 const C_IMAGES   = `${SW_BUILD}-images`;
@@ -165,6 +165,27 @@ async function staleWhileRevalidate(request, cacheName) {
   return new Response('', { status: 504, statusText: 'image offline' });
 }
 
+// ─── Helper : detection contexte admin (referer OU URL courante) ─────
+// Quand le user est en /?admin=1, on veut toujours des donnees fresh sans
+// jamais servir de cache SW. L admin modifie souvent produits, marques,
+// categories, pharmacies, bundles, banners, etc. et voir la vieille version
+// cache apres avoir sauve casse la confiance. Meme regle pour /?pharma=1
+// (dashboard pharma) et /driver (PWA livreur - deja bypass admin cote UI).
+function isAdminContext(request, url) {
+  try {
+    // 1. La request navigue vers ?admin=1 -> forcement admin
+    if (url.searchParams.has('admin') || url.searchParams.has('pharma')) return true;
+    // 2. Ou elle vient d une page admin/pharma (referer)
+    const ref = request.referrer || '';
+    if (ref && (ref.includes('?admin') || ref.includes('&admin') ||
+                ref.includes('?pharma') || ref.includes('&pharma'))) return true;
+    // 3. Ou le chemin est un endpoint admin RPC/table
+    if (url.pathname.includes('/rest/v1/rpc/admin_') ||
+        url.pathname.includes('/rest/v1/rpc/pharma_')) return true;
+  } catch (_e) { /* no-op */ }
+  return false;
+}
+
 // ─── ROUTER ────────────────────────────────────────
 self.addEventListener('fetch', (event) => {
   const { request } = event;
@@ -172,6 +193,15 @@ self.addEventListener('fetch', (event) => {
 
   // 1) Schémas non-http : pass-through (chrome-extension://, blob:, data:, ws://)
   if (!url.protocol.startsWith('http')) return;
+
+  // 1bis) Contexte admin/pharma : network-only sur TOUT.
+  // On bypass entierement le SW pour ne jamais servir de cache stale
+  // aux admins/pharmaciens qui viennent de modifier une entite. Le user
+  // final (client) continue de beneficier du cache normalement.
+  if (isAdminContext(request, url)) {
+    // On laisse le browser faire son fetch natif (pas de event.respondWith)
+    return;
+  }
 
   // 2) WebSocket Realtime — Supabase utilise wss://, donc déjà filtré ci-dessus.
   //    Belt-and-suspenders : si pathname contient /realtime/, on ne touche pas.
