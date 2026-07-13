@@ -133,8 +133,8 @@ export default function Pharma() {
 
   const handleSetPin = async (e) => {
     e?.preventDefault?.();
-    if (!pinInput || pinInput.length !== 4 || !/^\d{4}$/.test(pinInput)) {
-      setPinError('PIN doit être exactement 4 chiffres');
+    if (!pinInput || pinInput.length !== 6 || !/^\d{6}$/.test(pinInput)) {
+      setPinError('PIN doit être exactement 6 chiffres');
       return;
     }
     if (BANNED_PINS.includes(pinInput)) {
@@ -252,7 +252,7 @@ export default function Pharma() {
               onChange={e => { setPinInput(e.target.value.replace(/\D/g, '')); setPinError(''); }}
               placeholder="••••"
               autoFocus
-              maxLength={4}
+              maxLength={6}
             />
             <p style={{ fontSize: 'var(--y-fs-xs)', color: 'var(--y-n-600)', marginTop: -2, marginBottom: 10 }}>
               Astuce : évite 1234, 0000, 1111 et autres PIN évidents.
@@ -265,7 +265,7 @@ export default function Pharma() {
               value={confirmPin}
               onChange={e => { setConfirmPin(e.target.value.replace(/\D/g, '')); setPinError(''); }}
               placeholder="Confirme ton PIN"
-              maxLength={4}
+              maxLength={6}
             />
             {pinError && <p className="phar-pin-error">{pinError}</p>}
             <p style={{ fontSize: 'var(--y-fs-xs)', color: 'var(--y-n-600)', marginBottom: 12 }}>
