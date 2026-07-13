@@ -120,11 +120,11 @@ export default function BundlesSection() {
     try {
       const ext = file.name.split('.').pop() || 'jpg';
       const filename = `bundle-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from('banners').upload(filename, file, {
+      const { error } = await supabase.storage.from('bundle-covers').upload(filename, file, {
         cacheControl: '3600', upsert: false,
       });
       if (error) throw error;
-      const { data } = supabase.storage.from('banners').getPublicUrl(filename);
+      const { data } = supabase.storage.from('bundle-covers').getPublicUrl(filename);
       setForm((f) => ({ ...f, cover_url: data?.publicUrl || '' }));
       flash('Image uploadee');
     } catch (err) {
