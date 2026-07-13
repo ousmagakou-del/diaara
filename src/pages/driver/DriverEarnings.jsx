@@ -53,7 +53,11 @@ export default function DriverEarnings({ session }) {
     <>
       <header className="dvr-header">
         <div className="dvr-header-card">
-          <div className="dvr-avatar" style={{ background: 'linear-gradient(135deg, var(--y-warning), #C18C13)' }} aria-hidden="true">
+          <div
+            className="dvr-avatar"
+            style={{ background: 'linear-gradient(135deg, var(--pedalel-brand-tint), var(--pedalel-brand-dark))' }}
+            aria-hidden="true"
+          >
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           </div>
           <div className="dvr-header-text">
@@ -118,6 +122,54 @@ export default function DriverEarnings({ session }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--dvr-text-mute)' }}>
             <span>Total 7 jours : <strong style={{ color: 'var(--dvr-text)' }}>{fmtFcfa(breakdown.reduce((s, b) => s + Number(b.fcfa || 0), 0))}</strong></span>
             <span>{breakdown.reduce((s, b) => s + Number(b.count || 0), 0)} courses</span>
+          </div>
+        </div>
+
+        {/* PAYOUTS PLACEHOLDER (Phase 4 preview) */}
+        <div className="dvr-section">
+          <div className="dvr-section-label">Retraits & Wallet</div>
+          <div
+            className="dvr-card"
+            style={{
+              background: 'linear-gradient(140deg, var(--pedalel-brand-soft) 0%, #FFFFFF 100%)',
+              border: '1px solid var(--pedalel-brand-soft)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
+            }}
+          >
+            <div
+              style={{
+                width: 46, height: 46, borderRadius: 14,
+                background: 'var(--pedalel-brand)',
+                color: '#FFFFFF',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}
+              aria-hidden="true"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="6" width="20" height="12" rx="3" />
+                <path d="M2 10h20" />
+                <path d="M6 15h4" />
+              </svg>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 800, fontSize: 15, letterSpacing: '-0.01em' }}>
+                Retire tes gains bientôt
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--dvr-text-mid)', marginTop: 3, lineHeight: 1.45 }}>
+                Wave, Orange Money ou virement bancaire — Pedalel payout arrive.
+              </div>
+            </div>
+            <button
+              type="button"
+              disabled
+              className="dvr-btn dvr-btn-soft"
+              style={{ width: 'auto', minHeight: 40, padding: '8px 14px', opacity: 0.85 }}
+            >
+              Bientôt
+            </button>
           </div>
         </div>
 

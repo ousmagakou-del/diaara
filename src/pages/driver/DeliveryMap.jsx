@@ -183,7 +183,7 @@ export default function DeliveryMap({
       }
       if (pts.length >= 2) {
         polylineRef.current = L.polyline(pts, {
-          color: '#1F8B4C',
+          color: '#2AA5AC',
           weight: 4,
           opacity: 0.85,
           dashArray: '8 10',

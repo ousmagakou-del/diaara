@@ -1,5 +1,19 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
+import { PEDALEL_LOGO_URL, PEDALEL_META } from './pedalel-brand';
+
+// ─── Phase 5 — Persistance locale du statut online/offline ───
+const ONLINE_STATUS_KEY = 'pedalel-online-status';
+function readOnlineStatus() {
+  try {
+    const raw = localStorage.getItem(ONLINE_STATUS_KEY);
+    if (raw === null) return true; // default = online
+    return raw === '1' || raw === 'true';
+  } catch { return true; }
+}
+function writeOnlineStatus(next) {
+  try { localStorage.setItem(ONLINE_STATUS_KEY, next ? '1' : '0'); } catch {}
+}
 
 // ═══ Notification sound + vibration quand nouvelle course ═══
 let audioCtx = null;
@@ -44,7 +58,7 @@ function notifyNewOrder(orderInfo) {
   // Browser notification (si permission accordée)
   try {
     if ('Notification' in window && Notification.permission === 'granted') {
-      new Notification('Nouvelle livraison YARAM', {
+      new Notification('Nouvelle livraison Pedalel', {
         body: orderInfo
           ? `Commande ${orderInfo.id} · ${orderInfo.total?.toLocaleString('fr-FR')} FCFA`
           : 'Une nouvelle livraison t\'a été assignée',
@@ -245,6 +259,9 @@ export default function DriverDashboard({ session, onLogout, onOpenDelivery, onN
   const [refreshing, setRefreshing] = useState(false);
   const [available, setAvailable] = useState(session?.active !== false);
   const [acceptingId, setAcceptingId] = useState(null);
+  // ─── Phase 5 : Online/Offline persistant (localStorage + RPC) ───
+  const [isOnline, setIsOnline] = useState(() => readOnlineStatus());
+  const [togglingOnline, setTogglingOnline] = useState(false);
   const [installPrompt, setInstallPrompt] = useState(null);
   const [installed, setInstalled] = useState(
     typeof window !== 'undefined'
@@ -392,6 +409,49 @@ export default function DriverDashboard({ session, onLogout, onOpenDelivery, onN
     }
   };
 
+  // ─── Phase 5 : Toggle Online/Offline (optimistic + RPC + localStorage) ───
+  const togglePedalelOnline = async () => {
+    if (togglingOnline) return;
+    const next = !isOnline;
+    // Optimistic
+    setIsOnline(next);
+    writeOnlineStatus(next);
+    setTogglingOnline(true);
+    if (navigator.vibrate) navigator.vibrate(next ? 30 : [20, 30, 20]);
+    try {
+      const { data: r, error } = await supabase.rpc('driver_set_online_status', {
+        p_token: session.token,
+        p_online: next,
+      });
+      // Si RPC pas encore déployée (fn manquante) → on garde la mise à jour locale
+      // sans revert : l'UI reste cohérente, la DB sera sync au prochain déploiement.
+      const missingFn = error && (
+        String(error.message || '').includes('not find the function')
+        || String(error.message || '').includes('does not exist')
+        || error.code === 'PGRST202'
+      );
+      if (missingFn) {
+        console.warn('[Pedalel] driver_set_online_status RPC missing — local-only for now');
+        toast.success(next ? 'En ligne' : 'Hors ligne');
+        return;
+      }
+      if (error || (r && r.success === false)) {
+        // Revert
+        setIsOnline(!next);
+        writeOnlineStatus(!next);
+        toast.error('Impossible de changer ton statut. Réessaie.');
+        return;
+      }
+      toast.success(next ? 'En ligne · Prêt à livrer' : 'Hors ligne');
+    } catch (e) {
+      console.error('[Pedalel] toggle online fatal:', e);
+      // On garde l'état local si erreur réseau — meilleur UX que revert
+      toast.success(next ? 'En ligne' : 'Hors ligne');
+    } finally {
+      setTogglingOnline(false);
+    }
+  };
+
   const acceptOrder = async (orderId) => {
     setAcceptingId(orderId);
     try {
@@ -432,13 +492,37 @@ export default function DriverDashboard({ session, onLogout, onOpenDelivery, onN
       {/* HEADER */}
       <header className="dvr-header">
         <div className="dvr-header-card">
-          <div className="dvr-avatar">{initials}</div>
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 14,
+              background: '#FFFFFF',
+              border: '1px solid var(--dvr-border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              overflow: 'hidden',
+            }}
+            aria-hidden="true"
+          >
+            <img
+              src={PEDALEL_LOGO_URL}
+              alt=""
+              width={34}
+              height={34}
+              style={{ display: 'block' }}
+            />
+          </div>
           <div className="dvr-header-text">
-            <div className="dvr-header-name">Salut, {firstName}</div>
+            <div className="dvr-header-name">
+              {PEDALEL_META.name} <span style={{ fontWeight: 500, color: 'var(--dvr-text-mute)' }}>· Salut, {firstName}</span>
+            </div>
             <div className="dvr-header-sub">
-              {available
-                ? <><span className="dvr-online"><span className="dvr-dot-pulse" />Disponible</span></>
-                : <><span className="dvr-offline"><span className="dvr-dot-pulse" />Hors-ligne</span></>}
+              {isOnline
+                ? <><span className="dvr-online"><span className="dvr-dot-pulse" />En ligne</span></>
+                : <><span className="dvr-offline"><span className="dvr-dot-pulse" />Hors ligne</span></>}
             </div>
           </div>
           <button
@@ -453,6 +537,38 @@ export default function DriverDashboard({ session, onLogout, onOpenDelivery, onN
       </header>
 
       <div className="dvr-page">
+        {/* ─── PHASE 5 : GROS TOGGLE ONLINE/OFFLINE (iOS-style pill) ─── */}
+        <button
+          type="button"
+          className={`pedalel-status-toggle ${isOnline ? 'online' : 'offline'}`}
+          onClick={togglePedalelOnline}
+          disabled={togglingOnline}
+          aria-pressed={isOnline}
+          aria-label={isOnline ? 'Passer hors ligne' : 'Passer en ligne'}
+        >
+          <div className="pedalel-status-label">
+            <div className="pedalel-status-title">
+              <span className="pedalel-status-dot" aria-hidden="true" />
+              {isOnline ? 'En ligne' : 'Hors ligne'}
+            </div>
+            <div className="pedalel-status-sub">
+              {isOnline ? 'Prêt à livrer' : 'Tu ne reçois pas de courses'}
+            </div>
+          </div>
+          <span className="pedalel-status-pill" aria-hidden="true">
+            {isOnline ? (
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            )}
+          </span>
+        </button>
+
         {/* STATS RAPIDES */}
         <div className="dvr-stats-row">
           <div className="dvr-kpi">
@@ -467,7 +583,7 @@ export default function DriverDashboard({ session, onLogout, onOpenDelivery, onN
           </div>
         </div>
 
-        {/* DISPONIBILITÉ */}
+        {/* DISPONIBILITÉ (paramètre secondaire, distinct de l'online/offline) */}
         <div className="dvr-availability">
           <div className="dvr-availability-text">
             <div className="dvr-availability-title">Disponible pour les courses</div>

@@ -169,6 +169,64 @@ export default function DriverProfile({ session, onLogout, onBack, onSessionUpda
           </div>
         </div>
 
+        {/* ─── Multi-plateforme (placeholder Phase 3) ─── */}
+        <div
+          className="dvr-profile-row"
+          style={{
+            background: 'linear-gradient(140deg, var(--pedalel-brand-soft) 0%, #FFFFFF 100%)',
+            border: '1px solid var(--pedalel-brand-soft)',
+          }}
+        >
+          <div className="dvr-profile-row-label" style={{ color: 'var(--pedalel-brand-dark)' }}>
+            Multi-plateforme
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+            <div
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 12,
+                background: 'var(--pedalel-brand)',
+                color: '#FFFFFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+              aria-hidden="true"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M3 12h18" />
+                <path d="M12 3a15 15 0 0 1 0 18" />
+                <path d="M12 3a15 15 0 0 0 0 18" />
+              </svg>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--dvr-text)', letterSpacing: '-0.01em' }}>
+                Bientôt disponible
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--dvr-text-mid)', marginTop: 4, lineHeight: 1.5 }}>
+                Accepte des courses de plusieurs plateformes depuis Pedalel — YARAM aujourd'hui, plus de partenaires très bientôt.
+              </div>
+              <div style={{ marginTop: 10, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                <span style={{
+                  fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999,
+                  background: 'var(--pedalel-brand)', color: '#FFFFFF',
+                }}>
+                  YARAM · actif
+                </span>
+                <span style={{
+                  fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999,
+                  background: 'var(--y-n-200)', color: 'var(--dvr-text-mute)',
+                }}>
+                  Plus de plateformes · bientôt
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <button
           className="dvr-btn dvr-btn-danger dvr-btn-lg"
           onClick={handleLogout}
@@ -178,7 +236,7 @@ export default function DriverProfile({ session, onLogout, onBack, onSessionUpda
         </button>
 
         <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--dvr-text-mute)', marginTop: 16 }}>
-          YARAM Driver · v1.0 · Sénégal
+          Pedalel · v1.0 · Sénégal
         </div>
       </div>
     </>

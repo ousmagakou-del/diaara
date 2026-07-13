@@ -1,33 +1,33 @@
 import { useState, useRef, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { toast } from '../../lib/toast';
+import { PEDALEL_LOGO_URL, PEDALEL_META } from './pedalel-brand';
 
-// ─── LOGO YARAM Driver (réutilisé du Livreur premium) ───
-function YaramDriverLogo({ size = 80 }) {
+// ─── LOGO Pedalel (SVG servi depuis /public) ───
+function PedalelLogo({ size = 88 }) {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 1024 1024"
-      xmlns="http://www.w3.org/2000/svg"
-      shapeRendering="geometricPrecision"
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: Math.round(size * 0.24),
+        background: '#FFFFFF',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxShadow: '0 6px 22px rgba(0,0,0,0.18)',
+        overflow: 'hidden',
+      }}
       aria-hidden="true"
     >
-      <defs>
-        <linearGradient id="dvr-y-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#22B564" />
-          <stop offset="100%" stopColor="#0E6A38" />
-        </linearGradient>
-      </defs>
-      <rect x="0" y="0" width="1024" height="1024" rx="240" fill="url(#dvr-y-grad)" />
-      <g transform="translate(-251.23 -174.85) scale(6)">
-        <path
-          fill="#fff"
-          d="M153.9,64.45l-20.93,30.57-21.02-30.57h-24.32l28.48,41.39v58.66h23.8v-60.88l26.87-39.16h-12.87Z"
-        />
-      </g>
-      <circle fill="#F4B53A" cx="780" cy="780" r="64" />
-    </svg>
+      <img
+        src={PEDALEL_LOGO_URL}
+        alt="Pedalel"
+        width={Math.round(size * 0.78)}
+        height={Math.round(size * 0.78)}
+        style={{ display: 'block' }}
+      />
+    </div>
   );
 }
 
@@ -140,12 +140,22 @@ export default function DriverLogin({ onLogin }) {
   return (
     <div className="dvr-login">
       <div className="dvr-login-logo">
-        <YaramDriverLogo size={88} />
-        <div className="dvr-login-brand">YARAM Driver</div>
-        <div className="dvr-login-tag">L'app du livreur</div>
+        <PedalelLogo size={88} />
+        <div className="dvr-login-brand">{PEDALEL_META.name}</div>
+        <div className="dvr-login-tag">{PEDALEL_META.tagline}</div>
       </div>
 
       <form id="dvr-login-form" className="dvr-login-card" onSubmit={handleSubmit}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
+          <img
+            src={PEDALEL_LOGO_URL}
+            alt=""
+            width={56}
+            height={56}
+            style={{ display: 'block' }}
+            aria-hidden="true"
+          />
+        </div>
         <div className="dvr-login-welcome">Bienvenue</div>
         <div className="dvr-login-sub">Connecte-toi avec ton numéro et ton PIN.</div>
 
@@ -194,12 +204,12 @@ export default function DriverLogin({ onLogin }) {
         </button>
 
         <div className="dvr-login-help">
-          PIN oublié ? Contacte le support YARAM au <strong>77 760 89 83</strong>
+          PIN oublié ? Contacte le support Pedalel au <strong>77 760 89 83</strong>
         </div>
       </form>
 
       <div className="dvr-login-foot">
-        YARAM Driver · Sénégal · v1.0
+        Pedalel · Livre pour plusieurs plateformes · v1.0
       </div>
     </div>
   );

@@ -108,11 +108,12 @@ export default function DriverApp() {
     } catch {}
   }, []);
 
-  // Set body/root background to driver bg
+  // Set body/root background + theme-color to Pedalel teal
   useEffect(() => {
     const meta = document.querySelector('meta[name="theme-color"]');
     const prev = meta?.getAttribute('content');
-    if (meta) meta.setAttribute('content', 'var(--y-brand)');
+    // Pedalel brand teal (hex, pas var — les meta ne résolvent pas les CSS vars)
+    if (meta) meta.setAttribute('content', '#2AA5AC');
     document.body.style.background = 'var(--dvr-bg, #F5F5F5)';
     return () => {
       if (meta && prev) meta.setAttribute('content', prev);

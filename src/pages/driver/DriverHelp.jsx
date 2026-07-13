@@ -21,7 +21,7 @@ const FAQ = [
   },
   {
     q: 'Mon GPS ne fonctionne pas',
-    a: 'Vérifie que tu as autorisé la localisation pour YARAM Driver dans les réglages de ton téléphone. Sur iPhone : Réglages → Confidentialité → Service de localisation → YARAM Driver.',
+    a: 'Vérifie que tu as autorisé la localisation pour Pedalel dans les réglages de ton téléphone. Sur iPhone : Réglages → Confidentialité → Service de localisation → Pedalel.',
   },
   {
     q: 'Comment changer ma zone ou mon véhicule ?',
@@ -40,14 +40,14 @@ const FAQ = [
 const SUPPORT_PHONE = '221777608983';
 
 export default function DriverHelp() {
-  const waUrl = `https://wa.me/${SUPPORT_PHONE}?text=${encodeURIComponent('Bonjour YARAM, je suis livreur et j\'ai besoin d\'aide :')}`;
+  const waUrl = `https://wa.me/${SUPPORT_PHONE}?text=${encodeURIComponent('Bonjour Pedalel, je suis livreur et j\'ai besoin d\'aide :')}`;
   const telUrl = `tel:+${SUPPORT_PHONE}`;
 
   return (
     <>
       <header className="dvr-header">
         <div className="dvr-header-card">
-          <div className="dvr-avatar" style={{ background: 'linear-gradient(135deg, var(--y-info), #0064CC)' }} aria-hidden="true">
+          <div className="dvr-avatar" style={{ background: 'linear-gradient(135deg, var(--pedalel-brand-tint), var(--pedalel-brand-dark))' }} aria-hidden="true">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           </div>
           <div className="dvr-header-text">
@@ -80,7 +80,7 @@ export default function DriverHelp() {
             </svg>
           </div>
           <div className="dvr-help-cta-text">
-            WhatsApp YARAM Support
+            WhatsApp Pedalel Support
             <div className="dvr-help-cta-sub">77 760 89 83 · réponse en moins de 15 min</div>
           </div>
         </a>
@@ -111,7 +111,7 @@ export default function DriverHelp() {
         </div>
 
         <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--dvr-text-mute)', marginTop: 16 }}>
-          YARAM Driver · v1.0 · Sénégal
+          Pedalel · v1.0 · Sénégal
         </div>
       </div>
     </>
