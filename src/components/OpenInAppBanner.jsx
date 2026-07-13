@@ -92,6 +92,16 @@ export default function OpenInAppBanner() {
     if (!isMobile()) return;
     if (isStandaloneOrWebView()) return;
     if (wasDismissedRecently()) return;
+
+    // Routes internes B2B — pas de banner "installer YARAM app cliente"
+    // (ces users ont leur propre dashboard PWA)
+    const pathname = window.location.pathname || '';
+    const search   = window.location.search   || '';
+    const isInternalRoute =
+      /^\/(pharma|admin|livreur|driver|sign)(\/|$|\?)/.test(pathname) ||
+      /[?&](admin|livreur|pharma|driver)=1(&|$)/.test(search);
+    if (isInternalRoute) return;
+
     // Delai perf : 2.5s pour laisser hero + 1re image au-dessus du fold
     // finir leur render/décoder AVANT que le banner s'anime (sinon il
     // dispute le main thread avec le paint initial).

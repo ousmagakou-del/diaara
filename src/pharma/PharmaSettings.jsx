@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import PharmaInstallCard from './PharmaInstallCard';
 
 // PINs trop evidents (6 chiffres) : suites, repetitions, dates de naissance type.
 const BANNED_PINS = [
@@ -249,6 +250,9 @@ export default function PharmaSettings({ pharmacy, onUpdate }) {
       </div>
 
       <div className="phar-settings-form">
+
+        {/* ── INSTALL PWA + NOTIFICATIONS ── */}
+        <PharmaInstallCard pharmacyId={pharmacy?.id} />
 
         {/* ── IMAGES ── */}
         <div className="phar-card">
