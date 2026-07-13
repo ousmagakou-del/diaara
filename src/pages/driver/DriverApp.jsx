@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import DriverLogin from './DriverLogin';
+import DriverSignup from './DriverSignup';
 import DriverDashboard from './DriverDashboard';
 import DriverDelivery from './DriverDelivery';
 import DriverProfile from './DriverProfile';
@@ -41,6 +42,7 @@ function pathToView(pathname) {
   // parts[0] === 'driver'
   const sub = parts[1] || 'dashboard';
   if (sub === 'login')     return { name: 'login' };
+  if (sub === 'signup')    return { name: 'signup' };
   if (sub === 'profile')   return { name: 'profile' };
   if (sub === 'earnings')  return { name: 'earnings' };
   if (sub === 'help')      return { name: 'help' };
@@ -168,11 +170,26 @@ export default function DriverApp() {
     navigate({ name: 'dashboard' }); // après /driver login s'affichera car !session
   }, [navigate]);
 
+  // ── Signup route (public, avant meme la verif session) ──
+  if (view.name === 'signup') {
+    return (
+      <div className="dvr-root" style={{ paddingBottom: 0 }}>
+        <DriverSignup
+          onBack={() => navigate({ name: 'login' })}
+          onDone={() => navigate({ name: 'login' })}
+        />
+      </div>
+    );
+  }
+
   // ── Auto-redirect to login if no session ──
   if (!session) {
     return (
       <div className="dvr-root">
-        <DriverLogin onLogin={handleLogin} />
+        <DriverLogin
+          onLogin={handleLogin}
+          onSignup={() => navigate({ name: 'signup' })}
+        />
       </div>
     );
   }
@@ -181,7 +198,10 @@ export default function DriverApp() {
   if (view.name === 'login') {
     return (
       <div className="dvr-root">
-        <DriverLogin onLogin={handleLogin} />
+        <DriverLogin
+          onLogin={handleLogin}
+          onSignup={() => navigate({ name: 'signup' })}
+        />
       </div>
     );
   }

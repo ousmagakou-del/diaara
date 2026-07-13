@@ -1478,3 +1478,1002 @@ button.dvr-btn,
     font-size: var(--y-fs-5xl);
   }
 }
+
+/* ════════════════════════════════════════════════════════
+   PEDALEL — Login CTA signup banner
+   ════════════════════════════════════════════════════════ */
+.dvr-login-signup-banner {
+  margin-top: 18px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #FFFFFF;
+  border: 1.5px solid rgba(255, 255, 255, 0.32);
+  border-radius: 999px;
+  padding: 12px 22px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: transform 120ms, background 120ms;
+  position: relative;
+  z-index: 1;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.dvr-login-signup-banner:active { transform: scale(0.98); }
+.dvr-login-signup-banner strong { font-weight: 800; }
+.dvr-login-signup-banner span { opacity: 0.86; }
+
+/* ════════════════════════════════════════════════════════
+   PEDALEL — SIGNUP WIZARD
+   ════════════════════════════════════════════════════════ */
+.ped-signup-page {
+  min-height: 100dvh;
+  background: var(--y-n-100);
+  color: var(--pedalel-black);
+  display: flex;
+  flex-direction: column;
+  max-width: 480px;
+  margin: 0 auto;
+  position: relative;
+}
+.ped-signup-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: calc(var(--dvr-safe-top) + 12px) 16px 4px;
+  background: var(--y-n-0);
+}
+.ped-signup-back {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--dvr-border);
+  background: var(--y-n-0);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--pedalel-black);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 120ms, background 120ms;
+}
+.ped-signup-back:active { transform: scale(0.95); }
+.ped-signup-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+.ped-signup-brand img {
+  border-radius: 12px;
+  background: var(--pedalel-brand-soft);
+  padding: 4px;
+}
+.ped-signup-brand-name {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: var(--pedalel-brand-dark);
+}
+.ped-signup-brand-tag {
+  font-size: 12px;
+  color: var(--dvr-text-mute);
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+/* Progress bar */
+.ped-signup-progress-wrap {
+  background: var(--y-n-0);
+  padding: 12px 16px 16px;
+  border-bottom: 1px solid var(--dvr-border);
+}
+.ped-signup-progress-track {
+  height: 6px;
+  background: var(--pedalel-brand-soft);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.ped-signup-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--pedalel-brand-tint), var(--pedalel-brand));
+  border-radius: 999px;
+  transition: width 320ms cubic-bezier(.2,.85,.3,1);
+}
+.ped-signup-progress-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--dvr-text-mute);
+  margin-top: 8px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.ped-signup-progress-meta span:last-child {
+  color: var(--pedalel-brand-dark);
+  font-weight: 700;
+}
+
+/* Body */
+.ped-signup-body {
+  flex: 1;
+  padding: 20px 16px 24px;
+  overflow-y: auto;
+  animation: dvrFadeUp 260ms cubic-bezier(.2,.85,.3,1) both;
+}
+.ped-signup-step { display: flex; flex-direction: column; gap: 4px; }
+.ped-signup-title {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 4px 0 4px;
+  color: var(--pedalel-black);
+}
+.ped-signup-sub {
+  font-size: 14px;
+  color: var(--dvr-text-mid);
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
+.ped-signup-field {
+  margin-bottom: 14px;
+}
+.ped-signup-field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pedalel-brand-dark);
+  margin-bottom: 6px;
+  letter-spacing: 0.02em;
+}
+.ped-signup-optional {
+  font-weight: 500;
+  color: var(--dvr-text-mute);
+  font-size: 11px;
+  margin-left: 4px;
+}
+.ped-signup-input {
+  width: 100%;
+  border: 1.5px solid var(--dvr-border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  font-size: 16px;
+  font-family: inherit;
+  background: var(--y-n-0);
+  outline: none;
+  transition: border-color 140ms, box-shadow 140ms;
+  -webkit-appearance: none;
+  color: var(--pedalel-black);
+}
+.ped-signup-input:focus {
+  border-color: var(--pedalel-brand);
+  box-shadow: 0 0 0 4px rgba(42, 165, 172, 0.14);
+}
+.ped-signup-hint {
+  font-size: 11px;
+  color: var(--dvr-text-mute);
+  margin-top: 6px;
+  line-height: 1.4;
+}
+.ped-signup-info {
+  background: var(--pedalel-brand-soft);
+  color: var(--pedalel-brand-dark);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  margin-top: 6px;
+}
+.ped-signup-err {
+  background: var(--y-danger-soft);
+  color: var(--y-danger);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 12px;
+  animation: dvrShake 320ms ease;
+}
+
+/* Vehicles grid (step 2) */
+.ped-signup-vehicles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.ped-signup-vehicle {
+  appearance: none;
+  border: 1.5px solid var(--dvr-border);
+  background: var(--y-n-0);
+  border-radius: 16px;
+  padding: 16px 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 160ms cubic-bezier(.2,.85,.3,1);
+  position: relative;
+  color: var(--pedalel-black);
+}
+.ped-signup-vehicle:active { transform: scale(0.98); }
+.ped-signup-vehicle.selected {
+  border-color: var(--pedalel-brand);
+  background: var(--pedalel-brand-soft);
+  box-shadow: 0 4px 14px rgba(42, 165, 172, 0.18);
+}
+.ped-signup-vehicle-icon {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  background: var(--pedalel-brand-soft);
+  color: var(--pedalel-brand-dark);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+.ped-signup-vehicle.selected .ped-signup-vehicle-icon {
+  background: var(--pedalel-brand);
+  color: var(--y-n-0);
+}
+.ped-signup-vehicle-label {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.ped-signup-vehicle-sub {
+  font-size: 11px;
+  color: var(--dvr-text-mid);
+  margin-top: 2px;
+}
+.ped-signup-vehicle-check {
+  position: absolute;
+  top: 12px; right: 12px;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--pedalel-brand);
+  color: var(--y-n-0);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Uploads (step 3) */
+.ped-signup-uploads {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.ped-signup-upload {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--y-n-0);
+  border: 1.5px dashed var(--dvr-border);
+  border-radius: 16px;
+  padding: 14px;
+  cursor: pointer;
+  transition: all 160ms;
+}
+.ped-signup-upload.done {
+  border-style: solid;
+  border-color: var(--pedalel-brand);
+  background: var(--pedalel-brand-soft);
+}
+.ped-signup-upload:active { transform: scale(0.99); }
+.ped-signup-upload-empty {
+  width: 60px; height: 60px;
+  border-radius: 12px;
+  background: var(--y-n-100);
+  color: var(--pedalel-brand-dark);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ped-signup-upload-preview {
+  position: relative;
+  width: 60px; height: 60px;
+  border-radius: 12px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.ped-signup-upload-preview img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.ped-signup-upload-badge {
+  position: absolute;
+  bottom: 2px; right: 2px;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--pedalel-brand);
+  color: var(--y-n-0);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+.ped-signup-upload-meta { flex: 1; min-width: 0; }
+.ped-signup-upload-title {
+  font-size: 14px; font-weight: 800; letter-spacing: -0.01em;
+  color: var(--pedalel-black);
+}
+.ped-signup-upload-sub {
+  font-size: 12px; color: var(--dvr-text-mid);
+  margin-top: 2px;
+}
+
+/* City grid (step 4) */
+.ped-signup-city-grid {
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.ped-signup-city {
+  appearance: none;
+  border: 1.5px solid var(--dvr-border);
+  background: var(--y-n-0);
+  color: var(--dvr-text-mid);
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 140ms;
+}
+.ped-signup-city:active { transform: scale(0.96); }
+.ped-signup-city.active {
+  background: var(--pedalel-brand);
+  border-color: var(--pedalel-brand);
+  color: var(--y-n-0);
+  box-shadow: 0 3px 10px rgba(42,165,172,0.28);
+}
+.ped-signup-recap {
+  background: var(--pedalel-brand-soft);
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin-top: 18px;
+}
+.ped-signup-recap-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 800;
+  color: var(--pedalel-brand-dark);
+  margin-bottom: 8px;
+}
+.ped-signup-recap-row {
+  display: flex; justify-content: space-between; gap: 8px;
+  padding: 6px 0;
+  font-size: 13px;
+  border-bottom: 1px dashed rgba(25,109,113,0.15);
+}
+.ped-signup-recap-row:last-child { border-bottom: 0; }
+.ped-signup-recap-row span {
+  color: var(--pedalel-brand-dark);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.ped-signup-recap-row strong {
+  color: var(--pedalel-black);
+  font-weight: 700;
+  text-align: right;
+}
+
+/* Actions footer */
+.ped-signup-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.92) 30%, var(--y-n-0) 100%);
+  padding: 20px 16px calc(20px + var(--dvr-safe-bot));
+  display: flex;
+  gap: 10px;
+}
+.ped-signup-btn {
+  appearance: none;
+  border: 0;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 15px;
+  padding: 14px 20px;
+  min-height: 52px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: transform 100ms, opacity 100ms, background 140ms;
+  letter-spacing: -0.005em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.ped-signup-btn:active { transform: scale(0.97); }
+.ped-signup-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.ped-signup-btn-primary {
+  background: var(--pedalel-brand);
+  color: var(--y-n-0);
+  flex: 2;
+  box-shadow: 0 6px 18px rgba(42,165,172,0.28);
+}
+.ped-signup-btn-primary:hover:not(:disabled) { background: var(--pedalel-brand-dark); }
+.ped-signup-btn-ghost {
+  background: var(--y-n-100);
+  color: var(--pedalel-brand-dark);
+  border: 1.5px solid transparent;
+  flex: 1;
+}
+
+.ped-signup-spin {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  border: 2.5px solid rgba(255,255,255,0.35);
+  border-top-color: #FFFFFF;
+  animation: dvrSpin 700ms linear infinite;
+  display: inline-block;
+}
+
+/* Success step 5 */
+.ped-signup-success {
+  background: linear-gradient(160deg, var(--pedalel-brand) 0%, var(--pedalel-brand-dark) 100%);
+  color: var(--y-n-0);
+  padding: 40px 20px calc(40px + var(--dvr-safe-bot));
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+.ped-signup-success-inner {
+  max-width: 380px;
+  animation: dvrFadeUp 400ms cubic-bezier(.2,.85,.3,1) both;
+}
+.ped-signup-success-check {
+  width: 92px; height: 92px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.16);
+  border: 3px solid rgba(255,255,255,0.32);
+  color: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 22px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.ped-signup-success h1 {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0 0 10px;
+}
+.ped-signup-success p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: rgba(255,255,255,0.92);
+  margin: 0 0 28px;
+}
+.ped-signup-success-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 28px;
+  text-align: left;
+}
+.ped-signup-success-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255,255,255,0.14);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.ped-signup-success-step-num {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  color: var(--pedalel-brand-dark);
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 13px;
+}
+.ped-signup-success .ped-signup-btn-primary {
+  background: #FFFFFF;
+  color: var(--pedalel-brand-dark);
+  width: 100%;
+  min-height: 52px;
+  flex: none;
+}
+
+/* ════════════════════════════════════════════════════════
+   PEDALEL — WALLET (Phase 4)
+   ════════════════════════════════════════════════════════ */
+.ped-wallet-hero {
+  position: relative;
+  background: linear-gradient(140deg, var(--pedalel-brand) 0%, var(--pedalel-brand-dark) 100%);
+  color: var(--y-n-0);
+  border-radius: 22px;
+  padding: 24px 22px 22px;
+  margin-bottom: 14px;
+  box-shadow: 0 12px 32px rgba(25, 109, 113, 0.28);
+  overflow: hidden;
+}
+.ped-wallet-hero-decor {
+  position: absolute;
+  right: -60px; top: -60px;
+  width: 220px; height: 220px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.09);
+  pointer-events: none;
+}
+.ped-wallet-hero::after {
+  content: '';
+  position: absolute;
+  left: -50px; bottom: -80px;
+  width: 200px; height: 200px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  pointer-events: none;
+}
+.ped-wallet-label {
+  position: relative;
+  z-index: 1;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-weight: 700;
+  color: rgba(255,255,255,0.82);
+}
+.ped-wallet-balance {
+  position: relative;
+  z-index: 1;
+  font-size: 44px;
+  font-weight: 800;
+  letter-spacing: -0.028em;
+  margin-top: 4px;
+  line-height: 1;
+}
+.ped-wallet-note {
+  position: relative;
+  z-index: 1;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.88);
+  margin-top: 6px;
+  font-weight: 500;
+}
+.ped-wallet-cta {
+  position: relative;
+  z-index: 1;
+  appearance: none;
+  border: 0;
+  margin-top: 18px;
+  background: #FFFFFF;
+  color: var(--pedalel-brand-dark);
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  padding: 13px 22px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 120ms, background 120ms;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.14);
+}
+.ped-wallet-cta:active { transform: scale(0.97); }
+.ped-wallet-cta:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.ped-wallet-kpis {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.ped-wallet-kpi {
+  background: var(--dvr-card);
+  border-radius: 14px;
+  padding: 12px 10px;
+  text-align: left;
+  box-shadow: var(--dvr-shadow);
+  min-width: 0;
+}
+.ped-wallet-kpi-icon {
+  width: 30px; height: 30px;
+  border-radius: 9px;
+  background: var(--pedalel-brand-soft);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+.ped-wallet-kpi-val {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: var(--pedalel-black);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ped-wallet-kpi-label {
+  font-size: 10px;
+  color: var(--dvr-text-mute);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.ped-wallet-week-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.ped-wallet-week-title {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--pedalel-black);
+}
+.ped-wallet-week-sub {
+  font-size: 12px;
+  color: var(--dvr-text-mute);
+  margin-top: 2px;
+}
+
+/* ════════════════════════════════════════════════════════
+   PEDALEL — PAYOUT BOTTOM-SHEET
+   ════════════════════════════════════════════════════════ */
+.ped-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 34, 36, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: pedFadeIn 200ms ease-out both;
+}
+@keyframes pedFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.ped-sheet {
+  background: var(--y-n-0);
+  color: var(--pedalel-black);
+  width: 100%;
+  max-width: 480px;
+  border-radius: 24px 24px 0 0;
+  padding: 12px 20px calc(24px + var(--dvr-safe-bot));
+  box-shadow: 0 -8px 30px rgba(0,0,0,0.24);
+  animation: pedSlideUp 280ms cubic-bezier(.2,.85,.3,1) both;
+  max-height: 90dvh;
+  overflow-y: auto;
+}
+@keyframes pedSlideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.ped-sheet-grabber {
+  width: 40px; height: 4px;
+  background: var(--y-n-300);
+  border-radius: 999px;
+  margin: 0 auto 12px;
+}
+.ped-sheet-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.ped-sheet-title {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--pedalel-black);
+}
+.ped-sheet-sub {
+  font-size: 13px;
+  color: var(--dvr-text-mid);
+  margin-top: 2px;
+}
+.ped-sheet-sub strong {
+  color: var(--pedalel-brand-dark);
+  font-weight: 800;
+}
+.ped-sheet-close {
+  appearance: none;
+  border: 0;
+  background: var(--y-n-100);
+  color: var(--pedalel-black);
+  border-radius: 50%;
+  width: 36px; height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 120ms;
+  flex-shrink: 0;
+}
+.ped-sheet-close:active { transform: scale(0.94); }
+.ped-sheet-body { display: flex; flex-direction: column; gap: 4px; }
+
+.ped-payout-field { margin-bottom: 14px; }
+.ped-payout-field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pedalel-brand-dark);
+  letter-spacing: 0.02em;
+  margin-bottom: 8px;
+}
+.ped-payout-amount-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 14px 18px;
+  border: 1.5px solid var(--dvr-border);
+  border-radius: 16px;
+  background: var(--y-n-50);
+  transition: border-color 140ms, background 140ms;
+}
+.ped-payout-amount-wrap:focus-within {
+  border-color: var(--pedalel-brand);
+  background: var(--y-n-0);
+}
+.ped-payout-amount {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  outline: none;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--pedalel-black);
+  font-family: inherit;
+  min-width: 0;
+}
+.ped-payout-amount::placeholder { color: var(--y-n-300); }
+.ped-payout-amount-cur {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--dvr-text-mid);
+  letter-spacing: 0.05em;
+}
+.ped-payout-quicks {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  margin-top: 10px;
+}
+.ped-payout-quick {
+  appearance: none;
+  border: 1px solid var(--dvr-border);
+  background: var(--y-n-0);
+  color: var(--dvr-text-mid);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 140ms;
+}
+.ped-payout-quick:active { transform: scale(0.94); }
+.ped-payout-quick:hover:not(:disabled) {
+  border-color: var(--pedalel-brand);
+  color: var(--pedalel-brand-dark);
+}
+
+.ped-payout-methods {
+  display: flex; flex-direction: column; gap: 8px;
+}
+.ped-payout-method {
+  appearance: none;
+  border: 1.5px solid var(--dvr-border);
+  background: var(--y-n-0);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 140ms;
+  text-align: left;
+}
+.ped-payout-method:active { transform: scale(0.99); }
+.ped-payout-method.active {
+  border-color: var(--pedalel-brand);
+  background: var(--pedalel-brand-soft);
+  box-shadow: 0 3px 10px rgba(42,165,172,0.14);
+}
+.ped-payout-logo {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  color: #FFFFFF;
+  font-weight: 800;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  letter-spacing: -0.01em;
+}
+.ped-payout-method-text { flex: 1; min-width: 0; }
+.ped-payout-method-name {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--pedalel-black);
+}
+.ped-payout-method-sub {
+  font-size: 11px;
+  color: var(--dvr-text-mid);
+  margin-top: 2px;
+}
+.ped-payout-method-radio {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--y-n-300);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: border-color 140ms;
+}
+.ped-payout-method.active .ped-payout-method-radio { border-color: var(--pedalel-brand); }
+.ped-payout-method-radio-in {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--pedalel-brand);
+}
+
+.ped-payout-input {
+  width: 100%;
+  border: 1.5px solid var(--dvr-border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  font-size: 16px;
+  font-family: inherit;
+  background: var(--y-n-50);
+  outline: none;
+  transition: border-color 140ms, background 140ms;
+  color: var(--pedalel-black);
+  -webkit-appearance: none;
+}
+.ped-payout-input:focus {
+  border-color: var(--pedalel-brand);
+  background: var(--y-n-0);
+}
+.ped-payout-hint {
+  font-size: 11px;
+  color: var(--dvr-text-mute);
+  margin-top: 6px;
+  line-height: 1.4;
+}
+.ped-payout-err {
+  background: var(--y-danger-soft);
+  color: var(--y-danger);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  animation: dvrShake 320ms ease;
+}
+.ped-payout-submit {
+  appearance: none;
+  border: 0;
+  width: 100%;
+  background: var(--pedalel-brand);
+  color: var(--y-n-0);
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: -0.005em;
+  padding: 15px 22px;
+  min-height: 54px;
+  border-radius: 16px;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: transform 120ms, background 140ms;
+  box-shadow: 0 6px 16px rgba(42,165,172,0.28);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.ped-payout-submit:active { transform: scale(0.98); }
+.ped-payout-submit:hover:not(:disabled) { background: var(--pedalel-brand-dark); }
+.ped-payout-submit:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+
+/* ════════════════════════════════════════════════════════
+   PEDALEL — Mes plateformes (Profil)
+   ════════════════════════════════════════════════════════ */
+.ped-platforms {
+  background: var(--dvr-card);
+  border-radius: var(--dvr-radius);
+  padding: 18px;
+  margin-bottom: 8px;
+  box-shadow: var(--dvr-shadow);
+}
+.ped-platforms-header {
+  margin-bottom: 12px;
+}
+.ped-platforms-title {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--pedalel-black);
+}
+.ped-platforms-sub {
+  font-size: 12px;
+  color: var(--dvr-text-mid);
+  margin-top: 2px;
+}
+.ped-platforms-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ped-platform {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1.5px solid var(--dvr-border);
+  border-radius: 14px;
+  background: var(--y-n-0);
+  transition: all 140ms;
+}
+.ped-platform.is-active {
+  border-color: var(--pedalel-brand);
+  background: var(--pedalel-brand-soft);
+}
+.ped-platform.disabled { opacity: 0.6; }
+.ped-platform-logo {
+  width: 42px; height: 42px;
+  border-radius: 12px;
+  background: var(--pedalel-brand-dark);
+  color: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-weight: 800;
+  font-size: 13px;
+  overflow: hidden;
+}
+.ped-platform-logo img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.ped-platform-body { flex: 1; min-width: 0; }
+.ped-platform-name {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.005em;
+  color: var(--pedalel-black);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.ped-platform-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--y-n-200);
+  color: var(--dvr-text-mute);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.ped-platform-sub {
+  font-size: 12px;
+  color: var(--dvr-text-mid);
+  margin-top: 2px;
+}
+

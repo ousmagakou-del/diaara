@@ -13,6 +13,8 @@ export default function DriverProfile({ session, onLogout, onBack, onSessionUpda
   const [me, setMe] = useState(session);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [platforms, setPlatforms] = useState([]);
+  const [togglingSlug, setTogglingSlug] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -20,26 +22,48 @@ export default function DriverProfile({ session, onLogout, onBack, onSessionUpda
       if (!session?.token) return;
       setLoading(true);
       try {
-        const { data, error } = await supabase.rpc('driver_me', { p_token: session.token });
+        // driver_me — infos profil
+        const meRes = await supabase
+          .rpc('driver_me', { p_token: session.token })
+          .then((r) => r)
+          .catch((e) => ({ error: e, data: null }));
+
+        // driver_get_info — infos + platforms Pedalel
+        const infoRes = await supabase
+          .rpc('driver_get_info', { p_token: session.token })
+          .then((r) => r)
+          .catch(() => ({ error: null, data: null }));
+
         if (cancelled) return;
-        if (error || !data?.success) {
-          console.warn('[DriverProfile] me error:', error || data);
-          return;
+
+        // Profil
+        if (!meRes.error && meRes.data?.success) {
+          const d = meRes.data.driver || {};
+          const merged = {
+            ...session,
+            full_name: d.full_name ?? session.full_name,
+            phone:     d.phone     ?? session.phone,
+            vehicle:   d.vehicle   ?? session.vehicle,
+            zone:      d.zone      ?? session.zone,
+            rating:    d.rating    ?? session.rating,
+            total_deliveries: d.total_deliveries ?? session.total_deliveries,
+            active:    d.active    ?? session.active,
+          };
+          setMe(merged);
+          try { localStorage.setItem('yaram_driver_session', JSON.stringify(merged)); } catch {}
+          onSessionUpdate?.(merged);
         }
-        const d = data.driver || {};
-        const merged = {
-          ...session,
-          full_name: d.full_name ?? session.full_name,
-          phone:     d.phone     ?? session.phone,
-          vehicle:   d.vehicle   ?? session.vehicle,
-          zone:      d.zone      ?? session.zone,
-          rating:    d.rating    ?? session.rating,
-          total_deliveries: d.total_deliveries ?? session.total_deliveries,
-          active:    d.active    ?? session.active,
-        };
-        setMe(merged);
-        try { localStorage.setItem('yaram_driver_session', JSON.stringify(merged)); } catch {}
-        onSessionUpdate?.(merged);
+
+        // Plateformes (avec fallback YARAM par defaut si absent)
+        const rawPlatforms = infoRes.data?.platforms || [];
+        if (rawPlatforms.length > 0) {
+          setPlatforms(rawPlatforms);
+        } else {
+          setPlatforms([
+            { slug: 'yaram', name: 'YARAM', tagline: 'Livraison pharmacie & lifestyle', active: true, available: true },
+            { slug: 'harmat', name: 'Harmat', tagline: 'Bientôt disponible', active: false, available: false },
+          ]);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -47,6 +71,33 @@ export default function DriverProfile({ session, onLogout, onBack, onSessionUpda
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.token]);
+
+  const handleTogglePlatform = async (slug, nextActive, available) => {
+    if (!available) return;
+    setTogglingSlug(slug);
+    // Optimistic update
+    setPlatforms((prev) => prev.map((p) => (p.slug === slug ? { ...p, active: nextActive } : p)));
+    try {
+      const { data, error } = await supabase.rpc('driver_toggle_platform', {
+        p_token: session.token,
+        p_platform_slug: slug,
+        p_active: nextActive,
+      });
+      if (error || (data && data.success === false)) {
+        console.warn('[Platforms] toggle error:', error || data);
+        toast.error('Impossible de mettre à jour la plateforme.');
+        // Rollback
+        setPlatforms((prev) => prev.map((p) => (p.slug === slug ? { ...p, active: !nextActive } : p)));
+      } else {
+        toast.success(nextActive ? 'Plateforme activée' : 'Plateforme désactivée');
+      }
+    } catch (e) {
+      toast.error('Erreur réseau.');
+      setPlatforms((prev) => prev.map((p) => (p.slug === slug ? { ...p, active: !nextActive } : p)));
+    } finally {
+      setTogglingSlug(null);
+    }
+  };
 
   const updateField = async (patch) => {
     setSaving(true);
@@ -169,62 +220,60 @@ export default function DriverProfile({ session, onLogout, onBack, onSessionUpda
           </div>
         </div>
 
-        {/* ─── Multi-plateforme (placeholder Phase 3) ─── */}
-        <div
-          className="dvr-profile-row"
-          style={{
-            background: 'linear-gradient(140deg, var(--pedalel-brand-soft) 0%, #FFFFFF 100%)',
-            border: '1px solid var(--pedalel-brand-soft)',
-          }}
-        >
-          <div className="dvr-profile-row-label" style={{ color: 'var(--pedalel-brand-dark)' }}>
-            Multi-plateforme
-          </div>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-            <div
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 12,
-                background: 'var(--pedalel-brand)',
-                color: '#FFFFFF',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-              aria-hidden="true"
-            >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="9" />
-                <path d="M3 12h18" />
-                <path d="M12 3a15 15 0 0 1 0 18" />
-                <path d="M12 3a15 15 0 0 0 0 18" />
-              </svg>
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--dvr-text)', letterSpacing: '-0.01em' }}>
-                Bientôt disponible
-              </div>
-              <div style={{ fontSize: 13, color: 'var(--dvr-text-mid)', marginTop: 4, lineHeight: 1.5 }}>
-                Accepte des courses de plusieurs plateformes depuis Pedalel — YARAM aujourd'hui, plus de partenaires très bientôt.
-              </div>
-              <div style={{ marginTop: 10, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                <span style={{
-                  fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999,
-                  background: 'var(--pedalel-brand)', color: '#FFFFFF',
-                }}>
-                  YARAM · actif
-                </span>
-                <span style={{
-                  fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999,
-                  background: 'var(--y-n-200)', color: 'var(--dvr-text-mute)',
-                }}>
-                  Plus de plateformes · bientôt
-                </span>
+        {/* ─── Mes plateformes ─── */}
+        <div className="ped-platforms">
+          <div className="ped-platforms-header">
+            <div>
+              <div className="ped-platforms-title">Mes plateformes</div>
+              <div className="ped-platforms-sub">
+                Choisis les sources de courses que tu veux accepter.
               </div>
             </div>
           </div>
+
+          {platforms.length === 0 ? (
+            <div style={{ fontSize: 13, color: 'var(--dvr-text-mute)', padding: '18px 0', textAlign: 'center' }}>
+              Aucune plateforme disponible pour le moment.
+            </div>
+          ) : (
+            <div className="ped-platforms-list">
+              {platforms.map((p) => {
+                const available = p.available !== false;
+                const active = !!p.active;
+                const isTogglingThis = togglingSlug === p.slug;
+                return (
+                  <div
+                    key={p.slug}
+                    className={`ped-platform ${available ? '' : 'disabled'} ${active ? 'is-active' : ''}`}
+                  >
+                    <div className="ped-platform-logo" aria-hidden="true">
+                      {p.logo_url ? (
+                        <img src={p.logo_url} alt={p.name} />
+                      ) : (
+                        <span>{(p.name || '?').slice(0, 2).toUpperCase()}</span>
+                      )}
+                    </div>
+                    <div className="ped-platform-body">
+                      <div className="ped-platform-name">
+                        {p.name}
+                        {!available && <span className="ped-platform-badge">Bientôt disponible</span>}
+                      </div>
+                      <div className="ped-platform-sub">
+                        {p.tagline || (active ? 'Tu reçois des courses de cette plateforme.' : 'Désactivée')}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className={`dvr-switch ${active ? 'on' : ''}`}
+                      onClick={() => available && !isTogglingThis && handleTogglePlatform(p.slug, !active, available)}
+                      disabled={!available || isTogglingThis}
+                      aria-label={`${active ? 'Désactiver' : 'Activer'} ${p.name}`}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <button

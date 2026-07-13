@@ -31,7 +31,7 @@ function PedalelLogo({ size = 88 }) {
   );
 }
 
-export default function DriverLogin({ onLogin }) {
+export default function DriverLogin({ onLogin, onSignup }) {
   const [phone, setPhone] = useState('+221 ');
   const [pin, setPin] = useState('');
   const [busy, setBusy] = useState(false);
@@ -203,10 +203,33 @@ export default function DriverLogin({ onLogin }) {
           )}
         </button>
 
+        {onSignup && (
+          <button
+            type="button"
+            className="dvr-btn dvr-btn-ghost"
+            onClick={onSignup}
+            disabled={busy}
+            style={{ marginTop: 10 }}
+          >
+            Devenir livreur
+          </button>
+        )}
+
         <div className="dvr-login-help">
           PIN oublié ? Contacte le support Pedalel au <strong>77 760 89 83</strong>
         </div>
       </form>
+
+      {onSignup && (
+        <button
+          type="button"
+          className="dvr-login-signup-banner"
+          onClick={onSignup}
+        >
+          <span>Pas encore livreur&nbsp;?</span>
+          <strong>Rejoins Pedalel &rarr;</strong>
+        </button>
+      )}
 
       <div className="dvr-login-foot">
         Pedalel · Livre pour plusieurs plateformes · v1.0

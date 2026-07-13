@@ -1,51 +1,156 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
+import { toast } from '../../lib/toast';
 
-const fmtFcfa = (n) => `${Number(n || 0).toLocaleString('fr-FR')} FCFA`;
+// ══════════════════════════════════════════════════════════════════
+//  PEDALEL — Wallet + Payouts (Phase 4)
+//  Balance teal + KPIs + Cette semaine + Bouton Retirer + Historique
+// ══════════════════════════════════════════════════════════════════
 
-const PERIODS = [
-  { key: 'today', label: "Aujourd'hui" },
-  { key: 'week',  label: 'Cette semaine' },
-  { key: 'month', label: 'Ce mois' },
-  { key: 'total', label: 'Total' },
+const fmtFcfa = (cents) => {
+  const n = Math.round(Number(cents || 0) / 100);
+  return `${n.toLocaleString('fr-FR')} FCFA`;
+};
+const fmtFcfaRaw = (n) => `${Number(n || 0).toLocaleString('fr-FR')} FCFA`;
+
+// Methodes de retrait
+const PAYOUT_METHODS = [
+  {
+    key: 'wave',
+    label: 'Wave',
+    sub: 'Instant, sans frais',
+    color: '#1DC1FF',
+    Icon: () => (
+      <div className="ped-payout-logo" style={{ background: '#1DC1FF' }}>W</div>
+    ),
+  },
+  {
+    key: 'orange_money',
+    label: 'Orange Money',
+    sub: 'Frais opérateur',
+    color: '#FF7900',
+    Icon: () => (
+      <div className="ped-payout-logo" style={{ background: '#FF7900' }}>OM</div>
+    ),
+  },
+  {
+    key: 'free_money',
+    label: 'Free Money',
+    sub: 'Frais opérateur',
+    color: '#CD1F5F',
+    Icon: () => (
+      <div className="ped-payout-logo" style={{ background: '#CD1F5F' }}>FM</div>
+    ),
+  },
 ];
+
+// ═════════ Icons SVG ═════════
+const IconWallet = () => (
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
+    <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
+    <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
+  </svg>
+);
+const IconTrend = () => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+    <polyline points="17 6 23 6 23 12" />
+  </svg>
+);
+const IconClock = () => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <polyline points="12 6 12 12 16 14" />
+  </svg>
+);
+const IconCheck = () => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+const IconClose = () => (
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+const IconArrowUp = () => (
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="19" x2="12" y2="5" />
+    <polyline points="5 12 12 5 19 12" />
+  </svg>
+);
+
+// ═════════ Fetcher — combine driver_get_info + fallback driver_get_earnings ═════════
+async function fetchWalletData(token) {
+  const [infoRes, earnRes] = await Promise.all([
+    supabase.rpc('driver_get_info', { p_token: token }).then((r) => r).catch((e) => ({ error: e })),
+    supabase.rpc('driver_get_earnings', { p_token: token }).then((r) => r).catch(() => ({ error: null, data: null })),
+  ]);
+
+  return {
+    info: infoRes?.data || null,
+    earnings: earnRes?.data || null,
+    error: infoRes?.error || null,
+  };
+}
 
 export default function DriverEarnings({ session }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState('week');
+  const [showPayout, setShowPayout] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (!session?.token) return;
-      try {
-        const { data: r, error } = await supabase.rpc('driver_get_earnings', { p_token: session.token });
-        if (cancelled) return;
-        if (error || !r?.success) {
-          console.warn('[Earnings] error:', error || r);
-          return;
-        }
-        setData(r);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
+  const loadData = useCallback(async () => {
+    if (!session?.token) return;
+    setLoading(true);
+    try {
+      const res = await fetchWalletData(session.token);
+      setData(res);
+    } finally {
+      setLoading(false);
+    }
   }, [session?.token]);
 
-  const current = data?.[period] || { count: 0, fcfa: 0 };
-  const breakdown = data?.breakdown || [];
-  const recent = data?.recent || [];
+  useEffect(() => { loadData(); }, [loadData, refreshKey]);
+
+  // ─── Derived data ───
+  const wallet = data?.info?.wallet || {};
+  const earnings = data?.earnings || {};
+  const balanceCents = Number(wallet?.balance_cents ?? wallet?.balance ?? 0);
+  const totalEarnedCents = Number(
+    wallet?.total_earned_cents ?? wallet?.total_earned ?? (earnings?.total?.fcfa ? earnings.total.fcfa * 100 : 0)
+  );
+  const pendingCents = Number(wallet?.pending_cents ?? wallet?.pending ?? 0);
+  const paidOutCents = Number(wallet?.paid_out_cents ?? wallet?.paid_out ?? 0);
+
+  const breakdown = earnings?.breakdown || wallet?.weekly || [];
+  const recentEarnings = earnings?.recent || wallet?.recent_earnings || [];
+  const recentPayouts = wallet?.recent_payouts || wallet?.payouts || [];
+
   const maxBar = Math.max(1, ...breakdown.map((b) => Number(b.fcfa) || 0));
+  const weekTotal = breakdown.reduce((s, b) => s + Number(b.fcfa || 0), 0);
+  const weekCount = breakdown.reduce((s, b) => s + Number(b.count || 0), 0);
 
   if (loading) {
     return (
-      <div className="dvr-page">
-        <div className="dvr-skel" style={{ height: 140, marginBottom: 12 }} />
-        <div className="dvr-skel" style={{ height: 60, marginBottom: 12 }} />
-        <div className="dvr-skel" style={{ height: 200 }} />
-      </div>
+      <>
+        <header className="dvr-header">
+          <div className="dvr-header-card">
+            <div className="dvr-avatar"><IconWallet /></div>
+            <div className="dvr-header-text">
+              <div className="dvr-header-name">Ton portefeuille</div>
+              <div className="dvr-header-sub">Chargement…</div>
+            </div>
+          </div>
+        </header>
+        <div className="dvr-page">
+          <div className="dvr-skel" style={{ height: 180, marginBottom: 12 }} />
+          <div className="dvr-skel" style={{ height: 80, marginBottom: 12 }} />
+          <div className="dvr-skel" style={{ height: 200 }} />
+        </div>
+      </>
     );
   }
 
@@ -53,51 +158,74 @@ export default function DriverEarnings({ session }) {
     <>
       <header className="dvr-header">
         <div className="dvr-header-card">
-          <div
-            className="dvr-avatar"
-            style={{ background: 'linear-gradient(135deg, var(--pedalel-brand-tint), var(--pedalel-brand-dark))' }}
-            aria-hidden="true"
-          >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          </div>
+          <div className="dvr-avatar"><IconWallet /></div>
           <div className="dvr-header-text">
-            <div className="dvr-header-name">Mes gains</div>
-            <div className="dvr-header-sub">Estimation des courses livrées</div>
+            <div className="dvr-header-name">Ton portefeuille</div>
+            <div className="dvr-header-sub">Retire tes gains quand tu veux</div>
           </div>
         </div>
       </header>
 
       <div className="dvr-page">
-        {/* HERO GAINS */}
-        <div className="dvr-earn-hero">
-          <div className="dvr-earn-tag">{PERIODS.find((p) => p.key === period)?.label}</div>
-          <div className="dvr-earn-amount">{fmtFcfa(current.fcfa)}</div>
-          <div className="dvr-earn-count">
-            {current.count} livraison{current.count > 1 ? 's' : ''}
+        {/* ─── BALANCE HERO ─── */}
+        <div className="ped-wallet-hero">
+          <div className="ped-wallet-hero-decor" />
+          <div className="ped-wallet-label">Solde disponible</div>
+          <div className="ped-wallet-balance">{fmtFcfa(balanceCents)}</div>
+          <div className="ped-wallet-note">
+            {pendingCents > 0
+              ? `${fmtFcfa(pendingCents)} en attente de validation`
+              : 'Tout est confirmé, tu peux retirer.'}
+          </div>
+          <button
+            className="ped-wallet-cta"
+            onClick={() => setShowPayout(true)}
+            disabled={balanceCents <= 0}
+          >
+            <IconArrowUp />
+            Retirer
+          </button>
+        </div>
+
+        {/* ─── KPI GRID ─── */}
+        <div className="ped-wallet-kpis">
+          <div className="ped-wallet-kpi">
+            <div className="ped-wallet-kpi-icon" style={{ color: 'var(--pedalel-brand)' }}>
+              <IconTrend />
+            </div>
+            <div className="ped-wallet-kpi-val">{fmtFcfa(totalEarnedCents)}</div>
+            <div className="ped-wallet-kpi-label">Total gagné</div>
+          </div>
+          <div className="ped-wallet-kpi">
+            <div className="ped-wallet-kpi-icon" style={{ color: 'var(--y-warning, #F59E0B)' }}>
+              <IconClock />
+            </div>
+            <div className="ped-wallet-kpi-val">{fmtFcfa(pendingCents)}</div>
+            <div className="ped-wallet-kpi-label">En attente</div>
+          </div>
+          <div className="ped-wallet-kpi">
+            <div className="ped-wallet-kpi-icon" style={{ color: 'var(--pedalel-brand-dark)' }}>
+              <IconCheck />
+            </div>
+            <div className="ped-wallet-kpi-val">{fmtFcfa(paidOutCents)}</div>
+            <div className="ped-wallet-kpi-label">Retiré</div>
           </div>
         </div>
 
-        {/* PERIODES */}
-        <div className="dvr-period-tabs">
-          {PERIODS.map((p) => (
-            <button
-              key={p.key}
-              className={`dvr-period-tab ${period === p.key ? 'active' : ''}`}
-              onClick={() => setPeriod(p.key)}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-
-        {/* BREAKDOWN BAR CHART */}
-        <div className="dvr-card">
-          <div className="dvr-section-label" style={{ marginBottom: 4, padding: 0 }}>
-            7 derniers jours
+        {/* ─── CETTE SEMAINE ─── */}
+        <div className="dvr-card ped-wallet-week">
+          <div className="ped-wallet-week-head">
+            <div>
+              <div className="ped-wallet-week-title">Cette semaine</div>
+              <div className="ped-wallet-week-sub">
+                {fmtFcfaRaw(weekTotal)} · {weekCount} livraison{weekCount > 1 ? 's' : ''}
+              </div>
+            </div>
           </div>
+
           {breakdown.length === 0 ? (
-            <div style={{ fontSize: 13, color: 'var(--dvr-text-mute)', padding: '20px 0' }}>
-              Aucune donnée pour cette période.
+            <div style={{ padding: '20px 0', textAlign: 'center', color: 'var(--dvr-text-mute)', fontSize: 13 }}>
+              Aucune livraison cette semaine.
             </div>
           ) : (
             <div className="dvr-bars">
@@ -109,97 +237,62 @@ export default function DriverEarnings({ session }) {
                       <div
                         className="dvr-bar-fill"
                         style={{ height: `${pct}%` }}
-                        title={`${b.label} : ${fmtFcfa(b.fcfa)} (${b.count} livraison${b.count > 1 ? 's' : ''})`}
+                        title={`${b.label} : ${fmtFcfaRaw(b.fcfa)}`}
                       />
                     </div>
-                    <div className="dvr-bar-label">{b.label.slice(0, 3)}</div>
+                    <div className="dvr-bar-label">{b.label?.slice(0, 3) || ''}</div>
                   </div>
                 );
               })}
             </div>
           )}
-          <div className="dvr-divider" />
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--dvr-text-mute)' }}>
-            <span>Total 7 jours : <strong style={{ color: 'var(--dvr-text)' }}>{fmtFcfa(breakdown.reduce((s, b) => s + Number(b.fcfa || 0), 0))}</strong></span>
-            <span>{breakdown.reduce((s, b) => s + Number(b.count || 0), 0)} courses</span>
-          </div>
         </div>
 
-        {/* PAYOUTS PLACEHOLDER (Phase 4 preview) */}
+        {/* ─── HISTORIQUE ─── */}
         <div className="dvr-section">
-          <div className="dvr-section-label">Retraits & Wallet</div>
-          <div
-            className="dvr-card"
-            style={{
-              background: 'linear-gradient(140deg, var(--pedalel-brand-soft) 0%, #FFFFFF 100%)',
-              border: '1px solid var(--pedalel-brand-soft)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 14,
-            }}
-          >
-            <div
-              style={{
-                width: 46, height: 46, borderRadius: 14,
-                background: 'var(--pedalel-brand)',
-                color: '#FFFFFF',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                flexShrink: 0,
-              }}
-              aria-hidden="true"
-            >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2" y="6" width="20" height="12" rx="3" />
-                <path d="M2 10h20" />
-                <path d="M6 15h4" />
-              </svg>
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 800, fontSize: 15, letterSpacing: '-0.01em' }}>
-                Retire tes gains bientôt
-              </div>
-              <div style={{ fontSize: 12, color: 'var(--dvr-text-mid)', marginTop: 3, lineHeight: 1.45 }}>
-                Wave, Orange Money ou virement bancaire — Pedalel payout arrive.
-              </div>
-            </div>
-            <button
-              type="button"
-              disabled
-              className="dvr-btn dvr-btn-soft"
-              style={{ width: 'auto', minHeight: 40, padding: '8px 14px', opacity: 0.85 }}
-            >
-              Bientôt
-            </button>
-          </div>
-        </div>
+          <div className="dvr-section-label">Historique</div>
 
-        {/* DERNIERES LIVRAISONS */}
-        <div className="dvr-section">
-          <div className="dvr-section-label">Dernières livraisons</div>
-          {recent.length === 0 ? (
+          {recentPayouts.length === 0 && recentEarnings.length === 0 ? (
             <div className="dvr-empty">
-              <div className="dvr-empty-icon" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
-              <div className="dvr-empty-title">Pas encore de gains</div>
+              <div className="dvr-empty-icon"><IconWallet /></div>
+              <div className="dvr-empty-title">Pas encore de mouvements</div>
               <div className="dvr-empty-sub">
-                Tes gains apparaîtront ici dès tes premières livraisons complétées.
+                Tes livraisons et retraits s'afficheront ici.
               </div>
             </div>
           ) : (
             <div className="dvr-card" style={{ padding: '8px 16px' }}>
-              {recent.map((o) => (
-                <div className="dvr-history-row" key={o.id}>
-                  <div className="dvr-history-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+              {recentPayouts.map((p) => (
+                <div className="dvr-history-row" key={`p-${p.id}`}>
+                  <div className="dvr-history-icon" style={{ background: '#FFEDD5', color: '#F59E0B' }}>
+                    <IconArrowUp />
+                  </div>
                   <div className="dvr-history-mid">
-                    <div className="dvr-history-name">
-                      {o.address?.name || 'Cliente'}
-                    </div>
+                    <div className="dvr-history-name">Retrait {p.method || ''}</div>
                     <div className="dvr-history-date">
-                      #{String(o.id).slice(0, 8)} · {new Date(o.done_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
-                      {' · '}
-                      <span style={{ color: 'var(--dvr-text-mid)' }}>{fmtFcfa(o.total)} cmd</span>
+                      {p.destination || ''} · {p.created_at ? new Date(p.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : ''}
+                      {p.status && ` · ${p.status}`}
                     </div>
                   </div>
-                  <div className="dvr-history-amt">+{fmtFcfa(o.earn)}</div>
+                  <div className="dvr-history-amt" style={{ color: '#F59E0B' }}>
+                    -{fmtFcfa(p.amount_cents)}
+                  </div>
+                </div>
+              ))}
+              {recentEarnings.map((o) => (
+                <div className="dvr-history-row" key={`e-${o.id}`}>
+                  <div className="dvr-history-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                    </svg>
+                  </div>
+                  <div className="dvr-history-mid">
+                    <div className="dvr-history-name">{o.address?.name || 'Livraison'}</div>
+                    <div className="dvr-history-date">
+                      #{String(o.id).slice(0, 8)} · {o.done_at ? new Date(o.done_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : ''}
+                    </div>
+                  </div>
+                  <div className="dvr-history-amt">+{fmtFcfaRaw(o.earn)}</div>
                 </div>
               ))}
             </div>
@@ -207,10 +300,197 @@ export default function DriverEarnings({ session }) {
         </div>
 
         <div style={{ fontSize: 11, color: 'var(--dvr-text-mute)', textAlign: 'center', marginTop: 16, lineHeight: 1.6 }}>
-          Estimation indicative : 1000 FCFA de base + 200 FCFA par article<br />
-          (plafonné à 3000 FCFA / course). Le montant final est confirmé par l'admin.
+          Traitement des retraits : 24 à 48h ouvrées.<br />
+          Frais Wave = 0. Frais Orange Money / Free Money = tarif opérateur.
         </div>
       </div>
+
+      {showPayout && (
+        <PayoutSheet
+          token={session.token}
+          balanceCents={balanceCents}
+          onClose={() => setShowPayout(false)}
+          onSuccess={() => {
+            setShowPayout(false);
+            toast.success('Retrait demandé — traitement 24-48h');
+            setRefreshKey((k) => k + 1);
+          }}
+        />
+      )}
     </>
+  );
+}
+
+// ═════════ PAYOUT BOTTOM SHEET ═════════
+function PayoutSheet({ token, balanceCents, onClose, onSuccess }) {
+  const [amount, setAmount] = useState('');
+  const [method, setMethod] = useState('wave');
+  const [destination, setDestination] = useState('+221 ');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+
+  const balanceFcfa = Math.round(balanceCents / 100);
+  const amountNum = Number(String(amount).replace(/\D/g, '')) || 0;
+
+  const canSubmit =
+    amountNum >= 1000 &&
+    amountNum * 100 <= balanceCents &&
+    destination.replace(/\D/g, '').length >= 9 &&
+    !!method;
+
+  const handleAmountChange = (v) => {
+    const cleaned = String(v).replace(/\D/g, '').slice(0, 8);
+    setAmount(cleaned);
+    setErr('');
+  };
+
+  const handleSubmit = async () => {
+    setErr('');
+    if (amountNum < 1000) {
+      setErr('Montant minimum : 1 000 FCFA');
+      return;
+    }
+    if (amountNum * 100 > balanceCents) {
+      setErr(`Ton solde disponible est de ${balanceFcfa.toLocaleString('fr-FR')} FCFA.`);
+      return;
+    }
+    if (destination.replace(/\D/g, '').length < 9) {
+      setErr('Numéro de destination invalide.');
+      return;
+    }
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.rpc('driver_request_payout', {
+        p_token: token,
+        p_amount_cents: amountNum * 100,
+        p_method: method,
+        p_destination: destination.trim(),
+      });
+      if (error || (data && data.success === false)) {
+        console.warn('[Payout] error:', error || data);
+        setErr(data?.error || 'Impossible de traiter la demande.');
+        setBusy(false);
+        return;
+      }
+      onSuccess?.();
+    } catch (e) {
+      console.error('[Payout] fatal:', e);
+      setErr('Erreur réseau.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const quicks = [5000, 10000, 25000, balanceFcfa]
+    .filter((v, i, arr) => v > 0 && arr.indexOf(v) === i && v <= balanceFcfa)
+    .slice(0, 4);
+
+  return (
+    <div className="ped-sheet-overlay" onClick={busy ? undefined : onClose}>
+      <div className="ped-sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="ped-sheet-grabber" />
+        <div className="ped-sheet-head">
+          <div>
+            <div className="ped-sheet-title">Retirer mes gains</div>
+            <div className="ped-sheet-sub">
+              Disponible : <strong>{balanceFcfa.toLocaleString('fr-FR')} FCFA</strong>
+            </div>
+          </div>
+          <button className="ped-sheet-close" onClick={onClose} aria-label="Fermer">
+            <IconClose />
+          </button>
+        </div>
+
+        <div className="ped-sheet-body">
+          {/* Montant */}
+          <div className="ped-payout-field">
+            <label>Montant à retirer</label>
+            <div className="ped-payout-amount-wrap">
+              <input
+                className="ped-payout-amount"
+                type="text"
+                inputMode="numeric"
+                placeholder="0"
+                value={amount ? Number(amount).toLocaleString('fr-FR') : ''}
+                onChange={(e) => handleAmountChange(e.target.value)}
+                disabled={busy}
+              />
+              <span className="ped-payout-amount-cur">FCFA</span>
+            </div>
+            {quicks.length > 0 && (
+              <div className="ped-payout-quicks">
+                {quicks.map((q) => (
+                  <button
+                    key={q}
+                    type="button"
+                    className="ped-payout-quick"
+                    onClick={() => handleAmountChange(String(q))}
+                    disabled={busy}
+                  >
+                    {q.toLocaleString('fr-FR')}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Methode */}
+          <div className="ped-payout-field">
+            <label>Méthode de retrait</label>
+            <div className="ped-payout-methods">
+              {PAYOUT_METHODS.map((m) => (
+                <button
+                  key={m.key}
+                  type="button"
+                  className={`ped-payout-method ${method === m.key ? 'active' : ''}`}
+                  onClick={() => setMethod(m.key)}
+                  disabled={busy}
+                >
+                  <m.Icon />
+                  <div className="ped-payout-method-text">
+                    <div className="ped-payout-method-name">{m.label}</div>
+                    <div className="ped-payout-method-sub">{m.sub}</div>
+                  </div>
+                  <div className="ped-payout-method-radio">
+                    {method === m.key && <div className="ped-payout-method-radio-in" />}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Destination */}
+          <div className="ped-payout-field">
+            <label>Numéro de destination</label>
+            <input
+              className="ped-payout-input"
+              type="tel"
+              inputMode="tel"
+              placeholder="+221 77 000 00 00"
+              value={destination}
+              onChange={(e) => { setDestination(e.target.value); setErr(''); }}
+              disabled={busy}
+            />
+            <div className="ped-payout-hint">
+              Vérifie bien le numéro — l'argent est envoyé instantanément.
+            </div>
+          </div>
+
+          {err && <div className="ped-payout-err">{err}</div>}
+
+          <button
+            className="ped-payout-submit"
+            onClick={handleSubmit}
+            disabled={busy || !canSubmit}
+          >
+            {busy ? (
+              <span className="ped-signup-spin" />
+            ) : (
+              `Valider le retrait${amountNum ? ` — ${amountNum.toLocaleString('fr-FR')} FCFA` : ''}`
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
