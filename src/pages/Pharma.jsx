@@ -388,26 +388,26 @@ export default function Pharma() {
         </nav>
         <div className="phar-side-foot">
           <button
-            className="phar-mute-btn"
+            className="phar-mute-btn phar-mute-primary"
             onClick={() => setMuted(!muted)}
             title={muted ? 'Réactiver les sons' : 'Couper les sons'}
+            aria-label={muted ? 'Réactiver les sons' : 'Couper les sons'}
           >
-            {muted ? 'Sons coupés' : 'Sons activés'}
+            <span className="phar-mute-label">{muted ? 'Sons coupés' : 'Sons activés'}</span>
           </button>
 
           {notifPermission !== 'granted' && notifPermission !== 'denied' && (
             <button
-              className="phar-mute-btn"
+              className="phar-mute-btn phar-mute-warning"
               onClick={requestNotificationPermission}
               title="Active les notifications du navigateur"
-              style={{ color: 'var(--y-warning)' }}
             >
-              Activer les notifs
+              <span className="phar-mute-label">Activer les notifs</span>
             </button>
           )}
 
-          <button className="phar-mute-btn" onClick={testDing}>
-            Tester le son
+          <button className="phar-mute-btn phar-mute-test" onClick={testDing}>
+            <span className="phar-mute-label">Tester le son</span>
           </button>
 
           <a href="/" className="phar-app-link">Voir l'app cliente</a>
