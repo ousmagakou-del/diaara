@@ -33,6 +33,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.phar-side-logo img,
+.phar-side-logo-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 .phar-side-brand {
   font-size: 14px;
@@ -551,6 +560,20 @@
   align-items: center;
   justify-content: center;
   margin: 0 auto 18px;
+  overflow: hidden;
+}
+.phar-login-logo-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 50%;
+}
+/* Fond blanc quand une image est utilisée pour laisser la marque respirer */
+.phar-login-logo-img {
+  background: white;
+  border: 2px solid rgba(31, 139, 76, 0.15);
+  box-shadow: 0 4px 14px rgba(31, 139, 76, 0.12);
 }
 .phar-login-card h1 { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
 .phar-login-card > p { font-size: 13px; color: var(--y-n-600); margin-bottom: 24px; }

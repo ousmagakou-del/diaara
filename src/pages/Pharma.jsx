@@ -236,10 +236,15 @@ export default function Pharma() {
   }
 
   if (phase === 'setPin') {
+    const pharmaLogo = selectedPharmacy?.logo || selectedPharmacy?.logo_url;
     return (
       <div className="phar-login">
         <div className="phar-login-card">
-          <div className="phar-login-logo">D</div>
+          <div className="phar-login-logo phar-login-logo-img">
+            {pharmaLogo
+              ? <img src={pharmaLogo} alt={selectedPharmacy.name} onError={(e) => { e.target.style.display='none'; e.target.parentElement.textContent = (selectedPharmacy.name?.charAt(0) || 'D').toUpperCase(); }} />
+              : (selectedPharmacy?.name?.charAt(0) || 'D').toUpperCase()}
+          </div>
           <h1>{selectedPharmacy.name}</h1>
           <p>Première connexion — Crée ton code PIN à 6 chiffres</p>
           <form onSubmit={handleSetPin}>
@@ -280,10 +285,15 @@ export default function Pharma() {
   }
 
   if (phase === 'forgot') {
+    const pharmaLogo = selectedPharmacy?.logo || selectedPharmacy?.logo_url;
     return (
       <div className="phar-login">
         <div className="phar-login-card">
-          <div className="phar-login-logo">D</div>
+          <div className="phar-login-logo phar-login-logo-img">
+            {pharmaLogo
+              ? <img src={pharmaLogo} alt={selectedPharmacy?.name || ''} onError={(e) => { e.target.style.display='none'; e.target.parentElement.textContent = (selectedPharmacy?.name?.charAt(0) || 'D').toUpperCase(); }} />
+              : (selectedPharmacy?.name?.charAt(0) || 'D').toUpperCase()}
+          </div>
           <h1>PIN oublié ?</h1>
           <p>Pas de souci ! Contacte Ousmane et il te réinitialise ton PIN.</p>
 
@@ -304,10 +314,15 @@ export default function Pharma() {
   }
 
   if (phase === 'login') {
+    const pharmaLogo = selectedPharmacy?.logo || selectedPharmacy?.logo_url;
     return (
       <div className="phar-login">
         <div className="phar-login-card">
-          <div className="phar-login-logo">D</div>
+          <div className="phar-login-logo phar-login-logo-img">
+            {pharmaLogo
+              ? <img src={pharmaLogo} alt={selectedPharmacy.name} onError={(e) => { e.target.style.display='none'; e.target.parentElement.textContent = (selectedPharmacy.name?.charAt(0) || 'D').toUpperCase(); }} />
+              : (selectedPharmacy.name?.charAt(0) || 'D').toUpperCase()}
+          </div>
           <h1>{selectedPharmacy.name}</h1>
           <p>Saisis ton code PIN</p>
           <form onSubmit={handleLogin}>
@@ -337,7 +352,20 @@ export default function Pharma() {
     <div className="phar-shell">
       <aside className="phar-side">
         <div className="phar-side-head">
-          <div className="phar-side-logo">D</div>
+          <div className="phar-side-logo phar-side-logo-img">
+            {(selectedPharmacy.logo || selectedPharmacy.logo_url) ? (
+              <img
+                src={selectedPharmacy.logo || selectedPharmacy.logo_url}
+                alt={selectedPharmacy.name}
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.parentElement.textContent = (selectedPharmacy.name?.charAt(0) || 'D').toUpperCase();
+                }}
+              />
+            ) : (
+              (selectedPharmacy.name?.charAt(0) || 'D').toUpperCase()
+            )}
+          </div>
           <div>
             <div className="phar-side-brand">{selectedPharmacy.name}</div>
             <div className="phar-side-role">Pharmacie partenaire</div>
