@@ -2,21 +2,36 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8"/>
-<title>Ressource introuvable</title>
+<title>Chargement...</title>
 <meta name="robots" content="noindex"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
 <style>
-  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif; background:#0A0A0A; color:#fff; }
-  div { text-align:center; padding:24px; max-width:420px; }
-  h1 { font-size:20px; margin:0 0 8px; font-weight:900; }
-  p { color:rgba(255,255,255,0.6); font-size:14px; line-height:1.6; margin:0 0 20px; }
-  a { color:#2DAA5E; font-weight:700; text-decoration:none; }
+  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif; background:#FAFAF7; color:#0A0A0A; }
+  .spin { width:36px; height:36px; border-radius:50%; border:3px solid #E5E5E5; border-top-color:#1F8B4C; animation:s 0.8s linear infinite; }
+  @keyframes s { to { transform:rotate(360deg); } }
 </style>
 </head>
 <body>
-<div>
-<h1>Ressource introuvable</h1>
-<p>Cette page n existe pas ou a ete deplacee.</p>
-<a href="/">Retour a l accueil YARAM</a>
-</div>
+<div class="spin" role="progressbar" aria-label="Chargement"></div>
+<script>
+  // Cloudflare Pages sert ce fichier quand le path ne matche pas de fichier
+  // statique, AVANT que la regle _redirects "/*  /index.html 200" ne
+  // s applique. Consequence : les routes SPA (/sign/xxx, /product/yyy,
+  // /pharmacy/zzz, /order/aaa, /bundle/bbb, ...) tombaient sur ce 404
+  // au lieu d etre gerees par le router React.
+  //
+  // Fix : on preserve le path original en sessionStorage puis on charge
+  // / (index.html). App.jsx lit sessionStorage au boot et restore le path
+  // via history.replaceState -> parseRoute -> bonne page.
+  (function () {
+    try {
+      var full = window.location.pathname + window.location.search + window.location.hash;
+      if (full && full !== '/' && full !== '/index.html') {
+        sessionStorage.setItem('yaram-spa-redirect', full);
+      }
+    } catch (_e) {}
+    window.location.replace('/');
+  })();
+</script>
 </body>
 </html>

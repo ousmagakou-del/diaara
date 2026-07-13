@@ -173,10 +173,26 @@ function routeToPath(route) {
   }
 }
 
+// Restore le path preserve par public/404.html si Cloudflare a servi le 404
+// fallback avant que _redirects /* -> /index.html ne s applique. Ce cas se
+// produit surtout pour les routes SPA imbriquees (/sign/xxx, /product/yyy,
+// /pharmacy/zzz, etc.). Le 404.html met le path original en sessionStorage
+// puis redirige vers /. On restore ici via history.replaceState pour que
+// parseRoute mappe la bonne page.
+if (typeof window !== 'undefined') {
+  try {
+    const saved = sessionStorage.getItem('yaram-spa-redirect');
+    if (saved && (window.location.pathname === '/' || window.location.pathname === '/index.html')) {
+      sessionStorage.removeItem('yaram-spa-redirect');
+      window.history.replaceState({}, '', saved);
+    }
+  } catch (_e) { /* no-op */ }
+}
+
 function pathToRoute(pathname, search = '') {
   const path = pathname.replace(/^\//, '');
   const searchParams = new URLSearchParams(search);
-  
+
   if (path === '' || path === '/') return { name: 'landing', params: {} };
 
   const parts = path.split('/');
