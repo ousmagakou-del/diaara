@@ -43,6 +43,9 @@
   Cache-Control: public, max-age=300, must-revalidate
 /driver-manifest.webmanifest
   Cache-Control: public, max-age=300, must-revalidate
+/pharma-manifest.webmanifest
+  Cache-Control: public, max-age=300, must-revalidate
+  Content-Type: application/manifest+json
 
 # ─── Images/icônes statiques : cache 1 jour + SWR ─────────────
 # Icons PWA + logo peuvent changer sans hash. 1j = compromis raisonnable.

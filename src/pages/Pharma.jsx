@@ -87,6 +87,67 @@ export default function Pharma() {
     })();
   }, []);
 
+  // ─── Rebranding dynamique pour installation PWA iOS/Android ─────
+  // Quand la pharma est sur son dashboard, iOS "Ajouter à l'écran d'accueil"
+  // doit proposer "YARAM Pharma" au lieu du générique "YARAM", et le
+  // manifest_url doit inclure ?pharma=1 pour ouvrir directement le dashboard.
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+
+    // Save originals for restore on unmount
+    const originalTitle = document.title;
+    const originalAppleTitleMeta = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+    const originalAppleTitleContent = originalAppleTitleMeta?.getAttribute('content');
+    const originalDescMeta = document.querySelector('meta[name="description"]');
+    const originalDescContent = originalDescMeta?.getAttribute('content');
+
+    // Titre onglet + label écran d'accueil iOS
+    const pharmaTitle = selectedPharmacy?.name
+      ? `${selectedPharmacy.name} · YARAM Pharma`
+      : 'YARAM Pharma';
+    document.title = pharmaTitle;
+
+    // Apple: nom court affiché sous l'icône (max ~12 chars visibles)
+    // On veut "YARAM Pharma" concis
+    let appleMeta = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+    if (!appleMeta) {
+      appleMeta = document.createElement('meta');
+      appleMeta.setAttribute('name', 'apple-mobile-web-app-title');
+      document.head.appendChild(appleMeta);
+    }
+    appleMeta.setAttribute('content', 'YARAM Pharma');
+
+    // Description meta (pour partage/preview)
+    let descMeta = document.querySelector('meta[name="description"]');
+    if (!descMeta) {
+      descMeta = document.createElement('meta');
+      descMeta.setAttribute('name', 'description');
+      document.head.appendChild(descMeta);
+    }
+    descMeta.setAttribute('content', 'Dashboard pharmacie partenaire YARAM — commandes, stock, commissions.');
+
+    // Assure que l'URL courante contient ?pharma=1 pour que iOS mémorise
+    // la bonne route au moment du "Ajouter à l'écran d'accueil".
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get('pharma') !== '1') {
+        url.searchParams.set('pharma', '1');
+        window.history.replaceState({}, '', url.toString());
+      }
+    } catch { /* noop */ }
+
+    return () => {
+      // Restore original meta si l'user quitte /pharma (navigue vers /shop par ex)
+      document.title = originalTitle;
+      if (originalAppleTitleContent !== undefined && originalAppleTitleMeta) {
+        originalAppleTitleMeta.setAttribute('content', originalAppleTitleContent);
+      }
+      if (originalDescContent !== undefined && originalDescMeta) {
+        originalDescMeta.setAttribute('content', originalDescContent);
+      }
+    };
+  }, [selectedPharmacy?.name]);
+
   // Restaurer la session si déjà connectée
   useEffect(() => {
     const saved = localStorage.getItem('yaram-pharma-session');

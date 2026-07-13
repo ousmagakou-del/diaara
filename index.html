@@ -16,9 +16,22 @@
       (function(){
         try {
           var path = window.location.pathname;
+          var search = window.location.search || '';
           var isDriver = path === '/driver' || path.indexOf('/driver/') === 0;
-          var manifestHref = isDriver ? '/driver-manifest.webmanifest' : '/manifest.json';
-          var appTitle = isDriver ? 'YARAM Driver' : 'YARAM';
+          var isPharma = path === '/pharma'
+            || path.indexOf('/pharma/') === 0
+            || search.indexOf('pharma=1') !== -1;
+          var manifestHref, appTitle;
+          if (isDriver) {
+            manifestHref = '/driver-manifest.webmanifest';
+            appTitle = 'YARAM Driver';
+          } else if (isPharma) {
+            manifestHref = '/pharma-manifest.webmanifest';
+            appTitle = 'YARAM Pharma';
+          } else {
+            manifestHref = '/manifest.json';
+            appTitle = 'YARAM';
+          }
           document.write(
             '<link rel="manifest" href="' + manifestHref + '" />' +
             '<meta name="apple-mobile-web-app-title" content="' + appTitle + '" />'
