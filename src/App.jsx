@@ -341,6 +341,22 @@ export default function App() {
     return wrapRoute(DriverApp);
   }
 
+  // ─── Routes publiques PRIORITAIRES sur tous les checks admin/pharma/livreur ─
+  // /sign/*, /merchant/onboarding/*, /wishlist/* sont des liens publics envoyes
+  // a des tiers (pharmaciens, partenaires, clients partages). Ils NE doivent
+  // JAMAIS etre detournes par un ?admin=1 present dans l URL, ni par une
+  // sticky session admin/pharma en localStorage. On les detecte AVANT tout
+  // autre check pour garantir un bypass total.
+  const publicPath = typeof window !== 'undefined' ? window.location.pathname : '';
+  const isPublicSharedRoute =
+    publicPath.startsWith('/sign/') ||
+    publicPath === '/sign' ||
+    publicPath.startsWith('/merchant/onboarding/') ||
+    publicPath.startsWith('/wishlist/');
+  if (isPublicSharedRoute) {
+    return <ClientApp />;
+  }
+
   if (typeof window !== 'undefined' && !hasAnyExplicitRoute && isStickyAdminSession()) {
     reattachQueryParam('admin');
     return wrapRoute(Admin);
@@ -351,6 +367,9 @@ export default function App() {
   }
 
   // Routes top-level (non-client) : chunks separes, wrap dans Suspense + ErrorBoundary.
+  // NB: le check isPublicSharedRoute plus haut renvoie deja ClientApp avant
+  // d arriver ici pour /sign/*, /merchant/onboarding/*, /wishlist/*. Meme
+  // avec ?admin=1 dans l URL, ces routes publiques restent client-side.
   if (params.has('admin'))   return wrapRoute(Admin);
   if (params.has('pharma'))  return wrapRoute(Pharma);
   if (params.has('livreur')) return wrapRoute(Livreur);
