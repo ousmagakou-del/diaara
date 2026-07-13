@@ -103,10 +103,10 @@ export default function PharmaCommission({ pharmacyId, pharmacyName }) {
             <tbody>
               {data.payments.map(p => (
                 <tr key={p.id}>
-                  <td>{new Date(p.period_start).toLocaleDateString('fr-FR')} → {new Date(p.period_end).toLocaleDateString('fr-FR')}</td>
-                  <td><strong>{p.amount_due?.toLocaleString('fr-FR')} FCFA</strong></td>
-                  <td>{p.paid_method || '—'}</td>
-                  <td>
+                  <td data-label="Période">{new Date(p.period_start).toLocaleDateString('fr-FR')} → {new Date(p.period_end).toLocaleDateString('fr-FR')}</td>
+                  <td data-label="Montant"><strong>{p.amount_due?.toLocaleString('fr-FR')} FCFA</strong></td>
+                  <td data-label="Méthode">{p.paid_method || '—'}</td>
+                  <td data-label="Statut">
                     {p.status === 'paid' ? (
                       <span className="phar-badge phar-badge-delivered">✅ Payé</span>
                     ) : (
@@ -141,11 +141,11 @@ export default function PharmaCommission({ pharmacyId, pharmacyName }) {
             <tbody>
               {data.monthOrders.map(o => (
                 <tr key={o.id}>
-                  <td><code>{o.id}</code></td>
-                  <td>{new Date(o.created_at).toLocaleDateString('fr-FR')}</td>
-                  <td>{o.pharmacy_revenue?.toLocaleString('fr-FR')} FCFA</td>
-                  <td style={{ color: '#F4B53A' }}>-{o.pharmacy_commission?.toLocaleString('fr-FR')}</td>
-                  <td><strong style={{ color: '#1F8B4C' }}>{o.pharmacy_net?.toLocaleString('fr-FR')}</strong></td>
+                  <td data-label="Commande"><code>{o.id}</code></td>
+                  <td data-label="Date">{new Date(o.created_at).toLocaleDateString('fr-FR')}</td>
+                  <td data-label="Revenu">{o.pharmacy_revenue?.toLocaleString('fr-FR')} FCFA</td>
+                  <td data-label="Commission" style={{ color: '#F4B53A' }}>-{o.pharmacy_commission?.toLocaleString('fr-FR')}</td>
+                  <td data-label="Net"><strong style={{ color: '#1F8B4C' }}>{o.pharmacy_net?.toLocaleString('fr-FR')}</strong></td>
                 </tr>
               ))}
             </tbody>

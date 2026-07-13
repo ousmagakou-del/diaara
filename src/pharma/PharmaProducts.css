@@ -278,3 +278,111 @@
   cursor: pointer;
 }
 .ph-btn-pri:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE responsive premium
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+  .ph-section {
+    padding: 14px 14px 24px;
+  }
+  .ph-header h1 { font-size: 20px; }
+  .ph-products-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .ph-product-card img {
+    aspect-ratio: 16 / 10;
+  }
+  .ph-filters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    margin-left: -14px;
+    margin-right: -14px;
+    padding: 0 14px 4px;
+  }
+  .ph-filters::-webkit-scrollbar { display: none; }
+  .ph-filter {
+    flex-shrink: 0;
+    min-height: 38px;
+    padding: 8px 14px;
+  }
+  .ph-btn-add {
+    min-height: 50px;
+  }
+
+  /* Modal → bottom sheet mobile */
+  .ph-modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+  .ph-modal {
+    max-width: 100%;
+    width: 100%;
+    max-height: 92dvh;
+    max-height: 92vh;
+    border-radius: 20px 20px 0 0;
+    padding: 20px 18px calc(env(safe-area-inset-bottom, 0) + 22px);
+    animation: phSlideUp 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .ph-modal::before {
+    content: "";
+    display: block;
+    width: 44px;
+    height: 5px;
+    background: #DDD;
+    border-radius: 999px;
+    margin: -6px auto 12px;
+  }
+
+  /* Inputs anti-zoom iOS */
+  .ph-modal label input,
+  .ph-modal label textarea,
+  .ph-modal label select {
+    font-size: 16px;
+    padding: 12px 14px;
+    min-height: 46px;
+  }
+  .ph-modal label textarea { min-height: 88px; }
+
+  /* Photo buttons stack sur petits écrans */
+  .ph-photo-buttons {
+    flex-direction: column;
+  }
+  .ph-photo-btn {
+    min-height: 48px;
+    font-size: 14px;
+  }
+
+  /* Actions form column-reverse */
+  .ph-form-actions {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+  .ph-btn-sec, .ph-btn-pri {
+    width: 100%;
+    min-height: 48px;
+    font-size: 14px;
+  }
+
+  /* Product card actions */
+  .ph-product-actions { flex-wrap: wrap; }
+  .ph-mini-btn {
+    min-height: 40px;
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+
+  @keyframes phSlideUp {
+    from { transform: translateY(100%); opacity: 0.6; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+}
+
+@media (max-width: 380px) {
+  .ph-section { padding: 12px 10px 20px; }
+  .ph-modal { padding: 16px 14px calc(env(safe-area-inset-bottom, 0) + 18px); }
+  .ph-mini-btn { flex: 1 1 45%; }
+}

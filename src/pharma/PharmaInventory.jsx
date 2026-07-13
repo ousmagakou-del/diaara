@@ -163,36 +163,24 @@ export default function PharmaInventory({ pharmacyId }) {
       </div>
 
       {/* Filtres */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+      <div className="phar-inv-filters">
         <input
           type="text"
+          className="phar-inv-search"
           placeholder="🔍 Rechercher un produit..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          style={{
-            flex: 1, minWidth: 200,
-            padding: '10px 14px',
-            border: '1px solid #EEE',
-            borderRadius: 10,
-            fontSize: 13,
-          }}
         />
         <select
+          className="phar-inv-select"
           value={category}
           onChange={e => setCategory(e.target.value)}
-          style={{
-            padding: '10px 14px',
-            border: '1px solid #EEE',
-            borderRadius: 10,
-            fontSize: 13,
-            background: 'white',
-          }}
         >
           {categories.map(c => (
             <option key={c} value={c}>{c === 'all' ? 'Toutes catégories' : c}</option>
           ))}
         </select>
-        <label className="phar-filter" style={{ cursor: 'pointer' }}>
+        <label className="phar-filter phar-inv-toggle" style={{ cursor: 'pointer' }}>
           <input
             type="checkbox"
             checked={showOnlyMine}
@@ -211,22 +199,13 @@ export default function PharmaInventory({ pharmacyId }) {
           <p>Aucun produit trouvé</p>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div className="phar-inv-list">
           {filtered.map(p => {
             const inv = inventory[p.id] || { stock: 0, available: false };
             return (
               <div
                 key={p.id}
-                style={{
-                  background: 'white',
-                  border: `1px solid ${inv.available ? '#E8F5EC' : '#EEE'}`,
-                  borderLeft: `4px solid ${inv.available ? '#1F8B4C' : '#EEE'}`,
-                  borderRadius: 12,
-                  padding: 14,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                }}
+                className={`phar-inv-item ${inv.available ? 'available' : ''}`}
               >
                 {/* Photo */}
                 <img

@@ -241,7 +241,7 @@ export default function Pharma() {
         <div className="phar-login-card">
           <div className="phar-login-logo">D</div>
           <h1>{selectedPharmacy.name}</h1>
-          <p>Première connexion — Crée ton code PIN à 4 chiffres</p>
+          <p>Première connexion — Crée ton code PIN à 6 chiffres</p>
           <form onSubmit={handleSetPin}>
             <input
               type="password"

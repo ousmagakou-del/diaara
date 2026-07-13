@@ -365,19 +365,16 @@ function RefuseModal({ order, onRefuse, onCancel }) {
 
         {reason === 'Autre' && (
           <textarea
+            className="phar-textarea"
             value={customReason}
             onChange={e => setCustomReason(e.target.value)}
             placeholder="Précise la raison..."
             rows={3}
-            style={{
-              width: '100%', marginTop: 10, padding: 12,
-              border: '1.5px solid #EEE', borderRadius: 10,
-              fontSize: 13, fontFamily: 'inherit',
-            }}
+            style={{ marginTop: 10 }}
           />
         )}
 
-        <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+        <div className="phar-modal-actions" style={{ marginTop: 16 }}>
           <button className="phar-btn-sec" onClick={onCancel} style={{ flex: 1 }}>Annuler</button>
           <button className="phar-btn-danger" onClick={handleSubmit} style={{ flex: 2 }}>
             ❌ Confirmer le refus
