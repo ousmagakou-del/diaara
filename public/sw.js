@@ -16,7 +16,7 @@
 // Compat : iOS Safari + Chrome Android. Skip-waiting + clients.claim().
 // ════════════════════════════════════════════════
 
-const SW_BUILD = 'yaram-v26-2026-07-10-emergency-recovery';
+const SW_BUILD = 'yaram-v27-2026-07-13-sign-passthrough';
 const C_PRECACHE = `${SW_BUILD}-precache`;
 const C_ASSETS   = `${SW_BUILD}-assets`;
 const C_IMAGES   = `${SW_BUILD}-images`;
@@ -248,6 +248,21 @@ self.addEventListener('fetch', (event) => {
   if (request.destination === 'image' ||
       url.pathname.match(/\.(png|jpe?g|gif|webp|svg|ico)$/i)) {
     event.respondWith(staleWhileRevalidate(request, C_IMAGES));
+    return;
+  }
+
+  // 8bis) Pages publiques CRITIQUES sans compte YARAM → BYPASS TOTAL du SW.
+  // Le SW doit JAMAIS servir une version cachee d index.html pour ces routes,
+  // sinon un pharmacien qui recoit un lien de signature peut voir un shell
+  // sans la route sign compilee dedans -> 'page introuvable'.
+  // Meme regle pour les liens de commande public / merchant onboarding.
+  const isPublicCritical =
+    url.pathname.startsWith('/sign/') ||
+    url.pathname === '/sign' ||
+    url.pathname.startsWith('/merchant/onboarding/') ||
+    url.pathname.startsWith('/wishlist/');
+  if (isPublicCritical && (request.mode === 'navigate' || request.destination === 'document')) {
+    // Passthrough : pas de event.respondWith -> reseau natif direct
     return;
   }
 
