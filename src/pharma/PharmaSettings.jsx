@@ -95,16 +95,39 @@ export default function PharmaSettings({ pharmacy, onUpdate }) {
   };
 
   const handleSave = async () => {
+    // Etape 1: prompt le PIN pour verification server-side.
+    // Le PIN n est pas stocke en localStorage (sanitizeForStorage le strip
+    // au login) donc on demande a l user de le retaper au save. Pattern
+    // typique des dashboards SaaS pour confirmer une modif de settings.
+    const pin = window.prompt('Confirme ton PIN pour sauvegarder les modifications :');
+    if (!pin) return; // annule
+    if (!/^\d{4,6}$/.test(pin)) {
+      setSaveError('PIN invalide (4 ou 6 chiffres).');
+      return;
+    }
+
     setSaving(true);
     setSaved(false);
     setSaveError('');
-    const { error } = await supabase
-      .from('pharmacies')
-      .update(form)
-      .eq('id', pharmacy.id);
+    // RPC pharma_update_own_settings (SECURITY DEFINER): verifie le PIN
+    // server-side puis applique une whitelist de champs safe (pas de
+    // commission / active / delivery_radius_km qui restent admin-only).
+    const { data: rpcRes, error } = await supabase.rpc('pharma_update_own_settings', {
+      p_pharmacy_id: pharmacy.id,
+      p_pin: pin,
+      p_payload: form,
+    });
     setSaving(false);
     if (error) {
       setSaveError('Erreur : ' + error.message);
+      return;
+    }
+    if (rpcRes && rpcRes.success === false) {
+      if (rpcRes.error === 'invalid_pin') {
+        setSaveError('PIN incorrect. Reessaie.');
+      } else {
+        setSaveError('Erreur : ' + (rpcRes.error || 'inconnue'));
+      }
       return;
     }
     setSaved(true);
