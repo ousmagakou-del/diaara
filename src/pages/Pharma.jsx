@@ -146,12 +146,19 @@ export default function Pharma() {
       return;
     }
 
-    const nowIso = new Date().toISOString();
-    const { error } = await supabase
-      .from('pharmacies')
-      .update({ pin: pinInput, pin_set_at: nowIso })
-      .eq('id', selectedPharmacy.id);
+    // RPC pharma_set_initial_pin (SECURITY DEFINER): l UPDATE direct sur
+    // pharmacies etait refuse (aucune policy UPDATE). La RPC verifie que
+    // pin IS NULL avant de setter (protection contre reset non-autorise).
+    const { data: rpcRes, error } = await supabase.rpc('pharma_set_initial_pin', {
+      p_pharmacy_id: selectedPharmacy.id,
+      p_new_pin: pinInput,
+    });
     if (error) { setPinError('Erreur : ' + error.message); return; }
+    if (rpcRes && rpcRes.success === false) {
+      setPinError('Erreur : ' + (rpcRes.error || 'inconnue'));
+      return;
+    }
+    const nowIso = new Date().toISOString();
 
     // Important : pin_set_at est aussi mis a jour localement et le cache est invalide,
     // sinon une deconnexion / reconnexion dans les 10 min suivantes renverrait sur "setPin".
