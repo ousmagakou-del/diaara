@@ -53,8 +53,9 @@ export default function PharmaciesSection() {
         }
       }
 
-      // Update : champs non-PIN via UPDATE direct (OK car write n'est pas restreinte
-      // par notre GRANT — qui ne touche que SELECT).
+      // Update via RPC securisee admin_update_pharmacy (SECURITY DEFINER) au
+      // lieu d un UPDATE direct: aucune policy RLS UPDATE n existait sur la
+      // table pharmacies -> "permission denied for table pharmacies".
       const payload = {
         name: p.name, owner_name: p.owner_name, address: p.address,
         city: p.city, neighborhood: p.neighborhood, phone: p.phone,
@@ -74,8 +75,17 @@ export default function PharmaciesSection() {
         before:     prev ? { active: prev.active, name: prev.name, commission: prev.commission } : null,
         after:      { active: payload.active, name: payload.name, commission: payload.commission },
       }).catch(() => { /* best-effort */ });
-      const { error } = await supabase.from('pharmacies').update(payload).eq('id', p.id);
+      const session = getAdminSession();
+      const { data: rpcRes, error } = await supabase.rpc('admin_update_pharmacy', {
+        p_token: session?.token,
+        p_id: p.id,
+        p_payload: payload,
+      });
       if (error) { toast.error('Erreur update : ' + error.message); return; }
+      if (rpcRes && rpcRes.success === false) {
+        toast.error('Erreur update : ' + (rpcRes.error || 'inconnue'));
+        return;
+      }
 
       // Si l'admin a tape un nouveau PIN, on passe par la RPC securisee qui
       // verifie le role caller (admin ou super_admin uniquement).
