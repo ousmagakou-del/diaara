@@ -330,6 +330,7 @@ function ProductForm({ product, brand, categories, onCancel, onSave }) {
     old_price: product?.old_price || product?.compare_at_price || '',
     category: product?.category || product?.category_slug || (categories[0]?.slug || categories[0]?.id || ''),
     image_url: product?.image_url || product?.img || '',
+    stock: product?.initial_stock ?? product?.stock ?? 10,
   });
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -387,6 +388,7 @@ function ProductForm({ product, brand, categories, onCancel, onSave }) {
       category: form.category || null,
       category_slug: form.category || null,
       image_url: form.image_url || null,
+      stock: form.stock ? Number(form.stock) : 10,
       img: form.image_url || null,
       brand_id: brand?.id,
     };
@@ -509,20 +511,37 @@ function ProductForm({ product, brand, categories, onCancel, onSave }) {
             </div>
           </div>
 
-          <div className="brnd-field">
-            <label className="brnd-label">Catégorie</label>
-            <select
-              className="brnd-select"
-              value={form.category}
-              onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
-            >
-              <option value="">— Choisir —</option>
-              {categories.map(c => (
-                <option key={c.id || c.slug} value={c.slug || c.id}>
-                  {c.name || c.label || c.slug || c.id}
-                </option>
-              ))}
-            </select>
+          <div className="brnd-row">
+            <div className="brnd-field">
+              <label className="brnd-label">Catégorie</label>
+              <select
+                className="brnd-select"
+                value={form.category}
+                onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
+              >
+                <option value="">— Choisir —</option>
+                {categories.map(c => (
+                  <option key={c.id || c.slug} value={c.slug || c.id}>
+                    {c.name || c.label || c.slug || c.id}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="brnd-field">
+              <label className="brnd-label">Stock initial <span className="req">*</span></label>
+              <input
+                className="brnd-input"
+                type="number"
+                inputMode="numeric"
+                value={form.stock}
+                onChange={e => setForm(f => ({ ...f, stock: e.target.value }))}
+                placeholder="10"
+                min="0"
+              />
+              <p className="brnd-hint">
+                Combien d'unités tu peux livrer maintenant. Ajustable ensuite depuis "Mon stock".
+              </p>
+            </div>
           </div>
 
           <div className="brnd-field">
