@@ -2144,3 +2144,46 @@
   .pp-qa-expand { padding-left: 20px; }
   .pp-qa-q-body { gap: 10px; }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   BADGE "Vendu directement par [Marque]" (Option B — marque vendeur)
+   Fond violet-soft, texte violet-dark, border violet subtle
+   ═══════════════════════════════════════════════════════════════ */
+.pp-brand-direct {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  background: #F3E8FF;
+  border: 1px solid #DDD6FE;
+  border-radius: 12px;
+  margin: 12px 0 6px;
+}
+.pp-brand-direct-icon {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%);
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.28);
+}
+.pp-brand-direct-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.pp-brand-direct-copy strong {
+  font-size: 13px;
+  font-weight: 700;
+  color: #5B21B6;
+  letter-spacing: -0.005em;
+}
+.pp-brand-direct-copy span {
+  font-size: 12px;
+  color: #6B21A8;
+  opacity: 0.9;
+}

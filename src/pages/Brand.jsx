@@ -13,6 +13,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import BrandDashboard from '../brand/BrandDashboard';
 import BrandProducts from '../brand/BrandProducts';
+import BrandOrders from '../brand/BrandOrders';
+import BrandInventory from '../brand/BrandInventory';
 import BrandSettings from '../brand/BrandSettings';
 import { getWhatsAppNumber } from '../lib/utils';
 import './Brand.css';
@@ -55,8 +57,12 @@ const NavIcon = ({ id }) => {
   switch (id) {
     case 'dashboard':
       return (<svg {...props}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>);
+    case 'orders':
+      return (<svg {...props}><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>);
     case 'products':
       return (<svg {...props}><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>);
+    case 'inventory':
+      return (<svg {...props}><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>);
     case 'settings':
       return (<svg {...props}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>);
     case 'arrow':
@@ -68,7 +74,9 @@ const NavIcon = ({ id }) => {
 
 const NAV = [
   { id: 'dashboard', label: "Vue d'ensemble" },
+  { id: 'orders',    label: 'Commandes' },
   { id: 'products',  label: 'Mes produits' },
+  { id: 'inventory', label: 'Mon stock' },
   { id: 'settings',  label: 'Paramètres' },
 ];
 
@@ -83,6 +91,7 @@ export default function Brand() {
   const [pinError, setPinError] = useState('');
   const [section, setSection] = useState('dashboard');
   const [brandStats, setBrandStats] = useState(null);
+  const [pendingOrders, setPendingOrders] = useState(0);
 
   // ─── Restaurer la session si presente ────────────────────
   useEffect(() => {
@@ -530,6 +539,9 @@ export default function Brand() {
               {item.id === 'products' && brandStats?.pending_products > 0 && (
                 <span className="brnd-nav-badge">{brandStats.pending_products}</span>
               )}
+              {item.id === 'orders' && pendingOrders > 0 && (
+                <span className="brnd-nav-badge">{pendingOrders}</span>
+              )}
             </button>
           ))}
         </nav>
@@ -548,10 +560,21 @@ export default function Brand() {
             onStatsChange={setBrandStats}
           />
         )}
+        {section === 'orders' && (
+          <BrandOrders
+            brand={selectedBrand}
+            onPendingChange={setPendingOrders}
+          />
+        )}
         {section === 'products' && (
           <BrandProducts
             brand={selectedBrand}
             onStatsChange={setBrandStats}
+          />
+        )}
+        {section === 'inventory' && (
+          <BrandInventory
+            brand={selectedBrand}
           />
         )}
         {section === 'settings' && (

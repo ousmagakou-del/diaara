@@ -22,7 +22,27 @@ export default function BrandsSection() {
   const refresh = async () => {
     setLoading(true);
     const { data } = await supabase.from('brands').select('*').order('name');
-    setBrands(data || []);
+    // La colonne commission vit sur la pseudo-pharmacie liee (Option B).
+    // On la resout best-effort via un SELECT groupe sur pharmacies.
+    const list = data || [];
+    try {
+      const brandIds = list.filter(b => b.is_active_dashboard).map(b => b.id);
+      if (brandIds.length > 0) {
+        const { data: phs } = await supabase
+          .from('pharmacies')
+          .select('brand_id, commission, is_brand_direct')
+          .in('brand_id', brandIds)
+          .eq('is_brand_direct', true);
+        const commMap = {};
+        (phs || []).forEach(p => { if (p.brand_id != null) commMap[p.brand_id] = p.commission; });
+        list.forEach(b => {
+          if (commMap[b.id] != null && b.commission == null) b.commission = commMap[b.id];
+        });
+      }
+    } catch (e) {
+      // silencieux — on affiche juste la valeur par defaut 10 dans le formulaire
+    }
+    setBrands(list);
     setLoading(false);
   };
 
@@ -92,6 +112,15 @@ export default function BrandsSection() {
   };
 
   const handleSave = async (b) => {
+    // Commission YARAM : uniquement pour marques avec dashboard actif (vendeur direct).
+    // Clamp 0-100 avec fallback 10%.
+    const rawCommission = b.commission === '' || b.commission === null || b.commission === undefined
+      ? null
+      : Number(b.commission);
+    const validCommission = (typeof rawCommission === 'number' && !Number.isNaN(rawCommission))
+      ? Math.max(0, Math.min(100, rawCommission))
+      : null;
+
     const payload = {
       name: b.name?.trim(),
       country: b.country?.trim() || null,
@@ -115,6 +144,23 @@ export default function BrandsSection() {
         before:     null,
         after:      { name: payload.name, country: payload.country, local: payload.local },
       }).catch(() => { /* best-effort */ });
+
+      // Push la commission sur la pseudo-pharma liee (si dashboard actif)
+      if (b.is_active_dashboard && validCommission !== null) {
+        const token = getAdminToken();
+        if (token) {
+          const { data, error: commErr } = await supabase.rpc('admin_update_brand_commission', {
+            p_token: token,
+            p_brand_id: b.id,
+            p_commission: validCommission,
+          });
+          if (commErr) {
+            console.warn('[BrandsSection] commission RPC error:', commErr.message);
+          } else if (data?.success === false) {
+            console.warn('[BrandsSection] commission RPC refus:', data.error);
+          }
+        }
+      }
     } else {
       const { error } = await supabase.from('brands').insert(payload);
       if (error) { flash('Erreur : ' + error.message, 'err'); return; }
@@ -335,6 +381,24 @@ export default function BrandsSection() {
               <input type="checkbox" checked={!!editing.local} onChange={e => setEditing({ ...editing, local: e.target.checked })} />
               <span>🇸🇳 Marque locale (Made in Sénégal)</span>
             </label>
+
+            {editing.id && editing.is_active_dashboard && (
+              <label>
+                Commission YARAM (%)
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.5"
+                  value={editing.commission ?? 10}
+                  onChange={e => setEditing({ ...editing, commission: e.target.value })}
+                  placeholder="10"
+                />
+                <span style={{ fontSize: 11, color: '#6B6B6B', display: 'block', marginTop: 4 }}>
+                  Appliquée sur les commandes vendues directement par la marque. Défaut 10%.
+                </span>
+              </label>
+            )}
 
             <div className="adm-form-actions">
               <button className="adm-btn-sec" onClick={() => setEditing(null)}>Annuler</button>

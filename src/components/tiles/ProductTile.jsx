@@ -111,6 +111,9 @@ function ProductTile({ product, size = 'md', pharmacy = null, onOpen }) {
         {outOfStock && (
           <span className="y-tile__badge y-tile__badge--out">Rupture</span>
         )}
+        {(product.is_brand_direct || product.brand_direct) && (
+          <span className="y-tile__brand-dot" title="Vendu directement par la marque" aria-hidden="true" />
+        )}
 
         <span
           className="y-tile__add"

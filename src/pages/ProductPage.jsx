@@ -24,7 +24,7 @@ import Stepper from '../components/Stepper';
 import ReviewCard from '../components/ReviewCard';
 import WishlistPicker from '../components/WishlistPicker';
 import SubscribeWizard from '../components/SubscribeWizard';
-import { SUB_DISCOUNT_PCT } from '../lib/supabase';
+import { SUB_DISCOUNT_PCT, supabase } from '../lib/supabase';
 import './Subscriptions.css';
 import {
   getAllProducts,
@@ -340,6 +340,9 @@ export default function ProductPage() {
   // Wishlist picker (multi-listes + partage)
   const [pickerOpen, setPickerOpen] = useState(false);
 
+  // Marque vendeur direct (Option B) : la pseudo-pharmacie liee est is_brand_direct=true
+  const [brandDirect, setBrandDirect] = useState(null); // { name, city } | null
+
   // Push intelligentes : price drop + restock
   const [alertSubs, setAlertSubs] = useState({
     priceDropSubscribed: false,
@@ -437,6 +440,36 @@ export default function ProductPage() {
       setRelatedLoading(false);
     });
   }, [id]);
+
+  // ─── Marque vendeur direct : detect si product.brand_id => pharmacy is_brand_direct
+  // Legere : simple SELECT sur pharmacies avec brand_id + is_brand_direct.
+  // Read-only, RLS public (les pharmacies actives sont exposees en select).
+  useEffect(() => {
+    let cancelled = false;
+    if (!product?.brand_id) { setBrandDirect(null); return () => { cancelled = true; }; }
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from('pharmacies')
+          .select('id, name, city, is_brand_direct')
+          .eq('brand_id', product.brand_id)
+          .eq('is_brand_direct', true)
+          .eq('active', true)
+          .limit(1)
+          .maybeSingle();
+        if (cancelled) return;
+        if (data) {
+          setBrandDirect({
+            name: product.brand_name || data.name || 'la marque',
+            city: data.city || null,
+          });
+        } else {
+          setBrandDirect(null);
+        }
+      } catch { /* silencieux */ }
+    })();
+    return () => { cancelled = true; };
+  }, [product?.brand_id, product?.brand_name]);
 
   // ─── Alert subscriptions (price drop + restock) ───────────────
   useEffect(() => {
@@ -1037,6 +1070,21 @@ export default function ProductPage() {
                 </button>
               )}
               <h1 className="pp-title">{product?.name}</h1>
+
+              {brandDirect && (
+                <div className="pp-brand-direct" role="note" aria-label={`Vendu directement par ${brandDirect.name}`}>
+                  <span className="pp-brand-direct-icon" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+                      <line x1="7" y1="7" x2="7.01" y2="7"/>
+                    </svg>
+                  </span>
+                  <div className="pp-brand-direct-copy">
+                    <strong>Vendu directement par {brandDirect.name}</strong>
+                    <span>Expédition depuis l'atelier{brandDirect.city ? ` à ${brandDirect.city}` : ''} · Made in Sénégal</span>
+                  </div>
+                </div>
+              )}
 
               <div className="pp-rating-row">
                 <Stars value={reviewStats.avg || 0} size={16} />

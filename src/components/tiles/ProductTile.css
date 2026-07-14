@@ -238,3 +238,17 @@
   .y-tile__body { padding: 0 var(--y-sp-2) var(--y-sp-2) var(--y-sp-2); }
   .y-tile__price { font-size: var(--y-fs-base); }
 }
+
+/* Petit dot violet en haut à droite pour signaler "vendu directement par la marque" */
+.y-tile__brand-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #7C3AED;
+  box-shadow: 0 0 0 2px white, 0 2px 8px rgba(124, 58, 237, 0.45);
+  pointer-events: none;
+  z-index: 2;
+}
