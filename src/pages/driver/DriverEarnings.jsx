@@ -147,6 +147,16 @@ export default function DriverEarnings({ session }) {
 
   useEffect(() => { loadData(); }, [loadData, refreshKey]);
 
+  // Safety net: garantit que body scroll n est jamais bloque quand
+  // on entre sur la page wallet. Corrige les cas ou un PayoutSheet
+  // ou autre modal aurait laisse overflow:hidden orphelin.
+  useEffect(() => {
+    document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.height = '';
+  }, []);
+
   // ─── Derived data ───
   const wallet = data?.info?.wallet || {};
   const earnings = data?.earnings || {};
@@ -399,11 +409,12 @@ function PayoutSheet({ token, balanceCents, onClose, onSuccess }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
 
-  // Lock body scroll while sheet open
+  // Safety: force restore body overflow au mount (au cas ou un ancien
+  // sheet aurait laisse overflow:hidden bloque). Le backdrop du sheet
+  // suffit deja a empecher les taps derriere -- pas besoin de lock scroll.
   useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
+    document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
   }, []);
 
   const balanceFcfa = Math.round(balanceCents / 100);

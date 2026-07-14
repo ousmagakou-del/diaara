@@ -2084,13 +2084,17 @@ button.dvr-btn,
   min-width: 0;
 }
 .ped-wallet-kpi-icon {
-  width: 30px; height: 30px;
-  border-radius: 9px;
-  background: var(--pedalel-brand-soft);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 8px;
+  background: transparent;
+  padding: 0;
+}
+.ped-wallet-kpi-icon svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 2;
 }
 .ped-wallet-kpi-val {
   font-size: 13px;
@@ -2538,15 +2542,16 @@ button.dvr-btn,
   border: 1px dashed var(--dvr-border);
 }
 .ped-earnings-empty-week-icon {
-  width: 48px; height: 48px;
-  border-radius: 14px;
-  background: var(--pedalel-brand-soft);
-  color: var(--pedalel-brand);
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  color: var(--pedalel-brand);
   margin: 0 auto 12px;
-  box-shadow: 0 2px 10px rgba(42,165,172,0.16);
+  background: transparent;
+  padding: 0;
+}
+.ped-earnings-empty-week-icon svg {
+  width: 40px;
+  height: 40px;
+  stroke-width: 1.5;
 }
 .ped-earnings-empty-week-title {
   font-size: 15px;
