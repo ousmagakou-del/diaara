@@ -2477,3 +2477,611 @@ button.dvr-btn,
   margin-top: 2px;
 }
 
+/* ════════════════════════════════════════════════════════
+   PEDALEL DASHBOARD — Walmart Spark inspired
+   Big hero map + floating header + bottom sheet
+   ════════════════════════════════════════════════════════ */
+
+.ped-home {
+  position: relative;
+  min-height: 100dvh;
+  background: #F5F7F7;
+  overflow-x: hidden;
+}
+
+/* ── HERO MAP (background, fixed) ────────────────────── */
+.ped-hero-map {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 55vh;
+  z-index: 1;
+  background: #E7EEF0;
+  overflow: hidden;
+}
+.ped-hero-map-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.ped-hero-map-canvas .leaflet-container {
+  background: #E7EEF0;
+  outline: none;
+}
+.ped-hero-map-canvas .leaflet-tile-pane {
+  filter: saturate(1.08) brightness(1.02);
+}
+.ped-hero-map-canvas .leaflet-control-attribution {
+  display: none !important;
+}
+.ped-hero-map-overlay {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 40%;
+  background: linear-gradient(
+    180deg,
+    rgba(15, 34, 36, 0)     0%,
+    rgba(15, 34, 36, 0.05) 40%,
+    rgba(42,165,172, 0.20) 100%
+  );
+  pointer-events: none;
+}
+
+/* Pharmacies pins */
+.ped-map-icon {
+  background: transparent !important;
+  border: 0 !important;
+}
+.ped-map-pharma {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--pedalel-brand);
+  color: #FFFFFF;
+  display: flex; align-items: center; justify-content: center;
+  border: 2.5px solid #FFFFFF;
+  box-shadow: 0 3px 10px rgba(15, 34, 36, 0.25);
+}
+.ped-map-me {
+  position: relative;
+  width: 24px; height: 24px;
+}
+.ped-map-me-dot {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: #2F80ED;
+  border: 3px solid #FFFFFF;
+  box-shadow: 0 3px 10px rgba(47, 128, 237, 0.45);
+}
+.ped-map-me-pulse {
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  background: rgba(47, 128, 237, 0.32);
+  animation: ped-me-pulse 1.8s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes ped-me-pulse {
+  0%   { transform: scale(0.6); opacity: 0.85; }
+  100% { transform: scale(2);   opacity: 0;    }
+}
+
+/* ── FLOATING HEADER (glassmorphism) ─────────────────── */
+.ped-hero-header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 40;
+  padding: calc(var(--dvr-safe-top) + 10px) 14px 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.32) 100%);
+  -webkit-backdrop-filter: saturate(150%) blur(18px);
+  backdrop-filter: saturate(150%) blur(18px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+}
+.ped-hero-avatar {
+  appearance: none;
+  border: 0;
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--pedalel-brand-tint), var(--pedalel-brand-dark));
+  color: #FFFFFF;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(25, 109, 113, 0.28);
+  border: 2px solid #FFFFFF;
+  transition: transform 120ms;
+}
+.ped-hero-avatar:active { transform: scale(0.94); }
+.ped-hero-greet {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.15;
+}
+.ped-hero-greet-name {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--pedalel-black);
+}
+.ped-hero-greet-sub {
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pedalel-brand-dark);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.ped-hero-greet-sub svg { color: #F5A623; }
+.ped-hero-greet-dot { opacity: 0.6; padding: 0 2px; }
+.ped-hero-notif {
+  appearance: none;
+  position: relative;
+  border: 0;
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--pedalel-black);
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  box-shadow: 0 3px 10px rgba(15, 34, 36, 0.10);
+  transition: transform 120ms;
+}
+.ped-hero-notif:active { transform: scale(0.94); }
+.ped-hero-notif-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--y-danger);
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 0 5px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+}
+
+/* ── BOTTOM SHEET (scrollable content) ────────────────── */
+.ped-sheet {
+  position: relative;
+  z-index: 10;
+  margin-top: 46vh;
+  min-height: calc(54vh + 40px);
+  background: #F7F7F5;
+  border-radius: 28px 28px 0 0;
+  padding: 0 16px;
+  box-shadow: 0 -12px 30px rgba(15, 34, 36, 0.10);
+  animation: dvrFadeUp 320ms cubic-bezier(.2,.85,.3,1) both;
+}
+
+/* Drag handle indicator */
+.ped-sheet::before {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--y-n-300);
+  margin: 8px auto 4px;
+  opacity: 0.6;
+}
+
+/* ── BIG CTA (online/offline pill) ────────────────────── */
+.ped-sheet-cta-wrap {
+  position: relative;
+  margin: 4px auto 18px;
+  padding: 0 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.ped-hero-cta {
+  appearance: none;
+  border: 0;
+  width: 100%;
+  max-width: 340px;
+  min-height: 64px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  padding: 0 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #FFFFFF;
+  transition: transform 140ms cubic-bezier(.2,.85,.3,1), background 220ms, box-shadow 220ms;
+  -webkit-tap-highlight-color: transparent;
+}
+.ped-hero-cta:active { transform: scale(0.98); }
+.ped-hero-cta:disabled { opacity: 0.75; cursor: wait; }
+
+.ped-hero-cta.is-online {
+  background: linear-gradient(135deg, var(--pedalel-brand) 0%, var(--pedalel-brand-dark) 100%);
+  box-shadow: 0 12px 26px rgba(42, 165, 172, 0.38), 0 4px 8px rgba(25, 109, 113, 0.16);
+}
+.ped-hero-cta.is-offline {
+  background: linear-gradient(135deg, #1E2E30 0%, #0F2224 100%);
+  color: rgba(255,255,255,0.94);
+  box-shadow: 0 10px 22px rgba(15, 34, 36, 0.30);
+}
+.ped-hero-cta-dot {
+  position: relative;
+  display: inline-block;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  flex-shrink: 0;
+}
+.ped-hero-cta.is-online .ped-hero-cta-dot::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.55);
+  animation: ped-cta-pulse 1.6s ease-out infinite;
+  pointer-events: none;
+}
+.ped-hero-cta.is-offline .ped-hero-cta-dot { background: #94A3B8; }
+@keyframes ped-cta-pulse {
+  0%   { transform: scale(1);   opacity: 0.85; }
+  100% { transform: scale(2.4); opacity: 0;    }
+}
+.ped-hero-cta-label { white-space: nowrap; }
+.ped-sheet-cta-sub {
+  font-size: 12px;
+  color: var(--dvr-text-mute);
+  font-weight: 600;
+  text-align: center;
+  padding: 0 20px;
+}
+
+/* ── TIP CARD (GPS permission) ────────────────────────── */
+.ped-tip-card {
+  appearance: none;
+  border: 0;
+  width: 100%;
+  background: #FFFFFF;
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: 0 2px 8px rgba(15, 34, 36, 0.06);
+  transition: transform 120ms;
+  font-family: inherit;
+}
+.ped-tip-card:active { transform: scale(0.99); }
+.ped-tip-icon {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  background: var(--pedalel-brand-soft);
+  color: var(--pedalel-brand-dark);
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.ped-tip-text { flex: 1; min-width: 0; }
+.ped-tip-title {
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: -0.005em;
+  color: var(--pedalel-black);
+}
+.ped-tip-sub {
+  font-size: 12px;
+  color: var(--dvr-text-mid);
+  margin-top: 3px;
+  line-height: 1.4;
+}
+.ped-tip-chev {
+  color: var(--dvr-text-mute);
+  flex-shrink: 0;
+}
+
+/* ── HOURS CARD (graph 24h) ───────────────────────────── */
+.ped-hours-card {
+  background: #FFFFFF;
+  border-radius: 16px;
+  padding: 16px 16px 14px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(15, 34, 36, 0.06);
+}
+.ped-hours-head { margin-bottom: 12px; }
+.ped-hours-title {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--pedalel-black);
+}
+.ped-hours-sub {
+  font-size: 12px;
+  color: var(--dvr-text-mid);
+  margin-top: 2px;
+}
+.ped-hours-graph {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(24, 1fr);
+  align-items: end;
+  height: 96px;
+  gap: 3px;
+  padding: 0 2px 2px;
+}
+.ped-hours-bar {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+.ped-hours-bar-fill {
+  width: 100%;
+  min-height: 4px;
+  border-radius: 4px 4px 2px 2px;
+  transition: height 500ms cubic-bezier(.2,.85,.3,1);
+}
+.ped-hours-bar.is-past .ped-hours-bar-fill {
+  background: var(--y-n-200);
+}
+.ped-hours-bar.is-future .ped-hours-bar-fill {
+  background: linear-gradient(180deg, var(--pedalel-brand-soft) 0%, #C6E9EC 100%);
+}
+.ped-hours-bar.is-now .ped-hours-bar-fill {
+  background: linear-gradient(180deg, var(--pedalel-brand-tint) 0%, var(--pedalel-brand) 100%);
+  box-shadow: 0 3px 10px rgba(42, 165, 172, 0.35);
+}
+.ped-hours-bar-label {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  background: var(--pedalel-brand-dark);
+  color: #FFFFFF;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 6px;
+  border-radius: 999px;
+  box-shadow: 0 2px 6px rgba(25, 109, 113, 0.35);
+}
+.ped-hours-axis {
+  margin-top: 8px;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 2px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--dvr-text-mute);
+  letter-spacing: 0.02em;
+}
+.ped-hours-footer {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--y-n-100);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ped-hours-incentive {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ped-hours-incentive-icon {
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  background: #FFF4D6;
+  color: #B7791F;
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.ped-hours-incentive-body { flex: 1; min-width: 0; }
+.ped-hours-incentive-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--pedalel-black);
+  letter-spacing: -0.005em;
+}
+.ped-hours-incentive-sub {
+  font-size: 11px;
+  color: var(--dvr-text-mid);
+  margin-top: 1px;
+}
+.ped-hours-more {
+  appearance: none;
+  border: 0;
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: var(--y-n-100);
+  color: var(--dvr-text-mid);
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 120ms, background 140ms;
+}
+.ped-hours-more:active { transform: scale(0.94); background: var(--y-n-200); }
+
+/* ── QUEUE (En attente) ───────────────────────────────── */
+.ped-queue {
+  margin-bottom: 12px;
+}
+.ped-queue-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 4px 10px;
+}
+.ped-queue-title {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--pedalel-black);
+}
+.ped-queue-refresh {
+  appearance: none;
+  border: 0;
+  width: 32px; height: 32px;
+  border-radius: 10px;
+  background: #FFFFFF;
+  color: var(--dvr-text-mid);
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(15, 34, 36, 0.06);
+  transition: transform 120ms;
+}
+.ped-queue-refresh:active { transform: scale(0.94); }
+.ped-queue-refresh:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.ped-queue-skel {
+  height: 64px;
+  border-radius: 14px;
+  margin-bottom: 8px;
+  background: linear-gradient(90deg, #F0F2F2 0%, #FAFBFB 50%, #F0F2F2 100%);
+  background-size: 200% 100%;
+  animation: dvrSkel 1.2s linear infinite;
+}
+
+.ped-queue-item {
+  appearance: none;
+  border: 0;
+  width: 100%;
+  background: #FFFFFF;
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: 0 2px 6px rgba(15, 34, 36, 0.06);
+  transition: transform 120ms;
+  font-family: inherit;
+}
+.ped-queue-item:active { transform: scale(0.99); }
+.ped-queue-item-icon {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  background: var(--pedalel-brand-soft);
+  color: var(--pedalel-brand-dark);
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.ped-queue-item-body { flex: 1; min-width: 0; }
+.ped-queue-item-name {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.005em;
+  color: var(--pedalel-black);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ped-queue-item-meta {
+  font-size: 12px;
+  color: var(--dvr-text-mid);
+  margin-top: 2px;
+}
+.ped-queue-item-amt {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--pedalel-brand-dark);
+  letter-spacing: -0.01em;
+  flex-shrink: 0;
+}
+
+.ped-queue-item-available {
+  background: #FFF7E6;
+  border: 1.5px dashed #F4B740;
+  box-shadow: none;
+}
+.ped-queue-item-available .ped-queue-item-icon {
+  background: #FFEBB3;
+  color: #B7791F;
+}
+.ped-queue-accept {
+  appearance: none;
+  border: 0;
+  background: var(--pedalel-brand-dark);
+  color: #FFFFFF;
+  font-weight: 800;
+  font-size: 12px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 120ms;
+  letter-spacing: 0.01em;
+}
+.ped-queue-accept:active { transform: scale(0.96); }
+.ped-queue-accept:disabled { opacity: 0.6; cursor: wait; }
+
+/* Empty state */
+.ped-queue-empty {
+  background: #FFFFFF;
+  border-radius: 16px;
+  padding: 28px 20px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(15, 34, 36, 0.06);
+}
+.ped-queue-empty-icon {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: var(--pedalel-brand-soft);
+  color: var(--pedalel-brand-dark);
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-bottom: 10px;
+}
+.ped-queue-empty-title {
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  color: var(--pedalel-black);
+  margin-bottom: 4px;
+}
+.ped-queue-empty-sub {
+  font-size: 12px;
+  color: var(--dvr-text-mid);
+  line-height: 1.4;
+}
+
+/* Bottom spacer to clear the fixed tabbar */
+.ped-sheet-bottom-space {
+  height: calc(80px + var(--dvr-safe-bot));
+}
+
+/* ── RESPONSIVE : petits écrans ───────────────────────── */
+@media (max-height: 640px) {
+  .ped-hero-map { height: 52vh; }
+  .ped-sheet { margin-top: 44vh; }
+}
+@media (min-width: 640px) {
+  .ped-sheet { max-width: 560px; margin-left: auto; margin-right: auto; }
+  .ped-hero-header { max-width: 560px; margin-left: auto; margin-right: auto; }
+}

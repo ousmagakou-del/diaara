@@ -1,6 +1,10 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { supabase } from '../../lib/supabase';
 import { PEDALEL_LOGO_URL, PEDALEL_META } from './pedalel-brand';
+import { toast } from '../../lib/toast';
+import { useDriverPosition } from './DeliveryMap';
 
 // ─── Phase 5 — Persistance locale du statut online/offline ───
 const ONLINE_STATUS_KEY = 'pedalel-online-status';
@@ -22,7 +26,6 @@ function playNewOrderSound() {
     if (!audioCtx) {
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
-    // 3 beeps montants style Uber Driver
     const playBeep = (freq, when, duration) => {
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
@@ -43,19 +46,12 @@ function playNewOrderSound() {
     console.warn('[driver] sound failed:', e?.message);
   }
 }
-
 function vibrateNewOrder() {
-  try {
-    if ('vibrate' in navigator) {
-      navigator.vibrate([200, 100, 200, 100, 300]);
-    }
-  } catch {}
+  try { if ('vibrate' in navigator) navigator.vibrate([200, 100, 200, 100, 300]); } catch {}
 }
-
 function notifyNewOrder(orderInfo) {
   playNewOrderSound();
   vibrateNewOrder();
-  // Browser notification (si permission accordée)
   try {
     if ('Notification' in window && Notification.permission === 'granted') {
       new Notification('Nouvelle livraison Pedalel', {
@@ -71,47 +67,13 @@ function notifyNewOrder(orderInfo) {
     }
   } catch {}
 }
-import { toast } from '../../lib/toast';
-import DeliveryMap, { useDriverPosition } from './DeliveryMap';
 
-// Helpers
+// ─── Helpers ────────────────────────────────────────────
 const fmtFcfa = (n) => `${Number(n || 0).toLocaleString('fr-FR')} FCFA`;
-const fmtAddrShort = (addr) => {
-  if (!addr) return 'Adresse non précisée';
-  if (typeof addr === 'string') return addr;
-  const line = addr.line || addr.address || '';
-  const city = addr.neighborhood || addr.city || 'Dakar';
-  return [line, city].filter(Boolean).join(' · ') || 'Adresse non précisée';
-};
 const fmtClientName = (addr) => {
   if (!addr) return 'Cliente';
   if (typeof addr === 'string') return 'Cliente';
   return addr.name || 'Cliente';
-};
-const fmtPay = (m) => {
-  if (!m) return 'Paiement';
-  const v = String(m).toLowerCase();
-  if (v === 'cod' || v === 'cash') return 'Cash à la livraison';
-  if (v === 'wave') return 'Wave (payé)';
-  if (v === 'om' || v === 'orange_money') return 'Orange Money (payé)';
-  if (v === 'stripe' || v === 'card') return 'Carte (payé)';
-  return m;
-};
-const isCash = (m) => {
-  const v = String(m || '').toLowerCase();
-  return v === 'cod' || v === 'cash';
-};
-const statusBadge = (s) => {
-  const map = {
-    preparing: { cls: 'dvr-status-preparing', txt: 'En préparation' },
-    shipped:   { cls: 'dvr-status-shipped',   txt: 'En route' },
-    awaiting_confirm: { cls: 'dvr-status-awaiting', txt: 'À confirmer' },
-    delivered: { cls: 'dvr-status-delivered', txt: 'Livrée' },
-    paid:      { cls: 'dvr-status-paid',      txt: 'Payée' },
-    accepted:  { cls: 'dvr-status-paid',      txt: 'Acceptée' },
-    ready:     { cls: 'dvr-status-ready',     txt: 'Prête' },
-  };
-  return map[s] || { cls: 'dvr-status-paid', txt: s || '—' };
 };
 const shortOrderId = (id) => {
   if (!id) return '—';
@@ -119,12 +81,18 @@ const shortOrderId = (id) => {
   return s.length > 8 ? `#${s.slice(0, 8)}` : `#${s}`;
 };
 
-// SVG ICONS (inline, no extra deps)
+// ─── SVG ICONS (inline, no extra deps) ──────────────────
 const Icons = {
   Settings: () => (
     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <circle cx="12" cy="12" r="3" />
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>
+  ),
+  Bell: () => (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
     </svg>
   ),
   Box: () => (
@@ -134,119 +102,181 @@ const Icons = {
       <line x1="12" y1="22.08" x2="12" y2="12" />
     </svg>
   ),
-  Pin: () => (
-    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M12 22s7-7 7-12a7 7 0 1 0-14 0c0 5 7 12 7 12Z" />
-      <circle cx="12" cy="10" r="2.5" />
-    </svg>
-  ),
   Refresh: () => (
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <polyline points="23 4 23 10 17 10" />
       <polyline points="1 20 1 14 7 14" />
       <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
     </svg>
   ),
-  Empty: () => (
-    <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <circle cx="12" cy="12" r="10" />
-      <line x1="12" y1="8" x2="12" y2="12" />
-      <line x1="12" y1="16" x2="12.01" y2="16" />
+  Chevron: () => (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
+  ),
+  Trophy: () => (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+      <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+      <path d="M4 22h16" />
+      <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+      <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+      <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+    </svg>
+  ),
+  Star: () => (
+    <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true">
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
     </svg>
   ),
 };
 
-function DeliveryCard({ order, onClick, accent, driverPos }) {
-  const sb = statusBadge(order.status);
-  const cash = isCash(order.payment_method);
+// ─── Popular hours mock (24h heatmap Dakar-style, 0..100 %) ───
+// Peaks : matin 8-11 (livraison bureaux), midi 12-14, soir 18-22
+const POPULAR_HOURS_MOCK = [
+  15, 10, 8,  6,  6,  12, 22, 40, 65, 78, 82, 70, // 0-11
+  85, 90, 72, 55, 60, 78, 92, 95, 88, 74, 52, 28, // 12-23
+];
 
-  // Mini-map data : on ne render la carte que si on a au moins la position client
-  const delivery = (Number.isFinite(order.delivery_lat) && Number.isFinite(order.delivery_lng))
-    ? { lat: order.delivery_lat, lng: order.delivery_lng, name: fmtClientName(order.address) }
-    : null;
-  const pickup = (Number.isFinite(order.pickup_lat) && Number.isFinite(order.pickup_lng))
-    ? { lat: order.pickup_lat, lng: order.pickup_lng, name: order.pickup_name || 'Pharmacie' }
-    : null;
-  const hasMap = !!delivery || !!pickup;
+// ─── Hero map component (Leaflet, pharmacies + driver) ───
+function PedaHeroMap({ driverPos, pharmacies }) {
+  const containerRef = useRef(null);
+  const mapRef = useRef(null);
+  const markersRef = useRef({ pharmas: [], driver: null });
+  const [ready, setReady] = useState(false);
 
-  return (
-    <div
-      className={`dvr-delivery-card ${accent === 'available' ? 'dvr-available' : ''}`}
-      onClick={onClick}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClick?.(); }}
-    >
-      <div className="dvr-delivery-head">
-        <div className="dvr-delivery-icon"><Icons.Box /></div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="dvr-delivery-id">{shortOrderId(order.id)}</div>
-          <div className="dvr-delivery-amount">{fmtFcfa(order.total)}</div>
-        </div>
-        <span className={`dvr-status-badge ${sb.cls}`}>{sb.txt}</span>
-      </div>
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current) return;
+    const map = L.map(containerRef.current, {
+      zoomControl: false,
+      attributionControl: false,
+      dragging: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      touchZoom: false,
+      keyboard: false,
+      tap: false,
+    }).setView([14.6928, -17.4467], 13);
 
-      {hasMap && (
-        <div className="dvr-order-mini-map" aria-hidden="true">
-          <DeliveryMap
-            pickup={pickup}
-            delivery={delivery}
-            driver={driverPos}
-            height={110}
-            showRoute={true}
-            followDriver={false}
-            interactive={false}
-          />
-        </div>
-      )}
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '',
+      maxZoom: 19,
+      crossOrigin: true,
+    }).addTo(map);
 
-      <div className="dvr-delivery-loc">
-        <span className="dvr-loc-icon"><Icons.Pin /></span>
-        <span>
-          <strong>{fmtClientName(order.address)}</strong>
-          <br />
-          {fmtAddrShort(order.address)}
-        </span>
-      </div>
+    mapRef.current = map;
+    setReady(true);
 
-      <div className="dvr-delivery-pay">
-        <span className={`dvr-pay-chip ${cash ? '' : 'paid'}`}>
-          {cash ? `Encaisser ${fmtFcfa(order.total)}` : 'Payé'}
-        </span>
-        <span style={{ marginLeft: 'auto', fontSize: 11 }}>
-          {fmtPay(order.payment_method)}
-        </span>
-      </div>
-    </div>
-  );
+    return () => {
+      try { map.remove(); } catch {}
+      mapRef.current = null;
+      markersRef.current = { pharmas: [], driver: null };
+    };
+  }, []);
+
+  // Redraw pharmacies
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+
+    // Clean previous pharma pins
+    markersRef.current.pharmas.forEach((m) => { try { map.removeLayer(m); } catch {} });
+    markersRef.current.pharmas = [];
+
+    (pharmacies || []).forEach((p) => {
+      if (!Number.isFinite(p.lat) || !Number.isFinite(p.lng)) return;
+      const icon = L.divIcon({
+        html: `<div class="ped-map-pharma" title="${escapeHtml(p.name || 'Pharmacie')}">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3v18M3 12h18"/>
+          </svg>
+        </div>`,
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+        className: 'ped-map-icon',
+      });
+      const m = L.marker([p.lat, p.lng], { icon, zIndexOffset: 100 }).addTo(map);
+      markersRef.current.pharmas.push(m);
+    });
+  }, [pharmacies, ready]);
+
+  // Driver dot
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    const valid = driverPos && Number.isFinite(driverPos.lat) && Number.isFinite(driverPos.lng);
+
+    if (!valid) {
+      if (markersRef.current.driver) {
+        try { map.removeLayer(markersRef.current.driver); } catch {}
+        markersRef.current.driver = null;
+      }
+      return;
+    }
+
+    const icon = L.divIcon({
+      html: `<div class="ped-map-me">
+        <span class="ped-map-me-pulse"></span>
+        <span class="ped-map-me-dot"></span>
+      </div>`,
+      iconSize: [24, 24],
+      iconAnchor: [12, 12],
+      className: 'ped-map-icon',
+    });
+    if (markersRef.current.driver) {
+      markersRef.current.driver.setLatLng([driverPos.lat, driverPos.lng]);
+      markersRef.current.driver.setIcon(icon);
+    } else {
+      markersRef.current.driver = L.marker([driverPos.lat, driverPos.lng], {
+        icon,
+        zIndexOffset: 500,
+      }).addTo(map);
+      // Recenter softly on driver first time we have him
+      map.setView([driverPos.lat, driverPos.lng], 13, { animate: true });
+    }
+  }, [driverPos?.lat, driverPos?.lng, ready]);
+
+  // Handle resize
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const t = setTimeout(() => { try { mapRef.current?.invalidateSize(); } catch {} }, 150);
+    const onResize = () => { try { mapRef.current?.invalidateSize(); } catch {} };
+    window.addEventListener('resize', onResize);
+    window.addEventListener('orientationchange', onResize);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('orientationchange', onResize);
+    };
+  }, []);
+
+  return <div ref={containerRef} className="ped-hero-map-canvas" aria-label="Carte Dakar" />;
 }
 
+function escapeHtml(s) {
+  return String(s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ─── Available delivery card (accept flow) ────────────────
 function AvailableDeliveryCard({ order, onAccept, accepting }) {
   return (
-    <div className="dvr-delivery-card dvr-available">
-      <div className="dvr-delivery-head">
-        <div className="dvr-delivery-icon" style={{ background: 'var(--y-warning-soft)', color: 'var(--y-warning-text)' }}>
-          <Icons.Box />
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="dvr-delivery-id">{shortOrderId(order.id)} · Nouvelle</div>
-          <div className="dvr-delivery-amount">{fmtFcfa(order.total)}</div>
-        </div>
-      </div>
-      <div className="dvr-delivery-loc">
-        <span className="dvr-loc-icon"><Icons.Pin /></span>
-        <span>
-          <strong>{fmtClientName(order.address)}</strong>
-          <br />
-          {fmtAddrShort(order.address)}
-        </span>
+    <div className="ped-queue-item ped-queue-item-available">
+      <div className="ped-queue-item-icon"><Icons.Box /></div>
+      <div className="ped-queue-item-body">
+        <div className="ped-queue-item-name">Nouvelle course · {shortOrderId(order.id)}</div>
+        <div className="ped-queue-item-meta">{fmtClientName(order.address)}</div>
       </div>
       <button
-        className="dvr-accept-btn"
-        onClick={() => onAccept(order.id)}
+        type="button"
+        className="ped-queue-accept"
+        onClick={(e) => { e.stopPropagation(); onAccept(order.id); }}
         disabled={accepting}
       >
-        {accepting ? 'Acceptation…' : 'Accepter cette livraison'}
+        {accepting ? '…' : 'Accepter'}
       </button>
     </div>
   );
@@ -255,29 +285,33 @@ function AvailableDeliveryCard({ order, onAccept, accepting }) {
 export default function DriverDashboard({ session, onLogout, onOpenDelivery, onNavigate }) {
   const [data, setData] = useState({ in_progress: [], available: [], recent: [] });
   const [todayStats, setTodayStats] = useState({ count: 0, fcfa: 0 });
+  const [pharmacies, setPharmacies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [available, setAvailable] = useState(session?.active !== false);
   const [acceptingId, setAcceptingId] = useState(null);
-  // ─── Phase 5 : Online/Offline persistant (localStorage + RPC) ───
   const [isOnline, setIsOnline] = useState(() => readOnlineStatus());
   const [togglingOnline, setTogglingOnline] = useState(false);
-  const [installPrompt, setInstallPrompt] = useState(null);
-  const [installed, setInstalled] = useState(
-    typeof window !== 'undefined'
-      ? (window.matchMedia?.('(display-mode: standalone)').matches || window.navigator?.standalone === true)
-      : false,
-  );
+  const [gpsGranted, setGpsGranted] = useState(false);
 
-  // Position GPS du driver — utilisée pour les mini-maps des cards en cours
-  // Activée uniquement si on a des livraisons actives ou si le driver est disponible.
-  const { pos: driverPos } = useDriverPosition(available);
-
-  // ─── Track le compteur de courses pour détecter les nouvelles ───
+  // ─── Track counter pour détecter les nouvelles courses ───
   const previousOrderCountRef = useRef(null);
   const firstLoadRef = useRef(true);
 
-  const load = useCallback(async (isPolling = false) => {
+  // Position GPS live du driver — pin bleu pulsant sur la carte hero
+  const { pos: driverPos, error: gpsErr } = useDriverPosition(true);
+
+  useEffect(() => {
+    if (driverPos && Number.isFinite(driverPos.lat)) setGpsGranted(true);
+  }, [driverPos]);
+
+  // Fallback Dakar si pas de GPS (garantit un pin visible sur la map)
+  const displayDriverPos = useMemo(() => {
+    if (driverPos && Number.isFinite(driverPos.lat)) return driverPos;
+    return { lat: 14.6928, lng: -17.4467 };
+  }, [driverPos]);
+
+  // ─── Chargement orders + earnings ────────────────────────
+  const load = useCallback(async () => {
     if (!session?.token) return;
     try {
       const [ordersRes, earnRes] = await Promise.all([
@@ -298,8 +332,6 @@ export default function DriverDashboard({ session, onLogout, onOpenDelivery, onN
         const totalNewOrders = newInProgress.length + newAvailable.length;
         const newOrderInfo = newInProgress[0] || newAvailable[0] || null;
 
-        // ─── DETECT NOUVELLE COURSE ───
-        // Si on a plus de courses qu'avant ET c'est pas le 1er chargement → SON + VIBRATION
         if (!firstLoadRef.current
             && previousOrderCountRef.current !== null
             && totalNewOrders > previousOrderCountRef.current) {
@@ -329,12 +361,9 @@ export default function DriverDashboard({ session, onLogout, onOpenDelivery, onN
 
   useEffect(() => {
     load();
-    // ─── POLLING toutes les 15 secondes pour détecter les nouvelles courses ───
     const pollInterval = setInterval(() => {
-      // Skip si l'onglet n'est pas visible (économie batterie)
-      if (!document.hidden) load(true);
+      if (!document.hidden) load();
     }, 15000);
-    // Refresh quand on revient sur l'onglet
     const onVis = () => { if (!document.hidden) load(); };
     document.addEventListener('visibilitychange', onVis);
     return () => {
@@ -343,10 +372,34 @@ export default function DriverDashboard({ session, onLogout, onOpenDelivery, onN
     };
   }, [load]);
 
+  // ─── Charge les pharmacies actives (pins sur la map) ─────
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: rows, error } = await supabase
+          .from('pharmacies')
+          .select('id, name, lat, lng, logo')
+          .eq('active', true)
+          .not('lat', 'is', null)
+          .not('lng', 'is', null)
+          .limit(80);
+        if (cancelled) return;
+        if (error) {
+          console.warn('[Driver] pharmacies load error:', error.message);
+          return;
+        }
+        setPharmacies(rows || []);
+      } catch (e) {
+        console.warn('[Driver] pharmacies fatal:', e?.message);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   // ─── Demande la permission notifications au montage ───
   useEffect(() => {
     if ('Notification' in window && Notification.permission === 'default') {
-      // Attend un peu pour pas spammer l'user dès qu'il arrive
       const t = setTimeout(() => {
         Notification.requestPermission().catch(() => {});
       }, 3000);
@@ -354,66 +407,15 @@ export default function DriverDashboard({ session, onLogout, onOpenDelivery, onN
     }
   }, []);
 
-  // ─── beforeinstallprompt (Android / desktop Chrome) ───
-  useEffect(() => {
-    const handler = (e) => {
-      e.preventDefault();
-      setInstallPrompt(e);
-    };
-    window.addEventListener('beforeinstallprompt', handler);
-    window.addEventListener('appinstalled', () => setInstalled(true));
-    return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, []);
-
-  const handleInstall = async () => {
-    if (!installPrompt) return;
-    installPrompt.prompt();
-    const choice = await installPrompt.userChoice;
-    if (choice?.outcome === 'accepted') {
-      setInstallPrompt(null);
-      setInstalled(true);
-    }
-  };
-
   const handleRefresh = () => {
     setRefreshing(true);
     load();
   };
 
-  const toggleAvailable = async () => {
-    const next = !available;
-    setAvailable(next);
-    try {
-      const { data: r, error } = await supabase.rpc('driver_set_active', {
-        p_token: session.token,
-        p_active: next,
-      });
-      if (error || !r?.success) {
-        setAvailable(!next);
-        toast.error('Impossible de changer ta disponibilité.');
-        return;
-      }
-      // Update session local
-      try {
-        const raw = localStorage.getItem('yaram_driver_session');
-        if (raw) {
-          const s = JSON.parse(raw);
-          s.active = next;
-          localStorage.setItem('yaram_driver_session', JSON.stringify(s));
-        }
-      } catch {}
-      toast.success(next ? 'Tu es maintenant disponible' : 'Tu es maintenant hors-ligne');
-    } catch (e) {
-      setAvailable(!next);
-      toast.error('Erreur réseau.');
-    }
-  };
-
-  // ─── Phase 5 : Toggle Online/Offline (optimistic + RPC + localStorage) ───
+  // ─── Toggle Online/Offline (optimistic + RPC + localStorage) ─
   const togglePedalelOnline = async () => {
     if (togglingOnline) return;
     const next = !isOnline;
-    // Optimistic
     setIsOnline(next);
     writeOnlineStatus(next);
     setTogglingOnline(true);
@@ -423,8 +425,6 @@ export default function DriverDashboard({ session, onLogout, onOpenDelivery, onN
         p_token: session.token,
         p_online: next,
       });
-      // Si RPC pas encore déployée (fn manquante) → on garde la mise à jour locale
-      // sans revert : l'UI reste cohérente, la DB sera sync au prochain déploiement.
       const missingFn = error && (
         String(error.message || '').includes('not find the function')
         || String(error.message || '').includes('does not exist')
@@ -436,7 +436,6 @@ export default function DriverDashboard({ session, onLogout, onOpenDelivery, onN
         return;
       }
       if (error || (r && r.success === false)) {
-        // Revert
         setIsOnline(!next);
         writeOnlineStatus(!next);
         toast.error('Impossible de changer ton statut. Réessaie.');
@@ -445,7 +444,6 @@ export default function DriverDashboard({ session, onLogout, onOpenDelivery, onN
       toast.success(next ? 'En ligne · Prêt à livrer' : 'Hors ligne');
     } catch (e) {
       console.error('[Pedalel] toggle online fatal:', e);
-      // On garde l'état local si erreur réseau — meilleur UX que revert
       toast.success(next ? 'En ligne' : 'Hors ligne');
     } finally {
       setTogglingOnline(false);
@@ -473,7 +471,6 @@ export default function DriverDashboard({ session, onLogout, onOpenDelivery, onN
       toast.success('Livraison acceptée !');
       setAcceptingId(null);
       await load();
-      // Ouvre la commande direct
       onOpenDelivery?.(orderId);
     } catch (e) {
       console.error('[Driver] accept fatal:', e);
@@ -486,148 +483,154 @@ export default function DriverDashboard({ session, onLogout, onOpenDelivery, onN
   const initials = session?.full_name
     ? session.full_name.split(' ').slice(0, 2).map((p) => p[0]).join('').toUpperCase()
     : 'L';
+  const rating = Number(session?.rating) > 0 ? Number(session.rating).toFixed(1) : '5.0';
+
+  // Heure courante pour le graph
+  const currentHour = new Date().getHours();
+  const showTipCard = !gpsGranted && !!gpsErr;
+  const notifCount = data.available.length; // nb offres en attente
 
   return (
-    <>
-      {/* HEADER */}
-      <header className="dvr-header">
-        <div className="dvr-header-card">
-          <div
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 14,
-              background: '#FFFFFF',
-              border: '1px solid var(--dvr-border)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-              overflow: 'hidden',
-            }}
-            aria-hidden="true"
-          >
-            <img
-              src={PEDALEL_LOGO_URL}
-              alt=""
-              width={34}
-              height={34}
-              style={{ display: 'block' }}
-            />
-          </div>
-          <div className="dvr-header-text">
-            <div className="dvr-header-name">
-              {PEDALEL_META.name} <span style={{ fontWeight: 500, color: 'var(--dvr-text-mute)' }}>· Salut, {firstName}</span>
-            </div>
-            <div className="dvr-header-sub">
-              {isOnline
-                ? <><span className="dvr-online"><span className="dvr-dot-pulse" />En ligne</span></>
-                : <><span className="dvr-offline"><span className="dvr-dot-pulse" />Hors ligne</span></>}
-            </div>
-          </div>
-          <button
-            className="dvr-header-action"
-            onClick={() => onNavigate?.('profile')}
-            aria-label="Profil"
-            title="Profil"
-          >
-            <Icons.Settings />
-          </button>
-        </div>
-      </header>
+    <div className="ped-home">
+      {/* ═══ HERO MAP (background, ~55vh) ═══ */}
+      <div className="ped-hero-map" aria-hidden="true">
+        <PedaHeroMap driverPos={displayDriverPos} pharmacies={pharmacies} />
+        <div className="ped-hero-map-overlay" />
+      </div>
 
-      <div className="dvr-page">
-        {/* ─── PHASE 5 : GROS TOGGLE ONLINE/OFFLINE (iOS-style pill) ─── */}
+      {/* ═══ HEADER GLASSMORPHISM ═══ */}
+      <header className="ped-hero-header">
         <button
           type="button"
-          className={`pedalel-status-toggle ${isOnline ? 'online' : 'offline'}`}
-          onClick={togglePedalelOnline}
-          disabled={togglingOnline}
-          aria-pressed={isOnline}
-          aria-label={isOnline ? 'Passer hors ligne' : 'Passer en ligne'}
+          className="ped-hero-avatar"
+          onClick={() => onNavigate?.('profile')}
+          aria-label="Profil"
         >
-          <div className="pedalel-status-label">
-            <div className="pedalel-status-title">
-              <span className="pedalel-status-dot" aria-hidden="true" />
-              {isOnline ? 'En ligne' : 'Hors ligne'}
-            </div>
-            <div className="pedalel-status-sub">
-              {isOnline ? 'Prêt à livrer' : 'Tu ne reçois pas de courses'}
-            </div>
-          </div>
-          <span className="pedalel-status-pill" aria-hidden="true">
-            {isOnline ? (
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            ) : (
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            )}
-          </span>
+          <span className="ped-hero-avatar-initials">{initials}</span>
         </button>
-
-        {/* STATS RAPIDES */}
-        <div className="dvr-stats-row">
-          <div className="dvr-kpi">
-            <div className="dvr-kpi-label">Aujourd'hui</div>
-            <div className="dvr-kpi-value">{todayStats.count}</div>
-            <div className="dvr-kpi-sub">livraison{todayStats.count > 1 ? 's' : ''}</div>
+        <div className="ped-hero-greet">
+          <div className="ped-hero-greet-name">Salut {firstName}</div>
+          <div className="ped-hero-greet-sub">
+            <Icons.Star />
+            <span>{rating}</span>
+            <span className="ped-hero-greet-dot">·</span>
+            <span>{todayStats.count} course{todayStats.count > 1 ? 's' : ''} aujourd'hui</span>
           </div>
-          <div className="dvr-kpi">
-            <div className="dvr-kpi-label">Gains</div>
-            <div className="dvr-kpi-value">{fmtFcfa(todayStats.fcfa)}</div>
-            <div className="dvr-kpi-sub">aujourd'hui</div>
+        </div>
+        <button
+          type="button"
+          className="ped-hero-notif"
+          onClick={() => onNavigate?.('help')}
+          aria-label={notifCount > 0 ? `${notifCount} notification${notifCount > 1 ? 's' : ''}` : 'Notifications'}
+        >
+          <Icons.Bell />
+          {notifCount > 0 && <span className="ped-hero-notif-badge">{notifCount}</span>}
+        </button>
+      </header>
+
+      {/* ═══ BOTTOM SHEET (bg #F7F7F5, rounded top) ═══ */}
+      <section className="ped-sheet">
+        {/* Big CTA online/offline — overlaps map/sheet edge */}
+        <div className="ped-sheet-cta-wrap">
+          <button
+            type="button"
+            className={`ped-hero-cta ${isOnline ? 'is-online' : 'is-offline'}`}
+            onClick={togglePedalelOnline}
+            disabled={togglingOnline}
+            aria-pressed={isOnline}
+          >
+            <span className="ped-hero-cta-dot" aria-hidden="true" />
+            <span className="ped-hero-cta-label">
+              {isOnline ? 'En ligne · Livrer maintenant' : 'Passer en ligne'}
+            </span>
+          </button>
+          <div className="ped-sheet-cta-sub">
+            {isOnline
+              ? 'Tu apparais aux marchands · reste sur cette page'
+              : 'Active pour recevoir des courses Pedalel'}
           </div>
         </div>
 
-        {/* DISPONIBILITÉ (paramètre secondaire, distinct de l'online/offline) */}
-        <div className="dvr-availability">
-          <div className="dvr-availability-text">
-            <div className="dvr-availability-title">Disponible pour les courses</div>
-            <div className="dvr-availability-sub">
-              {available ? 'Tu reçois les nouvelles livraisons' : 'Active pour recevoir des courses'}
+        {/* ═══ SECTION 1 : Tip card (GPS) ═══ */}
+        {showTipCard && (
+          <button
+            type="button"
+            className="ped-tip-card"
+            onClick={() => toast.info('Ouvre les réglages du navigateur pour autoriser la position')}
+          >
+            <div className="ped-tip-icon"><Icons.Settings /></div>
+            <div className="ped-tip-text">
+              <div className="ped-tip-title">Améliore tes offres</div>
+              <div className="ped-tip-sub">
+                Autorise l'accès à ta position pour recevoir plus de courses proches de toi.
+              </div>
             </div>
-          </div>
-          <div
-            className={`dvr-switch ${available ? 'on' : ''}`}
-            role="switch"
-            aria-checked={available}
-            tabIndex={0}
-            onClick={toggleAvailable}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') toggleAvailable(); }}
-          />
-        </div>
-
-        {/* INSTALL PWA */}
-        {installPrompt && !installed && (
-          <div className="dvr-install">
-            <div className="dvr-install-icon">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-            </div>
-            <div className="dvr-install-text">
-              <strong>Installe l'app</strong>
-              <div style={{ color: 'var(--dvr-text-mute)' }}>Plus rapide, accès depuis l'écran d'accueil</div>
-            </div>
-            <button onClick={handleInstall}>Installer</button>
-          </div>
+            <span className="ped-tip-chev"><Icons.Chevron /></span>
+          </button>
         )}
 
-        {/* SECTION : LIVRAISONS EN COURS */}
-        <div className="dvr-section">
-          <div className="dvr-section-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span>Livraisons en cours</span>
+        {/* ═══ SECTION 2 : Heures populaires ═══ */}
+        <div className="ped-hours-card">
+          <div className="ped-hours-head">
+            <div className="ped-hours-title">Heures populaires · aujourd'hui</div>
+            <div className="ped-hours-sub">Explore les autres jours de la semaine</div>
+          </div>
+
+          <div className="ped-hours-graph" aria-hidden="true">
+            {POPULAR_HOURS_MOCK.map((value, hour) => {
+              const isNow = hour === currentHour;
+              const isPast = hour < currentHour;
+              const cls = isNow ? 'is-now' : isPast ? 'is-past' : 'is-future';
+              return (
+                <div key={hour} className={`ped-hours-bar ${cls}`}>
+                  <div
+                    className="ped-hours-bar-fill"
+                    style={{ height: `${Math.max(6, value)}%` }}
+                  />
+                  {isNow && <span className="ped-hours-bar-label">{value >= 60 ? 'Forte' : value >= 30 ? 'Moyenne' : 'Calme'}</span>}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="ped-hours-axis">
+            <span>6h</span>
+            <span>9h</span>
+            <span>12h</span>
+            <span>15h</span>
+            <span>18h</span>
+            <span>21h</span>
+          </div>
+
+          <div className="ped-hours-footer">
+            <div className="ped-hours-incentive">
+              <span className="ped-hours-incentive-icon"><Icons.Trophy /></span>
+              <div className="ped-hours-incentive-body">
+                <div className="ped-hours-incentive-title">Incentives</div>
+                <div className="ped-hours-incentive-sub">1 en cours · +500 FCFA / course de nuit</div>
+              </div>
+            </div>
             <button
-              className="dvr-header-action"
-              style={{ width: 32, height: 32, borderRadius: 10 }}
+              type="button"
+              className="ped-hours-more"
+              onClick={() => onNavigate?.('earnings')}
+              aria-label="Voir toutes les incentives"
+            >
+              <Icons.Chevron />
+            </button>
+          </div>
+        </div>
+
+        {/* ═══ SECTION 3 : Queue en attente ═══ */}
+        <div className="ped-queue">
+          <div className="ped-queue-head">
+            <div className="ped-queue-title">En attente</div>
+            <button
+              type="button"
+              className="ped-queue-refresh"
               onClick={handleRefresh}
               aria-label="Rafraîchir"
+              disabled={refreshing}
             >
               {refreshing ? <span className="dvr-spin" /> : <Icons.Refresh />}
             </button>
@@ -635,67 +638,60 @@ export default function DriverDashboard({ session, onLogout, onOpenDelivery, onN
 
           {loading ? (
             <>
-              <div className="dvr-skel" style={{ height: 140, marginBottom: 10 }} />
-              <div className="dvr-skel" style={{ height: 140 }} />
+              <div className="ped-queue-skel" />
+              <div className="ped-queue-skel" />
             </>
-          ) : data.in_progress.length === 0 ? (
-            <div className="dvr-empty">
-              <div className="dvr-empty-icon"><Icons.Box /></div>
-              <div className="dvr-empty-title">Aucune livraison en cours</div>
-              <div className="dvr-empty-sub">
-                {available
-                  ? 'Tu seras notifié dès qu\'une course t\'est assignée.'
-                  : 'Active la disponibilité pour recevoir des courses.'}
+          ) : (data.in_progress.length === 0 && data.available.length === 0) ? (
+            <div className="ped-queue-empty">
+              <div className="ped-queue-empty-icon"><Icons.Box /></div>
+              <div className="ped-queue-empty-title">Rien pour l'instant</div>
+              <div className="ped-queue-empty-sub">
+                {isOnline
+                  ? 'Reste en ligne, une course va arriver.'
+                  : 'Passe en ligne pour recevoir des courses.'}
               </div>
             </div>
           ) : (
-            data.in_progress.map((o) => (
-              <DeliveryCard
-                key={o.id}
-                order={o}
-                onClick={() => onOpenDelivery?.(o.id)}
-                driverPos={driverPos}
-              />
-            ))
+            <>
+              {data.in_progress.map((o) => (
+                <button
+                  key={o.id}
+                  type="button"
+                  className="ped-queue-item"
+                  onClick={() => onOpenDelivery?.(o.id)}
+                >
+                  <div className="ped-queue-item-icon"><Icons.Box /></div>
+                  <div className="ped-queue-item-body">
+                    <div className="ped-queue-item-name">
+                      {o.pickup_name || fmtClientName(o.address)}
+                    </div>
+                    <div className="ped-queue-item-meta">
+                      {shortOrderId(o.id)} · en cours
+                    </div>
+                  </div>
+                  <div className="ped-queue-item-amt">{fmtFcfa(o.total)}</div>
+                </button>
+              ))}
+              {data.available.map((o) => (
+                <AvailableDeliveryCard
+                  key={o.id}
+                  order={o}
+                  onAccept={acceptOrder}
+                  accepting={acceptingId === o.id}
+                />
+              ))}
+            </>
           )}
         </div>
 
-        {/* SECTION : NOUVELLES LIVRAISONS PROPOSÉES */}
-        {data.available.length > 0 && (
-          <div className="dvr-section">
-            <div className="dvr-section-label">Nouvelles livraisons proposées</div>
-            {data.available.map((o) => (
-              <AvailableDeliveryCard
-                key={o.id}
-                order={o}
-                onAccept={acceptOrder}
-                accepting={acceptingId === o.id}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* SECTION : HISTORIQUE RÉCENT */}
-        {data.recent.length > 0 && (
-          <div className="dvr-section">
-            <div className="dvr-section-label">Historique récent</div>
-            <div className="dvr-card" style={{ padding: '8px 16px' }}>
-              {data.recent.map((o) => (
-                <div className="dvr-history-row" key={o.id}>
-                  <div className="dvr-history-icon"><Icons.Box /></div>
-                  <div className="dvr-history-mid">
-                    <div className="dvr-history-name">{fmtClientName(o.address)}</div>
-                    <div className="dvr-history-date">
-                      {shortOrderId(o.id)} · {new Date(o.client_confirmed_at || o.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
-                    </div>
-                  </div>
-                  <div className="dvr-history-amt">{fmtFcfa(o.total)}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </>
+        {/* Espace bas pour la tab bar */}
+        <div className="ped-sheet-bottom-space" />
+      </section>
+    </div>
   );
 }
+
+// Silence warning : garder la ref sur la variable exportée du meta au cas où
+// l'import de PEDALEL_META / LOGO serait utilisé plus tard pour l'écran splash.
+void PEDALEL_META;
+void PEDALEL_LOGO_URL;
