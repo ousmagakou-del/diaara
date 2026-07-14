@@ -16,7 +16,7 @@
 // Compat : iOS Safari + Chrome Android. Skip-waiting + clients.claim().
 // ════════════════════════════════════════════════
 
-const SW_BUILD = 'yaram-v29-2026-07-13-pharma-mobile-responsive';
+const SW_BUILD = 'yaram-v30-2026-07-13-brand-dashboard';
 const C_PRECACHE = `${SW_BUILD}-precache`;
 const C_ASSETS   = `${SW_BUILD}-assets`;
 const C_IMAGES   = `${SW_BUILD}-images`;
@@ -30,6 +30,9 @@ const PRECACHE_URLS = [
   '/manifest.json',
   '/driver',                         // driver PWA entry point
   '/driver-manifest.webmanifest',    // driver PWA manifest
+  '/brand',                          // brand PWA entry point
+  '/brand-manifest.webmanifest',     // brand PWA manifest
+  '/pharma-manifest.webmanifest',    // pharma PWA manifest
   '/icon-192.png',
   '/icon-512.png',
   '/favicon.svg',
@@ -173,15 +176,18 @@ async function staleWhileRevalidate(request, cacheName) {
 // (dashboard pharma) et /driver (PWA livreur - deja bypass admin cote UI).
 function isAdminContext(request, url) {
   try {
-    // 1. La request navigue vers ?admin=1 -> forcement admin
-    if (url.searchParams.has('admin') || url.searchParams.has('pharma')) return true;
-    // 2. Ou elle vient d une page admin/pharma (referer)
+    // 1. La request navigue vers ?admin=1 / ?pharma=1 / ?brand=1 -> forcement bypass cache
+    if (url.searchParams.has('admin') || url.searchParams.has('pharma') || url.searchParams.has('brand')) return true;
+    // 2. Ou elle vient d une page admin/pharma/brand (referer)
     const ref = request.referrer || '';
     if (ref && (ref.includes('?admin') || ref.includes('&admin') ||
-                ref.includes('?pharma') || ref.includes('&pharma'))) return true;
-    // 3. Ou le chemin est un endpoint admin RPC/table
+                ref.includes('?pharma') || ref.includes('&pharma') ||
+                ref.includes('?brand') || ref.includes('&brand') ||
+                ref.includes('/brand'))) return true;
+    // 3. Ou le chemin est un endpoint admin/pharma/brand RPC/table
     if (url.pathname.includes('/rest/v1/rpc/admin_') ||
-        url.pathname.includes('/rest/v1/rpc/pharma_')) return true;
+        url.pathname.includes('/rest/v1/rpc/pharma_') ||
+        url.pathname.includes('/rest/v1/rpc/brand_')) return true;
   } catch (_e) { /* no-op */ }
   return false;
 }

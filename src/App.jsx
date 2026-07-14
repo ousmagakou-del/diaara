@@ -60,6 +60,7 @@ const ScanResult    = lazy(() => import('./pages/ScanResult'));
 const ScanHistory   = lazy(() => import('./pages/ScanHistory'));
 const Admin         = lazy(() => import('./pages/Admin'));
 const Pharma        = lazy(() => import('./pages/Pharma'));
+const Brand         = lazy(() => import('./pages/Brand'));
 const Livreur       = lazy(() => import('./pages/Livreur'));
 const ClientConfirm = lazy(() => import('./pages/ClientConfirm'));
 const PiSpiTest     = lazy(() => import('./pages/PiSpiTest'));
@@ -277,6 +278,18 @@ function isStickyPharmaSession() {
     return !!(s && (s.token || s.pharmacy_id) && (!s.expires_at || s.expires_at > Date.now()));
   } catch { return false; }
 }
+function isStickyBrandSession() {
+  try {
+    const raw = localStorage.getItem('yaram-brand-session');
+    if (!raw) return false;
+    const s = JSON.parse(raw);
+    if (!s || !s.token) return false;
+    if (!s.expires_at) return true;
+    // expires_at peut être un ISO string (RPC brand_login) ou un timestamp
+    const exp = typeof s.expires_at === 'string' ? new Date(s.expires_at).getTime() : s.expires_at;
+    return exp > Date.now();
+  } catch { return false; }
+}
 function reattachQueryParam(key) {
   try {
     const url = new URL(window.location.href);
@@ -302,6 +315,7 @@ export default function App() {
     typeof window !== 'undefined' && (
       params.has('admin')   ||
       params.has('pharma')  ||
+      params.has('brand')   ||
       params.has('livreur') ||
       params.has('confirm') ||
       params.has('pispi')
@@ -341,6 +355,17 @@ export default function App() {
     return wrapRoute(DriverApp);
   }
 
+  // ─── Brand dashboard PWA (route /brand exacte, sans ID) ──────
+  // Attention : /brand/:id existe deja et pointe sur BrandPage (catalogue
+  // d'une marque cote client). Notre dashboard marque n'est declenche que
+  // sur la route EXACTE /brand (sans segment supplementaire).
+  const isBrandDashboard =
+    typeof window !== 'undefined' &&
+    (window.location.pathname === '/brand' || window.location.pathname === '/brand/');
+  if (isBrandDashboard) {
+    return wrapRoute(Brand);
+  }
+
   // ─── Routes publiques PRIORITAIRES sur tous les checks admin/pharma/livreur ─
   // /sign/*, /merchant/onboarding/*, /wishlist/* sont des liens publics envoyes
   // a des tiers (pharmaciens, partenaires, clients partages). Ils NE doivent
@@ -365,6 +390,10 @@ export default function App() {
     reattachQueryParam('pharma');
     return wrapRoute(Pharma);
   }
+  if (typeof window !== 'undefined' && !hasAnyExplicitRoute && isStickyBrandSession()) {
+    reattachQueryParam('brand');
+    return wrapRoute(Brand);
+  }
 
   // Routes top-level (non-client) : chunks separes, wrap dans Suspense + ErrorBoundary.
   // NB: le check isPublicSharedRoute plus haut renvoie deja ClientApp avant
@@ -372,6 +401,7 @@ export default function App() {
   // avec ?admin=1 dans l URL, ces routes publiques restent client-side.
   if (params.has('admin'))   return wrapRoute(Admin);
   if (params.has('pharma'))  return wrapRoute(Pharma);
+  if (params.has('brand'))   return wrapRoute(Brand);
   if (params.has('livreur')) return wrapRoute(Livreur);
   if (params.has('confirm')) return wrapRoute(ClientConfirm);
   if (params.has('pispi'))   return wrapRoute(PiSpiTest);

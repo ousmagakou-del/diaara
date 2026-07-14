@@ -21,6 +21,9 @@
           var isPharma = path === '/pharma'
             || path.indexOf('/pharma/') === 0
             || search.indexOf('pharma=1') !== -1;
+          var isBrand = path === '/brand'
+            || path.indexOf('/brand/') === 0
+            || search.indexOf('brand=1') !== -1;
           var manifestHref, appTitle;
           if (isDriver) {
             manifestHref = '/driver-manifest.webmanifest';
@@ -28,6 +31,9 @@
           } else if (isPharma) {
             manifestHref = '/pharma-manifest.webmanifest';
             appTitle = 'YARAM Pharma';
+          } else if (isBrand) {
+            manifestHref = '/brand-manifest.webmanifest';
+            appTitle = 'YARAM Marque';
           } else {
             manifestHref = '/manifest.json';
             appTitle = 'YARAM';
