@@ -89,7 +89,7 @@ const IconSpark = () => (
 function PedalelHeaderLogo() {
   return (
     <div className="ped-signup-brand">
-      <img src="/pedalel-logo.svg" alt="Pedalel" width="46" height="46" />
+      <img src="/pedalel-logo.png" alt="Pedalel" width="46" height="46" />
       <div>
         <div className="ped-signup-brand-name">Pedalel</div>
         <div className="ped-signup-brand-tag">Deviens livreur multi-plateforme</div>

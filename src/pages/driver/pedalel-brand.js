@@ -31,7 +31,7 @@ export const PEDALEL_COLORS = {
   glass:      'rgba(255, 255, 255, 0.85)',
 };
 
-export const PEDALEL_LOGO_URL = '/pedalel-logo.svg';
+export const PEDALEL_LOGO_URL = '/pedalel-logo.png';
 
 export const PEDALEL_META = {
   name: 'Pedalel',
