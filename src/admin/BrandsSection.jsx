@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { adminLogAction } from '../lib/adminApi';
+import { getAdminToken } from '../lib/adminAuth';
 import { confirmDialog } from '../lib/toast';
 
 export default function BrandsSection() {
@@ -23,6 +24,71 @@ export default function BrandsSection() {
     const { data } = await supabase.from('brands').select('*').order('name');
     setBrands(data || []);
     setLoading(false);
+  };
+
+  // ─── Activer le dashboard marque (self-service) ─────────────────────
+  const handleActivateDashboard = async (b) => {
+    const phone = window.prompt(
+      `Active le dashboard pour "${b.name}".\n\nNumero de telephone du contact (avec indicatif +221) :`,
+      b.phone || '+221 '
+    );
+    if (!phone || phone.trim().length < 8) {
+      flash('Telephone invalide', 'err');
+      return;
+    }
+    const whatsapp = window.prompt(
+      'WhatsApp (optionnel, sinon meme que le telephone) :',
+      b.whatsapp || phone
+    ) || phone;
+    const email = window.prompt(
+      'Email contact (optionnel) :',
+      b.contact_email || ''
+    ) || null;
+
+    const token = getAdminToken();
+    if (!token) { flash('Session admin expiree', 'err'); return; }
+
+    const { data, error } = await supabase.rpc('admin_activate_brand_dashboard', {
+      p_token: token,
+      p_brand_id: b.id,
+      p_phone: phone.trim(),
+      p_whatsapp: whatsapp.trim(),
+      p_contact_email: email?.trim() || null,
+    });
+    if (error) { flash('Erreur : ' + error.message, 'err'); return; }
+    if (!data?.success) { flash('Echec : ' + (data?.error || 'inconnu'), 'err'); return; }
+
+    const pin = data.default_pin || '123456';
+    window.alert(
+      `✅ Dashboard active pour ${b.name}\n\n` +
+      `Envoie ces infos par WhatsApp au contact :\n\n` +
+      `🔗 URL : https://yaram.app/brand\n` +
+      `📱 Telephone : ${phone}\n` +
+      `🔑 PIN provisoire : ${pin}\n\n` +
+      `Il devra creer son vrai PIN a la 1ere connexion.`
+    );
+    adminLogAction({
+      action: 'activate_brand_dashboard',
+      targetType: 'brand',
+      targetId: b.id,
+      before: null,
+      after: { phone, whatsapp, email },
+    });
+    refresh();
+  };
+
+  const handleDeactivateDashboard = async (b) => {
+    if (!(await confirmDialog(`Desactiver le dashboard de ${b.name} ? Toutes les sessions seront invalidees.`))) return;
+    const token = getAdminToken();
+    if (!token) { flash('Session admin expiree', 'err'); return; }
+    const { data, error } = await supabase.rpc('admin_deactivate_brand_dashboard', {
+      p_token: token,
+      p_brand_id: b.id,
+    });
+    if (error) { flash('Erreur : ' + error.message, 'err'); return; }
+    if (!data?.success) { flash('Echec : ' + (data?.error || 'inconnu'), 'err'); return; }
+    flash('Dashboard desactive', 'ok');
+    refresh();
   };
 
   const handleSave = async (b) => {
@@ -331,6 +397,17 @@ export default function BrandsSection() {
                   {b.local
                     ? <span className="adm-badge good">🇸🇳 Locale</span>
                     : <span className="adm-badge">International</span>}
+                  {b.is_active_dashboard && (
+                    <div style={{ marginTop: 4 }}>
+                      <span
+                        className="adm-badge"
+                        style={{ background: '#F3E8FF', color: '#5B21B6', fontSize: 10 }}
+                        title={`PIN: ${b.pin_set_at ? 'defini' : 'provisoire 123456'} · ${b.phone}`}
+                      >
+                        🚀 Dashboard actif
+                      </span>
+                    </div>
+                  )}
                 </td>
                 <td>
                   <label style={{
@@ -364,6 +441,21 @@ export default function BrandsSection() {
                   )}
                 </td>
                 <td style={{ whiteSpace: 'nowrap' }}>
+                  {b.is_active_dashboard ? (
+                    <button
+                      className="adm-btn-sec"
+                      onClick={() => handleDeactivateDashboard(b)}
+                      style={{ marginRight: 4, background: '#F3E8FF', color: '#5B21B6', fontSize: 11 }}
+                      title="Desactiver le dashboard marque"
+                    >🔒 Off</button>
+                  ) : (
+                    <button
+                      className="adm-btn-sec"
+                      onClick={() => handleActivateDashboard(b)}
+                      style={{ marginRight: 4, background: '#7C3AED', color: 'white', fontSize: 11 }}
+                      title="Activer le dashboard self-service pour cette marque"
+                    >🚀 Activer</button>
+                  )}
                   <button className="adm-btn-sec" onClick={() => setEditing(b)}>✏️</button>
                   <button className="adm-btn-danger" onClick={() => handleDelete(b)} style={{ marginLeft: 4 }}>🗑️</button>
                 </td>
