@@ -3,8 +3,9 @@ import { supabase } from '../../lib/supabase';
 import { toast } from '../../lib/toast';
 
 // ══════════════════════════════════════════════════════════════════
-//  PEDALEL — Wallet + Payouts (Phase 4)
-//  Balance teal + KPIs + Cette semaine + Bouton Retirer + Historique
+//  PEDALEL — Wallet + Payouts
+//  Balance teal + KPIs + Cette semaine (empty state / graph propre)
+//  Historique badges par status + Bottom sheet payout amélioré
 // ══════════════════════════════════════════════════════════════════
 
 const fmtFcfa = (cents) => {
@@ -12,6 +13,11 @@ const fmtFcfa = (cents) => {
   return `${n.toLocaleString('fr-FR')} FCFA`;
 };
 const fmtFcfaRaw = (n) => `${Number(n || 0).toLocaleString('fr-FR')} FCFA`;
+
+// Petit haptic feedback (safe cross-device)
+const haptic = (ms = 12) => {
+  try { if (typeof window !== 'undefined' && window.navigator?.vibrate) window.navigator.vibrate(ms); } catch {}
+};
 
 // Methodes de retrait
 const PAYOUT_METHODS = [
@@ -81,6 +87,14 @@ const IconArrowUp = () => (
     <polyline points="5 12 12 5 19 12" />
   </svg>
 );
+const IconCalendar = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+    <line x1="16" y1="2" x2="16" y2="6" />
+    <line x1="8" y1="2" x2="8" y2="6" />
+    <line x1="3" y1="10" x2="21" y2="10" />
+  </svg>
+);
 
 // ═════════ Fetcher — combine driver_get_info + fallback driver_get_earnings ═════════
 async function fetchWalletData(token) {
@@ -95,6 +109,24 @@ async function fetchWalletData(token) {
     error: infoRes?.error || null,
   };
 }
+
+// ═════════ Helpers historique ═════════
+const statusBadgeClass = (status) => {
+  const s = String(status || '').toLowerCase();
+  if (s === 'paid_out' || s === 'paid') return 'ped-badge-status paid_out';
+  if (s === 'pending' || s === 'processing' || s === 'requested') return 'ped-badge-status pending';
+  if (s === 'available' || s === 'confirmed' || s === 'ready') return 'ped-badge-status available';
+  if (s === 'failed' || s === 'rejected') return 'ped-badge-status failed';
+  return 'ped-badge-status';
+};
+const statusBadgeLabel = (status) => {
+  const s = String(status || '').toLowerCase();
+  if (s === 'paid_out' || s === 'paid') return 'Payé';
+  if (s === 'pending' || s === 'processing' || s === 'requested') return 'En cours';
+  if (s === 'available' || s === 'confirmed' || s === 'ready') return 'Disponible';
+  if (s === 'failed' || s === 'rejected') return 'Refusé';
+  return status || '';
+};
 
 export default function DriverEarnings({ session }) {
   const [data, setData] = useState(null);
@@ -129,9 +161,10 @@ export default function DriverEarnings({ session }) {
   const recentEarnings = earnings?.recent || wallet?.recent_earnings || [];
   const recentPayouts = wallet?.recent_payouts || wallet?.payouts || [];
 
-  const maxBar = Math.max(1, ...breakdown.map((b) => Number(b.fcfa) || 0));
   const weekTotal = breakdown.reduce((s, b) => s + Number(b.fcfa || 0), 0);
   const weekCount = breakdown.reduce((s, b) => s + Number(b.count || 0), 0);
+  const maxBar = Math.max(1, ...breakdown.map((b) => Number(b.fcfa) || 0));
+  const hasWeekData = weekTotal > 0;
 
   if (loading) {
     return (
@@ -154,6 +187,11 @@ export default function DriverEarnings({ session }) {
     );
   }
 
+  const handleOpenPayout = () => {
+    haptic(14);
+    setShowPayout(true);
+  };
+
   return (
     <>
       <header className="dvr-header">
@@ -170,6 +208,7 @@ export default function DriverEarnings({ session }) {
         {/* ─── BALANCE HERO ─── */}
         <div className="ped-wallet-hero">
           <div className="ped-wallet-hero-decor" />
+          <div className="ped-wallet-hero-glow" aria-hidden="true" />
           <div className="ped-wallet-label">Solde disponible</div>
           <div className="ped-wallet-balance">{fmtFcfa(balanceCents)}</div>
           <div className="ped-wallet-note">
@@ -179,7 +218,7 @@ export default function DriverEarnings({ session }) {
           </div>
           <button
             className="ped-wallet-cta"
-            onClick={() => setShowPayout(true)}
+            onClick={handleOpenPayout}
             disabled={balanceCents <= 0}
           >
             <IconArrowUp />
@@ -190,14 +229,14 @@ export default function DriverEarnings({ session }) {
         {/* ─── KPI GRID ─── */}
         <div className="ped-wallet-kpis">
           <div className="ped-wallet-kpi">
-            <div className="ped-wallet-kpi-icon" style={{ color: 'var(--pedalel-brand)' }}>
+            <div className="ped-wallet-kpi-icon" style={{ color: 'var(--pedalel-brand-dark)' }}>
               <IconTrend />
             </div>
             <div className="ped-wallet-kpi-val">{fmtFcfa(totalEarnedCents)}</div>
             <div className="ped-wallet-kpi-label">Total gagné</div>
           </div>
           <div className="ped-wallet-kpi">
-            <div className="ped-wallet-kpi-icon" style={{ color: 'var(--y-warning, #F59E0B)' }}>
+            <div className="ped-wallet-kpi-icon ped-wallet-kpi-icon-amber" style={{ color: 'var(--y-warning, #F59E0B)' }}>
               <IconClock />
             </div>
             <div className="ped-wallet-kpi-val">{fmtFcfa(pendingCents)}</div>
@@ -218,29 +257,48 @@ export default function DriverEarnings({ session }) {
             <div>
               <div className="ped-wallet-week-title">Cette semaine</div>
               <div className="ped-wallet-week-sub">
-                {fmtFcfaRaw(weekTotal)} · {weekCount} livraison{weekCount > 1 ? 's' : ''}
+                {weekCount} livraison{weekCount > 1 ? 's' : ''}
               </div>
             </div>
+            {hasWeekData && (
+              <div className="ped-wallet-week-badge">{fmtFcfaRaw(weekTotal)}</div>
+            )}
           </div>
 
-          {breakdown.length === 0 ? (
-            <div style={{ padding: '20px 0', textAlign: 'center', color: 'var(--dvr-text-mute)', fontSize: 13 }}>
-              Aucune livraison cette semaine.
+          {!hasWeekData ? (
+            <div className="ped-earnings-empty-week">
+              <div className="ped-earnings-empty-week-icon">
+                <IconCalendar />
+              </div>
+              <div className="ped-earnings-empty-week-title">Ta semaine démarre bientôt</div>
+              <div className="ped-earnings-empty-week-sub">
+                Tes gains journaliers apparaîtront ici.
+              </div>
+              <div className="ped-earnings-empty-week-hint">
+                Reste en ligne pour recevoir des courses.
+              </div>
             </div>
           ) : (
-            <div className="dvr-bars">
+            <div className="ped-earnings-week-graph">
               {breakdown.map((b) => {
-                const pct = maxBar > 0 ? Math.max(4, Math.round((Number(b.fcfa) / maxBar) * 100)) : 4;
+                const raw = Number(b.fcfa) || 0;
+                const hasData = raw > 0;
+                const pct = hasData ? Math.max(8, Math.round((raw / maxBar) * 100)) : 0;
                 return (
-                  <div className="dvr-bar" key={b.day}>
-                    <div className="dvr-bar-track">
-                      <div
-                        className="dvr-bar-fill"
-                        style={{ height: `${pct}%` }}
-                        title={`${b.label} : ${fmtFcfaRaw(b.fcfa)}`}
-                      />
+                  <div className="ped-earnings-bar-col" key={b.day || b.label}>
+                    <div className="ped-earnings-bar-track">
+                      {hasData && (
+                        <div
+                          className="ped-earnings-bar-fill"
+                          style={{ height: `${pct}%` }}
+                          title={`${b.label} : ${fmtFcfaRaw(raw)}`}
+                          aria-label={`${b.label} : ${fmtFcfaRaw(raw)}`}
+                        />
+                      )}
                     </div>
-                    <div className="dvr-bar-label">{b.label?.slice(0, 3) || ''}</div>
+                    <div className={`ped-earnings-bar-label ${hasData ? 'has-data' : ''}`}>
+                      {b.label?.slice(0, 3) || ''}
+                    </div>
                   </div>
                 );
               })}
@@ -268,10 +326,15 @@ export default function DriverEarnings({ session }) {
                     <IconArrowUp />
                   </div>
                   <div className="dvr-history-mid">
-                    <div className="dvr-history-name">Retrait {p.method || ''}</div>
+                    <div className="dvr-history-name">
+                      Retrait {p.method || ''}
+                      {p.status && (
+                        <span className={statusBadgeClass(p.status)}>{statusBadgeLabel(p.status)}</span>
+                      )}
+                    </div>
                     <div className="dvr-history-date">
-                      {p.destination || ''} · {p.created_at ? new Date(p.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : ''}
-                      {p.status && ` · ${p.status}`}
+                      {p.destination || ''}
+                      {p.created_at ? ` · ${new Date(p.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}` : ''}
                     </div>
                   </div>
                   <div className="dvr-history-amt" style={{ color: '#F59E0B' }}>
@@ -279,22 +342,28 @@ export default function DriverEarnings({ session }) {
                   </div>
                 </div>
               ))}
-              {recentEarnings.map((o) => (
-                <div className="dvr-history-row" key={`e-${o.id}`}>
-                  <div className="dvr-history-icon">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-                    </svg>
-                  </div>
-                  <div className="dvr-history-mid">
-                    <div className="dvr-history-name">{o.address?.name || 'Livraison'}</div>
-                    <div className="dvr-history-date">
-                      #{String(o.id).slice(0, 8)} · {o.done_at ? new Date(o.done_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : ''}
+              {recentEarnings.map((o) => {
+                const st = o.status || 'available';
+                return (
+                  <div className="dvr-history-row" key={`e-${o.id}`}>
+                    <div className="dvr-history-icon">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                      </svg>
                     </div>
+                    <div className="dvr-history-mid">
+                      <div className="dvr-history-name">
+                        {o.address?.name || 'Livraison'}
+                        <span className={statusBadgeClass(st)}>{statusBadgeLabel(st)}</span>
+                      </div>
+                      <div className="dvr-history-date">
+                        #{String(o.id).slice(0, 8)} · {o.done_at ? new Date(o.done_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : ''}
+                      </div>
+                    </div>
+                    <div className="dvr-history-amt">+{fmtFcfaRaw(o.earn)}</div>
                   </div>
-                  <div className="dvr-history-amt">+{fmtFcfaRaw(o.earn)}</div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -313,6 +382,7 @@ export default function DriverEarnings({ session }) {
           onSuccess={() => {
             setShowPayout(false);
             toast.success('Retrait demandé — traitement 24-48h');
+            haptic(24);
             setRefreshKey((k) => k + 1);
           }}
         />
@@ -328,6 +398,13 @@ function PayoutSheet({ token, balanceCents, onClose, onSuccess }) {
   const [destination, setDestination] = useState('+221 ');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+
+  // Lock body scroll while sheet open
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
 
   const balanceFcfa = Math.round(balanceCents / 100);
   const amountNum = Number(String(amount).replace(/\D/g, '')) || 0;
@@ -359,6 +436,7 @@ function PayoutSheet({ token, balanceCents, onClose, onSuccess }) {
       return;
     }
     setBusy(true);
+    haptic(10);
     try {
       const { data, error } = await supabase.rpc('driver_request_payout', {
         p_token: token,
