@@ -130,6 +130,46 @@ export default function DriverApp() {
     return () => window.removeEventListener('popstate', onPop);
   }, []);
 
+  // ═══ BLOQUE le pinch-zoom viewport iOS Safari ═══════════════════
+  // iOS Safari ignore user-scalable=no depuis iOS 10. Le CSS
+  // touch-action ne bloque pas non plus le zoom viewport. Le SEUL fix
+  // fiable est preventDefault sur les evenements gesture (Safari) +
+  // touchmove multi-touch (Chrome/Firefox) + double-tap.
+  useEffect(() => {
+    // 1. Safari-specific gesture events (pinch)
+    const onGesture = (e) => { try { e.preventDefault(); } catch {} };
+    document.addEventListener('gesturestart',  onGesture, { passive: false });
+    document.addEventListener('gesturechange', onGesture, { passive: false });
+    document.addEventListener('gestureend',    onGesture, { passive: false });
+
+    // 2. Multi-touch touchmove (backup Android/cross-browser)
+    const onTouchMove = (e) => {
+      if (e.touches && e.touches.length > 1) {
+        try { e.preventDefault(); } catch {}
+      }
+    };
+    document.addEventListener('touchmove', onTouchMove, { passive: false });
+
+    // 3. Double-tap zoom (iOS Safari)
+    let lastTouchEnd = 0;
+    const onTouchEnd = (e) => {
+      const now = Date.now();
+      if (now - lastTouchEnd < 300) {
+        try { e.preventDefault(); } catch {}
+      }
+      lastTouchEnd = now;
+    };
+    document.addEventListener('touchend', onTouchEnd, { passive: false });
+
+    return () => {
+      document.removeEventListener('gesturestart',  onGesture);
+      document.removeEventListener('gesturechange', onGesture);
+      document.removeEventListener('gestureend',    onGesture);
+      document.removeEventListener('touchmove',     onTouchMove);
+      document.removeEventListener('touchend',      onTouchEnd);
+    };
+  }, []);
+
   const navigate = useCallback((next) => {
     setView(next);
     const path = viewToPath(next);
