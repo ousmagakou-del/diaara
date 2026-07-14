@@ -158,10 +158,23 @@ function PedaHeroMap({ driverPos, pharmacies }) {
       tap: false,
     }).setView([14.6928, -17.4467], 13);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // Tileset CartoDB Voyager — style epure moderne (Uber-like)
+    // Gratuit, pas de cle API requise, plus premium que OSM classique
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png', {
       attribution: '',
-      maxZoom: 19,
+      maxZoom: 20,
       crossOrigin: true,
+      subdomains: 'abcd',
+    }).addTo(map);
+
+    // Deuxieme couche : labels uniquement (villes/rues principales)
+    // pour un rendu plus lisible sans surcharger
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png', {
+      attribution: '',
+      maxZoom: 20,
+      crossOrigin: true,
+      subdomains: 'abcd',
+      pane: 'shadowPane',
     }).addTo(map);
 
     mapRef.current = map;

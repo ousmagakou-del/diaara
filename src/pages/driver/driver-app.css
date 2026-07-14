@@ -48,6 +48,11 @@
   -webkit-tap-highlight-color: transparent;
   font-size: 15px;
   line-height: 1.4;
+  /* Empeche le pinch-zoom viewport iOS Safari (recente version ignore
+     user-scalable=no). touch-action: pan-y permet le scroll vertical
+     mais bloque le pinch. */
+  touch-action: pan-y;
+  overscroll-behavior-y: contain;
 }
 
 .dvr-root *,
@@ -3101,21 +3106,32 @@ button.dvr-btn,
   right: 0;
   height: 55vh;
   z-index: 1;
-  background: #E7EEF0;
+  background: #F2F5F5;
   overflow: hidden;
+  /* Bloque le pinch-zoom viewport sur iOS Safari (qui ignore
+     user-scalable=no depuis iOS 10). Le pointer-events none empeche
+     aussi tout tap de propager a Leaflet (map decorative uniquement). */
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  pointer-events: none;
 }
 .ped-hero-map-canvas {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
+  touch-action: none;
+  pointer-events: none;
 }
 .ped-hero-map-canvas .leaflet-container {
-  background: #E7EEF0;
+  background: #F2F5F5;
   outline: none;
+  touch-action: none;
 }
 .ped-hero-map-canvas .leaflet-tile-pane {
-  filter: saturate(1.08) brightness(1.02);
+  /* Filter subtle pour donner un tint teal Pedalel a la map */
+  filter: saturate(0.85) brightness(1.02) hue-rotate(-5deg);
 }
 .ped-hero-map-canvas .leaflet-control-attribution {
   display: none !important;
