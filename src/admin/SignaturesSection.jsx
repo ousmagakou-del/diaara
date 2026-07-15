@@ -39,6 +39,30 @@ export default function SignaturesSection() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [viewSigned, setViewSigned] = useState(null);
+  const [loadingSigned, setLoadingSigned] = useState(false);
+
+  // Fetch le contrat signe complet (avec signed_html) et l'affiche
+  const openSignedContract = async (r) => {
+    // Optimistic : affiche immediatement les meta connues
+    setViewSigned({ ...r, signed_html: '', _loading: true });
+    setLoadingSigned(true);
+    try {
+      const token = getAdminToken();
+      const { data, error } = await supabase.rpc('admin_get_signature_request_full', {
+        p_admin_token: token,
+        p_request_id: r.id,
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'unknown');
+      setViewSigned({ ...r, ...data.request, _loading: false });
+    } catch (e) {
+      console.error('[SignaturesSection] fetch full failed:', e);
+      alert('Erreur chargement du contrat : ' + (e?.message || 'inconnue'));
+      setViewSigned(null);
+    } finally {
+      setLoadingSigned(false);
+    }
+  };
 
   // Nouveau formulaire
   const [selectedTemplate, setSelectedTemplate] = useState(null);
@@ -210,7 +234,12 @@ export default function SignaturesSection() {
         </div>
         <div
           style={{ background: 'var(--y-n-0)', border: '1px solid var(--y-n-300)', borderRadius: 16, padding: 32, boxShadow: '0 4px 16px rgba(0,0,0,0.03)' }}
-          dangerouslySetInnerHTML={{ __html: viewSigned.signed_html || '<p>Pas de contenu signé.</p>' }}
+          dangerouslySetInnerHTML={{
+            __html: viewSigned.signed_html
+              || (viewSigned._loading
+                  ? '<p style="text-align:center;padding:60px;color:#6B6B6B;">⏳ Chargement du contrat signé…</p>'
+                  : '<p style="text-align:center;padding:60px;color:#D9342B;">⚠️ Aucun contenu signé stocké pour ce contrat.</p>')
+          }}
         />
       </div>
     );
@@ -356,10 +385,11 @@ export default function SignaturesSection() {
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                           {r.status === 'signed' ? (
                             <button
-                              onClick={() => setViewSigned(r)}
+                              onClick={() => openSignedContract(r)}
+                              disabled={loadingSigned}
                               style={btnStyle('var(--y-brand)', 'var(--y-n-0)')}
                             >
-                              👁 Voir signé
+                              {loadingSigned ? '⏳ Chargement…' : '👁 Voir signé'}
                             </button>
                           ) : (
                             <>
