@@ -241,7 +241,7 @@ export default function DermaConsultDetail({ consultId, onBack }) {
             </span>
           </h1>
           <p style={{ fontSize: 13, color: 'var(--y-n-600)' }}>
-            {isVideo ? 'Visio 15 min' : 'Chat asynchrone'} · {formatDateTimeFr(consult.created_at)}
+            {isVideo ? 'Visio 20 min' : 'Consultation express'} · {formatDateTimeFr(isVideo && consult.scheduled_at ? consult.scheduled_at : consult.created_at)}
           </p>
         </div>
       </div>

@@ -87,7 +87,7 @@ export default function DermaConsultations({ onOpen }) {
               <div key={c.id} className="drm-list-row" onClick={() => onOpen(c.id)}>
                 <div className="drm-list-row-main">
                   <strong>
-                    {c.patient_name || `Patient #${c.patient_id?.slice?.(0, 6) || ''}`}
+                    {[c.first_name, c.last_name].filter(Boolean).join(' ') || c.patient_name || 'Patient'}
                     {unread > 0 && (
                       <span style={{
                         display: 'inline-block',
@@ -102,7 +102,7 @@ export default function DermaConsultations({ onOpen }) {
                     )}
                   </strong>
                   <span>
-                    {isVideo ? 'Visio 15 min' : 'Chat asynchrone'} · {formatDateTimeFr(c.created_at)}
+                    {isVideo ? 'Visio 20 min' : 'Consultation express'} · {formatDateTimeFr(isVideo && c.scheduled_at ? c.scheduled_at : c.created_at)}
                   </span>
                 </div>
                 <div style={{ textAlign: 'right' }}>

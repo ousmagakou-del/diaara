@@ -66,7 +66,7 @@ export default function DermaSettings({ dermato = {} }) {
 
       <div className="drm-card">
         <h2>Tarifs</h2>
-        <Row label="Chat asynchrone" value={formatFcfa(dermato.price_async_fcfa)} />
+        <Row label="Consultation express" value={formatFcfa(dermato.price_async_fcfa)} />
         <Row label="Visio" value={formatFcfa(dermato.price_video_fcfa)} />
         <Row label="Durée visio standard" value={dermato.video_duration_min ? `${dermato.video_duration_min} min` : '—'} />
         <Row label="Commission YARAM" value={dermato.commission_pct != null ? `${dermato.commission_pct} %` : '—'} />
