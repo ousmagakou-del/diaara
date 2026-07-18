@@ -87,9 +87,9 @@ export async function bookDermatoVideo({ dermatologistId, userId, slotId, sympto
 
 export async function confirmDermatoPayment(consultId, method = 'mock', ref = null) {
   const { data, error } = await supabase.rpc('confirm_dermato_payment', {
-    p_consult_id: consultId,
-    p_method: method,
-    p_ref: ref || `MOCK_${Date.now()}`,
+    p_consultation_id: consultId,
+    p_payment_method: method,
+    p_payment_ref: ref || `WAVE_${Date.now()}`,
   });
   if (error) throw error;
   return data;
@@ -105,7 +105,7 @@ export async function getMyDermatoConsultations(userId) {
 export async function getDermatoConsultationDetail(userId, consultId) {
   const { data, error } = await supabase.rpc('get_dermato_consultation_detail', {
     p_user_id: userId,
-    p_consult_id: consultId,
+    p_consultation_id: consultId,
   });
   if (error) throw error;
   return data;
@@ -114,7 +114,7 @@ export async function getDermatoConsultationDetail(userId, consultId) {
 export async function patientSendDermatoMessage(userId, consultId, body, photoUrl = null) {
   const { data, error } = await supabase.rpc('patient_send_dermato_message', {
     p_user_id: userId,
-    p_consult_id: consultId,
+    p_consultation_id: consultId,
     p_body: body || '',
     p_photo_url: photoUrl,
   });
@@ -125,7 +125,7 @@ export async function patientSendDermatoMessage(userId, consultId, body, photoUr
 export async function patientGetDermatoRoom(userId, consultId) {
   const { data, error } = await supabase.rpc('patient_get_dermato_room', {
     p_user_id: userId,
-    p_consult_id: consultId,
+    p_consultation_id: consultId,
   });
   if (error) throw error;
   return data;
@@ -134,7 +134,7 @@ export async function patientGetDermatoRoom(userId, consultId) {
 export async function rateDermatoConsultation(userId, consultId, rating, review = '') {
   const { data, error } = await supabase.rpc('rate_dermato_consultation', {
     p_user_id: userId,
-    p_consult_id: consultId,
+    p_consultation_id: consultId,
     p_rating: rating,
     p_review: review,
   });
@@ -189,7 +189,7 @@ export async function dermaGetConsultationDetail(consultId) {
   const token = getDermaToken();
   const { data, error } = await supabase.rpc('derma_get_consultation_detail', {
     p_token: token,
-    p_consult_id: consultId,
+    p_consultation_id: consultId,
   });
   if (error) throw error;
   return data;
@@ -199,7 +199,7 @@ export async function dermaSendMessage(consultId, body, photoUrl = null) {
   const token = getDermaToken();
   const { data, error } = await supabase.rpc('derma_send_message', {
     p_token: token,
-    p_consult_id: consultId,
+    p_consultation_id: consultId,
     p_body: body || '',
     p_photo_url: photoUrl,
   });
@@ -211,7 +211,7 @@ export async function dermaSendPrescription(consultId, payload) {
   const token = getDermaToken();
   const { data, error } = await supabase.rpc('derma_send_prescription', {
     p_token: token,
-    p_consult_id: consultId,
+    p_consultation_id: consultId,
     p_items: payload.items || [],
     p_diagnosis: payload.diagnosis || '',
     p_advice: payload.advice || '',
@@ -257,7 +257,7 @@ export async function dermaGetRoom(consultId) {
   const token = getDermaToken();
   const { data, error } = await supabase.rpc('derma_get_room', {
     p_token: token,
-    p_consult_id: consultId,
+    p_consultation_id: consultId,
   });
   if (error) throw error;
   return data;
