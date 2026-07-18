@@ -1,0 +1,411 @@
+/* ═══════════════════════════════════════════════════════════════
+   YARAM Derma Dashboard — style calqué sur /pharma
+   ═══════════════════════════════════════════════════════════════ */
+
+.drm-shell {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+  background: var(--y-n-100, #F4F4F2);
+  font-family: var(--y-font-sans, system-ui);
+}
+
+.drm-side {
+  width: 240px;
+  background: linear-gradient(180deg, #1F8B4C 0%, #0E5B33 100%);
+  color: rgba(255,255,255,0.85);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+.drm-side-head {
+  display: flex; align-items: center; gap: 12px;
+  padding: 18px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.drm-side-logo {
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  background: white;
+  color: #1F8B4C;
+  font-size: 18px;
+  font-weight: 900;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.drm-side-logo img { width: 100%; height: 100%; object-fit: cover; }
+.drm-side-brand { font-size: 14px; font-weight: 800; color: white; line-height: 1.2; }
+.drm-side-role { font-size: 10px; opacity: 0.75; font-weight: 700; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.05em; }
+.drm-nav { flex: 1; overflow-y: auto; padding: 10px; }
+.drm-nav-item {
+  width: 100%;
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.75);
+  text-align: left;
+  margin-bottom: 4px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 120ms;
+}
+.drm-nav-item:hover { background: rgba(255,255,255,0.10); color: white; }
+.drm-nav-item.active { background: white; color: #1F8B4C; font-weight: 800; }
+.drm-nav-badge {
+  margin-left: auto;
+  background: #E94E1B;
+  color: white;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+.drm-side-foot {
+  padding: 12px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  display: flex; flex-direction: column; gap: 4px;
+}
+.drm-side-foot button,
+.drm-side-foot a {
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.75);
+  text-align: left;
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  display: block;
+  cursor: pointer;
+}
+.drm-side-foot button:hover,
+.drm-side-foot a:hover { background: rgba(255,255,255,0.10); color: white; }
+
+.drm-main {
+  flex: 1;
+  overflow-x: hidden;
+  padding: 30px 40px 60px;
+  max-width: 100%;
+}
+.drm-page-h {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  gap: 16px; flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+.drm-page-h h1 { font-size: 26px; font-weight: 900; color: var(--y-n-900, #0A0A0A); letter-spacing: -0.01em; }
+.drm-page-h p { font-size: 13px; color: var(--y-n-600, #6B7280); margin-top: 4px; }
+
+.drm-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+.drm-kpi {
+  background: white;
+  padding: 18px;
+  border-radius: 16px;
+  border: 1px solid var(--y-n-200, #EEEDE8);
+}
+.drm-kpi-label { font-size: 11px; color: var(--y-n-600); font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+.drm-kpi-value { font-size: 28px; font-weight: 900; color: var(--y-n-900); }
+.drm-kpi-meta { font-size: 11px; color: var(--y-n-500); margin-top: 4px; }
+
+.drm-card {
+  background: white;
+  border: 1px solid var(--y-n-200);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.drm-card h2 { font-size: 17px; font-weight: 900; margin-bottom: 4px; }
+.drm-card p.sub { font-size: 13px; color: var(--y-n-600); margin-bottom: 14px; }
+
+.drm-list { display: flex; flex-direction: column; gap: 12px; }
+.drm-list-row {
+  background: white;
+  border: 1px solid var(--y-n-200);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 150ms;
+}
+.drm-list-row:hover { border-color: #1F8B4C; box-shadow: 0 4px 12px rgba(31,139,76,0.08); }
+.drm-list-row-main strong { display: block; font-size: 15px; font-weight: 800; }
+.drm-list-row-main span { font-size: 12px; color: var(--y-n-600); }
+
+.drm-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.drm-badge-paid       { background: #FFF9E6; color: #B78B00; }
+.drm-badge-in_review  { background: #EAF3FE; color: #0066CC; }
+.drm-badge-scheduled  { background: #EAF3FE; color: #0066CC; }
+.drm-badge-in_progress{ background: #EAF7F0; color: #1F8B4C; }
+.drm-badge-completed  { background: #EAF7F0; color: #0E5B33; }
+.drm-badge-cancelled  { background: #FDECEA; color: #D9342B; }
+.drm-badge-refunded   { background: #FDECEA; color: #D9342B; }
+
+.drm-field { margin-bottom: 14px; }
+.drm-field label { display: block; font-size: 12px; font-weight: 700; color: var(--y-n-700); margin-bottom: 6px; }
+.drm-field input,
+.drm-field textarea,
+.drm-field select {
+  width: 100%;
+  padding: 11px 13px;
+  border: 1.5px solid var(--y-n-300);
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  background: white;
+  box-sizing: border-box;
+}
+.drm-field textarea { min-height: 80px; resize: vertical; }
+.drm-field input:focus,
+.drm-field textarea:focus,
+.drm-field select:focus { outline: none; border-color: #1F8B4C; box-shadow: 0 0 0 3px rgba(31,139,76,0.10); }
+
+.drm-btn {
+  padding: 11px 18px;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  border: none;
+}
+.drm-btn-primary { background: linear-gradient(135deg, #1F8B4C, #0E5B33); color: white; box-shadow: 0 4px 12px rgba(31,139,76,0.20); }
+.drm-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.drm-btn-secondary { background: white; color: var(--y-n-800); border: 1.5px solid var(--y-n-300); }
+.drm-btn-danger { background: white; color: var(--y-danger); border: 1.5px solid #FDECEA; }
+.drm-btn-ghost { background: transparent; color: var(--y-n-700); }
+
+/* ─── LOGIN ─── */
+.drm-login {
+  min-height: 100vh;
+  width: 100%;
+  background: linear-gradient(135deg, #1F8B4C 0%, #0E5B33 100%);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  font-family: var(--y-font-sans, system-ui);
+}
+.drm-login-card {
+  background: white;
+  padding: 40px 32px;
+  border-radius: 24px;
+  text-align: center;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.20);
+}
+.drm-login-logo {
+  width: 64px; height: 64px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1F8B4C, #0E5B33);
+  color: white;
+  font-size: 28px;
+  font-weight: 900;
+  display: flex; align-items: center; justify-content: center;
+}
+.drm-login-card h1 { font-size: 22px; font-weight: 900; margin-bottom: 6px; letter-spacing: -0.01em; }
+.drm-login-card p { color: var(--y-n-600); font-size: 14px; margin-bottom: 24px; }
+.drm-login-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1.5px solid var(--y-n-300);
+  border-radius: 12px;
+  font-size: 15px;
+  text-align: center;
+  letter-spacing: 0.1em;
+  box-sizing: border-box;
+  margin-bottom: 12px;
+  font-family: inherit;
+}
+.drm-login-input:focus { outline: none; border-color: #1F8B4C; box-shadow: 0 0 0 3px rgba(31,139,76,0.10); }
+.drm-login-input.email { text-align: left; letter-spacing: normal; }
+.drm-login-input.error { border-color: var(--y-danger); }
+.drm-login-error { color: var(--y-danger); font-size: 13px; margin-bottom: 12px; }
+.drm-login-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #1F8B4C, #0E5B33);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(31,139,76,0.30);
+}
+.drm-login-back {
+  display: inline-block;
+  margin-top: 18px;
+  color: var(--y-n-600);
+  font-size: 13px;
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+/* ─── Prescription form ─── */
+.drm-rx-item {
+  background: var(--y-n-50);
+  border: 1px solid var(--y-n-200);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+.drm-rx-item-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.drm-rx-add {
+  background: white;
+  border: 1.5px dashed var(--y-n-300);
+  padding: 12px;
+  border-radius: 10px;
+  width: 100%;
+  cursor: pointer;
+  color: var(--y-n-700);
+  font-weight: 700;
+}
+.drm-rx-add:hover { border-color: #1F8B4C; color: #1F8B4C; }
+
+.drm-signature-canvas {
+  border: 1.5px dashed var(--y-n-300);
+  border-radius: 12px;
+  background: white;
+  cursor: crosshair;
+  touch-action: none;
+  width: 100%;
+  height: 180px;
+  display: block;
+}
+
+/* ─── SLOTS ─── */
+.drm-slots-cal {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+.drm-slot-cell {
+  background: white;
+  border: 1px solid var(--y-n-200);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.drm-slot-cell strong { display: block; font-weight: 800; font-size: 14px; }
+.drm-slot-cell span { font-size: 12px; color: var(--y-n-600); }
+.drm-slot-cell button {
+  background: transparent;
+  border: none;
+  color: var(--y-danger);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* ─── BOTTOM NAV MOBILE ─── */
+.drm-bnav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: white;
+  border-top: 1px solid var(--y-n-200);
+  padding: 8px 4px;
+  z-index: 100;
+  box-shadow: 0 -4px 12px rgba(0,0,0,0.06);
+}
+.drm-bnav-item {
+  flex: 1;
+  background: transparent;
+  border: none;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 6px 4px;
+  color: var(--y-n-600);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.drm-bnav-item.active { color: #1F8B4C; }
+.drm-bnav-item svg { width: 20px; height: 20px; }
+
+/* ─── Chat (dermato view) : miroir du côté patient ─── */
+.drm-chat {
+  max-height: 60vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px;
+}
+.drm-msg { display: flex; flex-direction: column; max-width: 78%; }
+.drm-msg-derma { align-self: flex-end; align-items: flex-end; }
+.drm-msg-patient { align-self: flex-start; align-items: flex-start; }
+.drm-msg-system { align-self: center; max-width: 90%; }
+.drm-msg-bubble { padding: 10px 14px; border-radius: 16px; font-size: 14px; line-height: 1.4; white-space: pre-wrap; word-break: break-word; }
+.drm-msg-derma .drm-msg-bubble { background: linear-gradient(135deg, #1F8B4C, #0E5B33); color: white; border-bottom-right-radius: 4px; }
+.drm-msg-patient .drm-msg-bubble { background: white; color: var(--y-n-900); border: 1px solid var(--y-n-200); border-bottom-left-radius: 4px; }
+.drm-msg-system .drm-msg-bubble { background: var(--y-n-100); color: var(--y-n-600); font-size: 12px; font-weight: 700; text-align: center; border-radius: 12px; }
+.drm-msg-photo { max-width: 220px; border-radius: 12px; margin-top: 4px; }
+.drm-msg-time { font-size: 10px; color: var(--y-n-500); margin-top: 3px; }
+
+.drm-video-modal {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.90);
+  z-index: 1000;
+  display: flex; flex-direction: column;
+}
+.drm-video-modal-topbar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 20px;
+  color: white;
+}
+.drm-video-modal-topbar button {
+  padding: 8px 16px;
+  background: rgba(255,255,255,0.15);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+}
+.drm-video-modal iframe {
+  flex: 1;
+  border: none;
+  background: black;
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 900px) {
+  .drm-shell { flex-direction: column; }
+  .drm-side {
+    width: 100%; height: auto; position: static;
+    flex-direction: row; align-items: center;
+    padding: 10px 16px;
+    justify-content: space-between;
+  }
+  .drm-side-head { padding: 0; border: none; flex: 1; }
+  .drm-nav { display: none; }
+  .drm-side-foot { display: none; }
+  .drm-main { padding: 20px 16px 100px; }
+  .drm-bnav { display: flex; }
+}

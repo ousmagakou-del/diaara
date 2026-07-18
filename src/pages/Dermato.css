@@ -1,0 +1,748 @@
+/* ═══════════════════════════════════════════════════════════════
+   Dermato — patient-facing pages (Landing, Profile, Book, Consult, MyConsults)
+   Style YARAM premium — vert #1F8B4C
+   Mobile-first, breakpoints 700 / 1024
+   ═══════════════════════════════════════════════════════════════ */
+
+.derm-page {
+  min-height: 100vh;
+  background: var(--y-n-50, #FAFAF7);
+  font-family: var(--y-font-sans, system-ui);
+  color: var(--y-n-900, #0A0A0A);
+}
+
+.derm-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* ─── Header simple (retour + titre) ─── */
+.derm-topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: white;
+  border-bottom: 1px solid var(--y-n-200, #EEEDE8);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.derm-topbar-back {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: var(--y-n-100, #F4F4F2);
+  border: none;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: var(--y-n-800, #1F2937);
+}
+.derm-topbar-back:hover { background: var(--y-brand-soft, #EAF7F0); color: var(--y-brand, #1F8B4C); }
+.derm-topbar-title {
+  font-weight: 800;
+  font-size: 15px;
+  flex: 1;
+}
+
+/* ═════════════ LANDING ═════════════ */
+.derm-hero {
+  background: linear-gradient(135deg, #1F8B4C 0%, #0E5B33 100%);
+  color: white;
+  padding: 60px 20px 80px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.derm-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 20% 30%, rgba(255,255,255,0.10), transparent 40%),
+              radial-gradient(circle at 80% 70%, rgba(255,255,255,0.08), transparent 40%);
+  pointer-events: none;
+}
+.derm-hero-inner { position: relative; max-width: 780px; margin: 0 auto; }
+.derm-hero-eyebrow {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.25);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 18px;
+}
+.derm-hero-title {
+  font-size: 40px;
+  font-weight: 900;
+  line-height: 1.1;
+  margin-bottom: 12px;
+  letter-spacing: -0.02em;
+}
+.derm-hero-title span {
+  background: linear-gradient(135deg, #FFE29B 0%, #FFC24E 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.derm-hero-sub {
+  font-size: 17px;
+  opacity: 0.92;
+  max-width: 620px;
+  margin: 0 auto 30px;
+  line-height: 1.5;
+}
+.derm-hero-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 30px;
+  background: white;
+  color: var(--y-brand, #1F8B4C);
+  border: none;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  transition: transform 150ms ease;
+}
+.derm-hero-cta:hover { transform: translateY(-2px); }
+
+.derm-section {
+  padding: 60px 20px;
+}
+.derm-section h2 {
+  font-size: 30px;
+  font-weight: 900;
+  text-align: center;
+  margin-bottom: 12px;
+  letter-spacing: -0.01em;
+}
+.derm-section-sub {
+  text-align: center;
+  color: var(--y-n-600, #6B7280);
+  font-size: 16px;
+  margin: 0 auto 40px;
+  max-width: 560px;
+}
+
+.derm-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+.derm-step {
+  background: white;
+  border-radius: 20px;
+  padding: 30px 24px;
+  border: 1px solid var(--y-n-200, #EEEDE8);
+  position: relative;
+}
+.derm-step-num {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1F8B4C, #0E5B33);
+  color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 900;
+  font-size: 18px;
+  margin-bottom: 16px;
+}
+.derm-step h3 { font-size: 18px; font-weight: 800; margin-bottom: 8px; }
+.derm-step p { font-size: 14px; color: var(--y-n-600, #6B7280); line-height: 1.55; }
+
+.derm-doctors-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.derm-doc-card {
+  background: white;
+  border: 1px solid var(--y-n-200, #EEEDE8);
+  border-radius: 20px;
+  padding: 20px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 150ms ease;
+}
+.derm-doc-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+  border-color: var(--y-brand, #1F8B4C);
+}
+.derm-doc-photo {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--y-n-100);
+  margin-bottom: 14px;
+  display: block;
+}
+.derm-doc-photo-fallback {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1F8B4C, #0E5B33);
+  color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 30px;
+  font-weight: 900;
+  margin-bottom: 14px;
+}
+.derm-doc-name { font-size: 17px; font-weight: 800; margin-bottom: 4px; }
+.derm-doc-spec { font-size: 13px; color: var(--y-brand); font-weight: 700; margin-bottom: 8px; }
+.derm-doc-meta { font-size: 12px; color: var(--y-n-600); margin-bottom: 12px; }
+.derm-doc-prices {
+  display: flex; gap: 10px; flex-wrap: wrap;
+  padding-top: 12px;
+  border-top: 1px solid var(--y-n-200);
+}
+.derm-doc-price {
+  font-size: 12px;
+  padding: 4px 10px;
+  background: var(--y-brand-soft, #EAF7F0);
+  color: var(--y-brand-dark, #0E5B33);
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.derm-faq {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.derm-faq-item {
+  background: white;
+  border: 1px solid var(--y-n-200);
+  border-radius: 14px;
+  padding: 18px 20px;
+}
+.derm-faq-item summary {
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  list-style: none;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.derm-faq-item summary::after {
+  content: '+';
+  font-size: 22px;
+  color: var(--y-brand);
+  font-weight: 900;
+}
+.derm-faq-item[open] summary::after { content: '−'; }
+.derm-faq-item p {
+  margin-top: 12px;
+  color: var(--y-n-600);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+/* ═════════════ PROFILE ═════════════ */
+.derm-profile-hero {
+  background: white;
+  padding: 40px 20px;
+  border-bottom: 1px solid var(--y-n-200);
+}
+.derm-profile-hero-inner {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 30px;
+  align-items: center;
+}
+.derm-profile-photo {
+  width: 200px; height: 200px;
+  border-radius: 24px;
+  object-fit: cover;
+  background: linear-gradient(135deg, #1F8B4C, #0E5B33);
+}
+.derm-profile-name { font-size: 32px; font-weight: 900; margin-bottom: 6px; letter-spacing: -0.01em; }
+.derm-profile-spec { font-size: 15px; color: var(--y-brand); font-weight: 700; margin-bottom: 12px; }
+.derm-profile-rating { font-size: 14px; color: var(--y-n-700); margin-bottom: 6px; }
+.derm-profile-meta { font-size: 13px; color: var(--y-n-600); }
+
+.derm-profile-body {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 30px 20px 60px;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 30px;
+}
+.derm-profile-main h3 { font-size: 18px; font-weight: 800; margin-bottom: 10px; }
+.derm-profile-main p { color: var(--y-n-700); line-height: 1.6; margin-bottom: 24px; font-size: 15px; }
+.derm-profile-clinic {
+  background: white;
+  border: 1px solid var(--y-n-200);
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+.derm-profile-clinic strong { display: block; margin-bottom: 4px; }
+.derm-profile-clinic span { color: var(--y-n-600); font-size: 13px; }
+
+.derm-price-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.derm-price-card {
+  background: white;
+  border: 2px solid var(--y-n-200);
+  padding: 20px;
+  border-radius: 16px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 150ms;
+}
+.derm-price-card:hover {
+  border-color: var(--y-brand);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(31,139,76,0.10);
+}
+.derm-price-card-tag {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--y-brand);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+.derm-price-card h4 { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+.derm-price-card .derm-price-value {
+  font-size: 26px;
+  font-weight: 900;
+  color: var(--y-brand-dark);
+  margin: 6px 0;
+}
+.derm-price-card p { font-size: 13px; color: var(--y-n-600); }
+
+.derm-slots-side {
+  background: white;
+  border: 1px solid var(--y-n-200);
+  border-radius: 16px;
+  padding: 20px;
+  align-self: start;
+  position: sticky;
+  top: 90px;
+}
+.derm-slots-side h3 { font-size: 15px; font-weight: 800; margin-bottom: 12px; }
+.derm-slots-day {
+  margin-bottom: 16px;
+}
+.derm-slots-day-label {
+  font-size: 12px;
+  color: var(--y-n-600);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.derm-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 6px;
+}
+.derm-slot-btn {
+  padding: 8px 6px;
+  background: var(--y-brand-soft);
+  color: var(--y-brand-dark);
+  border: 1px solid var(--y-brand-soft);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.derm-slot-btn:hover {
+  background: var(--y-brand);
+  color: white;
+  border-color: var(--y-brand);
+}
+.derm-slot-empty {
+  font-size: 13px;
+  color: var(--y-n-600);
+  text-align: center;
+  padding: 20px 8px;
+}
+
+/* ═════════════ BOOK ═════════════ */
+.derm-book-shell {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 30px 20px 60px;
+}
+.derm-book-steps {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 26px;
+}
+.derm-book-step-dot {
+  flex: 1;
+  height: 4px;
+  background: var(--y-n-200);
+  border-radius: 999px;
+}
+.derm-book-step-dot.active { background: var(--y-brand); }
+
+.derm-book-card {
+  background: white;
+  border: 1px solid var(--y-n-200);
+  border-radius: 20px;
+  padding: 26px;
+}
+.derm-book-card h2 { font-size: 22px; font-weight: 900; margin-bottom: 8px; }
+.derm-book-card p.derm-book-sub { color: var(--y-n-600); font-size: 14px; margin-bottom: 20px; }
+
+.derm-field {
+  margin-bottom: 16px;
+}
+.derm-field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--y-n-800);
+  margin-bottom: 6px;
+}
+.derm-field input,
+.derm-field textarea,
+.derm-field select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--y-n-300);
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  background: white;
+  box-sizing: border-box;
+}
+.derm-field textarea { min-height: 100px; resize: vertical; }
+.derm-field input:focus,
+.derm-field textarea:focus {
+  outline: none;
+  border-color: var(--y-brand);
+  box-shadow: 0 0 0 3px rgba(31,139,76,0.10);
+}
+.derm-field-hint { font-size: 12px; color: var(--y-n-600); margin-top: 4px; }
+
+.derm-photos-upload {
+  border: 2px dashed var(--y-n-300);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+}
+.derm-photos-upload:hover { border-color: var(--y-brand); background: var(--y-brand-soft); }
+.derm-photos-thumbs {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  margin-top: 10px;
+}
+.derm-photo-thumb {
+  width: 80px; height: 80px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1px solid var(--y-n-200);
+}
+
+.derm-book-summary {
+  background: var(--y-brand-soft);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+.derm-book-summary-row {
+  display: flex; justify-content: space-between;
+  font-size: 14px; padding: 4px 0;
+}
+.derm-book-summary-row strong { font-weight: 800; }
+.derm-book-summary-total {
+  font-size: 18px; font-weight: 900; color: var(--y-brand-dark);
+  padding-top: 10px; margin-top: 10px;
+  border-top: 1px solid rgba(31,139,76,0.20);
+}
+
+.derm-pay-methods {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.derm-pay-btn {
+  padding: 12px 8px;
+  background: white;
+  border: 1.5px solid var(--y-n-300);
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--y-n-800);
+}
+.derm-pay-btn.selected {
+  background: var(--y-brand-soft);
+  border-color: var(--y-brand);
+  color: var(--y-brand-dark);
+}
+
+.derm-book-actions { display: flex; gap: 10px; margin-top: 24px; }
+.derm-btn-primary {
+  flex: 1;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, #1F8B4C, #0E5B33);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 15px;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(31,139,76,0.25);
+}
+.derm-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.derm-btn-secondary {
+  padding: 14px 20px;
+  background: white;
+  color: var(--y-n-800);
+  border: 1.5px solid var(--y-n-300);
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+/* ═════════════ CONSULTATION (chat) ═════════════ */
+.derm-consult-shell {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+.derm-consult-card {
+  background: white;
+  border: 1px solid var(--y-n-200);
+  border-radius: 16px;
+  padding: 20px;
+}
+.derm-status-badge {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.derm-status-paid       { background: #FFF9E6; color: #B78B00; }
+.derm-status-in_review  { background: #EAF3FE; color: #0066CC; }
+.derm-status-scheduled  { background: #EAF3FE; color: #0066CC; }
+.derm-status-in_progress{ background: var(--y-brand-soft); color: var(--y-brand); }
+.derm-status-completed  { background: var(--y-brand-soft); color: var(--y-brand); }
+.derm-status-cancelled  { background: var(--y-danger-soft); color: var(--y-danger); }
+
+.derm-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 10px 4px;
+}
+.derm-msg { display: flex; flex-direction: column; max-width: 78%; }
+.derm-msg-patient { align-self: flex-end; align-items: flex-end; }
+.derm-msg-derma { align-self: flex-start; align-items: flex-start; }
+.derm-msg-system { align-self: center; max-width: 90%; }
+.derm-msg-bubble {
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.derm-msg-patient .derm-msg-bubble {
+  background: linear-gradient(135deg, #1F8B4C, #0E5B33);
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+.derm-msg-derma .derm-msg-bubble {
+  background: white;
+  color: var(--y-n-900);
+  border: 1px solid var(--y-n-200);
+  border-bottom-left-radius: 4px;
+}
+.derm-msg-system .derm-msg-bubble {
+  background: var(--y-n-100);
+  color: var(--y-n-600);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  border-radius: 12px;
+}
+.derm-msg-photo {
+  max-width: 220px;
+  border-radius: 12px;
+  margin-top: 4px;
+}
+.derm-msg-time {
+  font-size: 10px;
+  color: var(--y-n-500);
+  margin-top: 3px;
+}
+
+.derm-chat-input {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  background: white;
+  border: 1px solid var(--y-n-200);
+  border-radius: 14px;
+  margin-top: 14px;
+  align-items: flex-end;
+}
+.derm-chat-input textarea {
+  flex: 1;
+  border: none;
+  outline: none;
+  resize: none;
+  padding: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  min-height: 40px;
+  max-height: 100px;
+}
+.derm-chat-send {
+  padding: 10px 18px;
+  background: var(--y-brand);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.derm-chat-send:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.derm-video-cta {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #1F8B4C, #0E5B33);
+  color: white;
+  border-radius: 14px;
+  margin-bottom: 16px;
+}
+.derm-video-cta strong { display: block; font-size: 16px; margin-bottom: 4px; }
+.derm-video-cta span { font-size: 13px; opacity: 0.9; }
+.derm-video-cta button {
+  padding: 10px 20px;
+  background: white;
+  color: var(--y-brand-dark);
+  border: none;
+  border-radius: 999px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.derm-video-modal {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 1000;
+  display: flex; flex-direction: column;
+}
+.derm-video-modal-topbar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 20px;
+  color: white;
+}
+.derm-video-modal-close {
+  padding: 8px 16px;
+  background: rgba(255,255,255,0.15);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+}
+.derm-video-modal iframe {
+  flex: 1;
+  border: none;
+  background: black;
+}
+
+/* Prescription card */
+.derm-prescription {
+  background: white;
+  border: 1px solid var(--y-n-200);
+  border-radius: 16px;
+  padding: 20px;
+  margin-top: 20px;
+}
+.derm-prescription h3 { font-size: 16px; font-weight: 800; margin-bottom: 12px; }
+.derm-prescription-html {
+  padding: 16px;
+  background: var(--y-n-50);
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ─── My Consultations list ─── */
+.derm-consult-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+.derm-consult-row {
+  background: white;
+  border: 1px solid var(--y-n-200);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 150ms;
+}
+.derm-consult-row:hover { border-color: var(--y-brand); box-shadow: 0 4px 12px rgba(31,139,76,0.08); }
+.derm-consult-row-main strong { display: block; font-size: 15px; font-weight: 800; }
+.derm-consult-row-main span { font-size: 13px; color: var(--y-n-600); }
+
+.derm-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--y-n-600);
+}
+.derm-empty h3 { font-size: 18px; font-weight: 800; margin-bottom: 8px; color: var(--y-n-800); }
+.derm-empty p { font-size: 14px; margin-bottom: 20px; }
+
+/* ─── Responsive ─── */
+@media (max-width: 900px) {
+  .derm-profile-hero-inner {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  .derm-profile-photo { width: 140px; height: 140px; margin: 0 auto; }
+  .derm-profile-body { grid-template-columns: 1fr; }
+  .derm-slots-side { position: static; }
+}
+@media (max-width: 700px) {
+  .derm-hero { padding: 44px 16px 60px; }
+  .derm-hero-title { font-size: 30px; }
+  .derm-hero-sub { font-size: 15px; }
+  .derm-section { padding: 40px 16px; }
+  .derm-section h2 { font-size: 24px; }
+  .derm-steps { grid-template-columns: 1fr; }
+  .derm-price-cards { grid-template-columns: 1fr; }
+  .derm-pay-methods { grid-template-columns: 1fr; }
+  .derm-book-card { padding: 20px; }
+  .derm-video-cta { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .derm-video-cta button { width: 100%; }
+}

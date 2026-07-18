@@ -87,6 +87,14 @@ const CorporateDashboard = lazy(() => import('./pages/CorporateDashboard'));
 const PremiumConcierge   = lazy(() => import('./pages/PremiumConcierge'));
 const TradeIn            = lazy(() => import('./pages/TradeIn'));
 const ARTryOn            = lazy(() => import('./pages/ARTryOn'));
+// ─── Dermato (patient) ─────────────────────────────────────
+const DermatoLanding        = lazy(() => import('./pages/DermatoLanding'));
+const DermatoProfile        = lazy(() => import('./pages/DermatoProfile'));
+const DermatoBook           = lazy(() => import('./pages/DermatoBook'));
+const DermatoConsultation   = lazy(() => import('./pages/DermatoConsultation'));
+const DermatoMyConsultations = lazy(() => import('./pages/DermatoMyConsultations'));
+// ─── Dermato (dashboard dermatologue) ──────────────────────
+const DermaApp              = lazy(() => import('./derma/DermaApp'));
 
 // ════════════════════════════════════════════════════════════════
 //  FIX juin 2026 #8 — LazyFallback FULL SCREEN (CAUSE RACINE BLANCHE)
@@ -159,6 +167,18 @@ function routeToPath(route) {
     case 'premium_concierge': return '/premium/concierge';
     case 'trade_in': return '/trade-in';
     case 'ar_tryon': return `/ar/${params.productId}`;
+    // ─── Dermato (patient) ───
+    case 'dermato_landing': return '/dermato';
+    case 'dermato_profile': return `/dermato/${params.slug}`;
+    case 'dermato_book': {
+      const sp = new URLSearchParams();
+      if (params.type) sp.set('type', params.type);
+      if (params.slot_id) sp.set('slot_id', params.slot_id);
+      const q = sp.toString();
+      return q ? `/dermato/${params.slug}/book?${q}` : `/dermato/${params.slug}/book`;
+    }
+    case 'dermato_consultation': return `/dermato/consult/${params.id}`;
+    case 'dermato_my': return '/dermato/mes-consultations';
     case 'search': {
       const sp = new URLSearchParams();
       if (params.q) sp.set('q', params.q);
@@ -209,6 +229,18 @@ function pathToRoute(pathname, search = '') {
     return { name: 'merchant_onboarding', params: { applicationId: parts[2] } };
   }
   if (parts[0] === 'pharmacy' && parts[1]) return { name: 'pharmacy_detail', params: { id: parts[1] } };
+  // ─── Dermato routes ───
+  if (parts[0] === 'dermato') {
+    if (!parts[1]) return { name: 'dermato_landing', params: {} };
+    if (parts[1] === 'mes-consultations') return { name: 'dermato_my', params: {} };
+    if (parts[1] === 'consult' && parts[2]) return { name: 'dermato_consultation', params: { id: parts[2] } };
+    if (parts[2] === 'book') {
+      const type = searchParams.get('type') || 'async';
+      const slot_id = searchParams.get('slot_id');
+      return { name: 'dermato_book', params: { slug: parts[1], type, slot_id } };
+    }
+    return { name: 'dermato_profile', params: { slug: parts[1] } };
+  }
   if (parts[0] === 'order' && parts[1]) return { name: 'order_tracking', params: { orderId: parts[1] } };
   if (parts[0] === 'scan' && parts[1] === 'result' && parts[2]) return { name: 'scan_result', params: { scanId: parts[2] } };
   if (parts[0] === 'payment' && parts[1]) return { name: 'payment', params: { orderId: parts[1] } };
@@ -353,6 +385,14 @@ export default function App() {
     (window.location.pathname === '/driver' || window.location.pathname.startsWith('/driver/'));
   if (isDriverApp) {
     return wrapRoute(DriverApp);
+  }
+
+  // ─── Derma dashboard (route /derma exacte ou /derma/) ────────
+  const isDermaDashboard =
+    typeof window !== 'undefined' &&
+    (window.location.pathname === '/derma' || window.location.pathname === '/derma/');
+  if (isDermaDashboard) {
+    return wrapRoute(DermaApp);
   }
 
   // ─── Brand dashboard PWA (route /brand exacte, sans ID) ──────
@@ -1040,6 +1080,28 @@ function ClientApp() {
     );
   }
 
+  // ─── Dermato landing/profile : routes publiques (bypass onboarding + skin quiz) ───
+  // Un visiteur qui découvre le service dermato doit voir la landing + le profil
+  // du dermato sans avoir à créer un compte. La réservation (book) exige un user
+  // connecté, donc elle passe par le flow standard (auth gate) plus bas.
+  if (route.name === 'dermato_landing' || route.name === 'dermato_profile') {
+    const Page = route.name === 'dermato_landing' ? DermatoLanding : DermatoProfile;
+    return (
+      <NavContext.Provider value={{ navigate, goBack, route }}>
+        <UserContext.Provider value={{ user, refreshUser }}>
+          <div className="app-shell app-shell--site">
+            <ErrorBoundary key={`derm-${route.name}-eb`}>
+              <Suspense fallback={<LazyFallback />}>
+                <Page />
+              </Suspense>
+            </ErrorBoundary>
+          </div>
+          <Toaster />
+        </UserContext.Provider>
+      </NavContext.Provider>
+    );
+  }
+
   // ─── Blog SEO : route publique (bypass onboarding + skin quiz) ───
   // Un lecteur qui arrive de Google sur /blog/xxx doit voir l article
   // directement, sans onboarding forcé.
@@ -1132,6 +1194,12 @@ function ClientApp() {
     case 'premium_concierge': page = <Suspense fallback={<LazyFallback />}><PremiumConcierge /></Suspense>; break;
     case 'trade_in': page = <Suspense fallback={<LazyFallback />}><TradeIn /></Suspense>; break;
     case 'ar_tryon': page = <Suspense fallback={<LazyFallback />}><ARTryOn /></Suspense>; break;
+    // ─── Dermato patient ───
+    case 'dermato_landing':      page = <Suspense fallback={<LazyFallback />}><DermatoLanding /></Suspense>; break;
+    case 'dermato_profile':      page = <Suspense fallback={<LazyFallback />}><DermatoProfile /></Suspense>; break;
+    case 'dermato_book':         page = <Suspense fallback={<LazyFallback />}><DermatoBook /></Suspense>; break;
+    case 'dermato_consultation': page = <Suspense fallback={<LazyFallback />}><DermatoConsultation /></Suspense>; break;
+    case 'dermato_my':           page = <Suspense fallback={<LazyFallback />}><DermatoMyConsultations /></Suspense>; break;
     // notifications = vraie liste (Notifications.jsx)
     // notif_settings = paramètres push/email (NotifSettings.jsx)
     case 'notifications': page = <Notifications />; break;

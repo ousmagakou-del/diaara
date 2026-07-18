@@ -59,6 +59,8 @@ const DriverApplicationsSection  = lazy(() => import('../admin/DriverApplication
 const OnboardingReviewSection    = lazy(() => import('../admin/OnboardingReviewSection'));
 const CorporateSection           = lazy(() => import('../admin/CorporateSection'));
 const TradeInSection             = lazy(() => import('../admin/TradeInSection'));
+const DermatosSection            = lazy(() => import('../admin/DermatosSection'));
+const DermatoConsultationsSection = lazy(() => import('../admin/DermatoConsultationsSection'));
 
 import './Admin.css';
 
@@ -131,6 +133,8 @@ const NAV = [
   { id: 'merchant_onboarding', icon: '🏪', label: 'Onboarding partenaires', badge: true, roles: ROLES_ALL_PLUS_COMMERCIAL },
   { id: 'corporate',           icon: '🏢', label: 'Corporate B2B',           badge: true, roles: ROLES_ALL_PLUS_COMMERCIAL },
   { id: 'tradein',             icon: '♻️', label: 'Trade-In cosmetiques',    badge: true, roles: ROLES_ALL },
+  { id: 'dermatos',            icon: '🩺', label: 'Dermatologues',            roles: ROLES_ALL },
+  { id: 'dermato_consults',    icon: '💚', label: 'Consultations dermato',    roles: ROLES_ALL },
   { id: 'settings',    icon: '⚙️', label: 'Paramètres', roles: ['super_admin'] },
   { id: 'adminusers',  icon: '👥', label: 'Gestion admins', roles: ['super_admin'] },
   { id: 'adminlogs',   icon: '📜', label: 'Logs activité', roles: ['super_admin'] },
@@ -531,6 +535,8 @@ export default function Admin() {
           {section === 'merchant_onboarding'  && <OnboardingReviewSection />}
           {section === 'corporate'            && <CorporateSection />}
           {section === 'tradein'              && <TradeInSection />}
+          {section === 'dermatos'             && <DermatosSection />}
+          {section === 'dermato_consults'     && <DermatoConsultationsSection />}
               </>
             );
           })()}
