@@ -2,6 +2,16 @@
    YARAM Derma Dashboard — style calqué sur /pharma
    ═══════════════════════════════════════════════════════════════ */
 
+/* Deverrouille le scroll natif : le CSS global verrouille
+   html/body/#root en overflow:hidden (frame iPhone du shop).
+   Meme pattern que .app-shell--site. */
+html:has(.drm-shell),
+html:has(.drm-shell) body,
+html:has(.drm-shell) #root {
+  height: auto !important;
+  overflow: visible !important;
+}
+
 .drm-shell {
   display: flex;
   width: 100%;
