@@ -1,8 +1,12 @@
 // ════════════════════════════════════════════════════════════════
 // DermaSettings — infos du dermatologue (lecture seule, édit via admin)
+// Fetch le profil COMPLET via derma_get_profile (le login ne renvoie
+// que 5 champs — email/nom/photo/specialite).
 // ════════════════════════════════════════════════════════════════
 
-import { formatFcfa } from '../lib/dermato';
+import { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { formatFcfa, getDermaToken } from '../lib/dermato';
 
 function Row({ label, value }) {
   return (
@@ -18,7 +22,24 @@ function Row({ label, value }) {
   );
 }
 
-export default function DermaSettings({ dermato = {} }) {
+export default function DermaSettings({ dermato: sessionDermato = {} }) {
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const { data, error } = await supabase.rpc('derma_get_profile', {
+          p_token: getDermaToken(),
+        });
+        if (!error && data?.success && mounted) setProfile(data.dermato);
+      } catch { /* fallback session */ }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  const dermato = profile || sessionDermato;
+
   return (
     <>
       <div className="drm-page-h">
@@ -39,7 +60,7 @@ export default function DermaSettings({ dermato = {} }) {
             </div>
           )}
           <div>
-            <div style={{ fontSize: 18, fontWeight: 900 }}>Dr {dermato.full_name || '—'}</div>
+            <div style={{ fontSize: 18, fontWeight: 900 }}>{dermato.full_name || '—'}</div>
             <div style={{ fontSize: 13, color: 'var(--y-brand)', fontWeight: 700 }}>{dermato.speciality || 'Dermatologie'}</div>
           </div>
         </div>

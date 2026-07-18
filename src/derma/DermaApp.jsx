@@ -68,7 +68,7 @@ export default function DermaApp() {
             )}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="drm-side-brand">Dr {dermato.full_name || 'Dermato'}</div>
+            <div className="drm-side-brand">{dermato.full_name || 'Dermato'}</div>
             <div className="drm-side-role">{dermato.speciality || 'Dermatologie'}</div>
           </div>
         </div>
