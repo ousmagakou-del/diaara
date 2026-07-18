@@ -153,16 +153,16 @@ export default function DermatoProfile() {
           <div className="derm-price-cards">
             <button className="derm-price-card" onClick={bookAsync}>
               <div className="derm-price-card-tag">Envoi photos</div>
-              <h4>Chat asynchrone</h4>
+              <h4>Consultation express</h4>
               <div className="derm-price-value">{formatFcfa(derm.price_async_fcfa || 3000)}</div>
-              <p>Envoie tes photos + questions. Réponse et ordonnance en 24h max.</p>
+              <p>Envoie tes photos + description. Réponse et ordonnance en moins de 2h.</p>
             </button>
             <button className="derm-price-card" onClick={() => {
               // Scroll to slots
               document.getElementById('derm-slots-side')?.scrollIntoView({ behavior: 'smooth' });
             }}>
               <div className="derm-price-card-tag">Consultation vidéo</div>
-              <h4>Visio 15 min</h4>
+              <h4>Visio 20 min</h4>
               <div className="derm-price-value">{formatFcfa(derm.price_video_fcfa || 10000)}</div>
               <p>Rendez-vous en visio à l'horaire de ton choix. Écran partagé + ordonnance.</p>
             </button>
@@ -174,7 +174,7 @@ export default function DermatoProfile() {
           <h3>Créneaux visio disponibles</h3>
           {daysGroups.length === 0 ? (
             <div className="derm-slot-empty">
-              Aucun créneau visio pour l'instant. Choisis le chat asynchrone.
+              Aucun créneau visio pour l'instant. Choisis la consultation express.
             </div>
           ) : (
             daysGroups.slice(0, 5).map(g => (

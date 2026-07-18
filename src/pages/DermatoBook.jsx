@@ -274,7 +274,7 @@ export default function DermatoBook() {
 
             <div className="derm-book-summary">
               <div className="derm-book-summary-row"><span>Dermatologue</span><strong>Dr {derm.full_name}</strong></div>
-              <div className="derm-book-summary-row"><span>Type</span><strong>{type === 'video' ? 'Visio 15 min' : 'Chat asynchrone'}</strong></div>
+              <div className="derm-book-summary-row"><span>Type</span><strong>{type === 'video' ? 'Visio 20 min' : 'Consultation express'}</strong></div>
               {type === 'async' && photos.length > 0 && (
                 <div className="derm-book-summary-row"><span>Photos jointes</span><strong>{photos.length}</strong></div>
               )}

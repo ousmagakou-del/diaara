@@ -94,7 +94,7 @@ function ConsultRow({ c, onClick }) {
     <div className="derm-consult-row" onClick={onClick} role="button">
       <div className="derm-consult-row-main">
         <strong>Dr {dermName}</strong>
-        <span>{isVideo ? 'Visio 15 min' : 'Chat asynchrone'} · {formatDateTimeFr(c.created_at)}</span>
+        <span>{isVideo ? 'Visio 20 min' : 'Consultation express'} · {formatDateTimeFr(c.created_at)}</span>
       </div>
       <div style={{ textAlign: 'right' }}>
         <span className={`derm-status-badge derm-status-${c.status}`}>

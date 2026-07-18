@@ -11,14 +11,14 @@ import './Dermato.css';
 const STEPS = [
   { n: 1, title: 'Choisis ton dermato', desc: 'Parcours nos dermatologues certifiés à Dakar et sélectionne celui qui te correspond.' },
   { n: 2, title: 'Décris tes symptômes', desc: 'Envoie des photos et détaille tes préoccupations en toute confidentialité.' },
-  { n: 3, title: 'Reçois ton diagnostic', desc: 'Chat asynchrone ou visio — ordonnance signée en 24h maximum.' },
+  { n: 3, title: 'Reçois ton diagnostic', desc: 'Consultation express ou visio — diagnostic + ordonnance signée en moins de 2h.' },
 ];
 
 const FAQ = [
-  { q: 'Combien coûte une consultation ?', a: 'À partir de 3 000 F CFA pour un chat asynchrone (photos + questions). Une visio dure 15 minutes et coûte à partir de 10 000 F CFA.' },
+  { q: 'Combien coûte une consultation ?', a: '3 000 F CFA pour une consultation express (photos + description). Une visio dure 20 minutes et coûte 10 000 F CFA.' },
   { q: 'Mes photos sont-elles sécurisées ?', a: 'Oui, toutes tes photos et messages sont chiffrés. Seul le dermatologue que tu choisis y a accès. Aucun partage tiers.' },
   { q: 'Comment paie-t-on ?', a: 'Wave, Orange Money ou carte bancaire. Le paiement se fait avant la consultation.' },
-  { q: 'Combien de temps pour recevoir une réponse ?', a: 'En moyenne 4 à 6 heures pour un chat asynchrone. La visio se déroule à l\'horaire réservé.' },
+  { q: 'Combien de temps pour recevoir une réponse ?', a: 'Moins de 2 heures pour une consultation express. La visio se déroule à l\'horaire réservé.' },
   { q: 'Puis-je avoir une ordonnance ?', a: 'Oui, si le dermato juge que c\'est nécessaire, tu reçois une ordonnance signée numériquement, valable en pharmacie.' },
 ];
 
@@ -51,7 +51,7 @@ export default function DermatoLanding() {
             Consultez un <span>dermatologue</span> en ligne
           </h1>
           <p className="derm-hero-sub">
-            Dès 3 000 F CFA — chat asynchrone en 24h ou visio 15 min avec un spécialiste certifié à Dakar.
+            Dès 3 000 F CFA — réponse en moins de 2h ou visio 20 min avec un spécialiste certifié à Dakar.
             Photos, diagnostic, ordonnance numérique.
           </p>
           <button

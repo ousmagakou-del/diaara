@@ -181,7 +181,7 @@ export default function DermatoConsultation() {
         <div className="derm-consult-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
             <div>
-              <strong style={{ display: 'block', marginBottom: 4 }}>{isVideo ? 'Visio 15 min' : 'Chat asynchrone'}</strong>
+              <strong style={{ display: 'block', marginBottom: 4 }}>{isVideo ? 'Visio 20 min' : 'Consultation express'}</strong>
               <span style={{ fontSize: 13, color: 'var(--y-n-600)' }}>Créée le {formatDateTimeFr(consult.created_at)}</span>
             </div>
             <div style={{ textAlign: 'right' }}>
