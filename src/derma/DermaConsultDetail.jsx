@@ -246,19 +246,26 @@ export default function DermaConsultDetail({ consultId, onBack }) {
         </div>
       </div>
 
-      {/* PATIENT INFO */}
+      {/* PATIENT INFO — champs alignes sur la DB :
+          consult.patient_age / patient_gender / patient_history / symptom_description */}
       <div className="drm-card">
         <h2>Informations patient</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
-          <div><strong>Âge</strong><br /><span style={{ color: 'var(--y-n-600)' }}>{patient.age || '—'}</span></div>
+          <div><strong>Âge</strong><br /><span style={{ color: 'var(--y-n-600)' }}>{consult.patient_age ? `${consult.patient_age} ans` : '—'}</span></div>
+          <div><strong>Genre</strong><br /><span style={{ color: 'var(--y-n-600)' }}>{consult.patient_gender || 'Non précisé'}</span></div>
           <div><strong>Téléphone</strong><br /><span style={{ color: 'var(--y-n-600)' }}>{patient.phone || '—'}</span></div>
-          <div><strong>Type de peau</strong><br /><span style={{ color: 'var(--y-n-600)' }}>{patient.skin_type || 'Non précisé'}</span></div>
-          <div><strong>Prix payé</strong><br /><span style={{ color: 'var(--y-brand-dark)', fontWeight: 800 }}>{formatFcfa(consult.price_fcfa || consult.amount_fcfa || 0)}</span></div>
+          <div><strong>Prix payé</strong><br /><span style={{ color: 'var(--y-brand-dark)', fontWeight: 800 }}>{formatFcfa(consult.amount_fcfa || 0)}</span></div>
         </div>
-        {consult.symptoms && (
+        {consult.symptom_description && (
           <div style={{ marginTop: 14, padding: 12, background: 'var(--y-n-50)', borderRadius: 10 }}>
             <strong style={{ display: 'block', fontSize: 13, marginBottom: 4 }}>Symptômes rapportés</strong>
-            <p style={{ fontSize: 13, whiteSpace: 'pre-wrap' }}>{consult.symptoms}</p>
+            <p style={{ fontSize: 13, whiteSpace: 'pre-wrap' }}>{consult.symptom_description}</p>
+          </div>
+        )}
+        {consult.patient_history && (
+          <div style={{ marginTop: 10, padding: 12, background: 'var(--y-n-50)', borderRadius: 10 }}>
+            <strong style={{ display: 'block', fontSize: 13, marginBottom: 4 }}>Antécédents</strong>
+            <p style={{ fontSize: 13, whiteSpace: 'pre-wrap' }}>{consult.patient_history}</p>
           </div>
         )}
       </div>
