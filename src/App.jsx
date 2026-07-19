@@ -262,6 +262,10 @@ function pathToRoute(pathname, search = '') {
   // ─── Shop (catalogue e-commerce complet) ───
   if (parts[0] === 'shop' || parts[0] === 'home') return { name: 'shop', params: {} };
 
+  // Aliases FR pour la com (URLs jolies diffusees publiquement)
+  if (parts[0] === 'devenir-partenaire') return { name: 'partner-application', params: {} };
+  if (parts[0] === 'devenir-chauffeur') return { name: 'driver-application', params: {} };
+
   const simpleRoutes = ['search', 'cart', 'checkout', 'orders', 'profile', 'pharmacies', 'scan', 'scan_history', 'addresses', 'favorites', 'payments', 'evolution', 'categories', 'quiz', 'loyalty', 'referral', 'notifications', 'notif_settings', 'promos', 'privacy', 'terms', 'mentions', 'delete_account', 'international', 'help', 'newsletter', 'brands', 'partner-application', 'driver-application', 'subscriptions'];
   if (simpleRoutes.includes(parts[0])) {
     const params = {};

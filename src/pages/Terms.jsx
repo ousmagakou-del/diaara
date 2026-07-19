@@ -35,7 +35,7 @@ export default function Terms() {
           régissent l'utilisation de la plateforme <strong>YARAM</strong>, marketplace
           accessible sur le web (<a href="https://yaram.app">yaram.app</a>) et via
           l'application mobile iOS et Android, éditée par{' '}
-          <strong>[RAISON_SOCIALE]</strong>. YARAM met en relation des utilisateurs
+          <strong>Komunity SN</strong>. YARAM met en relation des utilisateurs
           (« Clients ») avec des pharmacies, parapharmacies et marques partenaires
           (« Vendeurs ») pour la commande de produits cosmétiques, de soins, d'hygiène
           et de parapharmacie.
@@ -147,7 +147,7 @@ export default function Terms() {
           peuvent être renvoyés pour des raisons d'hygiène ou de protection de la santé.
         </p>
         <p>
-          Pour exercer ce droit : contactez <a href="mailto:contact@yaram.sn">contact@yaram.sn</a>
+          Pour exercer ce droit : contactez <a href="mailto:contact@yaram.app">contact@yaram.app</a>
           ou WhatsApp <a href={`https://wa.me/${getWhatsAppNumber()}`}>{getWhatsAppDisplay()}</a>{' '}
           avec votre numéro de commande.
         </p>
@@ -208,7 +208,7 @@ export default function Terms() {
         <p>
           La marque YARAM, les logos, le design de l'interface, les textes, les
           illustrations, les bases de données et le code source sont la propriété
-          exclusive de <strong>[RAISON_SOCIALE]</strong>. Toute reproduction,
+          exclusive de <strong>Komunity SN</strong>. Toute reproduction,
           représentation ou exploitation, totale ou partielle, sans autorisation écrite
           préalable est strictement interdite et constitue une contrefaçon.
         </p>
@@ -242,7 +242,7 @@ export default function Terms() {
         <p>
           En cas de litige, les parties s'efforceront de trouver une solution amiable.
           Vous pouvez contacter le service client à{' '}
-          <a href="mailto:contact@yaram.sn">contact@yaram.sn</a>. À défaut de résolution
+          <a href="mailto:contact@yaram.app">contact@yaram.app</a>. À défaut de résolution
           amiable dans un délai de 30 jours, le litige sera porté devant les{' '}
           <strong>tribunaux compétents de Dakar</strong>.
         </p>

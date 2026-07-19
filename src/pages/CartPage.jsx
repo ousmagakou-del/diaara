@@ -284,10 +284,8 @@ export default function CartPage() {
     const itemCount = items.reduce((s, it) => s + (Number(it.qty) || 0), 0);
     const freeDelivery = subtotal >= FREE_DELIVERY_THRESHOLD;
     const delivery = items.length ? (freeDelivery ? 0 : DELIVERY_FEE) : 0;
-    const serviceFee = Math.max(
-      Math.round(subtotal * SERVICE_FEE_PCT),
-      items.length ? SERVICE_FEE_MIN : 0
-    );
+    // Zero frais de service (promesse YARAM, aligne app native)
+    const serviceFee = 0;
     const loyaltyAvail = Math.min(
       Math.floor((user?.loyalty_points || 0) || 0),
       Math.floor(subtotal * 0.1)

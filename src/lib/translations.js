@@ -147,7 +147,7 @@ export const translations = {
     'footer.brand': 'YARAM',
     'footer.terms': 'CGV',
     'footer.contact': 'Nous contacter',
-    'footer.copyright': '© 2026 YARAM SAS — Dakar, Sénégal',
+    'footer.copyright': '© 2026 Komunity SN — Dakar, Sénégal',
 
     // ─── Langue ───────────────────────────────────────────────────
     'lang.picker': 'Langue',
@@ -285,7 +285,7 @@ export const translations = {
     'footer.brand': 'YARAM',
     'footer.terms': 'Terms',
     'footer.contact': 'Contact us',
-    'footer.copyright': '© 2026 YARAM SAS — Dakar, Senegal',
+    'footer.copyright': '© 2026 Komunity SN — Dakar, Senegal',
 
     // ─── Langue ───────────────────────────────────────────────────
     'lang.picker': 'Language',

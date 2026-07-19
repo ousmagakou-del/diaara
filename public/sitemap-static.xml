@@ -43,4 +43,9 @@
     <priority>0.7</priority>
   </url>
 
+  <url><loc>https://yaram.app/dermato</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://yaram.app/blog</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://yaram.app/shop</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://yaram.app/brands</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://yaram.app/international</loc><changefreq>weekly</changefreq></url>
 </urlset>

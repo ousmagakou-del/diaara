@@ -329,7 +329,7 @@ export default function CheckoutPage() {
     }
   }
 
-  const serviceFee = Math.max(250, Math.round(subtotal * 0.05));
+  const serviceFee = 0; // Zero frais de service (promesse YARAM, aligne app native)
 
   // Cashback preview : X% du (subtotal + livraison) hors imports
   const cashbackEligibleAmount = hasImportedItem ? 0 : subtotal;

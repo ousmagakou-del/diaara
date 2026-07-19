@@ -31,19 +31,19 @@ export default function MentionsLegales() {
 
         <h2>1. Éditeur du service</h2>
         <ul>
-          <li><strong>Raison sociale</strong> : [RAISON_SOCIALE]</li>
-          <li><strong>Forme juridique</strong> : [FORME_JURIDIQUE] (ex. SAS, SARL, SUARL)</li>
-          <li><strong>Capital social</strong> : [CAPITAL] FCFA</li>
-          <li><strong>Siège social</strong> : [SIEGE], Dakar, Sénégal</li>
-          <li><strong>RCCM</strong> : [RCCM]</li>
-          <li><strong>NINEA</strong> : [NINEA]</li>
-          <li><strong>Représentant légal</strong> : [REPRÉSENTANT_LÉGAL]</li>
+          <li><strong>Raison sociale</strong> : Komunity SN</li>
+          <li><strong>Forme juridique</strong> : SARL (ex. SAS, SARL, SUARL)</li>
+          <li><strong>Capital social</strong> : 100 000 FCFA FCFA</li>
+          <li><strong>Siège social</strong> : Dakar, Senegal, Dakar, Sénégal</li>
+          <li><strong>RCCM</strong> : SN.DKR.2021.A.26292</li>
+          <li><strong>NINEA</strong> : 008771116</li>
+          <li><strong>Représentant légal</strong> : Ousmane Gakou</li>
           <li><strong>Directeur de la publication</strong> : [DIRECTEUR_PUBLICATION]</li>
         </ul>
 
         <h2>2. Contact</h2>
         <ul>
-          <li>Email : <a href="mailto:contact@yaram.sn">contact@yaram.sn</a></li>
+          <li>Email : <a href="mailto:contact@yaram.app">contact@yaram.app</a></li>
           <li>Téléphone / WhatsApp : <a href={`https://wa.me/${getWhatsAppNumber()}`}>{getWhatsAppDisplay()}</a></li>
           <li>Site web : <a href="https://yaram.app">https://yaram.app</a></li>
           <li>Application : YARAM (iOS, Android)</li>
@@ -87,7 +87,7 @@ export default function MentionsLegales() {
           La marque <strong>YARAM</strong>, son logo, sa charte graphique, les
           illustrations, photographies, textes, bases de données et le code source du
           site et de l'application sont la propriété exclusive de{' '}
-          <strong>[RAISON_SOCIALE]</strong> ou de ses partenaires et sont protégés par
+          <strong>Komunity SN</strong> ou de ses partenaires et sont protégés par
           le droit de la propriété intellectuelle (OAPI, conventions internationales).
         </p>
         <p>
