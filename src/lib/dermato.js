@@ -61,27 +61,65 @@ export async function getDermatologistDetail(slug) {
   return data;
 }
 
-export async function bookDermatoAsync({ dermatologistId, userId, symptoms, photos, patientInfo }) {
+/**
+ * Reservation consultation ASYNC (photos + description).
+ * Signature alignee sur la RPC reelle (cf. natif src/lib/dermato.js) :
+ * p_user_id, p_dermato_id, p_symptom_description, p_symptom_photos (text[]),
+ * p_patient_age (int), p_patient_gender, p_patient_history, p_skin_scan_id (uuid|null)
+ */
+export async function bookDermatoAsync({
+  userId,
+  dermatoId,
+  description,
+  photos = [],
+  age = null,
+  gender = null,
+  history = null,
+  skinScanId = null,
+}) {
   const { data, error } = await supabase.rpc('book_dermato_async', {
     p_user_id: userId,
-    p_dermatologist_id: dermatologistId,
-    p_symptoms: symptoms || '',
-    p_photos: photos || [],
-    p_patient_info: patientInfo || {},
+    p_dermato_id: dermatoId,
+    p_symptom_description: description,
+    p_symptom_photos: photos,
+    p_patient_age: age,
+    p_patient_gender: gender,
+    p_patient_history: history,
+    p_skin_scan_id: skinScanId,
   });
   if (error) throw error;
+  if (data && data.success === false) throw new Error(data.error || 'book_async_failed');
   return data;
 }
 
-export async function bookDermatoVideo({ dermatologistId, userId, slotId, symptoms, patientInfo }) {
+/**
+ * Reservation consultation VIDEO (creneau selectionne).
+ * Idem async + p_slot_id.
+ */
+export async function bookDermatoVideo({
+  userId,
+  dermatoId,
+  slotId,
+  description,
+  photos = [],
+  age = null,
+  gender = null,
+  history = null,
+  skinScanId = null,
+}) {
   const { data, error } = await supabase.rpc('book_dermato_video', {
     p_user_id: userId,
-    p_dermatologist_id: dermatologistId,
+    p_dermato_id: dermatoId,
     p_slot_id: slotId,
-    p_symptoms: symptoms || '',
-    p_patient_info: patientInfo || {},
+    p_symptom_description: description,
+    p_symptom_photos: photos,
+    p_patient_age: age,
+    p_patient_gender: gender,
+    p_patient_history: history,
+    p_skin_scan_id: skinScanId,
   });
   if (error) throw error;
+  if (data && data.success === false) throw new Error(data.error || 'book_video_failed');
   return data;
 }
 
@@ -324,7 +362,7 @@ export const CONSULT_STATUS_LABEL = {
   pending_payment: 'Paiement en attente',
   paid: 'Payé',
   in_review: 'En cours d\'analyse',
-  scheduled: 'Programmé',
+  scheduled: 'Visio planifiée',
   in_progress: 'En cours',
   completed: 'Terminé',
   cancelled: 'Annulé',

@@ -23,7 +23,12 @@ const FAQ = [
 ];
 
 export default function DermatoLanding() {
-  const { navigate } = useNav();
+  const { navigate, route } = useNav();
+  // scan_id : arrive du CTA ScanResult (route.params) ou de l'URL /dermato?scan_id=...
+  const scanId = route?.params?.scan_id
+    || (typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('scan_id')
+      : null);
   const [dermatos, setDermatos] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -39,7 +44,10 @@ export default function DermatoLanding() {
     })();
   }, []);
 
-  const gotoDoctor = (slug) => navigate({ name: 'dermato_profile', params: { slug } });
+  const gotoDoctor = (slug) => navigate({
+    name: 'dermato_profile',
+    params: scanId ? { slug, scan_id: scanId } : { slug },
+  });
 
   return (
     <div className="derm-page">
@@ -120,7 +128,7 @@ export default function DermatoLanding() {
               </div>
               <div className="derm-doc-prices">
                 {d.price_async_fcfa != null && (
-                  <span className="derm-doc-price">Chat {formatFcfaShort(d.price_async_fcfa)}</span>
+                  <span className="derm-doc-price">Express {formatFcfaShort(d.price_async_fcfa)}</span>
                 )}
                 {d.price_video_fcfa != null && (
                   <span className="derm-doc-price">Visio {formatFcfaShort(d.price_video_fcfa)}</span>

@@ -14,6 +14,8 @@ import {
   formatFcfa,
   CONSULT_STATUS_LABEL,
 } from '../lib/dermato';
+import { supabase } from '../lib/supabase';
+import { addToCart } from '../lib/cart';
 import './Dermato.css';
 
 function StatusBadge({ status }) {
@@ -37,6 +39,8 @@ export default function DermatoConsultation() {
   const [videoOpen, setVideoOpen] = useState(false);
   const [roomUrl, setRoomUrl] = useState(null);
   const [roomToken, setRoomToken] = useState(null);
+  const [addingRx, setAddingRx] = useState(false);
+  const [rxMessage, setRxMessage] = useState(null);
   const chatEndRef = useRef(null);
 
   const load = useCallback(async () => {
@@ -104,6 +108,62 @@ export default function DermatoConsultation() {
     } catch (e) {
       alert('Erreur visio : ' + (e?.message || ''));
     }
+  };
+
+  // ─── Ordonnance → panier : ajoute les produits YARAM de la prescription ───
+  const addPrescriptionToCart = async () => {
+    if (addingRx) return;
+    const items = Array.isArray(prescription?.items) ? prescription.items : [];
+    const withProduct = items.filter((it) => it && it.yaram_product_id);
+    if (withProduct.length === 0) {
+      setRxMessage('Ces produits ne sont pas encore dans notre catalogue.');
+      return;
+    }
+    setAddingRx(true);
+    setRxMessage(null);
+    try {
+      const ids = withProduct.map((it) => it.yaram_product_id);
+      const { data: products, error: pErr } = await supabase
+        .from('products')
+        .select('id, name, brand, price, img, image_url, is_imported, lead_time_days, origin_country')
+        .in('id', ids)
+        .eq('active', true);
+      if (pErr) throw pErr;
+      const found = products || [];
+      if (found.length === 0) {
+        setRxMessage('Ces produits ne sont pas encore dans notre catalogue.');
+        setAddingRx(false);
+        return;
+      }
+      // Meme fallback pharmacie que ProductPage.handleAddToCart
+      const pharmacy = { id: 'default', name: 'YARAM' };
+      let added = 0;
+      for (const p of found) {
+        const res = addToCart({
+          product: {
+            id: p.id,
+            name: p.name,
+            brand: p.brand || '',
+            img: p.img || p.image_url || '',
+            price: p.price,
+            is_imported: !!p.is_imported,
+            lead_time_days: p.lead_time_days || 1,
+            origin_country: p.origin_country || 'SN',
+          },
+          pharmacy,
+          qty: 1,
+        });
+        if (res?.success) added += 1;
+      }
+      if (added > 0) {
+        navigate({ name: 'cart', params: {} });
+      } else {
+        setRxMessage('Impossible d\'ajouter ces produits au panier.');
+      }
+    } catch (e) {
+      setRxMessage(e?.message || 'Erreur lors de l\'ajout au panier.');
+    }
+    setAddingRx(false);
   };
 
   const isVideo = consult?.type === 'video' || consult?.consult_type === 'video';
@@ -240,6 +300,23 @@ export default function DermatoConsultation() {
           <div className="derm-prescription">
             <h3>Ton ordonnance</h3>
             <div className="derm-prescription-html" dangerouslySetInnerHTML={{ __html: prescription.signed_html }} />
+
+            {/* Ordonnance → panier */}
+            <div style={{ marginTop: 16 }}>
+              <button
+                className="derm-btn-primary"
+                style={{ width: '100%' }}
+                disabled={addingRx}
+                onClick={addPrescriptionToCart}
+              >
+                {addingRx ? 'Ajout en cours…' : 'Ajouter les produits au panier'}
+              </button>
+              {rxMessage && (
+                <div style={{ marginTop: 10, padding: '10px 12px', background: 'var(--y-n-100, #F3F4F1)', color: 'var(--y-n-700, #4B4B45)', borderRadius: 10, fontSize: 13 }}>
+                  {rxMessage}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

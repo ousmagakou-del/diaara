@@ -266,6 +266,50 @@ export default function ScanResult({ scanId }) {
           {d.global && <p className="sr-global">{d.global}</p>}
         </section>
 
+        {/* ===== CTA AVIS DERMATOLOGUE (boucle scan → dermato) ===== */}
+        <section className="sr-section">
+          <button
+            type="button"
+            onClick={() => navigate({ name: 'dermato_landing', params: { scan_id: scanId } })}
+            style={{
+              width: '100%',
+              textAlign: 'left',
+              background: 'linear-gradient(135deg, #1F8B4C, #0E5B33)',
+              border: 'none',
+              borderRadius: 18,
+              padding: '18px 20px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
+              boxShadow: '0 8px 24px rgba(31,139,76,0.28)',
+            }}
+          >
+            <div style={{
+              width: 46, height: 46, borderRadius: '50%', flexShrink: 0,
+              background: 'rgba(255,255,255,0.16)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6 6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/>
+                <path d="M8 15v1a6 6 0 0 0 6 6 6 6 0 0 0 6-6v-4"/>
+                <circle cx="20" cy="10" r="2"/>
+              </svg>
+            </div>
+            <div style={{ flex: 1 }}>
+              <strong style={{ display: 'block', color: '#fff', fontSize: 15, fontWeight: 800 }}>
+                Avis d'un vrai dermatologue
+              </strong>
+              <span style={{ display: 'block', color: 'rgba(255,255,255,0.85)', fontSize: 12.5, marginTop: 3, lineHeight: 1.4 }}>
+                Ton scan est transmis au médecin · dès 3 000 F · réponse &lt; 2h
+              </span>
+            </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+        </section>
+
         {/* ===== DIAGNOSTIC CARDS ===== */}
         {d.concerns && d.concerns.length > 0 && (
           <section className="sr-section sr-stagger">

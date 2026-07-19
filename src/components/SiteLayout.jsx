@@ -213,6 +213,7 @@ export default function SiteLayout({ children, transparentHeader = false, hideFo
               <button onClick={() => navigate('brands')}>{t('nav.brands', 'Marques')}</button>
               <button onClick={() => navigate('international')}>{t('nav.international', 'International')}</button>
               <button onClick={() => navigate('pharmacies')}>{t('nav.pharmacies', 'Pharmacies')}</button>
+              <button onClick={() => navigate({ name: 'dermato_landing', params: {} })}>Dermatologue</button>
             </div>
 
             <div className="site-footer-col">

@@ -201,6 +201,24 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* ━━━ CONSULTATION DERMATO (nouveau service) ━━━ */}
+      <section className="lp-section" style={{ background: 'linear-gradient(135deg, #1F8B4C, #0E5B33)' }}>
+        <div style={{ textAlign: 'center', maxWidth: 640, margin: '0 auto' }}>
+          <span className="lp-section-eyebrow" style={{ color: '#F4B53A' }}>NOUVEAU · YARAM DERMATO</span>
+          <h2 className="lp-section-title" style={{ color: '#fff' }}>Un dermatologue dans ta poche</h2>
+          <p className="lp-section-sub" style={{ color: 'rgba(255,255,255,0.85)' }}>
+            Envoie tes photos ou réserve une visio avec un dermatologue certifié à Dakar — diagnostic et ordonnance dès 3 000 F CFA, réponse en moins de 2h.
+          </p>
+          <button
+            className="lp-btn-primary lp-btn-lg"
+            style={{ background: '#fff', color: '#0E5B33', marginTop: 8 }}
+            onClick={() => navigate({ name: 'dermato_landing', params: {} })}
+          >
+            Consulter un dermatologue
+          </button>
+        </div>
+      </section>
+
       {/* ━━━ APP DOWNLOAD ━━━ */}
       <section className="lp-section lp-app">
         <div className="lp-app-inner">

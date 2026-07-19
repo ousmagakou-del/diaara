@@ -490,6 +490,55 @@ export default function ShopHome() {
           <BrandGrid brands={featuredBrands} loading={loading} count={8} />
         </section>
 
+        {/* 2.5 CONSULTATION DERMATO (nouveau service) ──────────────── */}
+        <section className="yhome-section">
+          <button
+            type="button"
+            onClick={() => navigate({ name: 'dermato_landing', params: {} })}
+            style={{
+              width: '100%',
+              textAlign: 'left',
+              background: 'linear-gradient(135deg, #1F8B4C, #0E5B33)',
+              border: 'none',
+              borderRadius: 20,
+              padding: '22px 24px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 18,
+              boxShadow: '0 10px 28px rgba(31,139,76,0.25)',
+            }}
+          >
+            <div style={{
+              width: 54, height: 54, borderRadius: '50%', flexShrink: 0,
+              background: 'rgba(255,255,255,0.16)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6 6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/>
+                <path d="M8 15v1a6 6 0 0 0 6 6 6 6 0 0 0 6-6v-4"/>
+                <circle cx="20" cy="10" r="2"/>
+              </svg>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <span style={{
+                display: 'inline-block', background: '#F4B53A', color: '#0F1419',
+                fontSize: 10, fontWeight: 800, letterSpacing: 1,
+                padding: '3px 8px', borderRadius: 999, marginBottom: 6,
+              }}>NOUVEAU</span>
+              <strong style={{ display: 'block', color: '#fff', fontSize: 17, fontWeight: 800 }}>
+                Consultation dermato
+              </strong>
+              <span style={{ display: 'block', color: 'rgba(255,255,255,0.85)', fontSize: 13, marginTop: 3 }}>
+                Photos ou visio · dès 3 000 F CFA
+              </span>
+            </div>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+        </section>
+
         {/* 3. CATEGORIES (calque native chips ronds) ───────────────── */}
         {(categoriesRaw.length > 0 || catLoading) && (
           <section className="yhome-section">

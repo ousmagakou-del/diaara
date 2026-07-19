@@ -37,6 +37,11 @@ function Star({ filled }) {
 export default function DermatoProfile() {
   const { navigate, goBack, route } = useNav();
   const slug = route?.params?.slug;
+  // scan_id : propagé depuis DermatoLanding (route.params) ou présent dans l'URL
+  const scanId = route?.params?.scan_id
+    || (typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('scan_id')
+      : null);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -60,8 +65,14 @@ export default function DermatoProfile() {
   const slots = data?.slots || derm?.slots || [];
   const daysGroups = useMemo(() => groupSlotsByDay(slots.filter(s => !s.is_booked)), [slots]);
 
-  const bookAsync = () => navigate({ name: 'dermato_book', params: { slug, type: 'async' } });
-  const bookVideo = (slotId) => navigate({ name: 'dermato_book', params: { slug, type: 'video', slot_id: slotId } });
+  const bookAsync = () => navigate({
+    name: 'dermato_book',
+    params: { slug, type: 'async', ...(scanId ? { scan_id: scanId } : {}) },
+  });
+  const bookVideo = (slotId) => navigate({
+    name: 'dermato_book',
+    params: { slug, type: 'video', slot_id: slotId, ...(scanId ? { scan_id: scanId } : {}) },
+  });
 
   if (loading) {
     return (
