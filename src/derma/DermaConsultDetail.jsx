@@ -186,6 +186,7 @@ export default function DermaConsultDetail({ consultId, onBack }) {
   const messages = data?.messages || [];
   const prescription = data?.prescription || null;
   const photos = consult?.symptom_photos || consult?.photos || [];
+  const skinScan = data?.skin_scan || null;
 
   const sendMsg = async () => {
     const body = msgInput.trim();
@@ -269,6 +270,73 @@ export default function DermaConsultDetail({ consultId, onBack }) {
           </div>
         )}
       </div>
+
+      {/* ═══ SCAN IA ATTACHE — la boucle killer ═══
+          Le patient a fait un Skin Scan IA avant de consulter :
+          le dermato voit photos + analyse + score AVANT de diagnostiquer. */}
+      {skinScan && (
+        <div className="drm-card" style={{ borderLeft: '4px solid #1F8B4C' }}>
+          <h2 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            Scan IA du patient
+            <span style={{
+              fontSize: 11, fontWeight: 800, background: '#E8F5E9', color: '#166635',
+              padding: '3px 10px', borderRadius: 999,
+            }}>
+              Pre-analyse YARAM
+            </span>
+          </h2>
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-start', marginTop: 8 }}>
+            {/* Photos du scan */}
+            <div style={{ display: 'flex', gap: 8 }}>
+              {[skinScan.photo_front_url || skinScan.photo_url, skinScan.photo_left_url, skinScan.photo_right_url]
+                .filter(Boolean)
+                .map((p, i) => (
+                  <a key={i} href={p} target="_blank" rel="noreferrer">
+                    <img src={p} alt="" style={{ width: 110, height: 110, objectFit: 'cover', borderRadius: 10, border: '1px solid var(--y-n-200)' }} />
+                  </a>
+                ))}
+            </div>
+            {/* Score + type */}
+            <div style={{ display: 'flex', gap: 20 }}>
+              {skinScan.skin_score != null && (
+                <div>
+                  <div style={{ fontSize: 26, fontWeight: 900, color: '#1F8B4C' }}>{skinScan.skin_score}<span style={{ fontSize: 14, color: 'var(--y-n-600)' }}>/100</span></div>
+                  <div style={{ fontSize: 11, color: 'var(--y-n-600)', fontWeight: 600 }}>Score peau IA</div>
+                </div>
+              )}
+              {skinScan.skin_type && (
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 900, textTransform: 'capitalize' }}>{skinScan.skin_type}</div>
+                  <div style={{ fontSize: 11, color: 'var(--y-n-600)', fontWeight: 600 }}>Type de peau</div>
+                </div>
+              )}
+              {skinScan.skin_age != null && (
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 900 }}>{skinScan.skin_age} ans</div>
+                  <div style={{ fontSize: 11, color: 'var(--y-n-600)', fontWeight: 600 }}>Age cutane estime</div>
+                </div>
+              )}
+            </div>
+          </div>
+          {/* Analyse IA */}
+          {skinScan.diagnostic && (
+            <div style={{ marginTop: 14, padding: 12, background: 'var(--y-n-50)', borderRadius: 10 }}>
+              <strong style={{ display: 'block', fontSize: 13, marginBottom: 4 }}>Analyse IA</strong>
+              <p style={{ fontSize: 13, whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
+                {typeof skinScan.diagnostic === 'string'
+                  ? skinScan.diagnostic
+                  : (skinScan.diagnostic.global
+                      || (Array.isArray(skinScan.diagnostic.concerns)
+                          ? skinScan.diagnostic.concerns.map((c) => (typeof c === 'string' ? c : c?.title || c?.name || '')).filter(Boolean).join(' · ')
+                          : JSON.stringify(skinScan.diagnostic).slice(0, 400)))}
+              </p>
+            </div>
+          )}
+          <p style={{ fontSize: 11, color: 'var(--y-n-500, #9CA3AF)', marginTop: 8 }}>
+            Pre-analyse automatique a titre indicatif — votre diagnostic medical fait foi.
+          </p>
+        </div>
+      )}
 
       {/* SYMPTOM PHOTOS */}
       {photos.length > 0 && (
