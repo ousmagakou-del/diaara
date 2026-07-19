@@ -32,7 +32,8 @@ export const translations = {
     // ─── Landing hero ─────────────────────────────────────────────
     'landing.hero.title.line1': 'La beauté du Sénégal,',
     'landing.hero.title.line2': 'livrée chez toi.',
-    'landing.hero.sub': "Plus de 5 000 produits cosmétiques et soins authentiques, sélectionnés par nos pharmaciens partenaires.",
+    'landing.hero.sub': "YARAM est l'application de parapharmacie en ligne au Sénégal : plus de 5 000 produits authentiques, scan de peau IA, consultation dermatologue et livraison en 1h30 à Dakar.",
+    'landing.hero.eyebrow': 'Parapharmacie en ligne au Sénégal',
     'landing.hero.cta.download': "Télécharger l'app",
     'landing.hero.cta.explore': 'Explorer le catalogue',
     'landing.hero.trust.appstore': 'App Store',
@@ -170,7 +171,8 @@ export const translations = {
     // ─── Landing hero ─────────────────────────────────────────────
     'landing.hero.title.line1': "Senegal's beauty,",
     'landing.hero.title.line2': 'delivered to your door.',
-    'landing.hero.sub': 'Over 5,000 authentic beauty and skincare products, curated by our partner pharmacists.',
+    'landing.hero.sub': 'YARAM is the online parapharmacy app in Senegal: over 5,000 authentic products, AI skin scan, dermatologist consultations and 1h30 delivery in Dakar.',
+    'landing.hero.eyebrow': 'Online parapharmacy in Senegal',
     'landing.hero.cta.download': 'Download the app',
     'landing.hero.cta.explore': 'Browse catalog',
     'landing.hero.trust.appstore': 'App Store',

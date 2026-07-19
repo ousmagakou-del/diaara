@@ -81,6 +81,7 @@ export default function Landing() {
         <div className="lp-hero-bg-orb lp-orb-2"></div>
         <div className="lp-hero-inner">
           <div className="lp-hero-content">
+            <p className="lp-hero-eyebrow">YARAM · {t('landing.hero.eyebrow', 'Parapharmacie en ligne au Sénégal')}</p>
             <h1 className="lp-hero-title">
               {t('landing.hero.title.line1', 'La beauté du Sénégal,')}
               <br/>

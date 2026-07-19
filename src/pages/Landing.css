@@ -214,6 +214,14 @@
   70% { box-shadow: 0 0 0 10px rgba(31,139,76,0); }
   100% { box-shadow: 0 0 0 0 rgba(31,139,76,0); }
 }
+.lp-hero-eyebrow {
+  font-size: 15px; font-weight: 800;
+  letter-spacing: 2.5px; text-transform: uppercase;
+  color: #6BE49A; margin: 0 0 16px;
+  text-align: center;
+  text-shadow: 0 2px 16px rgba(0,0,0,0.35);
+}
+.lp-hero--no-video .lp-hero-eyebrow { color: #1F8B4C; text-shadow: none; }
 .lp-hero-title {
   font-size: 88px; font-weight: 900; line-height: 1;
   letter-spacing: -3px; margin: 0 0 24px;
