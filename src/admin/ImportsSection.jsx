@@ -8,6 +8,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { getAdminToken } from '../lib/adminAuth';
 import { toast, confirmDialog } from '../lib/toast';
 import { PREORDER_STATUS_LABELS, PREORDER_STATUS_ICONS, formatArrivalDate } from '../lib/preorder';
 import { notifyPreorderStatusChange } from '../lib/preorderNotify';
@@ -294,7 +295,9 @@ function ProductsTab() {
         onDelete={editing !== 'new' ? async () => {
           const ok = await confirmDialog({ title: 'Supprimer ?', message: 'Cette action est irréversible.' });
           if (!ok) return;
-          await supabase.from('products').delete().eq('id', editing);
+          const token = getAdminToken();
+          const { error } = await supabase.rpc('admin_delete_product', { p_token: token, p_id: editing });
+          if (error) { toast.error('Erreur : ' + error.message); return; }
           toast.success('Produit supprimé');
           setEditing(null);
           await load();
@@ -431,22 +434,32 @@ function ProductImportEditor({ product, categories, onSave, onCancel, onDelete }
     }
     setSaving(true);
     try {
+      const token = getAdminToken();
+      if (!token) { toast.error('Session admin expirée, reconnecte-toi'); setSaving(false); return; }
+
       const payload = {
-        ...p,
+        name: p.name,
+        brand: p.brand,
+        category: p.category,
+        img: p.img || p.image_url || null,
+        image_url: p.image_url || p.img || null,
         price: Number(p.price) || 0,
         score: Number(p.score) || 70,
         rating: Number(p.rating) || 4.5,
         lead_time_days: Number(p.lead_time_days) || 15,
         supplier_cost: p.supplier_cost ? Number(p.supplier_cost) : null,
+        supplier_url: p.supplier_url || null,
+        origin_country: p.origin_country || 'US',
+        active: p.active !== false,
+        status: 'approved',
         is_imported: true,
       };
-      // Cleanup avant insert
-      delete payload.created_at;
-      if (isNew) delete payload.id;
 
-      const { error } = isNew
-        ? await supabase.from('products').insert(payload)
-        : await supabase.from('products').update(payload).eq('id', p.id);
+      const { error } = await supabase.rpc('admin_upsert_product', {
+        p_token: token,
+        p_id: isNew ? null : p.id,
+        p_payload: payload,
+      });
       if (error) throw error;
       toast.success(isNew ? 'Produit créé ✅' : 'Produit modifié ✅');
       onSave();
