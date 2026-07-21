@@ -13,7 +13,29 @@
 // - WhatsApp / Facebook affichent la vraie preview d article (titre + cover).
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { sbFetch, isBotUA, buildMetaTags, injectMetaTags } from '../_lib.js';
+import { sbFetch, isBotUA, buildMetaTags, injectMetaTags, injectBotContent, escapeHtml } from '../_lib.js';
+
+// Markdown -> HTML minimaliste (titres, paragraphes, listes) pour servir le
+// corps d'article aux bots. Pas de parser complet : suffisant pour Googlebot.
+function mdToHtml(md) {
+  if (!md) return '';
+  return md
+    .split(/\n{2,}/)
+    .map((block) => {
+      const b = block.trim();
+      if (!b) return '';
+      if (b.startsWith('### ')) return `<h3>${escapeHtml(b.slice(4))}</h3>`;
+      if (b.startsWith('## '))  return `<h2>${escapeHtml(b.slice(3))}</h2>`;
+      if (b.startsWith('# '))   return `<h2>${escapeHtml(b.slice(2))}</h2>`;
+      if (/^[-*] /m.test(b)) {
+        const items = b.split('\n').filter(l => /^[-*] /.test(l.trim()))
+          .map(l => `<li>${escapeHtml(l.trim().slice(2).replace(/\*\*/g, ''))}</li>`).join('');
+        return `<ul>${items}</ul>`;
+      }
+      return `<p>${escapeHtml(b.replace(/\*\*/g, '').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1'))}</p>`;
+    })
+    .join('\n');
+}
 
 async function serveSpa(request, env) {
   const indexResponse = await env.ASSETS.fetch(new URL('/', request.url));
@@ -126,6 +148,16 @@ export async function onRequest(context) {
                    `\n<script type="application/ld+json">${JSON.stringify(jsonLdBreadcrumb)}</script>`;
 
     html = injectMetaTags(html, metaHtml + ldHtml);
+
+    // Corps d'article crawlable (Googlebot indexe le texte sans executer le JS)
+    const botBody = `
+      <article>
+        <h1>${escapeHtml(a.title)}</h1>
+        ${a.subtitle ? `<p><em>${escapeHtml(a.subtitle)}</em></p>` : ''}
+        ${mdToHtml(a.content_md)}
+        <p><a href="https://yaram.app/blog">Tous les conseils YARAM</a> · <a href="https://yaram.app/shop">Parapharmacie en ligne au Sénégal</a></p>
+      </article>`;
+    html = injectBotContent(html, botBody);
 
     return new Response(html, {
       status: 200,

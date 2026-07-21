@@ -85,6 +85,18 @@ export function buildMetaTags({ title, description, image, url, type = 'website'
   `.trim();
 }
 
+// Injecte un bloc de contenu HTML semantique (h1, p, prix…) juste apres
+// l'ouverture de <body>, AVANT #root. Servi uniquement aux bots : Googlebot
+// indexe ce contenu meme sans executer le JS de la SPA. Quand il rend le JS,
+// React monte dans #root sans toucher ce bloc (position: absolute off-screen
+// evite le flash visuel si un humain deguisé en bot le recoit).
+export function injectBotContent(html, contentHtml) {
+  return html.replace(
+    /<body([^>]*)>/i,
+    `<body$1>\n<div id="seo-content">${contentHtml}</div>`
+  );
+}
+
 // Remplace les meta tags par defaut dans le index.html par les nouveaux.
 // Strategie : on retire les balises og:/twitter:/title/description/canonical existantes,
 // puis on injecte les nouvelles juste avant </head>.

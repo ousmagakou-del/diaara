@@ -13,7 +13,7 @@
 // - Conversion x2-x5 sur les partages depuis l'app.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { sbFetch, escapeHtml, isBotUA, buildMetaTags, injectMetaTags } from '../_lib.js';
+import { sbFetch, escapeHtml, isBotUA, buildMetaTags, injectMetaTags, injectBotContent } from '../_lib.js';
 
 // Sert le SPA (index.html) en preservant l URL /product/:id dans le navigateur.
 // Utilise env.ASSETS.fetch au lieu de next() car next() delegue au pipeline
@@ -91,6 +91,16 @@ export async function onRequest(context) {
     });
 
     html = injectMetaTags(html, metaHtml + `\n<script type="application/ld+json">${jsonLd}</script>`);
+
+    // Contenu crawlable visible pour Googlebot (h1 + prix + description longue)
+    const priceStr = (p.price || 0).toLocaleString('fr-FR');
+    const botBody = `
+      <h1>${escapeHtml(p.name)}${p.brand ? ' — ' + escapeHtml(p.brand) : ''}</h1>
+      <p><strong>${priceStr} F CFA</strong> · Livraison en 1h30 à Dakar · Produit authentique vendu par les pharmacies partenaires YARAM.</p>
+      ${p.score ? `<p>Score YARAM : ${escapeHtml(String(p.score))}/100 — analysé pour la peau africaine.</p>` : ''}
+      <p>${escapeHtml(p.long_desc || p.short_desc || '')}</p>
+      <p><a href="https://yaram.app/shop">Voir tout le catalogue YARAM — parapharmacie en ligne au Sénégal</a></p>`;
+    html = injectBotContent(html, botBody);
 
     return new Response(html, {
       status: 200,
