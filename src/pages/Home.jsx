@@ -994,7 +994,7 @@ export default function Home() {
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
                   <circle cx="12" cy="10" r="3"/>
                 </svg>
-                Près de chez toi
+                Partenaires près de chez toi
               </h2>
               {gpsStatus === 'granted' && (
                 <div className="yhome-section-sub success">GPS activé · trié par distance</div>
@@ -1015,6 +1015,24 @@ export default function Home() {
           )}
 
           <div className="yhome-pharma-row">
+            {topBrands.filter(b => b.local && b.img).slice(0, 8).map(brand => (
+              <button
+                key={`brand-${brand.id}`}
+                className="yhome-pharma-card"
+                onClick={() => navigate({ name: 'search', params: { brand: brand.name } })}
+              >
+                <div
+                  className="yhome-pharma-cover"
+                  style={{ background: brand.img ? `url(${brand.img}) center/cover` : 'linear-gradient(135deg, #EFB355, #d99a3a)' }}
+                >
+                  <span className="yhome-pharma-dist" style={{ background: '#1F8B4C', color: '#fff' }}>MARQUE</span>
+                </div>
+                <div className="yhome-pharma-info">
+                  <div className="yhome-pharma-name">{brand.name}</div>
+                  <div className="yhome-pharma-area">{brand.tagline || [brand.city, brand.country].filter(Boolean).join(' · ') || 'Sénégal'}</div>
+                </div>
+              </button>
+            ))}
             {nearbyPharmacies.map(ph => (
               <button
                 key={ph.id}
