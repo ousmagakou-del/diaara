@@ -39,6 +39,7 @@ const GOOGLE_CATEGORY_MAP = {
   bouche:      'Health & Beauty > Personal Care > Oral Care',
   complement:  'Health & Beauty > Health Care > Nutrition > Dietary Supplements',
   parfum:      'Health & Beauty > Personal Care > Cosmetics > Perfume & Cologne',
+  parfums:     'Health & Beauty > Personal Care > Cosmetics > Perfume & Cologne',
   pieds_mains: 'Health & Beauty > Personal Care > Cosmetics > Skin Care',
   intime:      'Health & Beauty > Personal Care > Feminine Sanitary Supplies',
   deodorants:  'Health & Beauty > Personal Care > Deodorants & Anti-Perspirants',
@@ -56,7 +57,7 @@ export async function onRequest({ env }) {
     // ⚠️ products n'a pas updated_at (seulement created_at)
     const products = await sbFetch(
       env,
-      'products?select=id,name,brand,category,price,short_desc,long_desc,img,score,review_count,rating,active,status,created_at&status=eq.approved&active=eq.true&order=created_at.desc&limit=5000'
+      'products?select=id,name,brand,category,price,short_desc,long_desc,img,score,review_count,rating,active,status,created_at,is_imported&status=eq.approved&active=eq.true&order=created_at.desc&limit=5000'
     );
 
     if (!products || products.length === 0) {
@@ -140,6 +141,7 @@ function buildItem(p) {
       </g:shipping>
       <g:custom_label_0>${escapeXml(p.category || 'autre')}</g:custom_label_0>
       <g:custom_label_1>score-${Math.floor((p.score || 0) / 10) * 10}</g:custom_label_1>
+      <g:custom_label_2>${p.is_imported ? 'import' : 'local'}</g:custom_label_2>
     </item>`;
 }
 
