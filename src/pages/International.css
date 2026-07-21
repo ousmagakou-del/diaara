@@ -1047,6 +1047,14 @@
   gap: 12px;
   padding: 0 4px;
 }
+/* Desktop / large viewport : tiles plus petites, plusieurs colonnes
+   au lieu de 2 cartes géantes. */
+@media (min-width: 640px) {
+  .intlp-products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+  }
+}
 
 /* Empty products (calque native pattern sobre) */
 .intlp-products-empty {
@@ -1098,8 +1106,9 @@
 .intlp-product-img {
   width: 100%;
   aspect-ratio: 1 / 1;
-  object-fit: cover;
-  background: #F4F4F2;
+  object-fit: contain;
+  padding: 10px;
+  background: #FFFFFF;
   display: block;
 }
 
