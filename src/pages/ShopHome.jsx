@@ -372,7 +372,12 @@ export default function ShopHome() {
     if (!productsRaw.length) return [];
     const withDate = productsRaw
       .slice()
-      .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+      // Cosmetiques d'abord (display_rank), puis les plus recents.
+      .sort((a, b) => {
+        const dr = (a.display_rank ?? 0) - (b.display_rank ?? 0);
+        if (dr !== 0) return dr;
+        return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+      });
     const recent = withDate.filter((p) => daysAgo(p.created_at) <= 21);
     return (recent.length >= 6 ? recent : withDate).slice(0, 12);
   }, [productsRaw]);

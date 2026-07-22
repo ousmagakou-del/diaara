@@ -31,7 +31,7 @@ import { cachedFetch } from '../dataCache';
 // admin_list_orders/products.
 const PRODUCT_LIST_COLUMNS = [
   'id', 'name', 'brand', 'category', 'score', 'price', 'review_count',
-  'rating', 'badges', 'img', 'image_url', 'active', 'created_at',
+  'rating', 'badges', 'img', 'image_url', 'active', 'created_at', 'display_rank',
   // Import / origine
   'is_imported', 'origin_country', 'usage_duration_days', 'lead_time_days',
   // Contenu fiche (RN s'en sert pour rendre la fiche sans 2e fetch)
@@ -43,7 +43,10 @@ export async function getAllProducts() {
     const { data } = await supabase
       .from('products')
       .select(PRODUCT_LIST_COLUMNS)
-      .eq('active', true);
+      .eq('active', true)
+      // Cosmetiques d'abord (display_rank 0), complements (20), ortho/medical (40).
+      .order('display_rank', { ascending: true })
+      .order('created_at', { ascending: false });
     // Normalize : image_url canonique. On garde aussi `img` pour la
     // back-compat (ProductTile, Product.jsx legacy lisent les deux).
     return (data || []).map((p) => ({
