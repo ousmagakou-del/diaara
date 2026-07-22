@@ -60,13 +60,46 @@ const BRAND_ORANGE = "#E94E1B";
 const SUPPORT_EMAIL = "contact@yaram.app";
 const SUPPORT_WA = "+221 77 438 87 66";
 
-function layout({ title, preheader, body }: { title: string; preheader?: string; body: string }) {
+// ─── Gmail Email Markup (schema.org JSON-LD) ────────────────────────
+// Genere la carte "commande / facture" dans Gmail + le resume en haut
+// de la boite de reception. Necessite l'enregistrement de l'expediteur
+// aupres de Google pour s'afficher au grand public (voir doc Gmail).
+function orderJsonLd(opts: {
+  orderId: string;
+  total?: number | string;
+  statusUrl?: string;       // ex https://schema.org/OrderProcessing
+  actionLabel: string;      // ex "Voir ma commande" / "Payer le solde"
+  actionType?: string;      // ViewAction | TrackAction | PayAction
+  actionUrl?: string;       // override (ex page paiement)
+}): string {
+  const url = opts.actionUrl || `${APP_URL}/order/${opts.orderId}`;
+  const obj: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "Order",
+    merchant: { "@type": "Organization", name: "YARAM" },
+    orderNumber: String(opts.orderId).slice(0, 8).toUpperCase(),
+    priceCurrency: "XOF",
+    orderStatus: opts.statusUrl || "https://schema.org/OrderProcessing",
+    url,
+    potentialAction: {
+      "@type": opts.actionType || "ViewAction",
+      name: opts.actionLabel,
+      target: url,
+      url,
+    },
+  };
+  if (opts.total != null && Number(opts.total) > 0) obj.price = String(Number(opts.total));
+  return `<script type="application/ld+json">${JSON.stringify(obj)}</script>`;
+}
+
+function layout({ title, preheader, body, markup }: { title: string; preheader?: string; body: string; markup?: string }) {
   return `<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${title}</title>
+${markup || ""}
 </head>
 <body style="margin:0;padding:0;background:#F5F6F8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#1A1A1A;">
 <div style="display:none;font-size:1px;color:#fff;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">${preheader || ""}</div>
@@ -117,7 +150,7 @@ const BORDER_LIGHT = "#EEEEEE";
 const PAGE_BG = "#FAFAF7";
 const EMAIL_FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Inter,sans-serif";
 
-function layoutV2({ title, preheader, body }: { title: string; preheader?: string; body: string }) {
+function layoutV2({ title, preheader, body, markup }: { title: string; preheader?: string; body: string; markup?: string }) {
   return `<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -125,6 +158,7 @@ function layoutV2({ title, preheader, body }: { title: string; preheader?: strin
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="x-apple-disable-message-reformatting">
 <title>${title}</title>
+${markup || ""}
 </head>
 <body style="margin:0;padding:0;background:${PAGE_BG};font-family:${EMAIL_FONT};color:${TEXT_DARK};">
 <div style="display:none;font-size:1px;color:${PAGE_BG};line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">${preheader || ""}</div>
@@ -255,6 +289,7 @@ const Templates: Record<
       subject: isPre ? `Precommande ${orderNum} confirmee - livraison sous ${leadDays}j` : `Merci pour ta commande ${orderNum}`,
       html: layoutV2({
         title: isPre ? "Precommande confirmee" : "Commande confirmee",
+        markup: orderJsonLd({ orderId: o.id, total: o.total, actionLabel: "Suivre ma commande", actionType: "TrackAction", statusUrl: "https://schema.org/OrderProcessing" }),
         preheader: isPre
           ? `Precommande ${orderNum} confirmee. Arrivee estimee sous ${leadDays} jours.`
           : `Commande ${orderNum} confirmee. Suis ta livraison avec YARAM Track.`,
@@ -300,6 +335,7 @@ const Templates: Record<
       subject: `Ta commande ${orderNum} est en route`,
       html: layoutV2({
         title: "Ta commande est en route",
+        markup: orderJsonLd({ orderId: o.id, total: o.total, actionLabel: "Suivre le livreur", actionType: "TrackAction", statusUrl: "https://schema.org/OrderInTransit" }),
         preheader: `Le livreur est en approche pour la commande ${orderNum}.`,
         body: `
           <h1 style="margin:0 0 20px;font-size:32px;font-weight:900;letter-spacing:-0.5px;color:${TEXT_DARK};line-height:1.12;text-align:center;text-transform:uppercase;font-family:${EMAIL_FONT};">
@@ -334,6 +370,7 @@ const Templates: Record<
       subject: `Commande ${orderNum} livree - merci ${firstName || "toi"}`,
       html: layoutV2({
         title: "Commande livree",
+        markup: orderJsonLd({ orderId: o.id, total: o.total, actionLabel: "Voir ma commande", actionType: "ViewAction", statusUrl: "https://schema.org/OrderDelivered" }),
         preheader: `Commande ${orderNum} livree. On espere que tout est parfait.`,
         body: `
           <h1 style="margin:0 0 20px;font-size:32px;font-weight:900;letter-spacing:-0.5px;color:${TEXT_DARK};line-height:1.12;text-align:center;text-transform:uppercase;font-family:${EMAIL_FONT};">
@@ -450,6 +487,7 @@ const Templates: Record<
       subject: `Solde a regler pour ton colis YARAM (dernier pas)`,
       html: layout({
         title: "Solde a regler",
+        markup: orderJsonLd({ orderId: o.id, total: balance, actionLabel: "Payer le solde", actionType: "PayAction", actionUrl: `${APP_URL}/payment/${o.id}?mode=balance`, statusUrl: "https://schema.org/OrderPaymentDue" }),
         preheader: `Precommande #${o.id} — il ne reste que le solde et on livre sous 24h.`,
         body: `
           <div style="font-size:11px;font-weight:700;color:#888;letter-spacing:0.18em;text-transform:uppercase;margin-bottom:6px;">Precommande #${o.id}</div>
@@ -478,6 +516,7 @@ const Templates: Record<
       subject: `Paiement validé · YARAM #${o.id}`,
       html: layout({
         title: "Paiement validé",
+        markup: orderJsonLd({ orderId: o.id, total: amount, actionLabel: "Suivre ma commande", actionType: "ViewAction", statusUrl: "https://schema.org/OrderProcessing" }),
         preheader: `Ton paiement ${method} est validé — commande #${o.id} en préparation.`,
         body: `
           <div style="font-size:11px;font-weight:700;color:#888;letter-spacing:0.18em;text-transform:uppercase;margin-bottom:6px;">Commande #${o.id}</div>
