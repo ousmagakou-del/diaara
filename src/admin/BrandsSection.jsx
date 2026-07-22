@@ -134,8 +134,10 @@ export default function BrandsSection() {
       flash('Le nom est requis', 'err');
       return;
     }
+    const token = getAdminToken();
+    if (!token) { flash('Session admin expirée', 'err'); return; }
     if (b.id) {
-      const { error } = await supabase.from('brands').update(payload).eq('id', b.id);
+      const { error } = await supabase.rpc('admin_upsert_brand', { p_token: token, p_id: b.id, p_payload: payload });
       if (error) { flash('Erreur : ' + error.message, 'err'); return; }
       adminLogAction({
         action:     'update_brand',
@@ -147,8 +149,7 @@ export default function BrandsSection() {
 
       // Push la commission sur la pseudo-pharma liee (si dashboard actif)
       if (b.is_active_dashboard && validCommission !== null) {
-        const token = getAdminToken();
-        if (token) {
+        {
           const { data, error: commErr } = await supabase.rpc('admin_update_brand_commission', {
             p_token: token,
             p_brand_id: b.id,
@@ -162,7 +163,7 @@ export default function BrandsSection() {
         }
       }
     } else {
-      const { error } = await supabase.from('brands').insert(payload);
+      const { error } = await supabase.rpc('admin_upsert_brand', { p_token: token, p_id: null, p_payload: payload });
       if (error) { flash('Erreur : ' + error.message, 'err'); return; }
       adminLogAction({
         action:     'create_brand',
@@ -179,7 +180,7 @@ export default function BrandsSection() {
 
   const handleDelete = async (b) => {
     if (!await confirmDialog(`Supprimer "${b.name}" ?\n\nLes produits de cette marque ne seront pas supprimés.`)) return;
-    const { error } = await supabase.from('brands').delete().eq('id', b.id);
+    const { error } = await supabase.rpc('admin_delete_brand', { p_token: getAdminToken(), p_id: b.id });
     if (error) { flash('Erreur : ' + error.message, 'err'); return; }
     adminLogAction({
       action:     'delete_brand',
@@ -242,11 +243,10 @@ export default function BrandsSection() {
       return;
     }
 
-    // ⚠️ La colonne s'appelle `img` (pas `logo`) dans ta DB
-    const { error: updErr } = await supabase
-      .from('brands')
-      .update({ img: publicUrl })
-      .eq('id', brand.id);
+    // ⚠️ La colonne s'appelle `img` (pas `logo`) dans ta DB — via RPC admin (RLS)
+    const { error: updErr } = await supabase.rpc('admin_set_brand_logo', {
+      p_token: getAdminToken(), p_id: brand.id, p_img: publicUrl,
+    });
 
     setUploadingId(null);
 
@@ -268,7 +268,7 @@ export default function BrandsSection() {
 
   const handleRemoveLogo = async (b) => {
     if (!await confirmDialog(`Retirer le logo de "${b.name}" ?`)) return;
-    const { error } = await supabase.from('brands').update({ img: null }).eq('id', b.id);
+    const { error } = await supabase.rpc('admin_set_brand_logo', { p_token: getAdminToken(), p_id: b.id, p_img: null });
     if (error) { flash('Erreur : ' + error.message, 'err'); return; }
     adminLogAction({
       action:     'remove_brand_logo',
