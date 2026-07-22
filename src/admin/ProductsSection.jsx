@@ -124,6 +124,22 @@ export default function ProductsSection() {
     refresh();
   };
 
+  // ─── Mettre en avant / retirer de la "Sélection YARAM" (accueil) ───
+  const handleToggleFeatured = async (p) => {
+    const token = getAdminToken();
+    if (!token) { flash('Session admin expirée', true); return; }
+    const next = !p.featured;
+    setBusyId(p.id);
+    const { error } = await supabase.rpc('admin_set_product_featured', {
+      p_token: token, p_id: p.id, p_featured: next,
+    });
+    setBusyId(null);
+    if (error) { flash(`Erreur : ${error.message}`, true); return; }
+    // MAJ optimiste locale (evite un refresh complet)
+    setProducts((list) => list.map((x) => (x.id === p.id ? { ...x, featured: next } : x)));
+    flash(next ? '✓ Produit mis en avant sur l’accueil' : 'Retiré de la sélection accueil');
+  };
+
   // ─── Hard delete : suppression définitive ───
   // La RPC admin_delete_product cascade automatiquement sur inventory.
   const handleHardDelete = async (p) => {
@@ -265,9 +281,21 @@ export default function ProductsSection() {
                 <td>{p.category}</td>
                 <td>{p.price?.toLocaleString('fr-FR')} FCFA</td>
                 <td><span className={`adm-badge ${p.score >= 80 ? 'excellent' : p.score >= 60 ? 'good' : 'medium'}`}>{p.score}</span></td>
-                <td><span className={`adm-badge ${p.active ? 'good' : 'bad'}`}>{p.active ? '✓ Actif' : '× Inactif'}</span></td>
+                <td>
+                  <span className={`adm-badge ${p.active ? 'good' : 'bad'}`}>{p.active ? '✓ Actif' : '× Inactif'}</span>
+                  {p.featured && <span className="adm-badge excellent" style={{ marginLeft: 4 }}>★ Vedette</span>}
+                </td>
                 <td style={{ whiteSpace: 'nowrap' }}>
-                  <button className="adm-btn-sec" onClick={() => setEditing(p)} title="Modifier" disabled={busyId === p.id}>
+                  <button
+                    className="adm-btn-sec"
+                    onClick={() => handleToggleFeatured(p)}
+                    title={p.featured ? 'Retirer de la sélection accueil' : 'Mettre en avant sur l’accueil'}
+                    disabled={busyId === p.id}
+                    style={{ color: p.featured ? '#E8A200' : undefined }}
+                  >
+                    {p.featured ? '★' : '☆'}
+                  </button>
+                  <button className="adm-btn-sec" onClick={() => setEditing(p)} title="Modifier" style={{ marginLeft: 4 }} disabled={busyId === p.id}>
                     ✏️
                   </button>
                   {p.active ? (

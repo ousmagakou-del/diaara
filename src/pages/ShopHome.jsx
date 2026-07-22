@@ -382,6 +382,12 @@ export default function ShopHome() {
     return (recent.length >= 6 ? recent : withDate).slice(0, 12);
   }, [productsRaw]);
 
+  // Selection YARAM : produits epingles en admin (featured = true).
+  const featured = useMemo(() => {
+    if (!productsRaw.length) return [];
+    return productsRaw.filter((p) => p.featured === true).slice(0, 12);
+  }, [productsRaw]);
+
   // Bons plans : discount decroissant.
   // FALLBACK deterministe : si aucun produit n'a de old_price/list_price en DB,
   // on montre les produits les mieux notes pour garder la section peuplee
@@ -555,6 +561,22 @@ export default function ShopHome() {
             <CategoryGrid
               categories={categoriesRaw}
               onPick={(slug) => goSearch({ category: slug })}
+            />
+          </section>
+        )}
+
+        {/* 3.4 SELECTION YARAM (produits epingles en admin) ────────── */}
+        {featured.length > 0 && (
+          <section className="yhome-section">
+            <SectionHead
+              title="Sélection YARAM"
+              subtitle="Nos coups de cœur, choisis par l’équipe"
+            />
+            <ProductRail
+              products={featured}
+              loading={false}
+              pharmacy={activePharmacy}
+              count={12}
             />
           </section>
         )}
