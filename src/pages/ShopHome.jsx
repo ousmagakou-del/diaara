@@ -34,6 +34,7 @@ import {
 } from '../lib/queries';
 import { getFeaturedBundles } from '../lib/supabase';
 import SiteLayout from '../components/SiteLayout';
+import CategoryIcon, { hasCategoryIcon } from '../components/CategoryIcon';
 import { ProductTile, BrandTile } from '../components/tiles';
 import { SkeletonProductCard, SkeletonBrandCard } from '../components/Skeleton';
 import { useLanguage } from '../lib/i18n';
@@ -194,7 +195,9 @@ function CategoryGrid({ categories, onPick }) {
             onClick={() => onPick(slug)}
           >
             <span className="yhome-catg__circle" style={{ backgroundColor: bg }}>
-              {cat.icon_url ? (
+              {hasCategoryIcon(slug) ? (
+                <CategoryIcon slug={slug} size="66%" />
+              ) : cat.icon_url ? (
                 <img src={cat.icon_url} alt="" loading="lazy" decoding="async" />
               ) : (
                 <span className="yhome-catg__initial">{initial}</span>

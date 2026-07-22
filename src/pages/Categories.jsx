@@ -10,6 +10,7 @@ import { useMemo } from 'react';
 import { useNav } from '../App';
 import { useCategories, useBrands, useProductCategorySlugs } from '../lib/queries';
 import SiteLayout from '../components/SiteLayout';
+import CategoryIcon, { hasCategoryIcon } from '../components/CategoryIcon';
 import { BrandTile } from '../components/tiles';
 import Skeleton, { SkeletonBrandCard } from '../components/Skeleton';
 import './Categories.css';
@@ -196,7 +197,9 @@ export default function Categories() {
                     onClick={() => goSearch({ category: slug })}
                   >
                     <span className="ycatp__row-icon" aria-hidden>
-                      {cat.icon_url ? (
+                      {hasCategoryIcon(slug) ? (
+                        <CategoryIcon slug={slug} size="70%" />
+                      ) : cat.icon_url ? (
                         <img
                           src={cat.icon_url}
                           alt=""
