@@ -151,10 +151,9 @@ export default function CategoriesSection() {
       flash('Nom et slug requis', 'err');
       return;
     }
-    const op = cat.id
-      ? supabase.from('categories').update(payload).eq('id', cat.id)
-      : supabase.from('categories').insert(payload);
-    const { error } = await op;
+    const { error } = await supabase.rpc('admin_upsert_category', {
+      p_token: getAdminToken(), p_id: cat.id || null, p_payload: payload,
+    });
     if (error) { flash('Erreur : ' + error.message, 'err'); return; }
     adminLogAction({
       action:     cat.id ? 'update_category' : 'create_category',
@@ -172,7 +171,7 @@ export default function CategoriesSection() {
   // ─── Delete ───
   const handleDelete = async (cat) => {
     if (!await confirmDialog(`Supprimer definitivement "${cat.name}" ?\n\nLes produits avec cette categorie ne seront PAS supprimes mais n'apparaitront plus dans le filtre.`)) return;
-    const { error } = await supabase.from('categories').delete().eq('id', cat.id);
+    const { error } = await supabase.rpc('admin_delete_category', { p_token: getAdminToken(), p_id: cat.id });
     if (error) { flash('Erreur : ' + error.message, 'err'); return; }
     adminLogAction({
       action:     'delete_category',
@@ -187,10 +186,9 @@ export default function CategoriesSection() {
 
   // ─── Toggle active ───
   const handleToggleActive = async (cat) => {
-    const { error } = await supabase
-      .from('categories')
-      .update({ active: !cat.active })
-      .eq('id', cat.id);
+    const { error } = await supabase.rpc('admin_set_category_active', {
+      p_token: getAdminToken(), p_id: cat.id, p_active: !cat.active,
+    });
     if (error) { flash('Erreur : ' + error.message, 'err'); return; }
     adminLogAction({
       action:     'toggle_category_active',
@@ -208,9 +206,10 @@ export default function CategoriesSection() {
     const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
     if (swapIdx < 0 || swapIdx >= cats.length) return;
     const other = cats[swapIdx];
-    // Swap des display_order
-    const a = supabase.from('categories').update({ display_order: other.display_order }).eq('id', cat.id);
-    const b = supabase.from('categories').update({ display_order: cat.display_order }).eq('id', other.id);
+    const tok = getAdminToken();
+    // Swap des display_order (via RPC admin)
+    const a = supabase.rpc('admin_set_category_order', { p_token: tok, p_id: cat.id, p_order: other.display_order });
+    const b = supabase.rpc('admin_set_category_order', { p_token: tok, p_id: other.id, p_order: cat.display_order });
     const [r1, r2] = await Promise.all([a, b]);
     if (r1.error || r2.error) {
       flash('Erreur reorder', 'err');
