@@ -37,7 +37,7 @@ export function btn(label, href, color) {
 </td></tr></table>`;
 }
 
-export function layout({ title, preheader, body }) {
+export function layout({ title, preheader, body, markup }) {
   const year = new Date().getFullYear();
   return `<!DOCTYPE html>
 <html lang="fr">
@@ -45,6 +45,7 @@ export function layout({ title, preheader, body }) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${escapeHtml(title || 'YARAM')}</title>
+${markup || ''}
 </head>
 <body style="margin:0;padding:0;background:#F5F6F8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#1A1A1A;">
 <div style="display:none;font-size:1px;color:#fff;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">${escapeHtml(preheader || '')}</div>

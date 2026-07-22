@@ -14,7 +14,7 @@ import { onboardingD30Email } from './email-templates/onboarding-d30';
 // Activés via le builder `welcomeMjml`, `orderConfirmationMjml`, etc.
 // Les versions legacy `welcome`, `orderConfirmed` restent dispo pour compat.
 import { renderEmail } from './email-templates/render';
-import { schemaOrderConfirmation, schemaDelivered, schemaShippingUpdate } from './email-templates/schema';
+import { schemaOrderConfirmation, schemaDelivered, schemaShippingUpdate, renderJsonLd } from './email-templates/schema';
 import { renderProductsGrid } from './email-templates/productsGrid';
 
 const APP_URL = 'https://yaram.app';
@@ -243,6 +243,17 @@ export const EmailTemplates = {
         preheader: isPreorder
           ? `Ta précommande arrive sous ${leadDays} jours. Tu paies le solde à la réception.`
           : `Ta commande ${order.id} est en cours de préparation.`,
+        markup: renderJsonLd(schemaOrderConfirmation({
+          orderId: order.id,
+          total: order.total,
+          customerName: firstName,
+          items: (order.items || []).map((it) => ({
+            name: it?.name || it?.product_name || it?.title || 'Article',
+            price: Number(it?.unit_price ?? it?.price ?? 0) || 0,
+            qty: Number(it?.quantity ?? it?.qty ?? 1) || 1,
+            img: it?.image || it?.image_url || it?.img || undefined,
+          })),
+        })),
         body: `
           <h1 style="margin:0 0 16px;font-size:22px;font-weight:800;color:${BRAND_GREEN};">Merci ${firstName} 🎉</h1>
           <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#444;">
@@ -263,6 +274,7 @@ export const EmailTemplates = {
     html: layout({
       title: 'Commande en route',
       preheader: `Le livreur est en route vers toi.`,
+      markup: renderJsonLd(schemaShippingUpdate({ orderId: order.id, items: order.items })),
       body: `
         <h1 style="margin:0 0 16px;font-size:22px;font-weight:800;color:${BRAND_GREEN};">${firstName}, le livreur arrive 🛵</h1>
         <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#444;">
@@ -281,6 +293,7 @@ export const EmailTemplates = {
     html: layout({
       title: 'Livrée !',
       preheader: 'Merci de noter ton expérience.',
+      markup: renderJsonLd(schemaDelivered({ orderId: order.id, items: order.items, total: order.total })),
       body: `
         <h1 style="margin:0 0 16px;font-size:22px;font-weight:800;color:${BRAND_GREEN};">Bien reçu, ${firstName} 💚</h1>
         <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#444;">

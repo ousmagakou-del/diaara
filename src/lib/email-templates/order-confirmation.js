@@ -2,6 +2,7 @@
 // YARAM — Confirmation de commande (récap items + total + ETA)
 
 import { layout, btn, fcfa, escapeHtml, APP_URL, BRAND_GREEN } from './_shared';
+import { schemaOrderConfirmation, renderJsonLd } from './schema';
 
 function renderItemsTable(items) {
   const safe = Array.isArray(items) ? items : [];
@@ -77,11 +78,30 @@ export function orderConfirmationEmail({
   const addrHtml = formatAddress(deliveryAddress);
   const subtotal = (Number(total) || 0) - (Number(deliveryFee) || 0);
 
+  // Gmail Email Markup (schema.org JSON-LD) → carte riche en haut de l'email
+  const jsonLd = renderJsonLd(schemaOrderConfirmation({
+    orderId: String(orderId || ''),
+    total: Number(total) || 0,
+    customerName: (firstName || '').trim() || undefined,
+    deliveryDate: estimatedDeliveryDate
+      ? (typeof estimatedDeliveryDate === 'string'
+          ? estimatedDeliveryDate
+          : new Date(estimatedDeliveryDate).toISOString())
+      : undefined,
+    items: (Array.isArray(items) ? items : []).map((it) => ({
+      name: it?.name || it?.product_name || it?.title || 'Article',
+      price: Number(it?.unit_price ?? it?.price ?? 0) || 0,
+      qty: Number(it?.quantity ?? it?.qty ?? 1) || 1,
+      img: it?.image || it?.image_url || it?.img || undefined,
+    })),
+  }));
+
   return {
     subject: `Commande confirmée · YARAM #${id}`,
     html: layout({
       title: 'Commande confirmée',
       preheader: `Ta commande #${id} est confirmée — récap à l'intérieur.`,
+      markup: jsonLd,
       body: `
         <h1 style="margin:0 0 12px;font-size:22px;font-weight:800;color:${BRAND_GREEN};">Merci ${name} 🎉</h1>
         <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#444;">
