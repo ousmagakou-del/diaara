@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { getAdminToken } from '../lib/adminAuth';
 import { adminLogAction } from '../lib/adminApi';
 import { confirmDialog } from '../lib/toast';
 
@@ -49,20 +50,22 @@ export default function CategoriesSection() {
   const handleUploadSVG = async (cat, file) => {
     if (!file) return;
 
-    // Validation
-    if (file.type !== 'image/svg+xml' && !file.name.endsWith('.svg')) {
-      flash('Le fichier doit etre un SVG', 'err');
+    // Validation — SVG, PNG, WebP ou JPG
+    const okTypes = ['image/svg+xml', 'image/png', 'image/webp', 'image/jpeg'];
+    if (!okTypes.includes(file.type) && !/\.(svg|png|webp|jpe?g)$/i.test(file.name)) {
+      flash('Format accepté : SVG, PNG, WebP ou JPG', 'err');
       return;
     }
-    if (file.size > 500 * 1024) {
-      flash('SVG trop lourd (max 500 KB)', 'err');
+    if (file.size > 1024 * 1024) {
+      flash('Image trop lourde (max 1 Mo)', 'err');
       return;
     }
 
     setUploadingId(cat.id);
 
     // Nom unique : slug + timestamp pour casser le cache
-    const filename = `${cat.slug}-${Date.now()}.svg`;
+    const ext = (file.name.match(/\.(svg|png|webp|jpe?g)$/i)?.[1] || 'png').toLowerCase();
+    const filename = `${cat.slug}-${Date.now()}.${ext}`;
 
     // Upload
     const { data: uploadData, error: uploadErr } = await supabase
@@ -70,7 +73,7 @@ export default function CategoriesSection() {
       .from('category-icons')
       .upload(filename, file, {
         cacheControl: '3600',
-        contentType: 'image/svg+xml',
+        contentType: file.type || 'image/png',
         upsert: true,
       });
 
@@ -93,11 +96,10 @@ export default function CategoriesSection() {
       return;
     }
 
-    // Update la categorie
-    const { error: updErr } = await supabase
-      .from('categories')
-      .update({ icon_url: publicUrl })
-      .eq('id', cat.id);
+    // Update la categorie via RPC admin (RLS)
+    const { error: updErr } = await supabase.rpc('admin_set_category_icon', {
+      p_token: getAdminToken(), p_id: cat.id, p_icon: publicUrl,
+    });
 
     setUploadingId(null);
 
@@ -120,10 +122,9 @@ export default function CategoriesSection() {
   // ─── Retirer l'icone SVG (revient au fallback) ───
   const handleRemoveSVG = async (cat) => {
     if (!await confirmDialog(`Retirer l'icone de "${cat.name}" ?`)) return;
-    const { error } = await supabase
-      .from('categories')
-      .update({ icon_url: null })
-      .eq('id', cat.id);
+    const { error } = await supabase.rpc('admin_set_category_icon', {
+      p_token: getAdminToken(), p_id: cat.id, p_icon: null,
+    });
     if (error) { flash('Erreur : ' + error.message, 'err'); return; }
     adminLogAction({
       action:     'remove_category_icon',
@@ -285,13 +286,13 @@ export default function CategoriesSection() {
 
               {/* Status icone */}
               <div style={{ fontSize: 11, color: cat.icon_url ? '#1F8B4C' : '#9B9B9B' }}>
-                {cat.icon_url ? '✓ Icone SVG personnalisee' : 'Pas d\'icone (initiale affichee)'}
+                {cat.icon_url ? '✓ Icône personnalisée' : 'Pas d\'icone (initiale affichee)'}
               </div>
 
               {/* Actions */}
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 <label style={{ ...S.fileLabel, opacity: uploadingId === cat.id ? 0.6 : 1 }}>
-                  {uploadingId === cat.id ? 'Upload...' : (cat.icon_url ? 'Remplacer SVG' : 'Uploader SVG')}
+                  {uploadingId === cat.id ? 'Upload...' : (cat.icon_url ? 'Remplacer l'icône' : 'Uploader une icône')}
                   <input
                     type="file"
                     accept=".svg,image/svg+xml"
