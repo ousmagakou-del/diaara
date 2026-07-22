@@ -840,6 +840,29 @@ export default function ProductPage() {
     showToast('Ajoute au panier');
   };
 
+  // Partage produit : Web Share API (mobile) + fallback presse-papiers
+  const handleShare = async () => {
+    if (!product?.id) return;
+    const url = `https://yaram.app/product/${product.id}`;
+    const shareData = {
+      title: product.name,
+      text: `${product.name}${product.brand ? ` — ${product.brand}` : ''} sur YARAM`,
+      url,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        return;
+      }
+    } catch { /* annulé par l'utilisateur : on ne fait rien */ return; }
+    try {
+      await navigator.clipboard.writeText(url);
+      showToast('Lien copie');
+    } catch {
+      showToast(url);
+    }
+  };
+
   const handleBuyNow = () => {
     if (!product) return;
     const pharmacy = pharmacies?.[0] || { id: 'default', name: 'YARAM' };
@@ -1069,7 +1092,22 @@ export default function ProductPage() {
                   {product.brand_name}
                 </button>
               )}
-              <h1 className="pp-title">{product?.name}</h1>
+              <div className="pp-title-row">
+                <h1 className="pp-title">{product?.name}</h1>
+                <button
+                  type="button"
+                  className="pp-share-btn"
+                  onClick={handleShare}
+                  aria-label="Partager ce produit"
+                  title="Partager"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
+                    <line x1="8.6" y1="10.5" x2="15.4" y2="6.5" /><line x1="8.6" y1="13.5" x2="15.4" y2="17.5" />
+                  </svg>
+                  <span>Partager</span>
+                </button>
+              </div>
 
               {brandDirect && (
                 <div className="pp-brand-direct" role="note" aria-label={`Vendu directement par ${brandDirect.name}`}>

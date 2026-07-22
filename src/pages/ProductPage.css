@@ -2187,3 +2187,17 @@
   color: #6B21A8;
   opacity: 0.9;
 }
+
+/* ─── Bouton Partager (fiche produit) ─── */
+.pp-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.pp-title-row .pp-title { flex: 1; margin: 0; }
+.pp-share-btn {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px;
+  height: 38px; padding: 0 14px; border-radius: 999px;
+  background: #fff; border: 1.5px solid var(--border, #E8ECEA);
+  color: var(--text, #0F1419); font-weight: 800; font-size: 13px; cursor: pointer;
+  transition: background .15s ease, transform .1s ease;
+}
+.pp-share-btn:hover { background: #F5F7F6; }
+.pp-share-btn:active { transform: scale(.96); }
+@media (max-width: 520px) { .pp-share-btn span { display: none; } .pp-share-btn { padding: 0 10px; } }
