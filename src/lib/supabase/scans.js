@@ -113,6 +113,15 @@ export async function getLatestSkinScan() {
 }
 
 export async function getProductsForSkinDiagnosis(diagnosis) {
+  // v37 : produits reels deja matches cote serveur (analyze-skin) → prioritaires.
+  if (Array.isArray(diagnosis?.recommended_products) && diagnosis.recommended_products.length) {
+    const compatibles = diagnosis.recommended_products.map((p) => ({
+      ...p,
+      img: p.img || p.image_url || null,
+      image_url: p.image_url || p.img || null,
+    }));
+    return { compatibles, avoid: [] };
+  }
   const allProducts = await getAllProducts();
   const recommendedIngredients = (diagnosis.ingredients_recommandes || []).map(i => String(i || '').toLowerCase());
   const avoidIngredients = (diagnosis.ingredients_a_eviter || []).map(i => String(i || '').toLowerCase());
