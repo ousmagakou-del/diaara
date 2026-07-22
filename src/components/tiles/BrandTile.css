@@ -6,18 +6,18 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--y-sp-3);
-  padding: var(--y-sp-4);
+  gap: var(--y-sp-2);
+  padding: var(--y-sp-3);
   background: var(--y-n-0);
   border: 1px solid var(--y-n-200);
-  border-radius: var(--y-rad-xl);
+  border-radius: var(--y-rad-lg);
   cursor: pointer;
   transition: transform var(--y-dur-medium) var(--y-ease-out),
               box-shadow var(--y-dur-medium) var(--y-ease-out),
               border-color var(--y-dur-medium) var(--y-ease-out);
   font-family: var(--y-font-sans);
   text-align: center;
-  min-height: 200px;
+  min-height: 138px;
   width: 100%;
 }
 
@@ -34,15 +34,15 @@
 }
 
 .y-brand-tile__logo {
-  width: 96px;
-  height: 96px;
-  border-radius: 999px;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--y-rad-md);
   background: var(--y-n-50);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  padding: var(--y-sp-3);
+  padding: var(--y-sp-2);
   flex-shrink: 0;
 }
 
@@ -72,10 +72,10 @@
 }
 
 .y-brand-tile__name {
-  font-size: var(--y-fs-md);
+  font-size: var(--y-fs-base);
   font-weight: var(--y-fw-bold);
   color: var(--y-n-900);
-  line-height: 1.3;
+  line-height: 1.25;
 }
 
 .y-brand-tile__sub {
@@ -90,7 +90,7 @@
 }
 
 .y-brand-tile__count {
-  margin-top: var(--y-sp-2);
+  margin-top: 1px;
   font-size: var(--y-fs-xs);
   font-weight: var(--y-fw-semibold);
   color: var(--y-brand);
