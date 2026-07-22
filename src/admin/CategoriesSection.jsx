@@ -292,7 +292,7 @@ export default function CategoriesSection() {
               {/* Actions */}
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 <label style={{ ...S.fileLabel, opacity: uploadingId === cat.id ? 0.6 : 1 }}>
-                  {uploadingId === cat.id ? 'Upload...' : (cat.icon_url ? 'Remplacer l'icône' : 'Uploader une icône')}
+                  {uploadingId === cat.id ? 'Upload...' : (cat.icon_url ? 'Remplacer' : 'Uploader une icône')}
                   <input
                     type="file"
                     accept=".svg,image/svg+xml"
