@@ -101,7 +101,7 @@ function ProductTile({ product, size = 'md', pharmacy = null, onOpen }) {
           <span className="y-tile__badge y-tile__badge--promo">-{promoPct}%</span>
         )}
         {!hasPromo && product.is_imported && (
-          <span className="y-tile__badge y-tile__badge--import">Import</span>
+          <span className="y-tile__badge y-tile__badge--import">🌍 International</span>
         )}
         {lowStock && (
           <span className="y-tile__badge y-tile__badge--stock">
