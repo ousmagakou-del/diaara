@@ -24,7 +24,9 @@
   flex-direction: column;
   align-items: center;
   z-index: 2;
-  animation: yspl-fade-in 0.8s ease-out;
+  /* FIX juillet 2026 : PAS d'animation d'entrée. Le splash React prend le relais
+     du boot inline (#yaram-boot) qui est déjà peint dans le même état visuel.
+     Ré-animer ici faisait "sauter" le logo (translateY + fade) → double splash. */
 }
 
 /* Logo YARAM — SVG inline */
@@ -47,7 +49,8 @@
   letter-spacing: 0.35em;
   margin-top: 18px;
   text-transform: uppercase;
-  animation: yspl-fade-in 0.8s ease-out 0.5s both;
+  /* FIX juillet 2026 : plus de fade-in retardé (0.5s both) qui faisait
+     disparaître puis réapparaître la tagline lors du relais boot→React. */
 }
 
 /* Loader splash : VIRÉ. Splash dure < 1s grâce au cache IndexedDB,
