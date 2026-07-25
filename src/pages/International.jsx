@@ -138,7 +138,7 @@ export default function International() {
         .eq('is_imported', true)
         .eq('status', 'approved')
         .order('created_at', { ascending: false })
-        .limit(40);
+        .limit(1000);
 
       if (error) {
         console.error('[Intl] products fetch error:', error.message, error);
@@ -149,7 +149,7 @@ export default function International() {
           .eq('active', true)
           .eq('is_imported', true)
           .eq('status', 'approved')
-          .limit(40);
+          .limit(1000);
         return data2 || [];
       }
       console.log('[Intl] products loaded:', data?.length || 0);
