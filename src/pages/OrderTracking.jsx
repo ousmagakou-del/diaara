@@ -162,7 +162,9 @@ export default function OrderTracking({ orderId }) {
 
   const refresh = async (isFirst = false) => {
     try {
-      const { data: orderData, error: orderErr } = await supabase.rpc('client_get_order_by_id', { p_order_id: orderId });
+      // Token de suivi (lien magique WhatsApp/email) : autorise la lecture sans session connectée.
+      const _tok = (typeof window !== 'undefined') ? new URLSearchParams(window.location.search).get('t') : null;
+      const { data: orderData, error: orderErr } = await supabase.rpc('client_get_order_by_id', { p_order_id: orderId, p_token: _tok });
       if (orderErr) console.warn('[OrderTracking] order RPC error:', orderErr.message);
       if (orderData) {
         setOrder(orderData);
