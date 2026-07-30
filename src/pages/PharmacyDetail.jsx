@@ -75,11 +75,19 @@ export default function PharmacyDetail({ pharmacyId }) {
         .eq('pharmacy_id', pharmacyId).gt('stock', 0).eq('active', true);
       if (invErr) console.warn('[PharmacyDetail] inventory error:', invErr.message);
 
-      // 2) Produits soumis directement par la pharmacie (modèle submitted_by_pharmacy_id, comme l'app)
-      const { data: direct, error: dirErr } = await supabase
-        .from('products').select('*')
-        .eq('submitted_by_pharmacy_id', pharmacyId).eq('status', 'approved');
-      if (dirErr) console.warn('[PharmacyDetail] direct products error:', dirErr.message);
+      // 2) Produits soumis directement par la pharmacie (submitted_by_pharmacy_id)
+      //    Paginé par 1000 : PostgREST plafonne chaque SELECT à db-max-rows (1000).
+      const direct = [];
+      for (let from = 0; from < 6000; from += 1000) {
+        const { data: page, error: dirErr } = await supabase
+          .from('products').select('*')
+          .eq('submitted_by_pharmacy_id', pharmacyId).eq('status', 'approved')
+          .range(from, from + 999);
+        if (dirErr) { console.warn('[PharmacyDetail] direct products error:', dirErr.message); break; }
+        if (!page || page.length === 0) break;
+        direct.push(...page);
+        if (page.length < 1000) break;
+      }
 
       // Fusion des deux sources (dédup par id)
       const byId = new Map();
