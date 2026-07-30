@@ -353,8 +353,19 @@
 }
 .pd-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, 1fr);
   gap: 12px;
+}
+/* Tablette : 3-4 colonnes */
+@media (min-width: 640px) {
+  .pd-grid { grid-template-columns: repeat(4, 1fr); }
+}
+/* Desktop : 5-6 colonnes */
+@media (min-width: 1000px) {
+  .pd-grid { grid-template-columns: repeat(5, 1fr); }
+}
+@media (min-width: 1280px) {
+  .pd-grid { grid-template-columns: repeat(6, 1fr); }
 }
 .pd-tile-anim {
   opacity: 0;

@@ -69,15 +69,23 @@ export default function PharmacyDetail({ pharmacyId }) {
       if (phErr) console.warn('[PharmacyDetail] pharmacy fetch error:', phErr.message);
       if (!ph) return { pharmacy: null, products: [], reviews: [], error: true };
 
+      // 1) Produits via inventaire (modèle stock par pharmacie)
       const { data: inv, error: invErr } = await supabase
         .from('inventory').select('product_id, stock, products(*)')
         .eq('pharmacy_id', pharmacyId).gt('stock', 0).eq('active', true);
       if (invErr) console.warn('[PharmacyDetail] inventory error:', invErr.message);
 
-      const list = [];
-      (inv || []).forEach(i => {
-        if (i.products && i.products.id) list.push({ ...i.products, stock: i.stock });
-      });
+      // 2) Produits soumis directement par la pharmacie (modèle submitted_by_pharmacy_id, comme l'app)
+      const { data: direct, error: dirErr } = await supabase
+        .from('products').select('*')
+        .eq('submitted_by_pharmacy_id', pharmacyId).eq('status', 'approved');
+      if (dirErr) console.warn('[PharmacyDetail] direct products error:', dirErr.message);
+
+      // Fusion des deux sources (dédup par id)
+      const byId = new Map();
+      (inv || []).forEach(i => { if (i.products && i.products.id) byId.set(i.products.id, { ...i.products, stock: i.stock }); });
+      (direct || []).forEach(p => { if (p && p.id && !byId.has(p.id)) byId.set(p.id, { ...p, stock: p.stock ?? 1 }); });
+      const list = Array.from(byId.values());
       return { pharmacy: ph, products: list, reviews: [], error: false };
     },
     { ttl: 5 * 60 * 1000, enabled: !!pharmacyId }
