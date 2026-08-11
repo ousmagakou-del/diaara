@@ -40,6 +40,33 @@ function generateSecureToken() {
   return 'LIV-' + Array.from(bytes).map(b => b.toString(36).padStart(2, '0')).join('').slice(0, 12).toUpperCase();
 }
 
+// ─── AJIL (réseau de livraison externe) ──────────────────────────────
+// Passe par l'edge function ajil-dispatch (clé API 100% serveur). On envoie
+// le token de session admin pour l'auth serveur.
+function _adminToken() {
+  try {
+    const raw = (typeof localStorage !== 'undefined' && localStorage.getItem('yaram-admin-session'))
+      || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('yaram-admin-session'));
+    return raw ? (JSON.parse(raw)?.token || null) : null;
+  } catch { return null; }
+}
+async function ajilInvoke(action, orderId) {
+  const { data, error } = await supabase.functions.invoke('ajil-dispatch', {
+    body: { action, order_id: orderId, admin_token: _adminToken() },
+  });
+  if (error) throw new Error(error.message || 'ajil_failed');
+  if (data?.ok === false) throw new Error(data?.error || 'ajil_failed');
+  return data;
+}
+const AJIL_LABELS = {
+  requested: 'Demande reçue', pending: 'Recherche livreur', assigned: 'Livreur assigné',
+  en_route_pickup: 'Vers la collecte', arrived_pickup: 'Au point de collecte',
+  shopping_started: 'Courses en cours', picked_up: 'Colis récupéré',
+  en_route_dropoff: 'En route vers le client', arrived_dropoff: 'Chez le client',
+  delivered: 'Livré', canceled: 'Annulé',
+};
+const ajilLabel = (s) => AJIL_LABELS[s] || s || '—';
+
 export default function DeliveriesSection() {
   const [orders, setOrders] = useState([]);
   const [trackings, setTrackings] = useState({});
@@ -461,6 +488,31 @@ function AssignDriverModal({ order, onAssign, onCancel }) {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [assigning, setAssigning] = useState(false);
+  const [ajil, setAjil] = useState(() => order.ajil_ref_code ? {
+    ref_code: order.ajil_ref_code, delivery_code: order.ajil_delivery_code,
+    status: order.ajil_status, courier: order.ajil_courier_name, price: order.ajil_price_fcfa,
+  } : null);
+  const [ajilBusy, setAjilBusy] = useState(false);
+
+  const sendAjil = async () => {
+    setAjilBusy(true);
+    try {
+      const res = await ajilInvoke('create', order.id);
+      setAjil({ ref_code: res.ref_code, delivery_code: res.delivery_code, status: res.status || 'requested', courier: null, price: res.price_fcfa });
+      toast.success(`✅ AJIL ${res.ref_code} · code livraison ${res.delivery_code || '—'}`);
+    } catch (e) {
+      toast.error(e.message === 'ajil_key_not_configured' ? 'Clé AJIL non configurée côté serveur' : ('AJIL : ' + e.message));
+    } finally { setAjilBusy(false); }
+  };
+  const trackAjil = async () => {
+    setAjilBusy(true);
+    try {
+      const res = await ajilInvoke('track', order.id);
+      const d = res.delivery;
+      if (d) setAjil((p) => ({ ...(p || {}), status: d.status, courier: d.courier_name || p?.courier }));
+    } catch (e) { toast.error('AJIL : ' + e.message); }
+    finally { setAjilBusy(false); }
+  };
 
   // Charge la liste des livreurs actifs avec leur charge actuelle
   useEffect(() => {
@@ -544,6 +596,22 @@ function AssignDriverModal({ order, onAssign, onCancel }) {
             }}
           >
             ✍️ Manuel (extérieur)
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('ajil')}
+            style={{
+              padding: '8px 14px',
+              border: 'none',
+              background: 'transparent',
+              borderBottom: mode === 'ajil' ? '3px solid #1F8B4C' : '3px solid transparent',
+              fontWeight: mode === 'ajil' ? 800 : 500,
+              color: mode === 'ajil' ? '#1F8B4C' : '#666',
+              cursor: 'pointer',
+              fontSize: 14,
+            }}
+          >
+            🏍️ AJIL {ajil?.ref_code ? '✓' : ''}
           </button>
         </div>
 
@@ -639,21 +707,66 @@ function AssignDriverModal({ order, onAssign, onCancel }) {
           </div>
         )}
 
-        <p style={{ fontSize: 11, color: '#6B6B6B', marginTop: 12 }}>
-          ℹ️ {mode === 'registered'
-            ? 'La commande apparaîtra directement dans son app PWA + lien WhatsApp envoyé.'
-            : 'Le lien GPS sera envoyé par WhatsApp uniquement.'}
-        </p>
+        {mode === 'ajil' && (
+          <div>
+            <p style={{ fontSize: 12, color: '#6B6B6B', marginBottom: 12 }}>
+              Confie la course au <strong>réseau AJIL</strong> : il assigne automatiquement un de ses livreurs.
+              Collecte depuis la pharmacie assignée. La clé API reste côté serveur.
+            </p>
+            {ajil?.ref_code ? (
+              <div style={{ background: '#0f1e17', color: '#fff', borderRadius: 12, padding: 16 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1, color: '#8fdcae' }}>
+                  RÉF {ajil.ref_code}{ajil.status ? ` · ${ajilLabel(ajil.status).toUpperCase()}` : ''}
+                </div>
+                <div style={{ fontSize: 34, fontWeight: 900, letterSpacing: 8, marginTop: 6 }}>
+                  {ajil.delivery_code || '—'}
+                </div>
+                <div style={{ fontSize: 12.5, color: '#c9d6ce', marginTop: 6 }}>
+                  Code de livraison à donner au livreur.
+                  {ajil.courier ? ` Livreur : ${ajil.courier}.` : ''}
+                  {ajil.price ? ` Prix course : ${Number(ajil.price).toLocaleString('fr-FR')} FCFA.` : ''}
+                </div>
+                <button
+                  className="adm-btn-sec"
+                  style={{ marginTop: 12 }}
+                  onClick={trackAjil}
+                  disabled={ajilBusy}
+                >
+                  {ajilBusy ? '⏳ …' : '🔄 Rafraîchir le statut'}
+                </button>
+              </div>
+            ) : (
+              <button
+                className="adm-btn-pri"
+                style={{ width: '100%' }}
+                onClick={sendAjil}
+                disabled={ajilBusy}
+              >
+                {ajilBusy ? '🚀 Envoi à AJIL…' : '🏍️ Envoyer au réseau AJIL'}
+              </button>
+            )}
+          </div>
+        )}
+
+        {mode !== 'ajil' && (
+          <p style={{ fontSize: 11, color: '#6B6B6B', marginTop: 12 }}>
+            ℹ️ {mode === 'registered'
+              ? 'La commande apparaîtra directement dans son app PWA + lien WhatsApp envoyé.'
+              : 'Le lien GPS sera envoyé par WhatsApp uniquement.'}
+          </p>
+        )}
         <div className="adm-form-actions">
-          <button className="adm-btn-sec" onClick={onCancel}>Annuler</button>
-          <button
-            className="adm-btn-pri"
-            onClick={handleSubmit}
-            disabled={assigning || !name.trim()}
-          >
-            {assigning ? '🚀 Envoi...' :
-              (mode === 'registered' && selectedDriverId ? '🚀 Assigner ce livreur' : '🚀 Assigner & WhatsApp')}
-          </button>
+          <button className="adm-btn-sec" onClick={onCancel}>{mode === 'ajil' ? 'Fermer' : 'Annuler'}</button>
+          {mode !== 'ajil' && (
+            <button
+              className="adm-btn-pri"
+              onClick={handleSubmit}
+              disabled={assigning || !name.trim()}
+            >
+              {assigning ? '🚀 Envoi...' :
+                (mode === 'registered' && selectedDriverId ? '🚀 Assigner ce livreur' : '🚀 Assigner & WhatsApp')}
+            </button>
+          )}
         </div>
       </div>
     </div>
